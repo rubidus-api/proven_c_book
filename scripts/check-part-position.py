@@ -57,7 +57,12 @@ def main():
             if not path.exists():
                 continue
             name, first, last = next(p for p in ranges if p[1] <= i <= p[2])
-            for m in pat.finditer(path.read_text(encoding="utf-8")):
+            text = path.read_text(encoding="utf-8")
+            for m in pat.finditer(text):
+                # ★ 「…」 안에 든 것은 *예시*이지 주장이 아니다. 102장이 이 검사가
+                #   무엇을 보는지 설명하며 그 문장을 그대로 인용한다.
+                if m.start() > 0 and text[m.start(1) - 1] in "「\"":
+                    continue
                 if i != last:
                     bad += 1
                     print(f"  \u26a0\ufe0f  {path.relative_to(ROOT)}: "

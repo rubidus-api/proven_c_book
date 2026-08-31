@@ -112,6 +112,28 @@ for src in $(find "$root/$tree" -name '*.c' | sort); do
     echo "ok: $rel"
 done
 
+# ── 스크립트 예제 ────────────────────────────────────────────────
+# ★ 102장(빌드와 시험)의 시연은 C 파일 하나가 아니라 *스크립트*다 --- 낡은
+#   산출물 사고를 일으키려면 make 를 두 번 돌려야 하고, 골든 시험은 그 자체가
+#   러너이기 때문이다. 그래서 `run.sh` 를 만나면 그것을 돌려 출력을 갈무리한다.
+#   규약: 예제 디렉터리의 `run.sh` 는 *스스로 치우고* 0 으로 끝나야 한다.
+for runner in $(find "$root/$tree" -name 'run.sh' | sort); do
+    total=$((total + 1))
+    rel=${runner#"$root/$tree/"}
+    out="$outdir/$rel.out"
+    mkdir -p "$(dirname "$out")"
+    if ! sh "$runner" >"$out" 2>&1; then
+        echo "FAIL run:   $rel"
+        sed 's/^/    /' "$out"
+        fail=1
+        continue
+    fi
+    if grep -q "$root" "$out" 2>/dev/null; then
+        sed -i "s#$root#.#g" "$out"
+    fi
+    echo "ok: $rel"
+done
+
 if [ "$fail" -ne 0 ]; then
     echo "verify-examples: FAILED"
     exit 1

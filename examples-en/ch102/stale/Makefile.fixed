@@ -1,0 +1,9 @@
+# Let the compiler write the dependencies down - -MMD leaves .d files
+CFLAGS = -std=c23 -Wall -Wextra -MMD -MP
+demo: main.o greet.o
+	$(CC) $(CFLAGS) -o $@ main.o greet.o
+%.o: %.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+-include main.d greet.d
+clean:
+	rm -f demo *.o *.d
