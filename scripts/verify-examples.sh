@@ -67,6 +67,12 @@ for src in $(find "$root/$tree" -name '*.c' | sort); do
     if [ -f "$srcdir/main.c" ] && [ "$(basename "$src")" != "main.c" ]; then
         continue
     fi
+    # ★ `run.sh` 가 있는 디렉터리는 그 스크립트가 빌드까지 책임진다. 낱낱의
+    #   `.c` 를 홀로 빌드하려 들면 안 된다 --- 103장의 증인 시연은 *결함이 있는
+    #   판*과 *고친 판*을 나란히 두므로 함께 이으면 중복 정의가 난다.
+    if [ -f "$srcdir/run.sh" ]; then
+        continue
+    fi
     srcs="$src"
     if [ "$(basename "$src")" = "main.c" ]; then
         srcs=$(find "$srcdir" -maxdepth 1 -name '*.c' | sort | tr '\n' ' ')
