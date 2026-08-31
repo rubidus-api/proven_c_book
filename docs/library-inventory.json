@@ -1138,42 +1138,42 @@
     "variants": [
      "encodebind128"
     ],
-    "decl": "void encodebind128(unsigned char encptr[restrict static 16], const_Decimal128 * restrict xptr);"
+    "decl": "void encodebind128(unsigned char encptr[restrict static 16], const _Decimal128 * restrict xptr);"
    },
    {
     "name": "encodebind32",
     "variants": [
      "encodebind32"
     ],
-    "decl": "void encodebind32(unsigned char encptr[restrict static 4], const_Decimal32 * restrict xptr);"
+    "decl": "void encodebind32(unsigned char encptr[restrict static 4], const _Decimal32 * restrict xptr);"
    },
    {
     "name": "encodebind64",
     "variants": [
      "encodebind64"
     ],
-    "decl": "void encodebind64(unsigned char encptr[restrict static 8], const_Decimal64 * restrict xptr);"
+    "decl": "void encodebind64(unsigned char encptr[restrict static 8], const _Decimal64 * restrict xptr);"
    },
    {
     "name": "encodedecd128",
     "variants": [
      "encodedecd128"
     ],
-    "decl": "void encodedecd128(unsigned char encptr[restrict static 16], const_Decimal128 * restrict xptr);"
+    "decl": "void encodedecd128(unsigned char encptr[restrict static 16], const _Decimal128 * restrict xptr);"
    },
    {
     "name": "encodedecd32",
     "variants": [
      "encodedecd32"
     ],
-    "decl": "void encodedecd32(unsigned char encptr[restrict static 4], const_Decimal32 * restrict xptr);"
+    "decl": "void encodedecd32(unsigned char encptr[restrict static 4], const _Decimal32 * restrict xptr);"
    },
    {
     "name": "encodedecd64",
     "variants": [
      "encodedecd64"
     ],
-    "decl": "void encodedecd64(unsigned char encptr[restrict static 8], const_Decimal64 * restrict xptr);"
+    "decl": "void encodedecd64(unsigned char encptr[restrict static 8], const _Decimal64 * restrict xptr);"
    },
    {
     "name": "erf",
@@ -2380,6 +2380,7 @@
    "FP_FAST_D64DIVD128",
    "FP_FAST_D64FMAD128",
    "FP_FAST_D64MULD128",
+   "FP_FAST_D64SQRTD128",
    "FP_FAST_D64SUBD128",
    "FP_FAST_DADDL",
    "FP_FAST_DDIVL",
@@ -3049,7 +3050,7 @@
     "variants": [
      "remove"
     ],
-    "decl": "stdin stdout_PRINTF_NAN_LEN_MAX __STDC_VERSION_STDIO_H__ int remove(const char *filename);"
+    "decl": "stdout _PRINTF_NAN_LEN_MAX __STDC_VERSION_STDIO_H__ int remove(const char *filename);"
    },
    {
     "name": "rename",
@@ -3275,7 +3276,7 @@
    "FILE",
    "FILENAME_MAX",
    "FOPEN_MAX",
-   "NULL_IOFBF_IOLBF_IONBF",
+   "NULL",
    "SEEK_CUR",
    "SEEK_END",
    "SEEK_SET",
