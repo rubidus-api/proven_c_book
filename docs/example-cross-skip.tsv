@@ -18,5 +18,5 @@ ch62/convert.c	intentional	`takes_int(3.7)` 이 3 으로 잘리는 것을 보인
 ch32/for_decl.c	toolchain	C23 의 `for (static int ...)` 를 Clang 19 가 아직 거부한다. 표준 설명이 아니라 지원 시점의 문제다
 ch102/stale/run.sh	toolchain	ASan 으로 넘침을 보이는 시연인데, 이 자리의 Clang 에는 `libclang_rt.asan` 런타임이 없어 링크되지 않는다
 apx-baremetal/lockfree.c	intentional	자물쇠 없는지 *묻기만* 하는 예제라 변수를 읽지 않는다. Clang 의 -Wunneeded-internal-declaration 이 그것을 정확히 짚는다 --- `atomic_is_lock_free` 는 타입만 보면 되기 때문이다
-apx-measured/branch.c	toolchain	`__attribute__((optimize(...)))` 로 *조건 이동 변환만 꺼서* 분기를 남긴다. 그 속성은 GCC 것이고 Clang 에는 없다 --- 「재려는 것이 코드에 남아 있는가」가 이 예제의 주제이므로 속성을 뺄 수 없다
-apx-measured/fp_cost.c	toolchain	같은 까닭. `optimize("tree-vectorize")` 로 벡터화를 켠 판과 끈 판을 나란히 재는데, 그 스위치가 GCC 전용이다
+apx-measured/branch/run.sh	toolchain	`__attribute__((optimize(...)))` 로 *조건 이동 변환만 꺼서* 분기를 남긴다. 그 속성은 GCC 것이고 Clang 에는 없다 --- 「재려는 것이 코드에 남아 있는가」가 이 예제의 주제이므로 속성을 뺄 수 없다
+apx-measured/fp_cost/run.sh	toolchain	같은 까닭. `optimize("tree-vectorize")` 로 벡터화를 켠 판과 끈 판을 나란히 재는데, 그 스위치가 GCC 전용이다
