@@ -1,0 +1,819 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>부록 L — 기계가 깨어나는 순서: 부팅과 부트로더 — Proven C Book</title><style>/* ── 웹 판의 조판 (RFC-0027, 저자 지시 2026-08-10) ────────────────
+ *
+ * 전에는 이 CSS 가 scripts/wrap-html.py 안의 문자열이었다. 디자인을 한 줄
+ * 고치려면 파이썬 파일을 열어야 했고, 무엇이 디자인이고 무엇이 생성 논리인지
+ * 섞여 있었다. 이제 갈라 둔다 --- 디자인은 여기, 생성은 거기.
+ *
+ * ★ 고치는 절차
+ *   1. 이 파일만 고친다.
+ *   2. scripts/style-preview.sh --- build/style-preview.html 을 본다(몇 초).
+ *   3. 괜찮으면 그때 scripts/build-html.sh 로 전체를 만든다.
+ *
+ * ★ 규율 하나: 장치는 *왼쪽 세로선*으로 영역을 말하고, 제목은 *가로 밑줄*로
+ *   경계를 말한다. 소스 코드와 실행 결과(.demo)만 네 변 상자를 쓴다.
+ */
+
+/* ── 글꼴을 직접 싣는다 (RFC-0026 D2, 저자 지시 2026-08-10) ────────
+   전에는 @font-face 가 하나도 없어, CSS 가 적어 둔 이름이 방문자 기계에 없으면
+   대체 글꼴로 떨어졌다 --- 세리프 본문이 고딕으로 보이는 일이 흔했다.
+   이 책이 쓰는 갈래는 셋뿐이다: serif(본문) · sans-serif(제목·UI) · monospace(코드).
+   파일은 scripts/make-webfonts.sh 가 *이 책에 쓰인 글자만* 남겨 만든다.
+   font-display:swap --- 글꼴을 기다리느라 글이 안 보이는 일이 없게 한다. */
+@font-face { font-family:"PCB Serif"; src:url("../fonts/serif.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"PCB Serif"; src:url("../fonts/serif-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"PCB Serif"; src:url("../fonts/serif-italic.woff2") format("woff2");
+  font-weight:400; font-style:italic; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"PCB Serif"; src:url("../fonts/serif-kr.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"PCB Serif"; src:url("../fonts/serif-kr-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+@font-face { font-family:"PCB Sans"; src:url("../fonts/sans.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"PCB Sans"; src:url("../fonts/sans-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"PCB Sans"; src:url("../fonts/sans-kr.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"PCB Sans"; src:url("../fonts/sans-kr-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+@font-face { font-family:"PCB Mono"; src:url("../fonts/mono.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"PCB Mono"; src:url("../fonts/mono-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+/* ── 색은 세 가지 상태를 모두 적어야 한다 (저자 지적 2026-08-11) ───────
+ * ★ 예전에는 어두운 팔레트가 `@media (prefers-color-scheme: dark)` *안에만*
+ *   있었다. 그래서 「어둡게」 단추가 `data-theme` 를 붙여도 응답할 규칙이 없어
+ *   아무 일도 일어나지 않았고, 「밝게」도 시스템이 어두우면 소용없었다.
+ *   이제 세 자리에 적는다:
+ *     ① 바탕(:root)                          --- 밝은 팔레트
+ *     ② 시스템이 어두울 때, 단 밝게를 고르지 않았으면  --- 어두운 팔레트
+ *     ③ 어둡게를 골랐을 때                      --- 어두운 팔레트
+ *   ②③ 은 같은 값이라 되풀이되지만, CSS 에서 변수 묶음을 이름으로 나눠 쓸
+ *   방법이 없다. 고칠 때는 *둘 다* 고쳐야 한다.
+ */
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#c9c9c9; --box-bg:#f6f6f6; --box-rule:#c4c4c4; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+    --rule:#3a3d40; --box-bg:#1c1e20; --box-rule:#4a4d50; --code-bg:#1b1d1f; --link:#8ab4e8;
+    --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+    --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+:root[data-theme="dark"] { color-scheme: dark; --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#3a3d40; --box-bg:#1c1e20; --box-rule:#4a4d50; --code-bg:#1b1d1f; --link:#8ab4e8;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; }
+:root[data-theme="light"] { color-scheme: light; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"PCB Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+/* ── 상세 차례와 「이 장의 차례」 패널 (저자 지시 2026-08-10) ── */
+.here-btn { margin-left:.7rem; font:inherit; font-size:.92rem; cursor:pointer;
+  background:none; border:1px solid var(--rule,#bbb); border-radius:.25rem;
+  padding:.1rem .5rem; color:inherit; }
+.here-btn:hover { background:rgba(127,127,127,.14); }
+.here-at { margin-left:.7rem; font-size:.92rem; color:var(--muted); }
+.here-panel { position:sticky; top:2.9rem; z-index:19; max-height:70vh; overflow:auto;
+  border:1px solid var(--rule,#bbb); border-top:none; background:var(--bg,#fff);
+  padding:.6rem .9rem 1rem; box-shadow:0 6px 18px rgba(0,0,0,.12); }
+.here-head { display:flex; align-items:center; gap:.8rem; padding:.2rem 0 .5rem;
+  border-bottom:1px solid var(--rule,#ddd); margin-bottom:.5rem; }
+.here-head .sp { flex:1; }
+.here-all { margin-left:auto; font-size:.9rem; }
+.here-x { font:inherit; font-size:.9rem; cursor:pointer; background:none;
+  border:1px solid var(--rule,#bbb); border-radius:.25rem; padding:.05rem .45rem;
+  color:inherit; }
+.here-body a, .tf-secs a { display:block; text-decoration:none; padding:.12rem 0;
+  line-height:1.45; }
+.here-body a:hover, .tf-secs a:hover { text-decoration:underline; }
+.here-body a.lv4, .tf-secs a.lv4 { padding-left:1.6rem; font-size:.94rem;
+  color:var(--muted,#555); }
+.tf-no { display:inline-block; min-width:3.2rem; color:var(--muted,#666);
+  font-variant-numeric:tabular-nums; }
+.toc-full .tf-ch { margin:.9rem 0 .15rem; font-weight:700; }
+.toc-full .tf-secs { margin:0 0 .5rem .2rem; border-left:2px solid var(--rule,#e2e2e2);
+  padding-left:.7rem; }
+.toc-full h4.toc-part { margin-top:1.8rem; }
+.toc a.toc-detail { font-weight:700; }
+@media print { .here-btn, .here-panel { display:none; } }
+/* 왼쪽부터 죽 이어 쓰고, 좁으면 개행한다 (저자 지시 2026-08-10).
+   전에는 가운데 여백(.sp)이 뒤쪽 항목을 오른쪽 끝으로 밀어 두 덩이로
+   갈라져 있었다. 좁은 화면에서는 그 사이가 벌어져 읽기 나빴다. */
+.bar { position:sticky; top:0; z-index:20; display:flex; flex-wrap:wrap; gap:.35rem .8rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { display:none; }        /* 더 쓰지 않는다 --- 왼쪽 정렬로 이어 쓴다 */
+main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
+/* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다.
+   (2026-08-10: 40rem 으로 가둬 봤으나 저자가 「모양이 깨졌다」며 되돌리라고
+   했다. 줄 길이 문제는 D4 의 *독자가 고르는 폭*으로 푼다.) */
+.wrap { width:100%; max-width:none; margin:0; }
+h1,h2,h3,h4 { font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35;
+  padding-bottom:.18rem; border-bottom:1px solid var(--rule); }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem;
+     padding-bottom:.22rem; border-bottom:1.5px solid var(--fg); }
+p { margin:.9rem 0; } a { color:var(--link); }
+/* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
+   (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+/* 출처 주석 — PDF 의 각주에 해당한다(lib.typ 의 note). Typst 의 HTML 내보내기가
+   각주 본문을 버리므로 lib.typ 이 본문에 펴 두고, wrap-html.py 의 collect_notes 가
+   번호를 매겨 장 끝의 「주」로 옮긴다. 아래 .src-note 는 혹시 옮겨지지 않은 것이
+   있을 때의 대비책이다. */
+.src-note { font-size: .86em; color: var(--muted, #666); }
+.src-note code { font-size: .95em; }
+sup.fnref { font-size: .72em; line-height: 0; vertical-align: super; }
+sup.fnref a { text-decoration: none; padding: 0 .1em; }
+sup.fnref a::before { content: "["; }
+sup.fnref a::after  { content: "]"; }
+.chapter-notes { margin: 3rem 0 1rem; padding-top: .9rem;
+                 border-top: 2px solid var(--rule, #333); }
+.chapter-notes h2 { font-size: 1.05rem; margin: 0 0 .6rem; }
+.chapter-notes ol { margin: 0; padding-left: 1.6em; }
+.chapter-notes li { font-size: .92em; margin: .35em 0; text-indent: 0; }
+.chapter-notes a.fnback { text-decoration: none; }
+/* 상자 안에서는 표제 줄에 붙는 첫 문단만 들여쓰지 않는다(PDF 의 all:false) */
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+/* 표지(문./답.)가 들어간 첫 문단은 절대 들여쓰지 않는다 */
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
+pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
+pre code { background:none; padding:0; }
+/* 표: 바깥은 굵게, 안은 가늘게, 머리행은 굵은 글씨에 옅은 음영
+   (저자 지시 2026-08-06). */
+/* 표는 내용에 필요한 만큼만 폭을 쓰고 가운데에 선다. 100% 폭으로 늘리면
+   셀 오른쪽에 빈 칸이 생겨 테두리와 내용이 어긋나 보인다
+   (저자 지적 2026-08-06). 넘칠 때는 감싼 .tblwrap 이 가로로 스크롤한다. */
+.tblwrap { overflow-x:auto; text-align:center; }
+/* inline-table 은 언제나 내용만큼만 넓어진다(shrink-to-fit). flex 로 가운데를
+   맞추면 브라우저에 따라 늘어나거나 왼쪽이 잘리는 일이 있어 이 방식을 쓴다. */
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+/* 머리행 — 옅은 음영으로 포인트를 준다(PDF 와 같은 처리). 색이 아니라
+   반투명 회색이라 밝은·어두운 테마 양쪽에서 자연스럽다. */
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+/* 표·그림 목록은 훑어보는 것이라 촘촘해야 한다 (저자 지시 2026-08-31) */
+.float-list { list-style:none; padding-left:0; }
+.float-list li { margin:.12rem 0; }
+/* 메모리 사물함 도해 — 칸과 그 아래 주소. 표 서식과 섞이지 않게 따로 둔다. */
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"PCB Mono","D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"PCB Mono","D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+/* 시연 — 소스와 실행 결과는 선명한 검은 테두리로 묶는다 */
+/* 시연 상자 — 문답과 같은 1×2 모양. 위 칸은 표제(파일 경로는 고정폭,
+   "실행 결과"는 산세리프 굵은 글씨), 가로선 아래 칸이 내용이다
+   (저자 지시 2026-08-06). */
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"PCB Mono","D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+
+/* ── 왼쪽 세로선 규율 (저자 지시 2026-08-10) ─────────────────
+   네 변 상자는 좌우 안쪽 여백이 양쪽에서 폭을 갉는다. 왼쪽 세로선 하나로
+   영역만 표시하고 오른쪽은 열어 둔다. 제목 쪽 선이 내용 쪽보다 굵고, 둘은
+   서로 붙지 않는다(사이에 여백). 제목(heading)은 반대로 *가로* 밑줄이다 ---
+   영역과 경계는 하는 일이 다르므로 표시도 갈라 둔다. */
+.dev { margin:1.15rem 0; padding:0; background:none; border:none; border-radius:0; }
+/* 표지 줄 --- 굵은 왼쪽 선 */
+.dev > .dev-label { border-left:4px solid var(--fg);
+  padding:.1rem .8rem .25rem .8rem; margin:0 0 .34rem; }
+/* 본문 --- 가는 왼쪽 선 *하나*로 끝까지 이어진다.
+   ★ 자식마다 선을 그으면 문단 사이에서 끊기고, 한 문단짜리 본문(맨 글)은
+   선을 아예 받지 못한다. 그래서 본문을 한 겹으로 감싸고 그 칸에만 긋는다. */
+.dev > .dev-body { border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem .35rem .8rem; margin:0; }
+.dev > .dev-body > *:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child { margin-bottom:0; }
+/* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
+.float-caption { text-align:center; font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06).
+   ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
+     칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
+     여백이 겹쳐 들쭉날쭉해진다. */
+.dev.open { border:none; border-radius:0; background:none;
+  padding:0; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
+  text-indent:0; border-left:4px solid var(--fg);
+  font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+/* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
+.dev.open > .open-body { margin:0; padding:.35rem .8rem;
+  border-left:2px solid var(--box-rule); }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.06rem 0 .06rem .7rem; margin:.32rem 0 0; }
+/* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
+   (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
+.prereq .dev-label, .deepqa .dev-label, .why .dev-label,
+.organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+
+/* 문답 — 질문 쪽 선이 굵고, 답 쪽이 가늘고, 둘 사이가 떨어져 있다 */
+.qa-box { border:none; margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:0; background:none; }
+.qa-box .qa-q { border-left:4px solid var(--fg);
+  padding:.1rem .8rem .25rem .8rem; margin:0; }
+.qa-box .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem; margin:.34rem 0 0; }
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:0; }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:none; background:none; padding:0; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
+  text-indent:0; border-left:4px solid var(--fg);
+  font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > .dev-body > p, .dev.recap > .dev-body > div:not(.demo),
+.dev.recap > .dev-body > figure { margin:.3rem 0; padding:0; }
+
+/* ★ 장치 안에 든 시연 상자 --- 소스와 실행 결과는 중첩되어도 상자 그대로다
+   (저자 지시 2026-08-10). 바깥의 세로선 안쪽에서 조금 좁혀 놓는다. */
+.dev > .dev-body > .demo { margin:.7rem 0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+/* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
+   (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+/* 상자형 장치 공통 — 문답 상자와 같은 모양: 표제 줄과 본문을 가로선으로
+   가르고, 좌우 여백은 상자가 준다 (저자 지시 2026-08-06).
+   ★ 예전의 2단 구조(.misconception + div) 규칙이 남아 뒤따르는 문답 상자를
+     오해 상자의 아랫칸처럼 그리던 문제를 여기서 없앤다. */
+/* 같은 꼴을 쓰는 상자들 --- 네 변을 걷고 왼쪽 세로선만 남긴다
+   (저자 지시 2026-08-10). 소스 코드와 실행 결과(.demo)는 그대로 상자다. */
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:none; border-radius:0; background:none; padding:0; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem; text-indent:0;
+  border-left:4px solid var(--fg);
+  font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+/* ★ 본문 칸(.dev-body)은 건드리지 않는다 --- 전에는 `> div` 가 그것까지 잡아
+   padding:0 으로 덮어, 실제 사례·반례·흔한 오해의 글이 왼쪽 선에 바짝 붙었다
+   (저자 지적 2026-08-10). 안쪽 문단의 간격만 손본다. */
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
+.dev > .dev-body > figure, .dev > .open-body > p {
+  margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바: 제목은 왼쪽 끝, 장 이동 화살표·언어·GitHub 는 오른쪽 끝
+   (저자 지시 2026-08-06) */
+.bar > strong { flex:0 0 auto; }
+.bar .bar-nav { display:flex; gap:.55rem; align-items:center; margin-right:.35rem; }
+.bar .bar-nav a, .bar .bar-nav .off {
+  display:inline-block; min-width:1.35rem; text-align:center;
+  font-size:1.15rem; line-height:1.1; text-decoration:none; }
+.bar .bar-nav a:hover { text-decoration:none; color:var(--fg); }
+.bar .bar-nav .off { color:var(--muted); opacity:.35; }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+/* ★ 반례의 세로선도 실선이다(저자 지시 2026-08-10). 예전에는 점선으로 갈래를
+   구별했는데, 왼쪽 세로선 체계로 바꾼 뒤로는 그것만 따로 놀았다 --- 갈래는
+   선 모양이 아니라 표지 글(「반례.」)이 말한다. */
+.dev.antipattern > .dev-label { border-left-style:solid; }
+
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+/* ★ 표지에는 가로줄을 두지 않는다(저자 지시 2026-08-10) --- 제목 밑의 옅은 줄은
+   *일반 제목의 밑줄 규칙*이 표지 제목까지 잡은 것이었고, 소개글 밑의 줄은 표지
+   블록 자신의 아래 테두리였다. 표지는 경계를 말할 자리가 아니다. */
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.2rem; }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em;
+            padding-bottom:0; border-bottom:none; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+/* 개념도 — 흑백 선화라 다크 모드에서는 반전해 준다 */
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
+.toc { columns:24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
+/* 차례도 선 없이 --- 왼쪽 세로줄과 장마다의 밑줄을 걷어 낸다(저자 지시 2026-08-10).
+   여기는 장치가 아니라 목록이라 선이 뜻하는 바가 없다. */
+.toc-group { break-inside:avoid; padding-left:.85rem; }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+
+/* ── 서식 예시의 이름표 ─────────────────────────────────────────
+   조판 견본(style-specimen)에서만 나온다. 「이 모양을 뭐라고 부르는가」를
+   그 자리에 붙여 둔다 --- 본문에는 쓰지 않는다. */
+code.style-name { font-family:"PCB Mono","D2Coding",ui-monospace,monospace;
+  font-size:.72em; color:var(--muted); background:var(--rule);
+  padding:.05em .35em; border-radius:3px; white-space:nowrap;
+  font-weight:400; letter-spacing:0; }
+
+/* ── 조판 값 --- 견본에서 시험해 채택한 것들 (저자 지시 2026-08-10) ─────
+ *
+ * 아래는 견본(style-specimen)에서 눈으로 확인한 뒤 책에 들인 값이다.
+ * 여백은 일반적인 책의 숨에 맞추고, 선은 색 하나(#d5d5d5)로 모았다
+ * --- 표만 예외다(격자는 옅으면 칸이 안 읽힌다).
+ */
+
+/* 서두 다섯 칸 --- 표지 줄이 선에 눌려 있었다 */
+.dev.open > .dev-label { padding-top:.42rem; padding-bottom:.42rem; }
+.dev.open > .open-body { padding-top:.4rem; padding-bottom:.4rem; }
+.dev.open > .open-body > p { margin:.6rem 0; }
+
+/* 장치 안의 글도 조금 넉넉하게 */
+.dev > .dev-body { padding-top:.5rem; padding-bottom:.5rem; }
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
+.dev > .dev-body > figure { margin:.55rem 0; }
+
+/* 본문 --- 줄 사이와 문단 사이 */
+main { line-height:1.85; }
+p { margin:1.15rem 0; }
+h2 { margin-top:2.4rem; }
+h3 { margin-top:2rem; }
+li { margin:.3rem 0; }
+
+/* 제목 밑줄 --- 시험 중: 검정 대신 흐린 회색(저자 지시 2026-08-10).
+   경계를 말하되 글자보다 앞서지 않게. */
+/* 제목 밑줄도 팔레트를 따른다 --- 고정색이면 어두운 테마에서 홀로 밝다 */
+h1, h2, h3, h4 { border-bottom-color:var(--box-rule) !important; }
+
+/* 차례 --- 본문의 넉넉한 행간을 그대로 받아 헐거웠다. 목록은 촘촘해야 훑힌다.
+   (저자 지시 2026-08-10, 웹판 견본) */
+.toc { line-height:1.45; }
+.toc a { padding:.16rem 0; }
+.toc-part { margin:.85rem 0 .2rem; }
+
+/* 저작권·연락처 --- 두 칸짜리 표는 줄 사이가 벌어질수록 짝이 흩어진다 */
+.metalist { line-height:1.45; gap:.2rem 1.2rem; }
+.metalist dt, .metalist dd { margin:0; }
+
+/* 시연 상자(소스 코드·실행 결과) --- 시험 중: 테두리를 연한 회색으로
+   (저자 지시 2026-08-10). 코드가 이미 검은 덩어리다. */
+.demo { border-color:var(--box-rule); }
+.demo > .demo-head { border-bottom-color:var(--box-rule); }
+
+/* ── 왼쪽 세로선 --- 시험 중: 검정에서 연한 회색으로 (저자 지시 2026-08-10)
+ * 색은 팔레트(--box-rule)를 따른다 --- 테마가 바뀌면 선도 함께 바뀐다.
+ * 굵기(4px 대 2px)가 층위를 말하므로 색까지 세게 말할 까닭이 없다. */
+.dev > .dev-label,
+.dev.open > .dev-label,
+.qa-box .qa-q,
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  border-left-color:var(--box-rule); }
+
+.dev > .dev-body,
+.dev > .open-body,
+.dev.open .qa-a,
+.qa-box .qa-a,
+.deepqa .qa-a { border-left-color:var(--box-rule); }
+
+/* ★ 선의 색은 하나다(저자 지시 2026-08-10) --- 표(.tbl)만 예외로 제 색을 쓴다.
+   여기 한 줄로 못 박아, 뒤에 무엇이 오든 같은 회색이 되게 한다. */
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div {
+  border-color:var(--box-rule); }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+
+/* ★ 특이도(specificity) 함정 --- `.dev.open > .open-body` 는 클래스가 셋이라
+   위의 `.dev *`(하나) 나 `.dev > .open-body`(둘) 보다 세다. 그래서 서두 칸의
+   *내용* 세로선만 var(--box-rule)=#9a9a9a 로 남아 혼자 진했다(저자 지적).
+   같은 자리를 같은 힘으로 눌러 준다. */
+.dev.open > .open-body,
+.dev.open > .qa-a,
+.dev.open .qa-a,
+.dev.deepqa .qa-a,
+.qa-box > .qa-a,
+.qa-box > .qa-q { border-left-color:var(--box-rule); }
+
+/* 상단 바의 차례 그림글자 --- 글자 크기를 조금 키워 다른 이름들과 눈높이를 맞춘다 */
+.bar .bar-toc { font-size:1.15em; line-height:1; text-decoration:none; }
+
+/* ── 통일 (저자 지시 2026-08-11) ─────────────────────────────────────
+ * ★ 「글 전체의 통일성이 중요하다」 --- 장치 안의 글도, 장 안의 차례도, 본문과
+ *   같은 크기·행간·문단 간격을 쓴다. 예전에는 자리마다 값이 조금씩 달라
+ *   상자를 지날 때마다 리듬이 흔들렸다.
+ */
+.dev, .dev-body, .open-body, .qa-box, .qa-q, .qa-a, .dev-label,
+.toc-full, .toc-full .tf-secs { line-height:inherit; font-size:1rem; }
+.dev > .dev-body > p, .dev > .open-body > p,
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:1.15rem 0; }
+.dev > .dev-body > *:first-child, .dev > .open-body > *:first-child,
+.qa-box .qa-q > p:first-child, .qa-box .qa-a > p:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child, .dev > .open-body > *:last-child,
+.qa-box .qa-q > p:last-child, .qa-box .qa-a > p:last-child { margin-bottom:0; }
+/* 표지 줄만은 제 크기를 지킨다 --- 이름이지 본문이 아니다 */
+.dev > .dev-label, .dev.open > .dev-label { font-size:.98rem; line-height:1.4; }
+
+/* 제목: 글자와 밑줄 사이를 넉넉히, 그만큼 밑줄 아래도 넉넉히 */
+h1,h2,h3,h4 { padding-bottom:.34rem; }
+h1 { margin:.2rem 0 1.3rem; }
+h2 { padding-bottom:.42rem; margin-bottom:1.15rem; }
+h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
+
+/* ── 장 서두 칸의 목록과 문단 (저자 지시 2026-08-11) ──────────────────
+ * ★ 항목 사이에 여백을 또 주면 *행간이 두 번 붙은 것처럼* 보인다. 서두 칸은
+ *   짧은 줄이 여럿 늘어서는 자리라 그 겹침이 특히 크게 보였다. 항목 사이
+ *   간격은 행간이 대신하게 두고, 여백은 문단 사이에만 최소로 준다.
+ *   행간 자체는 본문과 같다(main 에서 물려받는다) --- 값을 따로 두지 않는다.
+ */
+.dev.open > .open-body > * { margin:.3rem 0; }
+.dev.open > .open-body > p { margin:.5rem 0; }
+.dev.open > .open-body > div { margin:.15rem 0; }   /* 「먼저 알아야 할 것」의 한 줄들 */
+.dev.open ul, .dev.open ol { margin:.3rem 0; }
+.dev.open li, .dev.open ol.qlist li { margin:0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open .qa-a > p { margin:.35rem 0; }
+
+/* ── 웹판만의 조정 (저자 승인 2026-08-11) ─────────────────────────────
+ * ★ 선의 색을 종이와 화면이 나눠 쓴다. 종이는 잉크가 실제로 얹혀 #d5d5d5 도
+ *   보이지만, 화면에서는 흰 배경 대비 **1.47:1** 이라 밝기를 낮추거나 값싼
+ *   패널에서는 사실상 사라진다 --- 「영역을 한눈에」라는 목적이 화면에서만
+ *   무너진다. 그래서 웹만 한 단계 진하게 둔다(#c4c4c4, 대비 1.75:1).
+ */
+/* 선의 색은 팔레트의 --box-rule 을 따른다 --- 테마가 바뀌면 함께 바뀐다 */
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div { border-color:var(--box-rule); }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+
+/* 키보드로 다닐 때 지금 어디인지 보여야 한다 --- 없으면 링크를 세며 다녀야 한다 */
+a:focus-visible, button:focus-visible, summary:focus-visible {
+  outline:2px solid var(--link); outline-offset:2px; border-radius:2px; }
+
+/* 고정 바 아래로 제목이 숨지 않게 --- 차례에서 절을 누르면 바에 가렸다 */
+:target, h1, h2, h3, h4, [id] { scroll-margin-top:4.2rem; }
+
+/* 본문 건너뛰기 --- 상단 바의 링크를 매 쪽마다 지나지 않아도 되게 */
+.skip { position:absolute; left:-9999px; top:0; z-index:30;
+        background:var(--bg); color:var(--fg); border:1px solid var(--fg);
+        padding:.5rem .8rem; font-size:.9rem; text-decoration:none; }
+.skip:focus { left:.5rem; top:.5rem; }
+
+/* ── 상단 바의 펼침 패널과 읽기 설정 (저자 지시 2026-08-11) ────────────
+ * 바에는 넷만 둔다. 나머지는 여기로 접었다 --- 늘 보이던 것을 접어 두면
+ * 읽는 자리가 넓어지고, 필요할 때는 한 번의 누름으로 전부 나온다.
+ */
+.here-btn { font:inherit; color:inherit; background:none; border:1px solid transparent;
+  border-radius:4px; padding:.1rem .45rem; cursor:pointer; }
+.here-btn .caret { color:var(--muted); }
+.here-panel { position:sticky; top:2.9rem; z-index:19; max-height:78vh; overflow:auto;
+  background:var(--bg); border-bottom:1px solid var(--rule);
+  padding:.6rem clamp(.8rem,3vw,2.5rem) .9rem; }
+
+/* 도구 줄 --- 인라인으로 죽 늘어서다 좁으면 다음 줄로 넘어간다 */
+.here-panel .tools { display:flex; flex-wrap:wrap; gap:.3rem .5rem; align-items:center;
+  margin-bottom:.5rem; }
+.tool { font:inherit; font-size:.86rem; color:inherit; background:none;
+  border:1px solid var(--rule); border-radius:4px; padding:.2rem .55rem;
+  text-decoration:none; cursor:pointer; white-space:nowrap;
+  font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+
+/* ★ 누를 수 있다는 것을 바탕색으로 말한다(저자 지시) --- 글자만 바뀌면
+   손이 닿기 전에는 알 수 없다. */
+.tool:hover, .here-btn:hover, .bar a:hover, .nav a:hover,
+.here-panel .here-body a:hover { background:var(--box-bg); }
+.tool:hover { border-color:var(--box-rule); }
+.here-btn:hover { border-color:var(--rule); }
+.bar a, .nav a { border-radius:4px; padding:.1rem .35rem; }
+.tool:active, .here-btn:active, .bar a:active { transform:translateY(1px); }
+.segb[aria-pressed="true"] { background:var(--box-bg); border-color:var(--fg); font-weight:700; }
+
+/* 본문 링크 --- 밑줄로 있음을 말하고, 손이 닿으면 바탕으로 답한다 */
+main a { text-decoration:underline; text-decoration-color:var(--box-rule);
+  text-underline-offset:2px; border-radius:3px; }
+main a:hover { background:var(--box-bg); text-decoration-color:var(--link); }
+main .toc a, main .toc-full a, main .here-body a { text-decoration:none; }
+main .toc a:hover, main .toc-full a:hover { background:var(--box-bg); text-decoration:underline; }
+
+/* 읽기 설정 상자 */
+.setbox { border:1px solid var(--rule); border-radius:5px; padding:.6rem .7rem;
+  margin:0 0 .6rem; font-size:.88rem;
+  font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.setrow { display:flex; flex-wrap:wrap; gap:.4rem .7rem; align-items:center;
+  margin:.35rem 0; }
+.setlbl { color:var(--muted); min-width:3.2rem; }
+.seg { display:inline-flex; gap:.25rem; }
+.segb { font:inherit; color:inherit; background:none; border:1px solid var(--rule);
+  border-radius:4px; padding:.15rem .5rem; cursor:pointer; }
+.col { display:inline-flex; align-items:center; gap:.3rem; }
+.col input[type=color] { width:2rem; height:1.4rem; padding:0; border:1px solid var(--rule);
+  border-radius:3px; background:none; cursor:pointer; }
+.setnote { margin:.5rem 0 0; color:var(--muted); font-size:.82rem; }
+
+/* 가로폭 제한 --- 기본은 제한 없음(설계 의도). 독자가 켤 때만 걸린다. */
+:root[data-measure="on"] main .wrap { max-width:46rem; margin-inline:auto; }
+
+/* 펼침 패널 맨 왼쪽의 판 번호 --- 도구가 아니라 표시다(누를 것이 없다) */
+.here-panel .ver { font-size:.82rem; color:var(--muted); padding:.2rem .45rem .2rem 0;
+  font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; white-space:nowrap; }
+
+/* ── 코드와 실행 결과의 줄바꿈 (저자 지시 2026-08-11) ─────────────────
+ * ★ 가로로 흘러 넘치게 두면 긴 줄은 *가로 스크롤 안에 숨는다.* 종이에서는
+ *   글자 단위로 접어 넣고 있으니(lib.typ 의 _hardwrap), 화면에서도 같은
+ *   약속을 지킨다 --- 넘치는 대신 접는다. 들여쓰기는 그대로 살린다.
+ */
+.demo pre, .demo pre code {
+  white-space:pre-wrap; overflow-wrap:anywhere; word-break:break-word; }
+.demo > .demo-body { overflow-x:visible; }
+
+/* ── 절의 주소(permalink) ─────────────────────────────────────────
+   종이 책에는 쪽수가 있지만 웹 판에는 없어서, 남에게 「거기」를 알려 줄
+   방법이 없었다. 절마다 닻을 두되 *읽기를 방해하지 않게* --- 평소에는
+   보이지 않다가 제목에 닿거나 키보드 초점이 오면 드러난다. */
+.plink {
+  margin-left: .4em; font-weight: 400; text-decoration: none;
+  color: var(--muted, #888); opacity: 0; transition: opacity .12s;
+}
+h3:hover > .plink, h4:hover > .plink,
+h3 > .plink:focus, h4 > .plink:focus { opacity: 1; }
+@media (hover: none) { .plink { opacity: .45; } }
+
+/* ── 검색 ─────────────────────────────────────────────────────────
+   *제목과 색인 표제어*만 찾는다. 본문 전체 색인은 판마다 수 MB 라
+   내려받게 하는 값이 얻는 것보다 크다. 무엇을 찾는지 화면에 적어 둔다. */
+.searchbox { margin:.6em 0 0; }
+.searchbox input[type=search] {
+  width: 100%; padding: .45em .6em; font: inherit;
+  border: 1px solid var(--rule, #ccc); border-radius: 4px;
+  background: var(--bg, #fff); color: var(--fg, #111);
+}
+.search-hint { color: var(--muted, #777); font-size: .85em; margin:.3em 0 0; }
+.search-results { list-style: none; padding: 0; margin: .5em 0 0; }
+.search-results li { margin: .15em 0; }
+.search-results .where { color: var(--muted, #777); font-size: .85em; margin-left: .4em; }
+
+body { font-family:"PCB Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"PCB Sans","Noto Sans CJK KR","Noto Sans KR",system-ui,sans-serif; }
+pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+</style>
+<script>(function(){try{var s=JSON.parse(localStorage.getItem('pcb-read')||'{}');var r=document.documentElement;if(s.theme&&s.theme!=='auto')r.setAttribute('data-theme',s.theme);if(s.fg)r.style.setProperty('--fg',s.fg);if(s.bg)r.style.setProperty('--bg',s.bg);if(s.link)r.style.setProperty('--link',s.link);if(s.width)r.setAttribute('data-measure','on');}catch(e){}})();</script></head>
+<body>
+<a class="skip" href="#content">본문으로 건너뛰기</a>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel">부록 L <span class="caret">▾</span></button><span class="sp"></span><span class="bar-nav"><a href="sec118.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="sec120.html" title="다음" aria-label="다음">→</a></span></div><div id="here-panel" class="here-panel" hidden><div class="tools"><span class="ver">v0.88.0</span><button class="tool" type="button" id="set-open">⚙ 설정</button><a class="tool" href="toc.html">▤ 상세 차례</a><a class="tool" href="../en/">En</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book/releases/download/v0.88.0/proven_c_book-v0.88.0-ko.pdf">⤓ PDF</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div class="setbox" id="setbox" hidden><label class="setrow"><input type="checkbox" id="s-width"><span>가로폭 제한</span></label><div class="setrow"><span class="setlbl">테마</span><span class="seg"><button type="button" class="segb" data-theme="auto">시스템</button><button type="button" class="segb" data-theme="light">밝게</button><button type="button" class="segb" data-theme="dark">어둡게</button></span></div><div class="setrow"><span class="setlbl">색</span><label class="col"><span>글자</span><input type="color" id="s-fg"></label><label class="col"><span>배경</span><input type="color" id="s-bg"></label><label class="col"><span>링크</span><input type="color" id="s-link"></label></div><p class="setnote">설정은 이 브라우저에만 저장된다.</p></div><div class="here-head"><strong>이 장의 차례</strong></div><div class="here-body"><a class="lv3" href="sec01.html#sx1"><span class="tf-no"></span>전원이 들어오면</a><a class="lv3" href="#sx2"><span class="tf-no"></span>BIOS 시대 — 512바이트가 전부였다</a><a class="lv3" href="#sx3"><span class="tf-no"></span>디스크의 배치도 — MBR 에서 GPT 로</a><a class="lv3" href="#sx4"><span class="tf-no"></span>UEFI — 펌웨어가 파일 시스템을 읽는다</a><a class="lv3" href="#sx5"><span class="tf-no"></span>부트로더가 실제로 하는 일</a><a class="lv4" href="#sx6"><span class="tf-no"></span>왜 여러 단계인가 — 446바이트의 그늘</a><a class="lv4" href="#sx7"><span class="tf-no"></span>UEFI 경로 — 이름과 변수로 찾는다</a><a class="lv4" href="#sx8"><span class="tf-no"></span>부트로더 없이 — 리눅스 EFI 스텁</a><a class="lv4" href="#sx9"><span class="tf-no"></span>임베디드 — U-Boot 와 MCUboot</a><a class="lv4" href="#sx10"><span class="tf-no"></span>넘겨줄 때 무엇을 물려주는가</a><a class="lv4" href="#sx11"><span class="tf-no"></span>안 뜰 때 — 증상으로 칸을 가린다</a><a class="lv3" href="#sx12"><span class="tf-no"></span>운영체제마다 — 그 뒤에 무슨 일이 일어나는가</a><a class="lv4" href="#sx13"><span class="tf-no"></span>MS-DOS</a><a class="lv4" href="#sx14"><span class="tf-no"></span>윈도우</a><a class="lv4" href="#sx15"><span class="tf-no"></span>리눅스</a><a class="lv4" href="#sx16"><span class="tf-no"></span>RTOS 와 작은 기계</a><a class="lv3" href="#sx17"><span class="tf-no"></span>사슬이 곧 신뢰의 사슬</a><a class="lv3" href="#sx18"><span class="tf-no"></span>여기서 남기는 것</a></div></div>
+<main id="content"><div class="wrap">
+<h2>부록 L — 기계가 깨어나는 순서: 부팅과 부트로더</h2><div></div><p>55장에서 「<code>main</code> 을 누가 부르는가」를 물었고, 답은 운영체제였다. 그러면 <strong>운영체제는 누가 부르는가.</strong> 이 부록은 그 물음을 따라 전원 스위치까지 내려간다.</p><p>세부는 기계마다 다르고, 다 알 필요도 없다. 대신 한 문장을 붙잡으면 어떤 기계의 부팅이든 읽어 낼 수 있다. <strong>부팅은 사슬이고, 각 칸이 하는 일은 같다 — 다음 것을 찾고, 읽어 싣고, 맞는지 보고, 제어를 넘긴다.</strong></p><figure class="fig"><img src="figures/boot-chain.svg" alt="boot-chain" loading="lazy"><span id="proven-float-622"></span><p class="float-caption">그림 105.1 — 부팅의 사슬 — 기계는 달라도 각 칸이 하는 일은 같다.</p></figure><div class="dev platform"><p class="dev-label">플랫폼 노트. 이 부록의 근거</p><div class="dev-body">여기 적은 것은 각 문서(UEFI 명세, GPT 를 정한 UEFI 부록, 리눅스 커널 문서, 각 부트로더의 문서)가 정하는 사실의 초입이다. <strong>이 기계의 부팅 설정은 캡처하지 않았다</strong> — 대신 규칙대로 바이트를 만들어 보이는 쪽으로 실증한다.</div></div><h3 id="sx1">전원이 들어오면<a class="plink" href="sec01.html#sx1" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>CPU 는 아무것도 모르는 채로 깨어난다. 기억에는 쓰레기가 있고, 장치는 초기화되어 있지 않으며, 「프로그램」이라는 개념도 아직 없다. CPU 가 아는 것은 하나다 — <strong>정해진 주소를 읽어 거기서부터 실행한다.</strong> 「OS 없이 도는 C」 부록에서 본 리셋 벡터가 그것이다.</p><p>그 정해진 자리에는 대개 ROM 이 배선되어 있고, 거기 든 프로그램을 <strong>펌웨어</strong>라 부른다. PC 라면 BIOS 또는 UEFI 펌웨어이고, 작은 칩이라면 제조사가 넣어 둔 부트 ROM 이다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>무엇</strong></th><th><strong>왜</strong></th></tr><tr><td>자기 검사(POST)와 기억 초기화</td><td>DRAM 은 설정해 주어야 쓸 수 있다 — 그 전에는 기억이 없다시피 하다</td></tr><tr><td>장치를 최소한만 깨우기</td><td>디스크나 USB 에서 다음 단계를 읽어야 하니까</td></tr><tr><td>다음 단계를 찾기</td><td>어느 장치의 어느 자리에서 무엇을 읽을지가 곧 「부팅 순서」다</td></tr><tr><td>읽은 것을 검사하기</td><td>서명 검사(보안 부팅)나 서명 없는 옛 방식의 마지막 두 바이트</td></tr><tr><td>제어를 넘기기</td><td>넘기고 나면 대개 자기는 사라진다</td></tr></table></div><span id="proven-float-623"></span><p class="float-caption">표 105.1 — 펌웨어가 하는 일</p></figure><h3 id="sx2">BIOS 시대 — 512바이트가 전부였다<a class="plink" href="#sx2" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>옛 PC 의 방식은 놀랄 만큼 단순하다. BIOS 는 부팅 장치의 <strong>첫 섹터 512바이트</strong>를 주소 0x7C00 에 싣고, 그 끝 두 바이트가 <code>0x55 0xAA</code> 인지 보고, 맞으면 그리로 뛴다. 그게 전부다. 그 512바이트를 <strong>부팅 섹터</strong>, 디스크 전체의 첫 섹터를 <strong>MBR</strong>(master boot record)이라 부른다.</p><p>직접 만들어 보면 자리 나눔이 눈에 들어온다. 다만 <strong>무엇을 만드는지</strong>를 먼저 분명히 해 두자.</p><div class="dev platform"><p class="dev-label">플랫폼 노트. 이 시연이 하는 일과 하지 않는 일</p><div class="dev-body"><p>이 프로그램은 <strong>디스크를 건드리지 않는다.</strong> 파일을 열배치도, 장치를 만지배치도, 무엇을 쓰배치도 않는다. 하는 일은 하나다 — 기억 속에 <code>unsigned char mbr[512]</code> 라는 <strong>배열 하나</strong>를 두고, 그것을 <strong>옛 규약 그대로 채운 다음, 자기가 채운 것을 다시 읽어 해독해 보인다.</strong> 곧 「디스크의 첫 섹터가 어떻게 생겼는가」를 말로 설명하는 대신 <strong>바이트로 지어 보이는</strong> 것이다.</p><p>그래서 컴파일해서 돌리면 <strong>글자만 나오고 끝난다.</strong> 특권도 필요 없고, 남는 파일도 없고, 부작용도 없다. 이 512바이트로 실제 디스크를 부팅 가능하게 만들려면 그것을 장치의 0번 섹터에 써야 하는데, 이 예제는 <strong>일부러 그 단계를 하지 않는다</strong> — 남의 기계를 망가뜨릴 수 있는 코드는 이 책에 싣지 않는다.</p></div></div><div class="demo demo-src"><p class="demo-head"><code>examples/apx-boot/disk_layout.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> 디스크의 첫 섹터에 무엇이 있는가 --- 직접 만들어 보고, 다시 읽어 본다.</span></em>
+
+<em><span class="tok-c">   주의: 이 프로그램은 디스크를 건드리지 않는다. 파일도 장치도 열지 않고, 아무것도 쓰지</span></em>
+<em><span class="tok-c">   않는다. 기억 속의 배열 하나를 옛 규약 그대로 채운 뒤, 그 배열을 다시 읽어 해독해</span></em>
+<em><span class="tok-c">   화면에 찍을 뿐이다. 돌리면 글자만 나오고 끝난다.</span></em>
+
+<em><span class="tok-c">   여기서 만드는 바이트는 진짜 규칙을 따른다: 512바이트, 0x1BE 의 파티션 표 네 칸,</span></em>
+<em><span class="tok-c">   그리고 끝의 0x55 0xAA. GPT 를 쓰는 디스크의 첫 섹터(보호 MBR)와 EFI PART 헤더도</span></em>
+<em><span class="tok-c">   같이 만든다. 이 바이트를 실제 디스크의 0번 섹터에 쓰는 일은 하지 않는다. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdint.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">string.h</span><span class="tok-s">></span>
+
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">uint32_t</span></strong> <strong>crc32</strong><span class="tok-x">(</span><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">void</span></strong> <strong><span class="tok-x">*</span></strong>buf<span class="tok-x">,</span> <strong><span class="tok-t">size_t</span></strong> n<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">unsigned</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>p <strong><span class="tok-x">=</span></strong> buf<span class="tok-x">;</span>
+    <strong><span class="tok-t">uint32_t</span></strong> c <strong><span class="tok-x">=</span></strong> <span class="tok-x">0x</span><span class="tok-n">FFFFFFFF</span><strong><span class="tok-t">u</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> n<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+        c <strong><span class="tok-x">^=</span></strong> p<span class="tok-x">[</span>i<span class="tok-x">]</span><span class="tok-x">;</span>
+        <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> k <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> k <strong><span class="tok-x">&lt;</span></strong> <span class="tok-n">8</span><span class="tok-x">;</span> k<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span>
+            c <strong><span class="tok-x">=</span></strong> <span class="tok-x">(</span>c <strong><span class="tok-x">>></span></strong> <span class="tok-n">1</span><span class="tok-x">)</span> <strong><span class="tok-x">^</span></strong> <span class="tok-x">(</span><span class="tok-x">0x</span><span class="tok-n">EDB88320</span><strong><span class="tok-t">u</span></strong> <strong><span class="tok-x">&amp;</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">uint32_t</span></strong><span class="tok-x">)</span><strong><span class="tok-x">-</span></strong><span class="tok-x">(</span><strong><span class="tok-t">int32_t</span></strong><span class="tok-x">)</span><span class="tok-x">(</span>c <strong><span class="tok-x">&amp;</span></strong> <span class="tok-n">1</span><span class="tok-x">)</span><span class="tok-x">)</span><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+    <strong><span class="tok-k">return</span></strong> c <strong><span class="tok-x">^</span></strong> <span class="tok-x">0x</span><span class="tok-n">FFFFFFFF</span><strong><span class="tok-t">u</span></strong><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong>put32</strong><span class="tok-x">(</span><strong><span class="tok-t">unsigned</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>p<span class="tok-x">,</span> <strong><span class="tok-t">uint32_t</span></strong> v<span class="tok-x">)</span>
+<span class="tok-x">{</span> p<span class="tok-x">[</span><span class="tok-n">0</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> v <strong><span class="tok-x">&amp;</span></strong> <span class="tok-x">0x</span><span class="tok-n">ff</span><span class="tok-x">;</span> p<span class="tok-x">[</span><span class="tok-n">1</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> v <strong><span class="tok-x">>></span></strong> <span class="tok-n">8</span> <strong><span class="tok-x">&amp;</span></strong> <span class="tok-x">0x</span><span class="tok-n">ff</span><span class="tok-x">;</span> p<span class="tok-x">[</span><span class="tok-n">2</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> v <strong><span class="tok-x">>></span></strong> <span class="tok-n">16</span> <strong><span class="tok-x">&amp;</span></strong> <span class="tok-x">0x</span><span class="tok-n">ff</span><span class="tok-x">;</span> p<span class="tok-x">[</span><span class="tok-n">3</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> v <strong><span class="tok-x">>></span></strong> <span class="tok-n">24</span><span class="tok-x">;</span> <span class="tok-x">}</span>
+
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong>put_part</strong><span class="tok-x">(</span><strong><span class="tok-t">unsigned</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>e<span class="tok-x">,</span> <strong><span class="tok-t">uint8_t</span></strong> boot<span class="tok-x">,</span> <strong><span class="tok-t">uint8_t</span></strong> type<span class="tok-x">,</span>
+                     <strong><span class="tok-t">uint32_t</span></strong> lba<span class="tok-x">,</span> <strong><span class="tok-t">uint32_t</span></strong> count<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    e<span class="tok-x">[</span><span class="tok-n">0</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> boot<span class="tok-x">;</span>              <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 0x80 이면 「이것으로 부팅」 </span></em><em><span class="tok-c">*/</span></em>
+    e<span class="tok-x">[</span><span class="tok-n">1</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">0x</span><span class="tok-n">fe</span><span class="tok-x">;</span> e<span class="tok-x">[</span><span class="tok-n">2</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">0x</span><span class="tok-n">ff</span><span class="tok-x">;</span> e<span class="tok-x">[</span><span class="tok-n">3</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">0x</span><span class="tok-n">ff</span><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 옛 CHS 자리 --- 이제는 채우는 시늉만 한다 </span></em><em><span class="tok-c">*/</span></em>
+    e<span class="tok-x">[</span><span class="tok-n">4</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> type<span class="tok-x">;</span>
+    e<span class="tok-x">[</span><span class="tok-n">5</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">0x</span><span class="tok-n">fe</span><span class="tok-x">;</span> e<span class="tok-x">[</span><span class="tok-n">6</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">0x</span><span class="tok-n">ff</span><span class="tok-x">;</span> e<span class="tok-x">[</span><span class="tok-n">7</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">0x</span><span class="tok-n">ff</span><span class="tok-x">;</span>
+    <strong>put32</strong><strong><span class="tok-x">(</span></strong><strong>e </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">8</span></strong><strong><span class="tok-x">,</span></strong><strong> lba</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>        <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 시작 --- 이쪽이 진짜로 쓰인다 </span></em><em><span class="tok-c">*/</span></em>
+    <strong>put32</strong><strong><span class="tok-x">(</span></strong><strong>e </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">12</span></strong><strong><span class="tok-x">,</span></strong><strong> count</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong>hexdump</strong><span class="tok-x">(</span><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">unsigned</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>p<span class="tok-x">,</span> <strong><span class="tok-t">size_t</span></strong> off<span class="tok-x">,</span> <strong><span class="tok-t">size_t</span></strong> n<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> n<span class="tok-x">;</span> i <strong><span class="tok-x">+=</span></strong> <span class="tok-n">16</span><span class="tok-x">)</span> <span class="tok-x">{</span>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  </span></strong><strong><span class="tok-s">%04zx</span></strong><strong><span class="tok-s">  </span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> off </strong><strong><span class="tok-x">+</span></strong><strong> i</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong> j <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> j <strong><span class="tok-x">&lt;</span></strong> <span class="tok-n">16</span><span class="tok-x">;</span> j<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%02x</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> p</strong><strong><span class="tok-x">[</span></strong><strong>off </strong><strong><span class="tok-x">+</span></strong><strong> i </strong><strong><span class="tok-x">+</span></strong><strong> j</strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">,</span></strong><strong> j </strong><strong><span class="tok-x">==</span></strong><strong> </strong><strong><span class="tok-n">7</span></strong><strong> </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  </span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">unsigned</span></strong> <strong><span class="tok-t">char</span></strong> mbr<span class="tok-x">[</span><span class="tok-n">512</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-n">0</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> (1) 부트스트랩 자리 --- 446바이트. 진짜 부트로더의 첫 조각이 여기 들어간다. </span></em><em><span class="tok-c">*/</span></em>
+    <strong>memcpy</strong><strong><span class="tok-x">(</span></strong><strong>mbr</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\xfa</span></strong><strong><span class="tok-n">\x31</span></strong><strong><span class="tok-n">\xc0</span></strong><strong><span class="tok-n">\x8e</span></strong><strong><span class="tok-n">\xd8</span></strong><strong><span class="tok-n">\x8e</span></strong><strong><span class="tok-n">\xd0</span></strong><strong><span class="tok-n">\xbc</span></strong><strong><span class="tok-n">\x00</span></strong><strong><span class="tok-n">\x7c</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">10</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>  <em><span class="tok-c">/*</span></em><em><span class="tok-c"> cli; 세그먼트·스택 차리기 </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">how the first sector divides up</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  0x000 - 0x1bd : bootstrap code, </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s"> bytes</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">0x</span></strong><strong><span class="tok-n">1be</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  0x1be - 0x1fd : partition table --- 16 bytes x 4 entries</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  0x1fe - 0x1ff : signature 0x55 0xaa</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> (2) 파티션 표 --- 흔한 배치 하나를 적어 둔다 </span></em><em><span class="tok-c">*/</span></em>
+    <strong>put_part</strong><strong><span class="tok-x">(</span></strong><strong>mbr </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-x">0x</span></strong><strong><span class="tok-n">1be</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">0x</span></strong><strong><span class="tok-n">80</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">0x</span></strong><strong><span class="tok-n">83</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">2048</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">1024000</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 부팅 가능, 리눅스 </span></em><em><span class="tok-c">*/</span></em>
+    <strong>put_part</strong><strong><span class="tok-x">(</span></strong><strong>mbr </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-x">0x</span></strong><strong><span class="tok-n">1ce</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">0x</span></strong><strong><span class="tok-n">00</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">0x</span></strong><strong><span class="tok-n">82</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">1026048</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">262144</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 리눅스 스왑 </span></em><em><span class="tok-c">*/</span></em>
+    mbr<span class="tok-x">[</span><span class="tok-n">510</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">0x</span><span class="tok-n">55</span><span class="tok-x">;</span> mbr<span class="tok-x">[</span><span class="tok-n">511</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">0x</span><span class="tok-n">aa</span><span class="tok-x">;</span>
+
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">the partition table (from 0x1be)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>hexdump</strong><strong><span class="tok-x">(</span></strong><strong>mbr</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">0x</span></strong><strong><span class="tok-n">1be</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">32</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">  entry 1: bootable </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s"> · type 0x</span></strong><strong><span class="tok-s">%02x</span></strong><strong><span class="tok-s"> (Linux) · start LBA </span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-s"> · </span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-s"> sectors (</span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-s"> MiB)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           mbr</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-x">0x</span></strong><strong><span class="tok-n">1be</span></strong><strong><span class="tok-x">]</span></strong><strong> </strong><strong><span class="tok-x">==</span></strong><strong> </strong><strong><span class="tok-x">0x</span></strong><strong><span class="tok-n">80</span></strong><strong> </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">yes</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">no</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> mbr</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-x">0x</span></strong><strong><span class="tok-n">1be</span></strong><strong> </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">4</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-n">2048</span></strong><strong><span class="tok-t">u</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">1024000</span></strong><strong><span class="tok-t">u</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">1024000</span></strong><strong><span class="tok-t">u</span></strong><strong> </strong><strong><span class="tok-x">/</span></strong><strong> </strong><strong><span class="tok-n">2048</span></strong><strong><span class="tok-t">u</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  entry 2: bootable </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s"> · type 0x</span></strong><strong><span class="tok-s">%02x</span></strong><strong><span class="tok-s"> (swap) · start LBA </span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           mbr</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-x">0x</span></strong><strong><span class="tok-n">1ce</span></strong><strong><span class="tok-x">]</span></strong><strong> </strong><strong><span class="tok-x">==</span></strong><strong> </strong><strong><span class="tok-x">0x</span></strong><strong><span class="tok-n">80</span></strong><strong> </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">yes</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">no</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> mbr</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-x">0x</span></strong><strong><span class="tok-n">1ce</span></strong><strong> </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">4</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">1026048</span></strong><strong><span class="tok-t">u</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">the last two bytes: </span></strong><strong><span class="tok-s">%02x</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-s">%02x</span></strong><strong><span class="tok-s"> --- </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> mbr</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">510</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">,</span></strong><strong> mbr</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">511</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-x">(</span></strong><strong>mbr</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">510</span></strong><strong><span class="tok-x">]</span></strong><strong> </strong><strong><span class="tok-x">==</span></strong><strong> </strong><strong><span class="tok-x">0x</span></strong><strong><span class="tok-n">55</span></strong><strong> </strong><strong><span class="tok-x">&amp;&amp;</span></strong><strong> mbr</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">511</span></strong><strong><span class="tok-x">]</span></strong><strong> </strong><strong><span class="tok-x">==</span></strong><strong> </strong><strong><span class="tok-x">0x</span></strong><strong><span class="tok-n">aa</span></strong><strong><span class="tok-x">)</span></strong>
+<strong>           </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">the BIOS accepts this as a boot sector only with these</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">not a boot sector</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> (3) GPT 를 쓰는 디스크의 첫 섹터 --- 보호 MBR </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">unsigned</span></strong> <strong><span class="tok-t">char</span></strong> pmbr<span class="tok-x">[</span><span class="tok-n">512</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-n">0</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+    <strong>put_part</strong><strong><span class="tok-x">(</span></strong><strong>pmbr </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-x">0x</span></strong><strong><span class="tok-n">1be</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">0x</span></strong><strong><span class="tok-n">00</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">0x</span></strong><strong><span class="tok-n">ee</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">0x</span></strong><strong><span class="tok-n">ffffffff</span></strong><strong><span class="tok-t">u</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>  <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 0xEE = 「여기부터 끝까지 남의 것」 </span></em><em><span class="tok-c">*/</span></em>
+    pmbr<span class="tok-x">[</span><span class="tok-n">510</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">0x</span><span class="tok-n">55</span><span class="tok-x">;</span> pmbr<span class="tok-x">[</span><span class="tok-n">511</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">0x</span><span class="tok-n">aa</span><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">the protective MBR (first sector of a GPT disk)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  partition type 0x</span></strong><strong><span class="tok-s">%02x</span></strong><strong><span class="tok-s"> --- it tells old tools the disk is fully used</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           pmbr</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-x">0x</span></strong><strong><span class="tok-n">1be</span></strong><strong> </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">4</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  the reason: to stop a tool that does not know GPT taking it for empty</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> (4) 진짜 지도는 두 번째 섹터(LBA 1)에 있다 --- GPT 헤더 </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">unsigned</span></strong> <strong><span class="tok-t">char</span></strong> gpt<span class="tok-x">[</span><span class="tok-n">92</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-n">0</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+    <strong>memcpy</strong><strong><span class="tok-x">(</span></strong><strong>gpt</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">EFI PART</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">8</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>put32</strong><strong><span class="tok-x">(</span></strong><strong>gpt </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">8</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">0x</span></strong><strong><span class="tok-n">00010000</span></strong><strong><span class="tok-t">u</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>      <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 개정 1.0 </span></em><em><span class="tok-c">*/</span></em>
+    <strong>put32</strong><strong><span class="tok-x">(</span></strong><strong>gpt </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">12</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">92</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>              <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 헤더 크기 </span></em><em><span class="tok-c">*/</span></em>
+    <strong>put32</strong><strong><span class="tok-x">(</span></strong><strong>gpt </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">16</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>               <em><span class="tok-c">/*</span></em><em><span class="tok-c"> CRC 자리는 0 으로 두고 계산한다 </span></em><em><span class="tok-c">*/</span></em>
+    <strong>put32</strong><strong><span class="tok-x">(</span></strong><strong>gpt </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">16</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>crc32</strong><strong><span class="tok-x">(</span></strong><strong>gpt</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">92</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">the GPT header (LBA 1)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  signature : </span></strong><strong><span class="tok-s">%.8s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> gpt</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  header CRC32: 0x</span></strong><strong><span class="tok-s">%08x</span></strong><strong><span class="tok-s"> --- it checks itself (this field is zero while computing)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">unsigned</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">(</span></strong><strong>gpt</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">16</span></strong><strong><span class="tok-x">]</span></strong><strong> </strong><strong><span class="tok-x">|</span></strong><strong> gpt</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">17</span></strong><strong><span class="tok-x">]</span></strong><strong> </strong><strong><span class="tok-x">&lt;&lt;</span></strong><strong> </strong><strong><span class="tok-n">8</span></strong><strong> </strong><strong><span class="tok-x">|</span></strong><strong> gpt</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">18</span></strong><strong><span class="tok-x">]</span></strong><strong> </strong><strong><span class="tok-x">&lt;&lt;</span></strong><strong> </strong><strong><span class="tok-n">16</span></strong><strong> </strong><strong><span class="tok-x">|</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">uint32_t</span></strong><strong><span class="tok-x">)</span></strong><strong>gpt</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">19</span></strong><strong><span class="tok-x">]</span></strong><strong> </strong><strong><span class="tok-x">&lt;&lt;</span></strong><strong> </strong><strong><span class="tok-n">24</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  and the same table exists once more at the very end of the disk, to survive damage</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>how the first sector divides up
+  0x000 - 0x1bd : bootstrap code, 446 bytes
+  0x1be - 0x1fd : partition table --- 16 bytes x 4 entries
+  0x1fe - 0x1ff : signature 0x55 0xaa
+
+the partition table (from 0x1be)
+  01be  80 fe ff ff 83 fe ff ff  00 08 00 00 00 a0 0f 00 
+  01ce  00 fe ff ff 82 fe ff ff  00 a8 0f 00 00 00 04 00 
+
+  entry 1: bootable yes · type 0x83 (Linux) · start LBA 2048 · 1024000 sectors (500 MiB)
+  entry 2: bootable no · type 0x82 (swap) · start LBA 1026048
+
+the last two bytes: 55 aa --- the BIOS accepts this as a boot sector only with these
+
+the protective MBR (first sector of a GPT disk)
+  partition type 0xee --- it tells old tools the disk is fully used
+  the reason: to stop a tool that does not know GPT taking it for empty
+
+the GPT header (LBA 1)
+  signature : EFI PART
+  header CRC32: 0x36425678 --- it checks itself (this field is zero while computing)
+  and the same table exists once more at the very end of the disk, to survive damage
+</code></pre></div></div><p>시연은 네 걸음으로 간다.</p><ol><li><strong>자리를 선언한다.</strong> 512바이트를 446 + 16×4 + 2 로 나누어 찍는다. 맨 앞에 넣는 열 바이트(<code>fa 31 c0 8e d8 …</code> — 인터럽트를 끄고 세그먼트와 스택을 차리는 코드)는 진짜 부트로더의 첫머리가 대개 어떤 모양인지 보이려는 것이지, <strong>도는 부트로더가 아니다.</strong></li><li><strong>파티션 항목 둘을 규약대로 적는다.</strong> 부팅 표시 <code>0x80</code>, 종류 <code>0x83</code>(리눅스)과 <code>0x82</code>(스왑), 시작 LBA 와 섹터 수를 작은 끝 차례의 4바이트로. 옛 CHS 자리는 요즘 관례대로 <code>fe ff ff</code> 로 채운다 — 「CHS 로는 못 적는 크기」라는 뜻의 관용 값이다. 그리고 510·511 번 바이트에 <code>55 aa</code> 를 둔다.</li><li><strong>자기가 적은 것을 다시 읽는다.</strong> 그 64바이트를 16진수로 찍고, 같은 바이트에서 「부팅 가능 · 종류 0x83 · 시작 LBA 2048 · 500 MiB」를 도로 꺼낸다. 쓰기와 읽기가 같은 규약을 쓰는지가 그 자리에서 드러난다.</li><li><strong>GPT 쪽도 같은 방식으로 지어 본다.</strong> 종류 <code>0xEE</code> 하나로 디스크를 덮는 보호 MBR 을 만들고, <code>EFI PART</code> 서명이 붙은 92바이트 헤더를 만들어 <strong>CRC 자리를 0 으로 둔 채 CRC32 를 계산해 그 자리에 써 넣는다</strong> — 규격이 정한 그대로다. 출력에 나온 <code>0x36425678</code> 은 그렇게 계산된 진짜 값이다. 다만 GUID 와 LBA 필드들은 0 이므로 <strong>모양을 보이는 표본</strong>이지 쓸 수 있는 GPT 헤더는 아니다.</li></ol><p>여기서 얻는 것은 「어느 필드가 몇 번째 바이트인가」가 아니다. <strong>446바이트</strong>라는 숫자 하나다. 그 좁은 자리가 뒤의 모든 것을 설명한다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>자리</strong></th><th><strong>크기</strong></th><th><strong>무엇</strong></th></tr><tr><td><code>0x000</code></td><td>446바이트</td><td>부트스트랩 코드 — 부트로더의 <strong>첫 조각</strong>밖에 못 들어간다</td></tr><tr><td><code>0x1BE</code></td><td>16바이트 × 4</td><td>파티션 표 — 그래서 기본 파티션이 넷뿐이었다</td></tr><tr><td><code>0x1FE</code></td><td>2바이트</td><td><code>0x55 0xAA</code> — 이것이 없으면 부팅 섹터가 아니다</td></tr></table></div><span id="proven-float-624"></span><p class="float-caption">표 105.2 — MBR 512바이트의 자리 나눔</p></figure><p>446바이트에 운영체제를 읽어 들이는 코드가 들어갈 리 없다. 그래서 옛 부트로더는 전부 <strong>여러 단계</strong>로 쪼개졌다 — 첫 조각은 「둘째 조각이 어디 있는지」만 알고, 둘째 조각이 파일 시스템을 읽을 줄 알며, 그다음이 커널을 싣는다.</p><div class="dev misconception"><p class="dev-label">흔한 오해. <strong>MBR 은 파티션 표다</strong></p><div class="dev-body">MBR 은 <strong>첫 섹터 전체</strong>이고, 파티션 표는 그 안의 64바이트다. 「MBR 이 날아갔다」는 말이 둘 중 어느 쪽인지에 따라 사정이 아주 다르다 — 부트스트랩 코드만 상했으면 자료는 멀쩡하고, 파티션 표가 상했으면 자료는 있는데 어디부터인지를 잃은 것이다.</div></div><h3 id="sx3">디스크의 배치도 — MBR 에서 GPT 로<a class="plink" href="#sx3" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>파티션 넷과 32비트 LBA(2 TiB 한계)는 곧 좁아졌다. 그 자리를 GPT(GUID Partition Table)가 대신한다. 위 시연의 뒷부분이 그 이야기다.</p><ul><li>첫 섹터에는 여전히 MBR 이 있다. 다만 파티션 하나가 종류 <code>0xEE</code> 로 디스크 전체를 덮고 있다 — <strong>보호 MBR</strong>. GPT 를 모르는 옛 도구가 「빈 디스크」로 알고 덮어쓰는 것을 막으려는 장치다.</li><li>진짜 배치도는 두 번째 섹터(LBA 1)의 GPT 헤더에 있다. 서명이 <code>EFI PART</code> 이고, <strong>자기 자신의 CRC32</strong> 를 담으며, 같은 표가 디스크 맨 끝에 한 벌 더 있다.</li></ul><p>이 두 방식의 <strong>필드 하나하나</strong>와 파티션 안의 파일 시스템까지는 「디스크는 어떻게 나뉘어 있는가」 부록이 표로 다룬다. 여기서는 사슬 이야기에 필요한 만큼만 본다.</p><p>★ 옛 방식과 새 방식의 차이가 두 낱말로 요약된다 — <strong>검사와 사본</strong>. <code>0x55 0xAA</code> 두 바이트가 하던 「맞는가」를 CRC 가 대신하고, 한 벌뿐이던 표가 두 벌이 되었다. 신뢰성 설계는 대체로 이 두 가지의 되풀이다.</p><h3 id="sx4">UEFI — 펌웨어가 파일 시스템을 읽는다<a class="plink" href="#sx4" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>UEFI 는 「512바이트」라는 제약 자체를 없앤다. 펌웨어가 <strong>FAT 파일 시스템을 읽을 줄 알고</strong>, 디스크의 한 파티션(ESP, EFI System Partition)에서 <strong>실행 파일</strong>을 찾아 그냥 실행한다.</p><p>여기서 앞 부록과 이어진다. <strong>그 실행 파일은 PE 형식이다</strong> — 윈도우 실행 파일과 같은 옷을 입었고, 헤더의 서브시스템 필드만 「UEFI 응용」으로 되어 있다. 파일 이름도 약속되어 있어서, 아무 설정이 없으면 <code>\EFI\BOOT\BOOTX64.EFI</code> 를 찾는다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th></th><th><strong>BIOS</strong></th><th><strong>UEFI</strong></th></tr><tr><td>다음 단계를 어떻게 찾나</td><td>첫 섹터를 통째로 읽는다</td><td>ESP 에서 <strong>파일</strong>을 읽는다</td></tr><tr><td>크기 제한</td><td>512바이트</td><td>사실상 없다</td></tr><tr><td>형식</td><td>날 바이트</td><td>PE 실행 파일(<code>.efi</code>)</td></tr><tr><td>실행 모드</td><td>16비트 실 모드</td><td>64비트 — 처음부터</td></tr><tr><td>무엇을 물려주나</td><td>거의 아무것도</td><td>기억 배치표, 장치 접근 서비스(부트 서비스)</td></tr><tr><td>검증</td><td><code>0x55 0xAA</code></td><td>서명(보안 부팅) — 하거나, 끄거나</td></tr></table></div><span id="proven-float-625"></span><p class="float-caption">표 105.3 — BIOS 방식과 UEFI 방식</p></figure><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> UEFI 가 파일을 실행할 수 있다면, 부트로더는 왜 아직 필요한가?</p></div><div class="dev qa-a"><p><span class="dev-label">답.</span> 꼭 필요하지는 않다. 리눅스 커널은 <strong>스스로 <code>.efi</code> 실행 파일</strong>이 될 수 있고(EFI 스텁), 그러면 펌웨어가 커널을 직접 띄운다. 부트로더가 남아 있는 이유는 「고르기」와 「물려주기」다 — 여러 커널·여러 운영체제 중 무엇을 띄울지, 어떤 명령줄과 어떤 initramfs 를 함께 줄지를 다루는 자리가 필요하기 때문이다.</p></div></div><h3 id="sx5">부트로더가 실제로 하는 일<a class="plink" href="#sx5" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>이름은 여럿이지만 하는 일은 표 105.1의 뒷부분과 같다. 그런데 그 「같은 일」을 어떻게 해내는지가 방식마다 꽤 다르고, 실무에서 부딪히는 문제는 대부분 그 차이에서 나온다. 하나씩 연다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>이름</strong></th><th><strong>어디서</strong></th><th><strong>특징</strong></th></tr><tr><td>GRUB</td><td>리눅스 배포판 기본</td><td>여러 단계 · 파일 시스템을 읽는다 · 메뉴와 설정</td></tr><tr><td>systemd-boot</td><td>UEFI 전용</td><td>아주 얇다 — 펌웨어가 이미 파일을 읽으니 그 위에 얹기만</td></tr><tr><td>윈도우 <code>bootmgr</code></td><td>윈도우</td><td>BCD 라는 설정 저장소를 읽어 고른다</td></tr><tr><td>U-Boot</td><td>임베디드 리눅스</td><td>SPL(작은 첫 조각) → 본체 · 장치 트리를 커널에 물려준다</td></tr><tr><td>MCUboot</td><td>마이크로컨트롤러</td><td>서명 검사 · 슬롯 둘 · 실패하면 되돌리기</td></tr><tr><td>EFI 스텁</td><td>리눅스 커널 자신</td><td>커널이 곧 <code>.efi</code> — 부트로더 없이 뜬다</td></tr></table></div><span id="proven-float-626"></span><p class="float-caption">표 105.4 — 흔히 만나는 부트로더</p></figure><h4 id="sx6">왜 여러 단계인가 — 446바이트의 그늘<a class="plink" href="#sx6" aria-label="이 절의 주소" title="이 절의 주소">#</a></h4><div></div><p>옛 BIOS 방식에서 첫 조각에 허락된 자리는 446바이트다 — 512바이트 가운데 파티션 표와 서명을 뺀 나머지다(자리 나눔의 전체 표는 「디스크는 어떻게 나뉘어 있는가」 부록에 있다). 파일 시스템을 읽는 코드가 그 안에 들어갈 리 없다. 그래서 부트로더는 쪼개진다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>단계</strong></th><th><strong>어디에 사는가</strong></th><th><strong>크기</strong></th><th><strong>무슨 일을 하나</strong></th></tr><tr><td><code>boot.img</code></td><td>MBR 의 446바이트</td><td>446바이트</td><td>다음 조각의 <strong>첫 섹터 번호 하나</strong>만 알고 그것을 읽어 뛴다</td></tr><tr><td><code>core.img</code></td><td>MBR 뒤의 빈 자리(MBR 간극), 또는 GPT 의 <strong>BIOS 부팅 파티션</strong></td><td>수십 KiB</td><td>압축을 풀고, 파일 시스템 모듈을 실어 <code>/boot</code> 를 읽을 수 있게 된다</td></tr><tr><td>모듈 · <code>grub.cfg</code></td><td>보통 <code>/boot/grub</code> (진짜 파일 시스템 안)</td><td>수 MiB</td><td>메뉴를 그리고, 커널과 initramfs 를 골라 싣는다</td></tr></table></div><span id="proven-float-627"></span><p class="float-caption">표 105.5 — GRUB(옛 BIOS 방식)의 단계</p></figure><p>★ 둘째 줄이 핵심이다. <code>boot.img</code> 는 파일 이름으로 다음 조각을 찾지 못한다 — 파일 시스템을 모르니까. 대신 <strong>섹터 번호</strong>를 박아 둔다. 그래서 <code>core.img</code> 가 놓일 「파일 시스템 바깥의 빈 자리」가 필요하다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>디스크 방식</strong></th><th><strong>그 자리</strong></th><th><strong>크기</strong></th></tr><tr><td>MBR (요즘 정렬)</td><td>LBA 1 ~ 2047 — 첫 파티션 앞의 빈 곳(「MBR 간극」)</td><td>약 1 MiB</td></tr><tr><td>MBR (옛 63섹터 정렬)</td><td>LBA 1 ~ 62</td><td>약 31 KiB — <strong>모자라는 일이 있었다</strong></td></tr><tr><td>GPT</td><td>종류 GUID <code>21686148-…</code> 인 <strong>BIOS 부팅 파티션</strong></td><td>보통 1 MiB</td></tr></table></div><span id="proven-float-628"></span><p class="float-caption">표 105.6 — <code>core.img</code> 가 사는 자리</p></figure><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> GPT 디스크에 왜 「BIOS 부팅 파티션」이라는 빈 파티션이 필요한가?</p></div><div class="dev qa-a"><p><span class="dev-label">답.</span> GPT 는 LBA 1 부터 34 까지를 제 배치도로 쓴다. 옛 MBR 간극이 사라진 것이다. 그런데 옛 BIOS 로 부팅하려면 <code>core.img</code> 를 <strong>파일 시스템 바깥</strong>에 두어야 한다. 그래서 「아무도 포맷하지 않는 1 MiB 짜리 파티션」을 하나 만들어 그 안에 넣는다. 파일이 아니라 <strong>섹터</strong> 로 접근하므로, 안이 비어 보이는 것이 정상이다.</p></div></div><div class="dev antipattern"><p class="dev-label">반례. 블록 목록으로 커널을 가리키게 해 둔다</p><div class="dev-body">파일의 섹터 번호를 어딘가에 박아 두는 방식(블록 목록)은 <strong>파일이 옮겨지는 순간 끊긴다.</strong> 파일 시스템은 조각 모음이나 갱신 중에 파일을 옮길 자유가 있다. 그래서 첫 조각처럼 달리 방법이 없는 자리에만 쓰고, 그 뒤로는 반드시 <strong>파일 이름</strong>으로 찾아가게 만든다.</div></div><h4 id="sx7">UEFI 경로 — 이름과 변수로 찾는다<a class="plink" href="#sx7" aria-label="이 절의 주소" title="이 절의 주소">#</a></h4><div></div><p>UEFI 에서는 이 모든 우회가 사라진다. 펌웨어가 FAT 를 읽을 줄 알기 때문에, 부트로더는 그냥 <strong>파일</strong>이다(디스크 부록의 ESP 항목 참고).</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>차례</strong></th><th><strong>무엇을 보나</strong></th><th><strong>메모</strong></th></tr><tr><td>1</td><td>NVRAM 의 <code>BootOrder</code> 변수</td><td><code>Boot0001</code>, <code>Boot0003</code> … 시도할 차례가 적혀 있다</td></tr><tr><td>2</td><td>각 <code>BootXXXX</code> 변수</td><td>「어느 장치의 어느 파일」이 들어 있다 (예: ESP 의 <code>\\EFI\\ubuntu\\shimx64.efi</code>)</td></tr><tr><td>3</td><td>없거나 다 실패하면 폴백</td><td>ESP 의 <code>\\EFI\\BOOT\\BOOTX64.EFI</code> — <strong>약속된 이름</strong></td></tr></table></div><span id="proven-float-629"></span><p class="float-caption">표 105.7 — UEFI 펌웨어가 다음 것을 찾는 순서</p></figure><p>★ 그래서 UEFI 기계에서 「부팅 순서가 사라졌다」는 사고는 디스크가 아니라 <strong>메인보드의 변수</strong>가 지워진 것이다. 폴백 이름이 있는 이유가 여기 있다 — USB 하나로 아무 기계나 부팅할 수 있는 것도 그 약속 덕이다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>차례</strong></th><th><strong>무엇</strong></th><th><strong>누가 서명했나</strong></th></tr><tr><td>1</td><td><code>shimx64.efi</code></td><td>마이크로소프트 — 그래서 대부분의 펌웨어가 믿는다</td></tr><tr><td>2</td><td><code>grubx64.efi</code></td><td>배포판 — shim 이 제 열쇠꾸러미로 검사한다</td></tr><tr><td>3</td><td>커널</td><td>배포판. 사용자가 만든 모듈은 MOK 로 따로 등록해야 한다</td></tr></table></div><span id="proven-float-630"></span><p class="float-caption">표 105.8 — 보안 부팅이 켜져 있을 때 리눅스가 뜨는 길</p></figure><h4 id="sx8">부트로더 없이 — 리눅스 EFI 스텁<a class="plink" href="#sx8" aria-label="이 절의 주소" title="이 절의 주소">#</a></h4><div></div><p>리눅스 커널 이미지는 <strong>그 자체가 PE 실행 파일</strong>로 만들어질 수 있다. 그러면 펌웨어가 커널을 직접 실행한다. 얇고 빠르지만 대가가 있다 — 메뉴가 없고, 명령줄과 initramfs 를 누가 정해 주느냐가 문제가 된다(펌웨어 변수에 박아 두거나, 커널에 박아 넣거나).</p><h4 id="sx9">임베디드 — U-Boot 와 MCUboot<a class="plink" href="#sx9" aria-label="이 절의 주소" title="이 절의 주소">#</a></h4><div></div><p>작은 기계에서는 「램조차 아직 없는」 자리에서 시작한다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>단계</strong></th><th><strong>어디서 도나</strong></th><th><strong>크기</strong></th><th><strong>하는 일</strong></th></tr><tr><td>부트 ROM</td><td>칩 안의 ROM</td><td>고정</td><td>정해진 장치에서 다음 조각을 읽는다. 바꿀 수 없다 — <strong>신뢰의 뿌리</strong></td></tr><tr><td>SPL</td><td>칩 내부 SRAM (수십 KiB)</td><td>작다</td><td><strong>DDR 을 초기화한다.</strong> 그래야 큰 것을 실을 수 있다</td></tr><tr><td>U-Boot 본체</td><td>DDR</td><td>수백 KiB</td><td>환경 변수(<code>bootcmd</code>)를 읽고, 커널·장치 트리·initramfs 를 실어 넘긴다</td></tr></table></div><span id="proven-float-631"></span><p class="float-caption">표 105.9 — U-Boot 계열의 단계</p></figure><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>장치</strong></th><th><strong>무엇</strong></th><th><strong>왜</strong></th></tr><tr><td>슬롯 둘</td><td>실행 중인 이미지와 새 이미지를 각각 둔다</td><td>갱신이 실패해도 옛것이 남아 있다</td></tr><tr><td>이미지 헤더</td><td>매직 · 버전 · 크기</td><td>「여기 진짜 이미지가 있다」</td></tr><tr><td>꼬리표(TLV)</td><td>해시와 서명</td><td>부트로더가 <strong>실행 전에</strong> 검사한다</td></tr><tr><td>시험 부팅</td><td>「이번 한 번만」 새것으로</td><td>새 이미지가 스스로 확인 표시를 못 하면 다음에 되돌아간다</td></tr></table></div><span id="proven-float-632"></span><p class="float-caption">표 105.10 — MCUboot 가 갱신을 안전하게 만드는 방법</p></figure><h4 id="sx10">넘겨줄 때 무엇을 물려주는가<a class="plink" href="#sx10" aria-label="이 절의 주소" title="이 절의 주소">#</a></h4><div></div><p>사슬의 각 칸은 사라지기 전에 다음 칸에게 짐을 남긴다. <strong>그 짐의 목록이 곧 규약이다.</strong></p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>누가 → 누구에게</strong></th><th><strong>자리</strong></th><th><strong>무엇</strong></th><th><strong>메모</strong></th></tr><tr><td>BIOS → 부팅 섹터</td><td>레지스터</td><td>부팅한 드라이브 번호</td><td>그것뿐이다. 기억 배치표는 따로 물어봐야 한다</td></tr><tr><td>부트로더 → 리눅스 커널</td><td>약속된 구조체</td><td>명령줄, initramfs 의 자리와 크기, 기억 배치표</td><td>「부트 프로토콜」이라 부른다</td></tr><tr><td>UEFI → <code>.efi</code> 응용</td><td>인자 둘</td><td>이미지 손잡이, 시스템 표(서비스 목록)</td><td><code>ExitBootServices</code> 를 부르면 부트 서비스는 끝난다</td></tr><tr><td>U-Boot → 커널</td><td>레지스터</td><td>장치 트리의 주소</td><td>「이 기계에 무엇이 붙어 있는지」가 그 안에 있다</td></tr><tr><td>MCUboot → 응용</td><td>벡터 표</td><td>실행할 이미지의 시작 주소</td><td>스택 포인터와 진입점</td></tr></table></div><span id="proven-float-633"></span><p class="float-caption">표 105.11 — 단계가 바뀔 때 넘어가는 것</p></figure><p>★ UEFI 줄의 <code>ExitBootServices</code> 를 눈여겨보라. 그 호출 전까지는 펌웨어가 디스크·화면· 네트워크를 대신 다뤄 준다. 부른 뒤에는 그 서비스가 전부 사라지고, <strong>기억 배치표의 사본</strong>만 남는다. 「운영체제가 기계를 넘겨받는 순간」이 함수 호출 하나로 정확히 정해져 있는 것이다.</p><h4 id="sx11">안 뜰 때 — 증상으로 칸을 가린다<a class="plink" href="#sx11" aria-label="이 절의 주소" title="이 절의 주소">#</a></h4><div></div><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>증상</strong></th><th><strong>어느 칸</strong></th><th><strong>무엇이 일어난 것</strong></th><th><strong>먼저 볼 것</strong></th></tr><tr><td>화면에 아무것도 없다</td><td>펌웨어</td><td>POST 도 못 끝냈다</td><td>기억·전원·화면 연결. 삐 소리 신호</td></tr><tr><td>「부팅 장치가 없다」</td><td>펌웨어 → 다음 칸</td><td>부팅 섹터/<code>.efi</code> 를 못 찾았다</td><td>부팅 순서, 디스크 인식, ESP 가 있는지</td></tr><tr><td><code>grub rescue></code> 프롬프트</td><td><code>core.img</code> → 모듈</td><td>자기는 떴는데 <code>/boot</code> 를 못 읽는다</td><td>파티션 번호가 바뀌었는지, <code>/boot</code> 가 살아 있는지</td></tr><tr><td>메뉴는 뜨는데 커널이 안 뜬다</td><td>부트로더 → 커널</td><td>파일이 없거나 서명이 안 맞는다</td><td>커널·initramfs 파일, 보안 부팅</td></tr><tr><td>「보안 부팅 위반」</td><td>펌웨어의 검사</td><td>서명이 없거나 열쇠를 모른다</td><td>shim/MOK 등록, 또는 보안 부팅 끄기</td></tr><tr><td><code>VFS: Unable to mount root</code></td><td>커널 → 루트</td><td>initramfs 가 루트를 못 열었다</td><td>명령줄의 <code>root=</code>, 드라이버가 initramfs 에 들었는지</td></tr><tr><td><code>initramfs</code> 셸로 떨어진다</td><td>initramfs 안</td><td>루트 장치가 아직 안 보인다</td><td>UUID 가 맞는지, 디스크가 늦게 뜨는지</td></tr></table></div><span id="proven-float-634"></span><p class="float-caption">표 105.12 — 증상 → 사슬의 어느 칸이 문제인가</p></figure><h3 id="sx12">운영체제마다 — 그 뒤에 무슨 일이 일어나는가<a class="plink" href="#sx12" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><h4 id="sx13">MS-DOS<a class="plink" href="#sx13" aria-label="이 절의 주소" title="이 절의 주소">#</a></h4><div></div><p>부팅 섹터가 <code>IO.SYS</code> 를 읽고, 그것이 <code>MSDOS.SYS</code>(커널에 해당)를 올린 뒤, <code>CONFIG.SYS</code> 를 읽어 장치 드라이버를 싣고, 마지막으로 <code>COMMAND.COM</code> 을 띄운다. 그리고 <code>AUTOEXEC.BAT</code> 가 돈다. 사슬이 파일 이름으로 그대로 드러나 있어서, 이 시절 사용자는 부팅 과정을 <strong>편집할 수 있었다.</strong></p><h4 id="sx14">윈도우<a class="plink" href="#sx14" aria-label="이 절의 주소" title="이 절의 주소">#</a></h4><div></div><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>시대</strong></th><th><strong>사슬</strong></th></tr><tr><td>NT · 2000 · XP</td><td><code>NTLDR</code> → <code>boot.ini</code> 로 고르기 → <code>ntoskrnl.exe</code> + <code>hal.dll</code> + 부팅 드라이버</td></tr><tr><td>비스타 이후 (7 · 8 · 10 · 11)</td><td><code>bootmgr</code> → BCD(설정 저장소) → <code>winload.efi</code> → <code>ntoskrnl.exe</code></td></tr><tr><td>공통 (커널 이후)</td><td><code>smss.exe</code>(세션 관리자) → <code>csrss.exe</code> · <code>winlogon.exe</code> → <code>services.exe</code></td></tr></table></div><span id="proven-float-635"></span><p class="float-caption">표 105.13 — 윈도우의 부팅 사슬</p></figure><p>바뀐 것은 「고르기」의 자리다. 텍스트 파일(<code>boot.ini</code>)이 이진 저장소(BCD)로 바뀌었고, <code>.efi</code> 실행 파일이 되었다. 바뀌지 않은 것은 사슬의 모양이다.</p><h4 id="sx15">리눅스<a class="plink" href="#sx15" aria-label="이 절의 주소" title="이 절의 주소">#</a></h4><div></div><ol><li>부트로더가 커널 이미지(<code>vmlinuz</code>)와 initramfs 를 기억에 싣고 명령줄을 물려준다.</li><li>커널 이미지의 앞부분은 <strong>자기 자신을 푸는 코드</strong>다. 압축을 풀고 진짜 커널로 뛴다.</li><li>커널이 자기 자료 구조를 세우고, initramfs 를 임시 루트 파일 시스템으로 삼는다.</li><li>initramfs 안의 <code>/init</code> 가 <strong>진짜 루트를 찾는 데 필요한 드라이버</strong>를 싣는다.</li><li>진짜 루트로 갈아탄 뒤(<code>switch_root</code>), PID 1 로 <code>init</code>(요즘은 대개 systemd)를 실행한다.</li></ol><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> initramfs 는 왜 있는가?</p></div><div class="dev qa-a"><p><span class="dev-label">답.</span> 닭과 달걀 때문이다. 루트 파일 시스템이 어떤 디스크·어떤 파일 시스템·어떤 암호화 위에 있는지 모르는 채로 커널을 만들면, 그것을 읽을 드라이버도 커널 안에 없다. 그렇다고 세상의 모든 드라이버를 커널에 넣을 수도 없다. 그래서 <strong>메모리에 올라온 작은 루트</strong>를 먼저 주고, 거기서 필요한 드라이버만 실어 진짜 루트를 열게 한다.</p></div></div><h4 id="sx16">RTOS 와 작은 기계<a class="plink" href="#sx16" aria-label="이 절의 주소" title="이 절의 주소">#</a></h4><div></div><p>작은 기계에는 대개 「운영체제를 싣는」 단계가 없다. <strong>커널이 응용과 함께 링크되어 이미지 하나</strong>가 되기 때문이다. FreeRTOS·Zephyr·NuttX 가 그렇다. 리셋 벡터에서 시작 코드가 돌고, <code>main</code> 이 불리고, 거기서 스케줄러를 시작하면 그때부터 태스크가 돈다.</p><p>그렇다고 부트로더가 없는 것은 아니다. 오히려 여기서 부트로더의 <strong>본래 일</strong>이 선명해진다.</p><div class="dev realcase"><p class="dev-label">실제 사례. 업데이트하다 전원이 나가면</p><div class="dev-body">현장에 나간 기계는 손으로 고칠 수 없다. 그래서 MCUboot 같은 부트로더는 이미지를 <strong>두 자리(A/B 슬롯)</strong>에 두고, 새것을 받아 서명을 검사한 뒤 「이번에 한 번만」 새것으로 부팅한다. 새 이미지가 스스로 「잘 떴다」고 표시하지 못하면 다음 부팅에서 옛것으로 되돌아간다. 53장의 계약 이야기가 전원 스위치까지 내려간 모습이다.</div></div><h3 id="sx17">사슬이 곧 신뢰의 사슬<a class="plink" href="#sx17" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>각 칸이 다음 칸을 <strong>검사한다</strong>고 했다. 그 검사를 서명으로 하면 사슬 전체가 신뢰의 사슬이 된다 — 펌웨어가 부트로더의 서명을 보고, 부트로더가 커널의 서명을 보고, 커널이 모듈의 서명을 본다. 보안 부팅(secure boot)과 임베디드의 서명 부팅이 같은 이야기다.</p><p>★ 이 구조의 성질을 하나만 짚어 둔다. <strong>사슬은 맨 앞에서만 신뢰를 만들 수 있다.</strong> 첫 칸 (ROM 안의 코드)은 바꿀 수 없어야 하고, 그래서 그 자리를 「신뢰의 뿌리」라 부른다. 뿌리가 흔들리면 뒤의 모든 검사는 의미가 없다 — 검사하는 코드 자체를 바꿔치기할 수 있으니까.</p><h3 id="sx18">여기서 남기는 것<a class="plink" href="#sx18" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><div class="dev recap"><p class="dev-label">복습 정리</p><div class="dev-body"><ul><li>부팅은 사슬이고, 각 칸은 다음 것을 찾고·싣고·검사하고·넘긴다.</li><li>BIOS 는 512바이트를 통째로 읽었고, UEFI 는 파일 시스템에서 PE 실행 파일을 읽는다.</li><li>MBR 의 자리 나눔(446 + 64 + 2)이 옛 부트로더가 여러 단계였던 이유를 설명한다.</li><li>GPT 는 같은 일을 검사(CRC)와 사본(맨 끝의 한 벌)으로 다시 지었다.</li><li>리눅스의 initramfs 는 「루트를 열 드라이버가 루트 안에 있는」 순환을 끊는 장치다.</li><li>작은 기계에서는 커널이 응용과 한 이미지이고, 부트로더의 일은 <strong>안전한 갱신</strong>이 된다.</li><li>검사를 서명으로 하면 사슬은 신뢰의 사슬이 되고, 그 뿌리는 바꿀 수 없는 자리여야 한다.</li></ul></div></div>
+<div class="nav"><a href="sec118.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="sec120.html">다음 →</a></div>
+</div></main>
+<script>(function(){var b=document.querySelector('.here-btn'),p=document.getElementById('here-panel');function open(o){if(!p)return;p.hidden=!o;if(b)b.setAttribute('aria-expanded',o);}if(b)b.addEventListener('click',function(){open(p.hidden);});if(p)p.addEventListener('click',function(e){if(e.target.tagName==='A'&&e.target.getAttribute('href').charAt(0)==='#')open(false);});document.addEventListener('keydown',function(e){if(e.key==='Escape')open(false);});var box=document.getElementById('setbox'),so=document.getElementById('set-open');if(!box||!so)return;var r=document.documentElement;function load(){try{return JSON.parse(localStorage.getItem('pcb-read')||'{}');}catch(e){return {};}}function save(s){try{localStorage.setItem('pcb-read',JSON.stringify(s));}catch(e){}}function css(n){return getComputedStyle(r).getPropertyValue(n).trim();}function paint(){var s=load();document.getElementById('s-width').checked=!!s.width;var t=s.theme||'auto';[].forEach.call(box.querySelectorAll('.segb'),function(x){x.setAttribute('aria-pressed',x.dataset.theme===t);});document.getElementById('s-fg').value=s.fg||hex(css('--fg'));document.getElementById('s-bg').value=s.bg||hex(css('--bg'));document.getElementById('s-link').value=s.link||hex(css('--link'));}function hex(v){var m=v.match(/^rgba?\((\d+)[ ,]+(\d+)[ ,]+(\d+)/);if(!m)return v.charAt(0)==='#'?v:'#000000';return '#'+[1,2,3].map(function(i){return ('0'+parseInt(m[i],10).toString(16)).slice(-2);}).join('');}so.addEventListener('click',function(){box.hidden=!box.hidden;so.setAttribute('aria-expanded',!box.hidden);if(!box.hidden)paint();});document.getElementById('s-width').addEventListener('change',function(){var s=load();s.width=this.checked;save(s);if(s.width)r.setAttribute('data-measure','on');else r.removeAttribute('data-measure');});[].forEach.call(box.querySelectorAll('.segb'),function(x){x.addEventListener('click',function(){var s=load();s.theme=x.dataset.theme;delete s.fg;delete s.bg;delete s.link;save(s);['--fg','--bg','--link'].forEach(function(n){r.style.removeProperty(n);});if(s.theme==='auto')r.removeAttribute('data-theme');else r.setAttribute('data-theme',s.theme);setTimeout(paint,0);});});[['s-fg','--fg','fg'],['s-bg','--bg','bg'],['s-link','--link','link']].forEach(function(a){document.getElementById(a[0]).addEventListener('input',function(){var s=load();s[a[2]]=this.value;save(s);r.style.setProperty(a[1],this.value);});});})();</script><script>
+(function(){
+  var q=document.getElementById('q'), out=document.getElementById('qr');
+  if(!q||!out) return;
+  var data=null, NONE="\ucc3e\uc740 \uac83\uc774 \uc5c6\ub2e4";
+  function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+  function run(){
+    var v=q.value.trim().toLowerCase();
+    out.innerHTML='';
+    if(!v||!data) return;
+    var hits=[];
+    for(var i=0;i<data.length && hits.length<40;i++){
+      if(data[i][0].toLowerCase().indexOf(v)>=0) hits.push(data[i]);
+    }
+    if(!hits.length){ out.innerHTML='<li>'+NONE+'</li>'; return; }
+    out.innerHTML=hits.map(function(h){
+      return '<li><a href="'+h[1]+'">'+esc(h[0])+'</a>'+
+             (h[2]?'<span class="where">'+esc(h[2])+'</span>':'')+'</li>';
+    }).join('');
+  }
+  q.addEventListener('input',function(){
+    if(data){ run(); return; }
+    fetch('search-index.json').then(function(r){return r.json();})
+      .then(function(j){ data=j; run(); })
+      .catch(function(){ out.innerHTML='<li>'+NONE+'</li>'; });
+  });
+})();
+</script></body></html>

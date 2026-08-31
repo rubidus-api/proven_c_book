@@ -148,6 +148,14 @@ for src in $(find "$root/$tree" -name '*.c' | sort); do
         fail=1
         continue
     fi
+    # ★ 기계가 읽을 줄과 사람이 읽을 줄을 가른다 (부록 O 편입, 2026-09-01).
+    #   측정 예제는 `#DATA ...` 줄로 잰 값을 함께 낸다. 그것은 도해 생성기가
+    #   읽을 것이지 지면에 실릴 것이 아니다 --- 그래서 따로 빼내고 출력에서 지운다.
+    #   덕분에 그림이 *이 빌드에서 잰 값*을 그린다.
+    if grep -q '^#DATA ' "$out" 2>/dev/null; then
+        grep '^#DATA ' "$out" > "${out%.out}.data"
+        sed -i '/^#DATA/d' "$out"
+    fi
     # 캡처한 출력에 이 기계의 절대 경로가 섞이면 책에 그대로 인쇄된다
     # (53장 예제가 argv[0] 을 찍는다). 저장소 밖의 자리는 책에 실을 것이 아니다.
     if grep -q "$root" "$out" 2>/dev/null; then
