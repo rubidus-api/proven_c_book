@@ -118,6 +118,20 @@ def load_dictionary(ko):
     return terms, noglossed
 
 
+def occurs(term, text):
+    """★ 용어가 *낱말로* 나오는가. 그냥 `in` 으로 보면 다른 낱말 속을 짚는다 ---
+    「스필」이 「루카스필름」에 걸려 33장을 정의 자리로 잡았다. 앞뒤가 한글이면
+    다른 낱말의 조각이다(조사·어미는 한글이 아닌 경계로 치지 않으므로 뒤는
+    허용한다 --- 「스필로」·「스필을」은 같은 낱말이다)."""
+    i = text.find(term)
+    while i != -1:
+        before = text[i - 1] if i > 0 else " "
+        if not ("가" <= before <= "힣"):
+            return True
+        i = text.find(term, i + 1)
+    return False
+
+
 def defining_chapter(term, ko):
     """정의하는 자리(장 번호)와 그 근거를 돌려준다."""
     for n in sorted(ko):
@@ -128,7 +142,7 @@ def defining_chapter(term, ko):
         if any(term == b.strip() for b in BOLD.findall(ko[n])):
             return n, "굵은 강조"
     for n in sorted(ko):
-        if term in ko[n]:
+        if occurs(term, ko[n]):
             return n, "첫 등장"
     return None, "없음"
 

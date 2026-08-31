@@ -17,6 +17,15 @@
 set -u
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 TYPST="${TYPST:-typst}"
+# ★ 2026-08-31 --- typst 이 PATH 에 없으면 컴파일이 아예 안 돌고, 빈 오류 파일을
+#   「경고 0」으로 읽어 이 게이트가 *통과*했다. 실제로는 48건이 남아 있었다.
+#   이 파일 머리말이 경고하던 바로 그 실패를 이 파일 자신이 저질렀다.
+#   그래서 ① 빌드와 같은 자리에서 도구를 찾고 ② 컴파일이 실패하면 실패로 센다.
+command -v "$TYPST" >/dev/null 2>&1 || TYPST="$ROOT/../usr/toolchains/typst/typst"
+command -v "$TYPST" >/dev/null 2>&1 || {
+  echo "check-typst-warnings: typst 을 찾지 못했다 (TYPST 나 PATH 로 알려 달라)" >&2
+  exit 1
+}
 FONTS="${FONTS:-$ROOT/../toolchains/fonts}"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
@@ -25,7 +34,11 @@ total=0
 for ed in book book-en; do
   [ -f "$ROOT/$ed/main.typ" ] || continue
   "$TYPST" compile --root "$ROOT" --font-path "$FONTS" \
-      "$ROOT/$ed/main.typ" "$TMP/$ed.pdf" 2>"$TMP/$ed.err" >/dev/null
+      "$ROOT/$ed/main.typ" "$TMP/$ed.pdf" 2>"$TMP/$ed.err" >/dev/null || {
+    echo "  ⚠️  [$ed] 조판이 실패했다 --- 경고를 셀 수 없다" >&2
+    tail -20 "$TMP/$ed.err" >&2
+    exit 1
+  }
   n=$(grep -c '^warning:' "$TMP/$ed.err" || true)
   total=$((total + n))
   if [ "$n" -gt 0 ]; then
