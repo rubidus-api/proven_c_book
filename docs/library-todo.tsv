@@ -7,9 +7,4 @@
 # 헤더	단계	함수 행수
 stdio.h	L2	64
 stdlib.h	L3	57
-time.h	L4	18
-wchar.h	L5	85
 math.h	L6	168
-complex.h	L7	22
-stdatomic.h	L8	21
-threads.h	L8	25
