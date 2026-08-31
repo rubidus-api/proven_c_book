@@ -975,6 +975,65 @@ def fig_boot_chain(L):
     return "".join(out)
 
 
+# ── F. 같은 바이트를 보내는 두 길 (부록 M) ───────────────────────
+def fig_serial_parallel(L):
+    w, h = 760, 380
+    out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
+    out.append(text(w / 2, 22, L["title"], 14, "bold"))
+    out.append(text(40, 56, L["ser"], 12, "bold", anchor="start"))
+    out.append(box(40, 66, 90, 40)); out.append(text(85, 91, L["tx"], 10))
+    out.append(box(630, 66, 90, 40)); out.append(text(675, 91, L["rx"], 10))
+    out.append('<line x1="130" y1="86" x2="630" y2="86" stroke="#111" stroke-width="1.6"/>')
+    for i, b in enumerate("10110010"):
+        x = 150 + i * 58
+        out.append(box(x, 72, 50, 28, fill="#f5f5f5"))
+        out.append(text(x + 25, 91, b, 11))
+    out.append(text(w / 2, 122, L["ser_note"], 10))
+    out.append(text(40, 166, L["par"], 12, "bold", anchor="start"))
+    out.append(box(40, 176, 90, 130)); out.append(text(85, 245, L["tx"], 10))
+    out.append(box(630, 176, 90, 130)); out.append(text(675, 245, L["rx"], 10))
+    for i, b in enumerate("10110010"):
+        y = 186 + i * 15
+        out.append(f'<line x1="130" y1="{y}" x2="630" y2="{y}" stroke="#111" stroke-width="1.2"/>')
+        out.append(text(380, y - 3, b, 9))
+    out.append(text(w / 2, 322, L["par_note"], 10))
+    out.append(box(40, 336, 680, 36, dash="4 3"))
+    out.append(text(w / 2, 352, L["end1"], 10, "bold"))
+    out.append(text(w / 2, 366, L["end2"], 10, "bold"))
+    out.append(TAIL)
+    return "".join(out)
+
+
+# ── F. 같은 자료를 옮기는 두 길 (부록 M) ─────────────────────────
+def fig_dma_path(L):
+    w, h = 760, 340
+    out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
+    out.append(text(w / 2, 22, L["title"], 14, "bold"))
+    out.append(text(40, 54, L["by_cpu"], 12, "bold", anchor="start"))
+    out.append(box(60, 66, 120, 54)); out.append(text(120, 98, L["dev"], 11))
+    out.append(box(320, 66, 120, 54, fill="#f5f5f5"))
+    out.append(text(380, 92, "CPU", 11, "bold")); out.append(text(380, 110, L["via_reg"], 9))
+    out.append(box(580, 66, 120, 54)); out.append(text(640, 98, L["mem"], 11))
+    out.append(arrow(180, 93, 318, 93)); out.append(arrow(440, 93, 578, 93))
+    out.append(text(w / 2, 136, L["cpu_note"], 10))
+    out.append(text(40, 176, L["by_dma"], 12, "bold", anchor="start"))
+    out.append(box(60, 188, 120, 54)); out.append(text(120, 220, L["dev"], 11))
+    out.append(box(580, 188, 120, 54)); out.append(text(640, 220, L["mem"], 11))
+    out.append(box(320, 188, 120, 54, dash="4 3"))
+    out.append(text(380, 214, L["dma_c"], 10, "bold")); out.append(text(380, 232, L["moves"], 9))
+    out.append(arrow(180, 215, 318, 215)); out.append(arrow(440, 215, 578, 215))
+    out.append(box(320, 262, 120, 40, fill="#f5f5f5"))
+    out.append(text(380, 287, "CPU", 11, "bold"))
+    out.append('<line x1="380" y1="262" x2="380" y2="244" stroke="#111" '
+               'stroke-width="1.2" stroke-dasharray="3 3"/>')
+    out.append(text(210, 287, L["starts"], 10, anchor="end"))
+    out.append(text(550, 287, L["one_irq"], 10, anchor="start"))
+    out.append(box(40, 312, 680, 24, dash="4 3"))
+    out.append(text(w / 2, 328, L["end"], 11, "bold"))
+    out.append(TAIL)
+    return "".join(out)
+
+
 FIGS = {
     "memory-order": (fig_memory_order, {
         "ko": dict(title="깃발이 보이면 데이터도 보이는가",
@@ -1252,6 +1311,40 @@ FIGS = {
                    derived="derived types", d1="array, struct, union",
                    d2="function, pointer", d3="atomic (_Atomic)",
                    note="a dashed box is a collective name — not a branch of the tree but a word gathering several."),
+    }),
+    "serial-parallel": (fig_serial_parallel, {
+        "ko": dict(title="같은 한 바이트를 보내는 두 가지 방법",
+                   ser="직렬 --- 선 하나에 비트를 줄지어", par="병렬 --- 선 여덟에 비트를 한꺼번에",
+                   tx="보내는 쪽", rx="받는 쪽",
+                   ser_note="시간 →   비트가 *차례로* 흐른다 · 선이 적다 · 한 클록에 1비트",
+                   par_note="한 클록에 8비트 --- 그런데 여덟 줄이 *똑같은 순간에* 도착해야 한다",
+                   end1="빨라질수록 병렬이 진다 --- 줄마다 도착 시각이 어긋나는 폭(스큐)이",
+                   end2="한 비트의 시간보다 커지는 순간, 여덟 줄을 맞출 수 없게 된다"),
+        "en": dict(title="two ways of sending the same byte",
+                   ser="serial --- bits in a queue on one wire", par="parallel --- eight bits at once on eight wires",
+                   tx="sender", rx="receiver",
+                   ser_note="time →   the bits flow *in turn* · few wires · one bit per clock",
+                   par_note="eight bits per clock --- but all eight must arrive at *the same instant*",
+                   end1="the faster it goes the more parallel loses --- once the spread in arrival times (skew)",
+                   end2="grows larger than one bit's time, the eight lines cannot be lined up"),
+    }),
+    "dma-path": (fig_dma_path, {
+        "ko": dict(title="같은 자료를 옮기는 두 가지 길",
+                   by_cpu="① CPU 가 직접 --- 바이트마다 CPU 를 거친다",
+                   by_dma="② DMA --- 장치와 기억이 곧장, CPU 는 시작과 끝만",
+                   dev="장치", mem="기억", via_reg="레지스터를 거쳐",
+                   cpu_note="바이트마다 끼어들기 → CPU 는 그동안 다른 일을 못 한다",
+                   dma_c="DMA 제어기", moves="덩어리를 나른다",
+                   starts="시작 시킴", one_irq="끝나면 끼어들기 한 번",
+                   end="옮기는 일 자체는 같다 --- 달라지는 것은 그동안 CPU 가 자유로운가다"),
+        "en": dict(title="two paths for moving the same data",
+                   by_cpu="1. the CPU itself --- every byte passes through it",
+                   by_dma="2. DMA --- device and memory directly, the CPU only starts and finishes",
+                   dev="device", mem="memory", via_reg="through a register",
+                   cpu_note="an interrupt per byte → the CPU can do nothing else meanwhile",
+                   dma_c="DMA controller", moves="moves it in blocks",
+                   starts="starts it", one_irq="one interrupt when done",
+                   end="the moving itself is the same --- what differs is whether the CPU is free meanwhile"),
     }),
     "boot-chain": (fig_boot_chain, {
         "ko": dict(title="부팅은 사슬이다 --- 각 칸은 다음 칸을 찾아 검사하고 넘긴다",

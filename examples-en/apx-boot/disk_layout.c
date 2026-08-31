@@ -52,36 +52,36 @@ int main(void)
 
     /* (1) 부트스트랩 자리 --- 446바이트. 진짜 부트로더의 첫 조각이 여기 들어간다. */
     memcpy(mbr, "\xfa\x31\xc0\x8e\xd8\x8e\xd0\xbc\x00\x7c", 10);  /* cli; 세그먼트·스택 차리기 */
-    printf("첫 섹터의 자리 나눔\n");
-    printf("  0x000 ~ 0x1bd : 부트스트랩 코드 %d바이트\n", 0x1be);
-    printf("  0x1be ~ 0x1fd : 파티션 표 --- 16바이트 × 4칸\n");
-    printf("  0x1fe ~ 0x1ff : 서명 0x55 0xaa\n\n");
+    printf("how the first sector divides up\n");
+    printf("  0x000 - 0x1bd : bootstrap code, %d bytes\n", 0x1be);
+    printf("  0x1be - 0x1fd : partition table --- 16 bytes x 4 entries\n");
+    printf("  0x1fe - 0x1ff : signature 0x55 0xaa\n\n");
 
     /* (2) 파티션 표 --- 흔한 배치 하나를 적어 둔다 */
     put_part(mbr + 0x1be, 0x80, 0x83, 2048, 1024000);   /* 부팅 가능, 리눅스 */
     put_part(mbr + 0x1ce, 0x00, 0x82, 1026048, 262144); /* 리눅스 스왑 */
     mbr[510] = 0x55; mbr[511] = 0xaa;
 
-    printf("파티션 표 (0x1be 부터)\n");
+    printf("the partition table (from 0x1be)\n");
     hexdump(mbr, 0x1be, 32);
-    printf("\n  1번: 부팅 %s · 종류 0x%02x(리눅스) · 시작 LBA %u · %u섹터(%u MiB)\n",
-           mbr[0x1be] == 0x80 ? "가능" : "아님", mbr[0x1be + 4],
+    printf("\n  entry 1: bootable %s · type 0x%02x (Linux) · start LBA %u · %u sectors (%u MiB)\n",
+           mbr[0x1be] == 0x80 ? "yes" : "no", mbr[0x1be + 4],
            2048u, 1024000u, 1024000u / 2048u);
-    printf("  2번: 부팅 %s · 종류 0x%02x(스왑) · 시작 LBA %u\n\n",
-           mbr[0x1ce] == 0x80 ? "가능" : "아님", mbr[0x1ce + 4], 1026048u);
+    printf("  entry 2: bootable %s · type 0x%02x (swap) · start LBA %u\n\n",
+           mbr[0x1ce] == 0x80 ? "yes" : "no", mbr[0x1ce + 4], 1026048u);
 
-    printf("끝의 두 바이트: %02x %02x --- %s\n\n", mbr[510], mbr[511],
+    printf("the last two bytes: %02x %02x --- %s\n\n", mbr[510], mbr[511],
            (mbr[510] == 0x55 && mbr[511] == 0xaa)
-           ? "BIOS 는 이것이 있어야 「부팅 섹터」로 인정한다" : "부팅 섹터가 아니다");
+           ? "the BIOS accepts this as a boot sector only with these" : "not a boot sector");
 
     /* (3) GPT 를 쓰는 디스크의 첫 섹터 --- 보호 MBR */
     unsigned char pmbr[512] = { 0 };
     put_part(pmbr + 0x1be, 0x00, 0xee, 1, 0xffffffffu);  /* 0xEE = 「여기부터 끝까지 남의 것」 */
     pmbr[510] = 0x55; pmbr[511] = 0xaa;
-    printf("보호 MBR (GPT 디스크의 첫 섹터)\n");
-    printf("  파티션 종류 0x%02x --- 옛 도구에게 「이 디스크는 전부 쓰였다」고 말한다\n",
+    printf("the protective MBR (first sector of a GPT disk)\n");
+    printf("  partition type 0x%02x --- it tells old tools the disk is fully used\n",
            pmbr[0x1be + 4]);
-    printf("  까닭: GPT 를 모르는 도구가 빈 디스크로 알고 덮어쓰는 것을 막으려고\n\n");
+    printf("  the reason: to stop a tool that does not know GPT taking it for empty\n\n");
 
     /* (4) 진짜 지도는 두 번째 섹터(LBA 1)에 있다 --- GPT 헤더 */
     unsigned char gpt[92] = { 0 };
@@ -91,10 +91,10 @@ int main(void)
     put32(gpt + 16, 0);               /* CRC 자리는 0 으로 두고 계산한다 */
     put32(gpt + 16, crc32(gpt, 92));
 
-    printf("GPT 헤더 (LBA 1)\n");
-    printf("  서명   : %.8s\n", gpt);
-    printf("  헤더 CRC32: 0x%08x --- 자기 자신을 검사한다(계산할 때 이 자리는 0)\n",
+    printf("the GPT header (LBA 1)\n");
+    printf("  signature : %.8s\n", gpt);
+    printf("  header CRC32: 0x%08x --- it checks itself (this field is zero while computing)\n",
            (unsigned)(gpt[16] | gpt[17] << 8 | gpt[18] << 16 | (uint32_t)gpt[19] << 24));
-    printf("  그리고 같은 표가 디스크의 *맨 끝*에 한 벌 더 있다 --- 하나가 깨져도 살아남게\n");
+    printf("  and the same table exists once more at the very end of the disk, to survive damage\n");
     return 0;
 }
