@@ -1,8 +1,6 @@
 # 장·절·부의 개수를 세는 서술 (RFC-0028 §3.4).
 # 재편 뒤에는 한 줄씩 읽고 고친 다음 --- scripts/check-counting-prose.py --write
 # 파일	표현
-book-en/appendix/a10-paths.typ	fifteen chapters
-book-en/appendix/a10-paths.typ	one chapter
 book-en/appendix/a4-reading.typ	two chapters
 book-en/chapters/ch01.typ	four remaining chapters
 book-en/chapters/ch01.typ	several chapters
@@ -39,6 +37,7 @@ book-en/chapters/ch73.typ	two chapters
 book-en/chapters/ch77.typ	six chapters
 book-en/chapters/ch77.typ	three chapters
 book-en/chapters/ch80.typ	one chapter
+book-en/chapters/ch80.typ	two chapters
 book-en/chapters/ch82.typ	six chapters
 book-en/chapters/ch87.typ	one chapters
 book-en/chapters/ch87.typ	two chapters
@@ -49,14 +48,12 @@ book-en/chapters/ch91.typ	nine chapters
 book-en/chapters/ch93.typ	seven chapters
 book-en/chapters/ch99.typ	one chapter
 book-en/chapters/ch99.typ	six chapters
-book-en/chapters/ch99.typ	two remaining chapters
+book-en/front/reading-paths.typ	fifteen chapters
+book-en/front/reading-paths.typ	one chapter
 book-en/parts/part11s.typ	The last three chapters
 book-en/parts/part11s.typ	three chapters
 book-en/parts/part12.typ	eight chapters
 book-en/parts/part12.typ	nine chapters
-book/appendix/a10-paths.typ	두 부
-book/appendix/a10-paths.typ	열다섯 장
-book/appendix/a10-paths.typ	열한 부
 book/appendix/a4-reading.typ	두 장
 book/chapters/ch01.typ	몇 장
 book/chapters/ch01.typ	여러 장
@@ -104,6 +101,7 @@ book/chapters/ch72.typ	두 장
 book/chapters/ch73.typ	두 장
 book/chapters/ch77.typ	두 장
 book/chapters/ch77.typ	여섯 장
+book/chapters/ch80.typ	두 장
 book/chapters/ch81.typ	두 장
 book/chapters/ch82.typ	서른여섯 장
 book/chapters/ch83.typ	열일곱 장
@@ -115,9 +113,11 @@ book/chapters/ch90.typ	다섯 장
 book/chapters/ch91.typ	아홉 장
 book/chapters/ch92.typ	부 열
 book/chapters/ch93.typ	일곱 장
-book/chapters/ch99.typ	두 장
 book/chapters/ch99.typ	여섯 장
 book/front/preface.typ	두 부
+book/front/reading-paths.typ	두 부
+book/front/reading-paths.typ	열다섯 장
+book/front/reading-paths.typ	열한 부
 book/parts/part02.typ	두 걸음
 book/parts/part11s.typ	세 장
 book/parts/part12.typ	아홉 장
