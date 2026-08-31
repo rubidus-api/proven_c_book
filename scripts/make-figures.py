@@ -845,6 +845,32 @@ def fig_paging(L):
     return "".join(out)
 
 
+# ── F. 실행 파일 형식의 뼈대 (부록 J) ────────────────────────────
+def fig_format_skeleton(L):
+    """형식은 셋이지만 로더가 묻는 질문은 하나라는 것을 나란히 세워 보인다."""
+    w, h = 760, 400
+    out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
+    out.append(text(w / 2, 22, L["title"], 14, "bold"))
+    for i, (x, key) in enumerate(((40, "com"), (280, "elf"), (520, "pe"))):
+        out.append(text(x + 100, 52, L[key + "_t"], 12, "bold"))
+        y = 64
+        for r in L[key + "_rows"]:
+            if not r:
+                continue
+            out.append(box(x, y, 200, 44, fill="#f5f5f5" if y == 64 else "none"))
+            out.append(text(x + 100, y + 27, r, 10))
+            y += 52
+        for j, line in enumerate(L.get(key + "_memo", [])):
+            out.append(text(x + 100, y + 18 + j * 16, line, 10))
+    qy = 300
+    out.append(box(40, qy, 680, 76, dash="4 3"))
+    out.append(text(w / 2, qy + 24, L["q"], 11, "bold"))
+    out.append(text(w / 2, qy + 48, L["q1"], 10))
+    out.append(text(w / 2, qy + 66, L["q2"], 10))
+    out.append(TAIL)
+    return "".join(out)
+
+
 FIGS = {
     "memory-order": (fig_memory_order, {
         "ko": dict(title="깃발이 보이면 데이터도 보이는가",
@@ -1122,6 +1148,32 @@ FIGS = {
                    derived="derived types", d1="array, struct, union",
                    d2="function, pointer", d3="atomic (_Atomic)",
                    note="a dashed box is a collective name — not a branch of the tree but a word gathering several."),
+    }),
+    "format-skeleton": (fig_format_skeleton, {
+        "ko": dict(title="형식은 달라도 로더가 묻는 질문은 같다",
+                   com_t="도스 .COM", com_rows=["(머리가 없다)", "코드 + 자료"],
+                   com_memo=["약속: 0x100 에 싣고", "거기서 시작한다"],
+                   elf_t="ELF (리눅스)",
+                   elf_rows=["ELF 머리", "프로그램 헤더 표",
+                             "구역들: .text .data .bss", "심볼·재배치·디버그"],
+                   pe_t="PE (윈도우)",
+                   pe_rows=["MZ 머리 + 도스 스텁", "PE 머리 + 구역 표",
+                            "구역들: .text .data .rdata", "임포트 표(IAT)·재배치"],
+                   q="무엇을 어디에 싣는가 · 어디서 시작하는가 · 무엇이 더 필요한가 · 주소를 어떻게 고치는가",
+                   q1="매직이 없는 형식(.COM)은 이 질문들의 답을 「약속」으로 대신한다 --- 그래서 하나도 못 바꾼다",
+                   q2="매직이 있는 형식은 답을 파일 안에 적는다 --- 그래서 형식이 자란다"),
+        "en": dict(title="the formats differ; the loader's questions do not",
+                   com_t="DOS .COM", com_rows=["(no header)", "code + data"],
+                   com_memo=["by convention: load at 0x100", "and start there"],
+                   elf_t="ELF (Linux)",
+                   elf_rows=["ELF header", "program header table",
+                             "sections: .text .data .bss", "symbols, relocation, debug"],
+                   pe_t="PE (Windows)",
+                   pe_rows=["MZ header + DOS stub", "PE header + section table",
+                            "sections: .text .data .rdata", "import table (IAT), relocation"],
+                   q="what goes where · where does it start · what else is needed · how are addresses fixed",
+                   q1="a format without a magic number (.COM) answers by convention --- so nothing can change",
+                   q2="a format with one writes the answers into the file --- so the format can grow"),
     }),
     "paging": (fig_paging, {
         "ko": dict(title="가상 주소가 물리 주소가 되기까지",
