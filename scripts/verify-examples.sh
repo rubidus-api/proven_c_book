@@ -190,6 +190,13 @@ for runner in $(find "$root/$tree" -name 'run.sh' | sort); do
         fail=1
         continue
     fi
+    # ★ 스크립트 예제도 `#DATA` 를 낸다. 위쪽 .c 경로에만 갈라내기를 두었더니
+    #   측정 예제를 run.sh 로 옮긴 순간 도해가 *옛 자료*를 계속 읽었다
+    #   --- 갈라내는 규칙은 출력이 생기는 *모든* 자리에 있어야 한다.
+    if grep -q '^#DATA ' "$out" 2>/dev/null; then
+        grep '^#DATA ' "$out" > "${out%.out}.data"
+        sed -i '/^#DATA/d' "$out"
+    fi
     if grep -q "$root" "$out" 2>/dev/null; then
         sed -i "s#$root#.#g" "$out"
     fi

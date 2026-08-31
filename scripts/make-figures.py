@@ -1141,7 +1141,7 @@ def fig_ssd_erase(L):
 #   숫자를 기억하지 않게 하려는 것이다. 값이 없으면 *없다고 그린다*(빈 그림을
 #   그럴듯하게 채우지 않는다).
 def _measured(name):
-    f = ROOT / "build" / "examples-out" / "apx-measured" / (name + ".c.data")
+    f = ROOT / "build" / "examples-out" / "apx-measured" / name / "run.sh.data"
     rows = []
     if f.exists():
         for line in f.read_text(encoding="utf-8").splitlines():

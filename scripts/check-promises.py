@@ -76,6 +76,23 @@ def chapters():
     return out
 
 
+def sources():
+    """약속을 *하는* 자리. 장뿐 아니라 **부록도 약속한다**(2026-09-01).
+
+    ★ 왜 늘렸나 --- 사설 부록 일곱을 편입하고 보니 부록이 장을 부르는 자리가
+      열아홉인데 그중 넷이 엉뚱한 장을 가리키고 있었다(비트 필드가 48장, 자동
+      벡터화가 14장, 쪽 부재가 10장). 검사가 장만 보고 있어서 아무도 몰랐다.
+      *검사의 사각지대는 새 글이 들어오는 자리에 생긴다.*
+    """
+    out = []
+    for n, body in chapters().items():
+        out.append((n, f"{n}장", body))
+    for f in sorted((ROOT / "book" / "appendix").glob("*.typ")):
+        out.append((None, f.stem, chreg.expand(f.read_text(encoding="utf-8"),
+                                               chreg.lang_of(f))))
+    return out
+
+
 def concept_vocabulary():
     """대조에 쓸 낱말은 *이 책이 개념어로 인정한 것*만 쓴다.
 
@@ -138,8 +155,7 @@ def main() -> int:
     ch = chapters()
     ok, used = allowed(), set()
     broken, checked = [], 0
-    for n in sorted(ch):
-        body = ch[n]
+    for n, label, body in sources():
         for m in PROMISE.finditer(body):
             before = m.group("before")
             target = int(m.group("no"))
@@ -167,11 +183,11 @@ def main() -> int:
             if key:
                 used.add(key)
                 continue
-            broken.append((n, target, kws, m.group(0).strip()[:72]))
+            broken.append((label, target, kws, m.group(0).strip()[:72]))
 
     show_all = "--all" in sys.argv
-    for n, t, kws, quote in (broken if show_all else broken[:40]):
-        print(f"  ⚠️  {n:>2}장 → {t:>2}장  [{'/'.join(kws)}]  …{quote}…")
+    for src, t, kws, quote in (broken if show_all else broken[:40]):
+        print(f"  ⚠️  {src:>16} → {t:>2}장  [{'/'.join(kws)}]  …{quote}…")
     # 낡은 허용 --- 약속 문장이 바뀌어 더는 걸리지 않는 줄은 지워야 한다.
     stale = sorted(set(ok) - used)
     for a, b, k in stale:
