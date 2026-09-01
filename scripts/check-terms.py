@@ -73,12 +73,32 @@ SEC = re.compile(r"^==+ (.+)$", re.M)
 BOLD = re.compile(r"\*([가-힣][가-힣 ·']{1,18})\*")
 
 
+# ★ 부록도 용어를 정의한다 (2026-09-01). 부록이 아홉에서 열여섯으로 늘고 보니
+#   한/영 병기가 마흔 곳인데 이 검사가 *장만* 보고 있었다. 자리 번호는 장 뒤에
+#   오도록 900 부터 매긴다 --- 「정의하는 자리는 첫 등장보다 앞이어야 한다」는
+#   판정이 순서에 기대기 때문이다. 이름표는 번호가 아니라 파일 이름으로 적는다.
+APX_BASE = 900
+
+
+def place_name(n):
+    return f"{n}장" if n < APX_BASE else _apx_names.get(n, f"부록{n - APX_BASE}")
+
+
+_apx_names = {}
+
+
 def chapters(base):
     out = {}
     for f in sorted(base.glob("ch*.typ")):
         m = re.match(r"ch(\d+)\.typ$", f.name)
         if m:
             out[int(m.group(1))] = f.read_text(encoding="utf-8")
+    apx = base.parent / "appendix"
+    if apx.is_dir():
+        for i, f in enumerate(sorted(apx.glob("*.typ"))):
+            key = APX_BASE + i
+            out[key] = f.read_text(encoding="utf-8")
+            _apx_names[key] = f.stem
     return out
 
 
@@ -173,7 +193,10 @@ def main() -> int:
             state.append("gloss-missing")
         elif want_gloss and gloss_at > n:
             state.append("gloss-late")
-        if not idx_at:
+        # ★ 병기하지 않기로 판정한 낱말은 *용어가 아니다*. 용어가 아닌 것에
+        #   색인을 요구하면, 「이것은 용어가 아니다」라고 적어 둔 판정이
+        #   반쪽만 듣는 셈이 된다 (2026-09-01).
+        if not idx_at and want_gloss:
             state.append("index-missing")
         elif not idx_here:
             state.append("index-elsewhere")
@@ -205,7 +228,7 @@ def main() -> int:
     quiet = "--quiet" in sys.argv
     if problems and not quiet:
         for s, term, n, why in sorted(problems)[:60]:
-            print(f"  ⚠️  {s:<15} {term}  ({n}장 — {why})")
+            print(f"  ⚠️  {s:<15} {term}  ({place_name(n)} — {why})")
     print(f"check-terms: 용어 {len(rows)}개 · 어긋난 곳 {len(problems)}건"
           + (f" ({', '.join(f'{k} {v}' for k, v in sorted(tally.items()))})" if tally else ""))
     return 1 if problems else 0

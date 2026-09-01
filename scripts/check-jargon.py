@@ -28,7 +28,10 @@ def chapter_files():
     for i in range(1, len(ids) + 1):
         f = ROOT / "book" / "chapters" / (f"ch{i:02d}.typ" if i < 10 else f"ch{i}.typ")
         if f.exists():
-            yield i, f
+            yield f"{i}장", f
+    # ★ 부록도 원고다 --- 장만 훑는 검사는 새 글이 들어오는 자리에서 눈을 감는다.
+    for f in sorted((ROOT / "book" / "appendix").glob("*.typ")):
+        yield f"부록 {f.stem}", f
 
 
 def terms():
@@ -97,7 +100,7 @@ def main():
 
     if "--check" in sys.argv:
         for n, term, ctx, memo in sorted(missing):
-            print(f"  ⚠️  {n}장 「{term}」 첫 등장에 설명이 없다 --- {memo}")
+            print(f"  ⚠️  {n} 「{term}」 첫 등장에 설명이 없다 --- {memo}")
             print(f"        …{ctx}…")
         if missing:
             print(f"check-jargon: {len(missing)} 건 --- 처음 나오는 자리에 한 줄을 붙일 것")
