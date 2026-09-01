@@ -47,12 +47,21 @@ def policy():
     return out
 
 
+# ★ 부록도 약어를 처음 쓴다 (2026-09-01). 장만 보던 탓에 부록 열여섯의
+#   약어가 통째로 검사 밖이었다. 자리 번호는 장 뒤에 오도록 900 부터 매긴다.
+APX_BASE = 900
+
+
 def chapters(base=KO):
     out = {}
     for f in sorted(base.glob("ch*.typ")):
         m = re.match(r"ch(\d+)\.typ", f.name)
         if m:
             out[int(m.group(1))] = f.read_text(encoding="utf-8")
+    apx = base.parent / "appendix"
+    if apx.is_dir():
+        for i, f in enumerate(sorted(apx.glob("*.typ"))):
+            out[APX_BASE + i] = f.read_text(encoding="utf-8")
     return out
 
 
