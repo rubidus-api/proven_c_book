@@ -12,17 +12,17 @@
 > 생겼는지에서 출발해, C23을 기본값으로 삼고, 마지막 부에서
 > [proven](https://github.com/rubidus-api) C 라이브러리로 이어진다.
 
-- **현재 판**: v0.90.2 — **초안(draft)**
-- **PDF 바로 받기** — [한국어 PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.90.2/proven_c_book-v0.90.2-ko.pdf) · [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.90.2/proven_c_book-v0.90.2-en.pdf)
+- **현재 판**: v0.91.0 — **초안(draft)**
+- **PDF 바로 받기** — [한국어 PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.91.0/proven_c_book-v0.91.0-ko.pdf) · [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.91.0/proven_c_book-v0.91.0-en.pdf)
 - **웹으로 읽기** — [한국어](https://rubidus-api.github.io/proven_c_book/ko/) · [English](https://rubidus-api.github.io/proven_c_book/en/)
-- **묶음(zip)** — [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.90.2/proven_c_book-v0.90.2-ko.zip) · [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.90.2/proven_c_book-v0.90.2-en.zip) · [전체](https://github.com/rubidus-api/proven_c_book/releases/download/v0.90.2/proven_c_book-v0.90.2-all.zip)
-- 저장소 안 사본: [ko PDF](dist/proven_c_book-v0.90.2-ko.pdf) · [en PDF](dist/proven_c_book-v0.90.2-en.pdf)
+- **묶음(zip)** — [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.91.0/proven_c_book-v0.91.0-ko.zip) · [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.91.0/proven_c_book-v0.91.0-en.zip) · [전체](https://github.com/rubidus-api/proven_c_book/releases/download/v0.91.0/proven_c_book-v0.91.0-all.zip)
+- 저장소 안 사본: [ko PDF](dist/proven_c_book-v0.91.0-ko.pdf) · [en PDF](dist/proven_c_book-v0.91.0-en.pdf)
 - **서식 예시(style specimen)** — 책에 쓰이는 모든 장치를 한자리에 모아 둔 견본이다.
   각 요소 옆에 그 이름(웹은 CSS 선택자, 텍스트 판은 함수 이름)이 붙어 있다.
   판을 내지 않고도 늘 최신이다:
   [웹](https://rubidus-api.github.io/proven_c_book/style-specimen.html) ·
   [PDF](https://rubidus-api.github.io/proven_c_book/style-specimen.pdf)
-- 13부 105장 + 부록 A~Q + 찾아보기 — 한국어판 1,189쪽, 영어판 1,260쪽
+- 13부 105장 + 부록 A~Q + 찾아보기 — 한국어판 1,190쪽, 영어판 1,261쪽
 - 갱신 내역은 [CHANGELOG.md](CHANGELOG.md)에 있다.
 
 ## 궁금한 것이 있으면
@@ -75,7 +75,7 @@ C에는 오랜 역사가 남긴 흉터가 있다. 널 포인터가 왜 「0인�
 
 ## 이 책이 다른 점
 
-- **인쇄된 실행 결과는 전부 실제 출력이다.** 예제 222개를 매 빌드마다
+- **인쇄된 실행 결과는 전부 실제 출력이다.** 예제 223개를 매 빌드마다
   컴파일·실행해 그 출력을 지면에 싣는다(GCC 14 기준 전수, Clang 19 로 교차 --- 교차에서
   건너뛴 7건과 그 까닭은 `docs/example-cross-skip.tsv` 에 적혀 있다).
   사람이 옮겨 적은 출력은 한 줄도 없다.
@@ -139,7 +139,7 @@ CC=clang scripts/verify-examples.sh     # 다른 컴파일러로 교차 검증
 ```
 dist/        배포물 — PDF(ko·en)와 zip 묶음
 docs/        GitHub Pages 가 서비스하는 HTML 판 (ko/, en/)
-examples/    본문에 실리는 예제 222개 — 전부 검증된 것
+examples/    본문에 실리는 예제 223개 — 전부 검증된 것
 examples-en/ 같은 예제의 영어판 (주석·문자열·출력이 영어)
 scripts/     예제 검증 스크립트
 vendor/      proven 라이브러리 스냅샷 (예제 링크용)
