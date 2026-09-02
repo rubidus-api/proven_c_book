@@ -46,3 +46,25 @@ twice — see `scripts/pages-build.sh` for that story.
    point at anything but the newest release.
 
 Steps 1–6 are local and reversible. From step 7 the work is public.
+
+## Code shown on the page
+
+`#demo` examples are compiled and run on every build. Code written by hand into the
+prose — fenced ```c blocks — was not, until `check-snippets.py`. A table in appendix P
+carried `__flash char msg[] = "hi";`, which AVR rejects (it demands `const`), and nobody
+noticed because nothing ever compiled it.
+
+Most snippets on the page are *deliberately* fragments: pieces without declarations,
+`…` placeholders, grammar excerpts, code that is wrong on purpose. So the rule cannot be
+"everything must compile". The gate keeps a **baseline** instead —
+`docs/snippet-baseline.tsv` lists what does not compile today, and the gate speaks up
+when that set *changes*. New prose that does not compile shows up immediately.
+
+Snippets containing a target-specific keyword (`__flash`, `__memx`) are compiled with the
+AVR toolchain rather than the host compiler; that is the case the appendix P defect fell
+into. Where that toolchain is absent the snippet is skipped and the count says so, the
+same rule the RISC-V and AVR examples follow (`usr/docs/avr-toolchain.md`).
+
+    python3 scripts/check-snippets.py            # count
+    python3 scripts/check-snippets.py --check    # gate: differs from the baseline?
+    python3 scripts/check-snippets.py --write    # accept the current state
