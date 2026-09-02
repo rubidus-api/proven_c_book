@@ -14,17 +14,17 @@ those who have just finished a first textbook.
 > default, and ends as a manual for the
 > [proven](https://github.com/rubidus-api) C library.
 
-- **Current edition**: v0.90.0 — **draft**
-- **Download the PDF** — [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.90.0/proven_c_book-v0.90.0-en.pdf) · [Korean PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.90.0/proven_c_book-v0.90.0-ko.pdf)
+- **Current edition**: v0.90.1 — **draft**
+- **Download the PDF** — [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.90.1/proven_c_book-v0.90.1-en.pdf) · [Korean PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.90.1/proven_c_book-v0.90.1-ko.pdf)
 - **Read on the web** — [English](https://rubidus-api.github.io/proven_c_book/en/) · [한국어](https://rubidus-api.github.io/proven_c_book/ko/)
-- **Bundles (zip)** — [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.90.0/proven_c_book-v0.90.0-en.zip) · [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.90.0/proven_c_book-v0.90.0-ko.zip) · [all](https://github.com/rubidus-api/proven_c_book/releases/download/v0.90.0/proven_c_book-v0.90.0-all.zip)
-- Copies inside the repository: [en PDF](dist/proven_c_book-v0.90.0-en.pdf) · [ko PDF](dist/proven_c_book-v0.90.0-ko.pdf)
+- **Bundles (zip)** — [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.90.1/proven_c_book-v0.90.1-en.zip) · [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.90.1/proven_c_book-v0.90.1-ko.zip) · [all](https://github.com/rubidus-api/proven_c_book/releases/download/v0.90.1/proven_c_book-v0.90.1-all.zip)
+- Copies inside the repository: [en PDF](dist/proven_c_book-v0.90.1-en.pdf) · [ko PDF](dist/proven_c_book-v0.90.1-ko.pdf)
 - **Style specimen** — every device the book uses, gathered in one place, with each
   element labelled by its own name (CSS selector on the web, function name in the
   typeset edition). Always current, independently of releases:
   [web](https://rubidus-api.github.io/proven_c_book/style-specimen.html) ·
   [PDF](https://rubidus-api.github.io/proven_c_book/style-specimen.pdf)
-- 13 parts, 105 chapters, appendices A–Q and an index — 1,236 pages in English, 1,166 in Korean.
+- 13 parts, 105 chapters, appendices A–Q and an index — 1,259 pages in English, 1,188 in Korean.
 - The change log lives in [CHANGELOG.md](CHANGELOG.md).
 
 ## If you have a question
