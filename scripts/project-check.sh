@@ -44,6 +44,9 @@ fi
 if [ -f scripts/check-acronyms.py ]; then
   python3 scripts/check-acronyms.py --check || fail "장의 첫 자리에서 풀리지 않은 약어가 있다"
 fi
+if [ -f scripts/check-snippets.py ]; then
+  python3 scripts/check-snippets.py --check || fail "지면의 코드 조각이 기준선과 다르다"
+fi
 if [ -f scripts/check-jargon.py ]; then
   python3 scripts/check-jargon.py --check || fail "설명 없이 등장하는 낱말이 있다"
 fi
