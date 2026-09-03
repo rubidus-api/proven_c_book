@@ -1,1 +1,1 @@
-proven vendored snapshot: v26.07.23b-3-gc0e4d09 (2026-08-04, from local proven_c_lib)
+proven vendored snapshot: v26.09.03a-2-g9f8616c (2026-09-03, from local proven_c_lib)

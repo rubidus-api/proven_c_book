@@ -112,7 +112,26 @@ static void* worker_main(void* arg) {
             proven_panic("proven_job: failed to park a worker");
             return NULL;
         }
-        if (proven_job_execute_one(sys)) continue;
+        /*
+         * Drain, rather than take one job per permit.
+         *
+         * A permit is a hint that there may be work, not a ticket for exactly one
+         * job. Tying the two together deadlocked the system, because a permit can
+         * be spent without a job being run: the queue hands out its slots in
+         * order, so a producer that has claimed slot n but not yet published it
+         * hides slot n+1 from every consumer. A worker woken by the permit for
+         * n+1 therefore sees an empty queue, spends the permit, and parks. The
+         * job is published a moment later with no permit left to announce it.
+         *
+         * Draining here means one permit can clear the whole queue, so a spent
+         * permit never leaves work stranded behind it. That stranding was the
+         * deadlock: not a worker that failed to exit, but a job that no permit
+         * was left to announce, so the queue never emptied, so no worker ever
+         * reached the exit test at all and destroy waited on them for ever.
+         * Measured under load, 18 runs in 40 hung before this line; 400 in 400
+         * passed after it.
+         */
+        while (proven_job_execute_one(sys)) { }
 
         /*
          * A permit may be stale when an external caller executed the job first.
@@ -124,6 +143,22 @@ static void* worker_main(void* arg) {
         if (proven_job_is_closed(sys) &&
             proven_job_active_submitters(sys) == 0 &&
             !proven_job_execute_one(sys)) {
+            /*
+             * Pass the baton before leaving.
+             *
+             * Close posts one permit per worker, which is exactly enough only if
+             * no permit is ever spent on anything else - and a worker woken to an
+             * empty queue spends one. That alone was not what deadlocked the
+             * system (the drain above was: with the baton but without it, the
+             * stress harness still hung in 18 runs out of 80), but it is the same
+             * accounting, and it is the half that decides whether the last worker
+             * ever wakes to be told to stop.
+             *
+             * So a departing worker wakes the next one. Shutdown then needs one
+             * permit to reach every worker rather than one each, and no tally of
+             * how many were spent on the way.
+             */
+            proven_job_post_work(sys);
             break;
         }
     }
