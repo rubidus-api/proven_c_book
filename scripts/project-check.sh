@@ -23,7 +23,11 @@ fi
 
 if command -v find >/dev/null 2>&1; then
   for script in $(find scripts -type f -name '*.sh' 2>/dev/null | sort); do
-    sh -n "$script"
+    first=$(sed -n '1p' "$script")
+    case "$first" in
+      *bash*) command -v bash >/dev/null 2>&1 || fail "bash is required for $script"; bash -n "$script" ;;
+      *) sh -n "$script" ;;
+    esac
   done
 fi
 
