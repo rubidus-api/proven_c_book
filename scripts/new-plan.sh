@@ -1,4 +1,6 @@
 #!/bin/sh
+# new-plan.sh — create a T3 plan file (architecture, data format, protocol,
+# public API, concurrency, security). Smaller work plans in the reply, not here.
 set -eu
 
 slug="${1:-}"
@@ -24,42 +26,32 @@ if [ -e "$path" ]; then
 fi
 
 mkdir -p docs/plans/active
-cat > "$path" <<EOF
+cat > "$path" <<EOT
 # Plan: $slug
 
-## Request
+## Goal
 
+<one sentence: what will be true when this is done>
 
-## Acceptance Criteria
-
--
-
-## TDD Plan
-
-- Test id:
-- Verification:
-
-## Expected File Changes
+## Files
 
 -
 
-## Token Budget
+## Verification
 
-- Read:
-- Avoid:
+- <the exact command that shows it works>
 
-## Stop Conditions
+## Risks
 
-- Stop after three repeated failures for the same reason.
-- Stop if requirements conflict or destructive ambiguity appears.
+-
 
-## User Questions
+## Questions For The Owner
 
 -
 
 ## Steps
 
 - [ ]
-EOF
+EOT
 
 printf '%s\n' "$path"

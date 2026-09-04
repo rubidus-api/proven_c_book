@@ -4,6 +4,7 @@
 # DECISIONS.md, docs/) stay tracked. To version-control these instead, set
 # "Operating docs tracking: tracked" in INIT.md and delete this block.
 /AGENTS.md
+/CLAUDE.md
 /CONTEXT.md
 /MEMORY.md
 /BACKLOGS.md
