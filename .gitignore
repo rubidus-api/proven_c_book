@@ -74,3 +74,15 @@ __pycache__/
 
 # agy-only customization layer (local; see rootsator RFC-0001)
 /.agents/
+
+# ── 예제를 돌리면 나오는 산출물 ────────────────────────────────────
+# 각 run.sh 는 끝나며 `make clean` 으로 스스로 지우지만, 중간에 끊기면 남는다.
+# greet.o 와 main.o 는 v0.88.0 에 딸려 들어갔고, 그 뒤로 전수 검증을 돌릴 때마다
+# 그 예제의 `make clean` 이 *추적되는* 파일을 지워 작업 트리가 더러워졌다
+# (2026-09-06). 영어판 트리에는 처음부터 없었다.
+examples/**/*.o
+examples/**/*.d
+examples-en/**/*.o
+examples-en/**/*.d
+examples/ch102/stale/demo
+examples-en/ch102/stale/demo
