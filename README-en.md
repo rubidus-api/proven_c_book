@@ -25,7 +25,7 @@ foundation to memory management, error handling, libraries and project structure
   typeset edition). Always current, independently of releases:
   [web](https://rubidus-api.github.io/proven_c_book/style-specimen.html) ·
   [PDF](https://rubidus-api.github.io/proven_c_book/style-specimen.pdf)
-- 13 parts, 105 chapters, appendices A–Q and an index — 1,261 pages in English, 1,190 in Korean.
+- 13 parts, 105 chapters, appendices A–Q and an index — 1,261 pages in English, 1,190 in Korean
 - The change log lives in [CHANGELOG.md](CHANGELOG.md).
 
 ## Beyond the first C textbook
@@ -146,12 +146,11 @@ layout, measurements and memory-management hardware.
 > **What that verification covers.** It reaches exactly this far: *the examples
 > build and run in this environment, and the output on the page came from that
 > run* (x86-64 Linux, all of them under GCC 14.2, cross-checked with Clang 19.1
-> where 7 are skipped). It is not an
-> audit of the book's prose against the standard, not a security audit, and not
-> validation by large-scale real use. The prose is grounded separately, in clauses
-> of the standard and primary sources; the verified scope and the limits of the
-> bundled proven library are discussed in the introduction and boundaries chapters
-> linked above.
+> where 7 are skipped). It is not an audit of the book's prose against the
+> standard, not a security audit, and not validation by large-scale real use.
+> The prose is grounded separately, in clauses of the standard and primary
+> sources; the verified scope and the limits of the bundled proven library are
+> discussed in the introduction and boundaries chapters linked above.
 
 ## Dependencies between chapters
 
@@ -162,7 +161,7 @@ dependency declarations change.
 
 [![Dependencies between chapters](docs/dependency-graph-en.svg)](docs/DEPENDENCIES-en.md)
 
-The horizontal axis places the chapters in order, and each arc is one dependency ---
+The horizontal axis places the chapters in order, and each arc is one dependency —
 from the chapter leaned on (left) to the chapter itself (right). The longer the arc,
 the further back it reaches; the bigger the dot, the more chapters lean on it. Any
 chapter leaning on a later one shows up as a red dashed arc.
@@ -208,8 +207,8 @@ vendor/      A snapshot of the proven library (for linking the listings)
 
 Ask about the content on the [Q&A board (Discussions)](https://github.com/rubidus-api/proven_c_book/discussions/categories/q-a),
 or report an incorrect explanation or typo in an [issue](https://github.com/rubidus-api/proven_c_book/issues).
-Korean and English are both welcome. I will respond as time allows and keep a record
-of answers and corrections.
+Korean and English are both welcome. The author responds as time allows and
+keeps a record of answers and corrections.
 
 ## Licence
 
@@ -227,4 +226,4 @@ Details are in [LICENSE-NOTICE.md](LICENSE-NOTICE.md).
 ---
 
 This is a draft, so errors remain. Wrong statements, listings that do not run and
-typos are gratefully received as issues. Contact: rubidus@gmail.com.
+typos are welcome as issues, and gratefully fixed. Contact: rubidus@gmail.com.
