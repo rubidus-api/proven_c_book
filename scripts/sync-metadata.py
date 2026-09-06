@@ -46,9 +46,17 @@ def pages(pdf: pathlib.Path):
 
 
 def last_change() -> str:
-    """원고가 마지막으로 바뀐 날. git 이 없으면 파일 시각에서 잰다."""
+    """원고가 마지막으로 바뀐 날. git 이 없으면 파일 시각에서 잰다.
+
+    ★ git 질의는 *원고 경로로 좁힌다*. 저장소 전체에 물으면 README 만 고친
+      커밋이 「최종 수정일」을 끌고 가서, 책이 바뀌지 않은 날짜가 판권장에
+      찍힌다. 지금 `book/` 은 .gitignore 에 있어 git 이 원고를 본 적이 없으므로
+      이 질의는 비어서 아래의 파일 시각으로 떨어진다 --- 그쪽이 이 함수가
+      말하는 「원고가 마지막으로 바뀐 날」이다.
+    """
     try:
-        out = subprocess.run(["git", "-C", str(ROOT), "log", "-1", "--format=%cs"],
+        out = subprocess.run(["git", "-C", str(ROOT), "log", "-1", "--format=%cs",
+                              "--", "book", "book-en"],
                              capture_output=True, text=True, timeout=20)
         if out.returncode == 0 and out.stdout.strip():
             return out.stdout.strip()
