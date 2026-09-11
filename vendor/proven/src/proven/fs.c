@@ -40,7 +40,15 @@ static void internal_cstr_free(proven_allocator_t scratch, char *buf) {
     }
 }
 
-proven_result_file_t proven_fs_open(proven_allocator_t scratch, proven_u8str_view_t path, proven_fs_mode_t mode) {
+/*
+ * The body of proven_fs_open, plus PAL-only flags the public mode word cannot carry.
+ *
+ * PROVEN_SYS_FS_PRIVATE is one of those: it is an internal staging concern, not a new
+ * public open mode, and proven_fs_open's own flag validation still rejects anything the
+ * public enum does not name.
+ */
+static proven_result_file_t internal_fs_open_with(proven_allocator_t scratch, proven_u8str_view_t path,
+                                                  proven_fs_mode_t mode, int extra_pal_flags) {
     proven_result_file_t res = {0};
     internal_result_cstr_t path_res = internal_view_to_cstr(scratch, path);
     if (!proven_is_ok(path_res.err)) {
@@ -71,18 +79,31 @@ proven_result_file_t proven_fs_open(proven_allocator_t scratch, proven_u8str_vie
         pal_flags |= PROVEN_FS_READ;
     }
 
-    proven_sys_file_handle_t sh = proven_sys_fs_open(path_buf, pal_flags);
+    proven_sys_fs_open_result_t why = PROVEN_SYS_FS_OPEN_OK;
+    proven_sys_file_handle_t sh = proven_sys_fs_open_checked(path_buf, pal_flags | extra_pal_flags, &why);
     internal_cstr_free(scratch, path_buf);
+
+    /* "It went wrong" is not an answer a caller can act on. These three are: the name is not
+     * there, the caller may not, or something else holds it right now. Everything else stays
+     * PROVEN_ERR_IO, including an exclusive-create collision, which has no error of its own
+     * and is not worth inventing one for. */
+    proven_err_t open_err = PROVEN_ERR_IO;
+    switch (why) {
+        case PROVEN_SYS_FS_OPEN_NOT_FOUND: open_err = PROVEN_ERR_NOT_FOUND; break;
+        case PROVEN_SYS_FS_OPEN_DENIED:    open_err = PROVEN_ERR_PERMISSION; break;
+        case PROVEN_SYS_FS_OPEN_BUSY:      open_err = PROVEN_ERR_BUSY; break;
+        default: break;
+    }
 
 #if defined(_WIN32) || defined(_WIN64)
     if (!sh.handle) {
-        res.err = PROVEN_ERR_IO;
+        res.err = open_err;
         return res;
     }
     res.value.internal.ptr = sh.handle;
 #else
     if (sh.fd < 0) {
-        res.err = PROVEN_ERR_IO;
+        res.err = open_err;
         return res;
     }
     res.value.internal.fd = sh.fd;
@@ -91,6 +112,29 @@ proven_result_file_t proven_fs_open(proven_allocator_t scratch, proven_u8str_vie
     res.err = PROVEN_OK;
     return res;
 }
+
+proven_result_file_t proven_fs_open(proven_allocator_t scratch, proven_u8str_view_t path, proven_fs_mode_t mode) {
+    return internal_fs_open_with(scratch, path, mode, 0);
+}
+
+/* Permissions through the OPEN HANDLE. The pathname form has to resolve the name a second
+ * time, and a staging file's name is exactly the kind of name that can come to mean
+ * something else in between. */
+static proven_err_t internal_fchmod(proven_file_t file, proven_fs_perms_t perms) {
+#if defined(_WIN32) || defined(_WIN64)
+    proven_sys_file_handle_t h = { .handle = file.internal.ptr };
+#else
+    proven_sys_file_handle_t h = { .fd = file.internal.fd };
+#endif
+    return proven_sys_fs_fchmod(h, (unsigned int)perms) ? PROVEN_OK : PROVEN_ERR_IO;
+}
+
+/* Both are defined further down, next to proven_fs_stat. Declared here because the whole-file
+ * replacements above use them, and one rule about protected destinations has to be reachable
+ * from every one of them. */
+static proven_err_t internal_stat_impl(proven_allocator_t scratch, proven_u8str_view_t path,
+                                       proven_fs_stat_t *out_stat, bool *out_missing);
+static proven_err_t internal_refuse_if_protected(proven_allocator_t scratch, proven_u8str_view_t path);
 
 proven_err_t proven_fs_close(proven_file_t file) {
 #if defined(_WIN32) || defined(_WIN64)
@@ -283,7 +327,14 @@ proven_err_t proven_fs_sync_dir(proven_allocator_t scratch, proven_u8str_view_t 
 #endif
 }
 
-proven_err_t proven_fs_rename(proven_allocator_t scratch, proven_u8str_view_t src, proven_u8str_view_t dest) {
+/*
+ * The rename itself, with no policy attached.
+ *
+ * internal_write_file_atomic uses this one because it has already refused a protected
+ * target - before creating anything - and re-asking here would be a second stat on the
+ * hot path for an answer it holds.
+ */
+static proven_err_t internal_rename_raw(proven_allocator_t scratch, proven_u8str_view_t src, proven_u8str_view_t dest) {
     internal_result_cstr_t s_res = internal_view_to_cstr(scratch, src);
     if (!proven_is_ok(s_res.err)) return s_res.err;
     
@@ -293,19 +344,60 @@ proven_err_t proven_fs_rename(proven_allocator_t scratch, proven_u8str_view_t sr
         return d_res.err;
     }
 
-    bool success = proven_sys_fs_rename(s_res.value, d_res.value);
+    proven_sys_fs_rename_result_t kind = proven_sys_fs_rename_checked(s_res.value, d_res.value);
     internal_cstr_free(scratch, s_res.value);
     internal_cstr_free(scratch, d_res.value);
-    return success ? PROVEN_OK : PROVEN_ERR_IO;
+    /* "No" is not one answer. A caller who is told PROVEN_ERR_IO cannot tell a protected
+     * destination from a broken disk, so it cannot ask the user about the first or retry
+     * the second - and on Windows a read-only destination is a refusal a caller runs into
+     * routinely, because that platform treats the attribute as one. */
+    switch (kind) {
+        case PROVEN_SYS_FS_RENAME_OK:     return PROVEN_OK;
+        case PROVEN_SYS_FS_RENAME_DENIED: return PROVEN_ERR_PERMISSION;
+        case PROVEN_SYS_FS_RENAME_BUSY:   return PROVEN_ERR_BUSY;
+        default:                          return PROVEN_ERR_IO;
+    }
+}
+
+proven_err_t proven_fs_rename(proven_allocator_t scratch, proven_u8str_view_t src, proven_u8str_view_t dest) {
+    /*
+     * A rename REPLACES the destination, so it is a whole-file replacement and it obeys the
+     * same rule as the other four. Without this it was the hole straight through them: a
+     * caller refused by proven_fs_write_file_atomic got the same result from the rename that
+     * function is built on - the protected file replaced, contents and mode both gone - and
+     * on POSIX only, because Windows refuses it at the syscall. One line of caller code was
+     * all the rule was worth.
+     */
+    proven_err_t perr = internal_refuse_if_protected(scratch, dest);
+    if (!proven_is_ok(perr)) return perr;
+    return internal_rename_raw(scratch, src, dest);
 }
 
 proven_err_t proven_fs_remove(proven_allocator_t scratch, proven_u8str_view_t path) {
     internal_result_cstr_t p_res = internal_view_to_cstr(scratch, path);
     if (!proven_is_ok(p_res.err)) return p_res.err;
     
-    bool success = proven_sys_fs_remove(p_res.value);
+    proven_sys_fs_open_result_t why = proven_sys_fs_remove_checked(p_res.value);
     internal_cstr_free(scratch, p_res.value);
-    return success ? PROVEN_OK : PROVEN_ERR_IO;
+
+    /*
+     * Removing is NOT covered by the protected-destination rule above, and that is
+     * deliberate: deleting a name is a directory operation, and POSIX has never let the
+     * file's own mode have a say in it. Refusing here would break ordinary cleanup - a
+     * read-only vendored file, a build output - for a rule about writing.
+     *
+     * The platforms do disagree, and the disagreement is reported rather than hidden:
+     * Windows refuses to delete a read-only file, and that comes back as
+     * PROVEN_ERR_PERMISSION, not as a bare I/O error a caller cannot act on. A caller who
+     * wants the file gone clears the mark first, and now knows to.
+     */
+    switch (why) {
+        case PROVEN_SYS_FS_OPEN_OK:        return PROVEN_OK;
+        case PROVEN_SYS_FS_OPEN_NOT_FOUND: return PROVEN_ERR_NOT_FOUND;
+        case PROVEN_SYS_FS_OPEN_DENIED:    return PROVEN_ERR_PERMISSION;
+        case PROVEN_SYS_FS_OPEN_BUSY:      return PROVEN_ERR_BUSY;
+        default:                           return PROVEN_ERR_IO;
+    }
 }
 
 proven_err_t proven_fs_mkdir(proven_allocator_t scratch, proven_u8str_view_t path) {
@@ -350,25 +442,47 @@ proven_err_t proven_fs_copy(proven_allocator_t temp_alloc, proven_u8str_view_t s
     if (!proven_is_ok(r_res.err)) return r_res.err;
     
     /*
-     * An existing destination we cannot WRITE to has to be made writable first.
+     * A destination the caller marked as not-to-be-written is refused, like every other
+     * whole-file replacement here. See internal_refuse_if_protected.
      *
-     * The copy carries the source's mode onto the destination (see below), so copying a
-     * 0400 file leaves a 0400 file - and the NEXT copy onto it could not even open it:
-     * open(O_WRONLY) on a 0400 file fails, so a backup loop worked once and failed forever
-     * after, with the destination silently keeping its old contents. We are about to
-     * overwrite the file anyway; making it writable first is the honest thing, and the
-     * final mode goes back on at the end.
+     * This used to do the opposite: it made an unwritable destination writable and carried
+     * on, because the copy carries the SOURCE's mode across, so copying a 0400 file left a
+     * 0400 file and the next copy onto it could not open it - a backup loop that worked
+     * once and failed forever after. That was a real problem and this is a real change to
+     * how it is solved: the loop now fails on the second run with PROVEN_ERR_PERMISSION
+     * instead of the first run silently stripping the destination's protection.
+     *
+     * Loud and recoverable beats quiet and not. Measured before this changed: copying onto
+     * a 0444 file succeeded and left it 0664 - the mark the user set was gone, and nothing
+     * anywhere said so. A caller who means to replace a protected file can lift the mark;
+     * a caller who did not mean to cannot get the file back.
      */
     {
-        proven_fs_stat_t d_stat = {0};
-        if (proven_is_ok(proven_fs_stat(temp_alloc, dest, &d_stat)) &&
-            d_stat.type == PROVEN_FS_TYPE_FILE &&
-            (d_stat.perms & 0200u) == 0u) {
-            (void)proven_fs_chmod(temp_alloc, dest, (proven_fs_perms_t)(d_stat.perms | 0600u));
+        proven_err_t perr = internal_refuse_if_protected(temp_alloc, dest);
+        if (!proven_is_ok(perr)) {
+            (void)proven_fs_close(r_res.value);
+            return perr;
         }
     }
 
-    proven_result_file_t w_res = proven_fs_open(temp_alloc, dest, PROVEN_FS_WRITE | PROVEN_FS_CREATE | PROVEN_FS_TRUNC);
+    /*
+     * Learn the source's mode BEFORE the destination is created, because whether the
+     * destination has to be created private depends on it.
+     *
+     * A destination that does not exist yet used to be created with the process umask and
+     * narrowed to 0600 immediately afterwards - and a descriptor opened in between stays
+     * readable no matter what the mode becomes later. The narrowing was already the
+     * intent; this makes it true from the first instant. An existing destination keeps
+     * whatever mode it has: creation flags do not apply to it, and its existing readers
+     * are not something this library can revoke.
+     */
+    proven_fs_stat_t src_stat = {0};
+    bool have_src_perms = proven_is_ok(proven_fs_stat(temp_alloc, src, &src_stat)) &&
+                          src_stat.type == PROVEN_FS_TYPE_FILE;
+
+    proven_result_file_t w_res = internal_fs_open_with(temp_alloc, dest,
+        (proven_fs_mode_t)(PROVEN_FS_WRITE | PROVEN_FS_CREATE | PROVEN_FS_TRUNC),
+        have_src_perms ? PROVEN_SYS_FS_PRIVATE : 0);
     if (!proven_is_ok(w_res.err)) {
         (void)proven_fs_close(r_res.value);
         return w_res.err;
@@ -385,10 +499,9 @@ proven_err_t proven_fs_copy(proven_allocator_t temp_alloc, proven_u8str_view_t s
      * a wider mode than the original had, not even briefly, AND the file stays writable
      * while we are writing it.
      */
-    proven_fs_stat_t src_stat = {0};
-    bool have_src_perms = proven_is_ok(proven_fs_stat(temp_alloc, src, &src_stat)) &&
-                          src_stat.type == PROVEN_FS_TYPE_FILE;
     if (have_src_perms) {
+        /* An EXISTING destination was not created by the open above, so it still carries
+         * its old mode and still needs narrowing here. */
         proven_err_t merr = proven_fs_chmod(temp_alloc, dest, (proven_fs_perms_t)0600u);
         if (!proven_is_ok(merr) && merr != PROVEN_ERR_UNSUPPORTED) {
             (void)proven_fs_close(r_res.value);
@@ -797,6 +910,44 @@ proven_err_t proven_fs_write_file(proven_allocator_t scratch, proven_u8str_view_
     return err;
 }
 
+/*
+ * Is this destination one the caller has said not to write?
+ *
+ * The owner-write bit is the only place either platform records that intent: on POSIX it is
+ * mode 0200, and on Windows the READONLY attribute is reported through the same bit. A
+ * destination without it is protected, and every whole-file replacement in this file
+ * refuses one, with PROVEN_ERR_PERMISSION.
+ *
+ * That rule exists because the three ways of saying "make this file hold these bytes" used
+ * to give three different answers on ONE platform, and only one of them respected the mark:
+ *
+ *   proven_fs_write_file        refused - it opens the destination for writing
+ *   proven_fs_write_file_atomic succeeded - rename asks the DIRECTORY for permission,
+ *                               not the file, so the mark was never consulted
+ *   proven_fs_copy              succeeded AND left the file writable afterwards, because
+ *                               it carried the source's mode across
+ *
+ * The last one is the reason this is a refusal rather than a documented difference: a
+ * protection the user set disappeared, and nothing said so. Which of the three a caller
+ * happened to use is not a decision about permissions.
+ *
+ * What this is NOT: a security boundary. The mode is read before the work and acted on
+ * after, so a mode that changes in between is not caught, and a caller who owns the file
+ * can lift the mark and try again - which is exactly what they should do when they mean it.
+ * It is a guard against destroying protected data by accident, and it is honest about
+ * being only that.
+ */
+static proven_err_t internal_refuse_if_protected(proven_allocator_t scratch, proven_u8str_view_t path) {
+    proven_fs_stat_t st = {0};
+    bool missing = false;
+    proven_err_t err = internal_stat_impl(scratch, path, &st, &missing);
+    if (!proven_is_ok(err)) return err;
+    if (missing) return PROVEN_OK;                       /* nothing there to protect */
+    if (st.type != PROVEN_FS_TYPE_FILE) return PROVEN_OK; /* not our business here */
+    if ((st.perms & 0200u) == 0u) return PROVEN_ERR_PERMISSION;
+    return PROVEN_OK;
+}
+
 /* Longest basename most filesystems accept. The temp sibling has to fit too. */
 #define INTERNAL_NAME_MAX ((proven_size_t)255)
 #define INTERNAL_TMP_SUFFIX_LEN ((proven_size_t)8)   /* ".pvtmpNN", no NUL */
@@ -819,16 +970,49 @@ proven_err_t proven_fs_write_file(proven_allocator_t scratch, proven_u8str_view_
  * currently offers.
  */
 
+/*
+ * Does this byte separate path components ON THIS PLATFORM?
+ *
+ * POSIX says one thing and Windows says another, and the difference is not cosmetic. On
+ * POSIX a backslash is an ordinary character in a filename: "a\\b" is one name, not "b"
+ * inside "a". Treating it as a separator made a durable write to that file sync
+ * "<dir>/a" - which is not its parent. If that name does not exist the write returns an
+ * I/O error AFTER the rename has already published the new contents; if it happens to be
+ * a directory, the wrong directory is synced and the call reports a durability it did not
+ * achieve. Both are worse than not trying.
+ *
+ * proven_fs_is_absolute deliberately still accepts Windows spellings everywhere: it
+ * CLASSIFIES a path that may have come from elsewhere, rather than resolving one on this
+ * machine. That is a different question and it keeps its own answer.
+ */
+static bool internal_is_separator(proven_byte_t c) {
+#if defined(_WIN32) || defined(_WIN64)
+    return c == (proven_byte_t)'/' || c == (proven_byte_t)'\\';
+#else
+    return c == (proven_byte_t)'/';
+#endif
+}
+
 /* The directory a path lives in - "." when the path has no separator. Used to sync
  * the directory after a rename, which is the only thing that makes the rename
  * itself survive a power cut. */
 static proven_u8str_view_t internal_parent_dir(proven_u8str_view_t path) {
     proven_size_t cut = PROVEN_INDEX_NOT_FOUND;
     for (proven_size_t i = 0; i < path.size; ++i) {
-        if (path.ptr[i] == (proven_byte_t)'/' || path.ptr[i] == (proven_byte_t)'\\') cut = i;
+        if (internal_is_separator(path.ptr[i])) cut = i;
     }
     if (cut == PROVEN_INDEX_NOT_FOUND) return PROVEN_LIT(".");
     if (cut == 0) return PROVEN_LIT("/");           /* "/foo" -> the root */
+#if defined(_WIN32) || defined(_WIN64)
+    /* "C:\\foo" -> "C:\\": the separator after a drive letter IS the root and cannot be
+     * trimmed away, or the parent becomes the drive-relative current directory, which is a
+     * different place. UNC and extended-length prefixes are not modelled here; on Windows
+     * proven_fs_sync_dir is PROVEN_ERR_UNSUPPORTED, so this feeds only the staging-name
+     * basename, where a too-long name is refused rather than mis-resolved. */
+    if (cut == 2 && path.ptr[1] == (proven_byte_t)':') {
+        return (proven_u8str_view_t){ .ptr = path.ptr, .size = 3 };
+    }
+#endif
     return (proven_u8str_view_t){ .ptr = path.ptr, .size = cut };
 }
 
@@ -846,7 +1030,7 @@ static proven_err_t internal_write_file_atomic(proven_allocator_t scratch, prove
     proven_size_t stem = path.size;
     proven_size_t name_start = 0;
     for (proven_size_t i = 0; i < path.size; ++i) {
-        if (path.ptr[i] == (proven_byte_t)'/' || path.ptr[i] == (proven_byte_t)'\\') name_start = i + 1;
+        if (internal_is_separator(path.ptr[i])) name_start = i + 1;
     }
     proven_size_t name_len = path.size - name_start;
     if (name_len + INTERNAL_TMP_SUFFIX_LEN > INTERNAL_NAME_MAX) {
@@ -865,10 +1049,31 @@ static proven_err_t internal_write_file_atomic(proven_allocator_t scratch, prove
 
     /* Read the target's permissions before we create anything, so we can carry
      * them across. A missing target is fine: then the temp's own fresh mode is
-     * the right answer, exactly as it would be for write_file. */
+     * the right answer, exactly as it would be for write_file.
+     *
+     * A FAILED lookup is not fine, and it is not the same thing. If we cannot tell what
+     * we are about to overwrite, we do not know whether the bytes we are about to write
+     * need protecting - so we stop here, before creating anything, rather than guess a
+     * default mode for a file that may well be private. */
     proven_fs_stat_t target = {0};
-    bool have_target_perms = proven_is_ok(proven_fs_stat(scratch, path, &target)) &&
-                             target.type == PROVEN_FS_TYPE_FILE;
+    bool target_missing = false;
+    {
+        /* Before ANY of this: if the caller marked the destination as not to be written,
+         * that is the answer. Refusing here means no staging file is created, nothing is
+         * renamed, and the protected file is untouched. */
+        proven_err_t perr = internal_refuse_if_protected(scratch, path);
+        if (!proven_is_ok(perr)) {
+            scratch.free_fn(scratch.ctx, tmp);
+            return perr;
+        }
+
+        proven_err_t serr = internal_stat_impl(scratch, path, &target, &target_missing);
+        if (!proven_is_ok(serr)) {
+            scratch.free_fn(scratch.ctx, tmp);
+            return serr;
+        }
+    }
+    bool have_target_perms = !target_missing && target.type == PROVEN_FS_TYPE_FILE;
 
     proven_result_file_t f_res = {0};
     f_res.err = PROVEN_ERR_BUSY;
@@ -885,8 +1090,21 @@ static proven_err_t internal_write_file_atomic(proven_allocator_t scratch, prove
         s[7] = (proven_byte_t)('0' + (attempt % 10));
         s[8] = 0;
 
-        f_res = proven_fs_open(scratch, tmp_view,
-            (proven_fs_mode_t)(PROVEN_FS_WRITE | PROVEN_FS_CREATE_NEW));
+        /*
+         * PRIVATE when we are carrying an existing target's mode across: the staging file
+         * then holds the payload under 0600 from its first instant, and the target's own
+         * mode goes on through the open handle further down. Without it the file is born
+         * 0666 & ~umask - 0644 under the usual umask - and a chmod a moment later cannot
+         * revoke a descriptor another user opened in between. That is the whole defect:
+         * open descriptors are not re-checked against the mode.
+         *
+         * For a target that does not exist there is nothing to protect that the finished
+         * file will not publish anyway, so the default creation mode stays what it has
+         * always been. Changing THAT is a permissions-policy decision, not a bug fix.
+         */
+        int private_flag = have_target_perms ? PROVEN_SYS_FS_PRIVATE : 0;
+        f_res = internal_fs_open_with(scratch, tmp_view,
+            (proven_fs_mode_t)(PROVEN_FS_WRITE | PROVEN_FS_CREATE_NEW), private_flag);
         if (proven_is_ok(f_res.err)) break;
     }
     if (!proven_is_ok(f_res.err)) {
@@ -895,22 +1113,50 @@ static proven_err_t internal_write_file_atomic(proven_allocator_t scratch, prove
     }
 
     /*
-     * Put the mode on the temp BEFORE writing a single byte of the payload.
+     * Put the mode on the temp BEFORE writing a single byte of the payload, and put it on
+     * through the OPEN HANDLE.
      *
-     * It used to be chmod'd after the write, at the very end - which meant the entire new
-     * contents of a 0600 file sat in a world-readable 0644 temp for the whole duration of
-     * the write. A watcher thread stat'ing the temp during a 64 MiB rewrite saw exactly
-     * that. The end state was right and the window was wide open, and a window is all a
-     * secret needs. If there is no target, the temp's fresh mode is the right answer, the
-     * same as for write_file.
+     * Two different windows, and they need both halves. Creating the file private (see the
+     * open above) closes the instant between creation and the first mode change - the one
+     * a chmod can never close afterwards, because an already-open descriptor is not
+     * re-checked against the mode. Setting the target's mode before the payload closes the
+     * duration of the write itself: on a filesystem whose inherited ACLs widen every new
+     * file regardless of the mode asked for, the creation flag alone does not hold, and a
+     * 64 MiB rewrite would sit group-readable for as long as it took.
+     *
+     * Through the handle rather than the pathname because the name would have to be
+     * resolved a second time, and a staging name is exactly the kind of name a concurrent
+     * writer can make mean something else. If there is no target, the temp keeps its fresh
+     * default mode, the same as for write_file.
      */
+    /*
+     * One bit is held back until the end: OWNER-WRITE.
+     *
+     * A target that is read-only carries a mode we must not hand to the staging file while
+     * we still own it. On Windows that mode is the READONLY attribute, and a read-only file
+     * cannot be deleted - so a replacement that failed left its staging file behind, which
+     * a native run found and no amount of reading the code here did. proven_fs_copy already
+     * reasoned this way about its destination; this is the same reasoning one function over.
+     *
+     * Holding 0200 back costs nothing in confidentiality: owner-write is not a read
+     * permission, and every bit that lets somebody else READ the payload is applied here,
+     * before the payload exists.
+     */
+    proven_fs_perms_t staging_perms = (proven_fs_perms_t)(target.perms | 0200u);
+
     proven_err_t err = PROVEN_OK;
     if (have_target_perms) {
-        err = proven_fs_chmod(scratch, tmp_view, target.perms);
+        err = internal_fchmod(f_res.value, staging_perms);
     }
 
     if (proven_is_ok(err)) {
         err = proven_fs_write_all(f_res.value, data);
+    }
+
+    /* The exact mode goes on once the payload is in, and still before the rename that
+     * publishes it - so the file is never VISIBLE under the wrong mode. */
+    if (proven_is_ok(err) && have_target_perms && staging_perms != target.perms) {
+        err = internal_fchmod(f_res.value, target.perms);
     }
 
     if (proven_is_ok(err) && durable) {
@@ -930,7 +1176,8 @@ static proven_err_t internal_write_file_atomic(proven_allocator_t scratch, prove
     }
 
     if (proven_is_ok(err)) {
-        err = proven_fs_rename(scratch, tmp_view, path);
+        /* The protected-target question was answered before anything was created. */
+        err = internal_rename_raw(scratch, tmp_view, path);
     }
 
     if (proven_is_ok(err) && durable) {
@@ -949,7 +1196,15 @@ static proven_err_t internal_write_file_atomic(proven_allocator_t scratch, prove
     }
 
     if (!proven_is_ok(err)) {
-        /* Leave no debris behind; the remove itself cannot rescue the error. */
+        /*
+         * Leave no debris behind; the remove itself cannot rescue the error.
+         *
+         * Make it removable first. By this point the staging file may be carrying the
+         * target's exact mode, and on Windows a read-only file cannot be deleted at all -
+         * so the cleanup silently failed and the debris stayed. Restoring owner-write is
+         * the whole fix, and it is harmless: the file is about to stop existing.
+         */
+        (void)proven_fs_chmod(scratch, tmp_view, (proven_fs_perms_t)0600u);
         (void)proven_fs_remove(scratch, tmp_view);
     }
 
@@ -1054,18 +1309,31 @@ proven_err_t proven_fs_lock(proven_file_t file, proven_fs_lock_type_t type, bool
 #endif
 }
 
-proven_err_t proven_fs_stat(proven_allocator_t scratch, proven_u8str_view_t path, proven_fs_stat_t *out_stat) {
+/*
+ * The same lookup proven_fs_stat does, but it says which kind of "no" it got.
+ *
+ * A caller that is about to replace a file needs "there is nothing there" and "I could
+ * not find out" apart: the first means there is no mode to carry across, the second means
+ * it does not know what it is about to overwrite. The public proven_fs_stat keeps
+ * collapsing both into PROVEN_ERR_IO, because that is what its callers already expect.
+ */
+static proven_err_t internal_stat_impl(proven_allocator_t scratch, proven_u8str_view_t path,
+                                       proven_fs_stat_t *out_stat, bool *out_missing) {
     if (!out_stat) return PROVEN_ERR_INVALID_ARG;
-    
+
     internal_result_cstr_t p_res = internal_view_to_cstr(scratch, path);
     if (!proven_is_ok(p_res.err)) return p_res.err;
-    
+
     proven_sys_fs_stat_t se;
-    bool stat_ok = proven_sys_fs_stat(p_res.value, &se);
+    proven_sys_fs_stat_result_t kind = proven_sys_fs_stat_checked(p_res.value, &se);
     internal_cstr_free(scratch, p_res.value);
-    
-    if (!stat_ok) return PROVEN_ERR_IO;
-    
+
+    if (kind == PROVEN_SYS_FS_STAT_NOT_FOUND) {
+        if (out_missing) { *out_missing = true; return PROVEN_OK; }
+        return PROVEN_ERR_IO;
+    }
+    if (kind != PROVEN_SYS_FS_STAT_OK) return PROVEN_ERR_IO;
+
     out_stat->size = se.size;
     out_stat->type = se.is_dir ? PROVEN_FS_TYPE_DIR
                    : se.is_regular ? PROVEN_FS_TYPE_FILE
@@ -1085,6 +1353,10 @@ proven_err_t proven_fs_stat(proven_allocator_t scratch, proven_u8str_view_t path
     out_stat->gid = se.gid;
 
     return PROVEN_OK;
+}
+
+proven_err_t proven_fs_stat(proven_allocator_t scratch, proven_u8str_view_t path, proven_fs_stat_t *out_stat) {
+    return internal_stat_impl(scratch, path, out_stat, NULL);
 }
 
 proven_err_t proven_fs_symlink(proven_allocator_t scratch, proven_u8str_view_t target, proven_u8str_view_t linkpath) {

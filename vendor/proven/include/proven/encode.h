@@ -48,6 +48,13 @@
  * @brief The number of characters `proven_hex_encode` writes for `n` input bytes.
  * @note Two per byte, no NUL. `proven_hex_encode` does not terminate; if you want a C string,
  *       size for this + 1 and place the NUL yourself, or use the encoding into a proven_u8str.
+ * @note Returns `PROVEN_SIZE_MAX` when the output size cannot be represented in a
+ *       `proven_size_t` (`n > PROVEN_SIZE_MAX / 2`). A real hex output can never be that
+ *       value - it is always even - so the sentinel is unambiguous. It used to return the
+ *       wrapped product, a small number that passes any capacity check. Zero is not used
+ *       for this, because zero is the honest answer for empty input. `proven_hex_encode`
+ *       makes the same judgement itself and answers `PROVEN_ERR_OVERFLOW`, so a caller who
+ *       passes the sentinel on as a capacity is refused rather than trusted.
  */
 [[nodiscard]]
 proven_size_t proven_hex_encoded_size(proven_size_t n);
@@ -65,7 +72,10 @@ proven_size_t proven_hex_decoded_size(proven_size_t n);
  * @param out       caller-owned. Must be at least `proven_hex_encoded_size(data.size)`.
  * @param written_out receives the number of characters written; may be NULL.
  * @return PROVEN_OK; PROVEN_ERR_OUT_OF_BOUNDS if `out` is too small (nothing is written);
- *         PROVEN_ERR_INVALID_ARG for a NULL out with a nonzero size, or a `{NULL, >0}` view.
+ *         PROVEN_ERR_OVERFLOW if the output size cannot be represented at all, which is a
+ *         different thing from a buffer that is too small and is decided before any byte is
+ *         read or written; PROVEN_ERR_INVALID_ARG for a NULL out with a nonzero size, or a
+ *         `{NULL, >0}` view.
  * @note Lowercase, to match sha256sum and git. Decoding accepts either case.
  */
 [[nodiscard]]
@@ -95,13 +105,19 @@ proven_err_t proven_hex_decode(proven_mem_view_t text, proven_byte_t *out, prove
  * @note `4 * ceil(n / 3)`. The standard form pads to a multiple of 4 with `=`; the URL form
  *       (see the note on `proven_base64url_encode`) does not, so its size can be smaller — this
  *       returns the padded size, which is safe for both.
+ * @note Returns `PROVEN_SIZE_MAX` when that size cannot be represented in a `proven_size_t`.
+ *       A real padded Base64 output can never be that value - it is always a multiple of
+ *       four - so the sentinel is unambiguous, and it is not zero, which is the honest
+ *       answer for empty input. The encoders make the same judgement themselves and answer
+ *       `PROVEN_ERR_OVERFLOW`.
  */
 [[nodiscard]]
 proven_size_t proven_base64_encoded_size(proven_size_t n);
 
 /**
  * @brief The maximum number of bytes a Base64 `text` of `n` characters can decode to.
- * @note An upper bound over both the padded and the UNPADDED form: `((n + 3) / 4) * 3`. The
+ * @note An upper bound over both the padded and the UNPADDED form: `(n / 4) * 3`, plus 3 for
+ *       a tail that is not a whole group. The
  *       exact count depends on the padding and is reported by the decode. It has to round `n`
  *       up rather than down, or it would under-report the 1-2 bytes an unpadded tail carries -
  *       and a caller sizing a buffer by a floor would fail to decode this library's own
@@ -113,7 +129,8 @@ proven_size_t proven_base64_decoded_size(proven_size_t n);
 /**
  * @brief Encode `data` as standard Base64 (`+` `/`, `=`-padded) into `out`.
  * @param out at least `proven_base64_encoded_size(data.size)` bytes.
- * @return PROVEN_OK; OUT_OF_BOUNDS if `out` is too small; INVALID_ARG for a `{NULL, >0}` view.
+ * @return PROVEN_OK; OUT_OF_BOUNDS if `out` is too small; OVERFLOW if the output size cannot
+ *         be represented at all; INVALID_ARG for a `{NULL, >0}` view.
  */
 [[nodiscard]]
 proven_err_t proven_base64_encode(proven_mem_view_t data, proven_byte_t *out, proven_size_t out_cap,

@@ -20,8 +20,21 @@ static int hex_value(proven_byte_t c) {
     return -1;
 }
 
+/*
+ * The exact hex output size, or false when it does not fit in a proven_size_t.
+ *
+ * The public helper cannot return an error - it returns a size - so it answers
+ * PROVEN_SIZE_MAX for a size that cannot be represented. That is a value no valid hex
+ * output can have (hex output is always even, PROVEN_SIZE_MAX is odd), and it is not
+ * zero, which is the honest answer for empty input and would be read as "fits anywhere".
+ */
+static bool hex_exact_size(proven_size_t n, proven_size_t *out) {
+    return !PROVEN_CKD_MUL(out, n, (proven_size_t)2);
+}
+
 proven_size_t proven_hex_encoded_size(proven_size_t n) {
-    return n * 2;
+    proven_size_t need;
+    return hex_exact_size(n, &need) ? need : PROVEN_SIZE_MAX;
 }
 
 proven_size_t proven_hex_decoded_size(proven_size_t n) {
@@ -34,7 +47,11 @@ proven_err_t proven_hex_encode(proven_mem_view_t data, proven_byte_t *out, prove
     if (data.size > 0 && !data.ptr) return PROVEN_ERR_INVALID_ARG;
     if (out_cap > 0 && !out) return PROVEN_ERR_INVALID_ARG;
 
-    proven_size_t need = data.size * 2;
+    /* The size is computed and judged BEFORE any byte is read or written. A wrapped
+     * `need` is a small number: it passes this capacity check and the loop below then
+     * writes past what the caller reserved. */
+    proven_size_t need;
+    if (!hex_exact_size(data.size, &need)) return PROVEN_ERR_OVERFLOW;
     if (need > out_cap) return PROVEN_ERR_OUT_OF_BOUNDS;
 
     for (proven_size_t i = 0; i < data.size; ++i) {
@@ -85,8 +102,31 @@ static int b64_value(proven_byte_t c) {
     return -1;
 }
 
+/*
+ * The exact Base64 output size for `n` input bytes, or false when it does not fit.
+ *
+ * Four characters per whole three-byte group, then the tail: the padded form rounds the
+ * tail up to four with '=', the unpadded form emits only the significant characters.
+ * Written as (n / 3) * 4 plus the tail rather than ((n + 2) / 3) * 4, because the round-up
+ * addition is itself where the old form wrapped.
+ */
+static bool base64_exact_size(proven_size_t n, bool pad, proven_size_t *out) {
+    proven_size_t full = n / 3;
+    proven_size_t rem = n % 3;
+    proven_size_t need;
+    if (PROVEN_CKD_MUL(&need, full, (proven_size_t)4)) return false;
+    proven_size_t tail = 0;
+    if (rem == 1) tail = pad ? 4 : 2;
+    else if (rem == 2) tail = pad ? 4 : 3;
+    if (PROVEN_CKD_ADD(&need, need, tail)) return false;
+    *out = need;
+    return true;
+}
+
 proven_size_t proven_base64_encoded_size(proven_size_t n) {
-    return ((n + 2) / 3) * 4;
+    /* The padded size, which is a safe upper bound for the unpadded form too. */
+    proven_size_t need;
+    return base64_exact_size(n, true, &need) ? need : PROVEN_SIZE_MAX;
 }
 
 proven_size_t proven_base64_decoded_size(proven_size_t n) {
@@ -94,8 +134,14 @@ proven_size_t proven_base64_decoded_size(proven_size_t n) {
      * no padding, so a text of length n%4 == 2 or 3 carries 1 or 2 real bytes that the floor
      * form (n/4)*3 dropped - which made the library unable to decode its own base64url output
      * into a buffer the caller sized with this function. Rounding n up to the next multiple of
-     * 4 first covers both the padded and the unpadded tail. */
-    return ((n + 3) / 4) * 3;
+     * 4 first covers both the padded and the unpadded tail.
+     *
+     * Rounding n up first is what the old form did, and n + 3 wrapped at the top of the
+     * range. Counting whole groups and adding the tail separately reaches the same answer
+     * without ever exceeding size_t: the largest value this can return is
+     * (SIZE_MAX / 4) * 3 + 3, which fits. This bound therefore needs no overflow
+     * sentinel - unlike the encoded sizes. */
+    return (n / 4) * 3 + ((n % 4 != 0) ? 3 : 0);
 }
 
 static proven_err_t base64_encode_impl(proven_mem_view_t data, proven_byte_t *out,
@@ -105,18 +151,21 @@ static proven_err_t base64_encode_impl(proven_mem_view_t data, proven_byte_t *ou
     if (data.size > 0 && !data.ptr) return PROVEN_ERR_INVALID_ARG;
     if (out_cap > 0 && !out) return PROVEN_ERR_INVALID_ARG;
 
-    /* Exact output length: 4 chars per full 3-byte group, then the tail. The padded form rounds
-     * the tail up to 4 with '='; the unpadded form emits only the significant characters. */
+    /* Exact output length, computed with checked arithmetic and judged before a single byte
+     * is read or written. An unrepresentable size is refused outright, and that is a
+     * different answer from "the buffer is too small": collapsing the two would let a
+     * wrapped size be mistaken for a size that fits. */
     proven_size_t full = data.size / 3;
     proven_size_t rem = data.size % 3;   /* 0, 1, or 2 */
-    proven_size_t need = full * 4;
-    if (rem == 1) need += pad ? 4 : 2;
-    else if (rem == 2) need += pad ? 4 : 3;
+    proven_size_t need;
+    if (!base64_exact_size(data.size, pad, &need)) return PROVEN_ERR_OVERFLOW;
     if (need > out_cap) return PROVEN_ERR_OUT_OF_BOUNDS;
 
     proven_size_t o = 0;
     proven_size_t i = 0;
-    for (; i + 3 <= data.size; i += 3) {
+    /* Counted by whole groups. The old guard was `i + 3 <= data.size`, and that addition
+     * is itself capable of wrapping at the top of the range. */
+    for (proven_size_t g = 0; g < full; ++g, i += 3) {
         proven_u32 v = ((proven_u32)data.ptr[i] << 16) | ((proven_u32)data.ptr[i + 1] << 8) | data.ptr[i + 2];
         out[o++] = (proven_byte_t)alphabet[(v >> 18) & 0x3F];
         out[o++] = (proven_byte_t)alphabet[(v >> 12) & 0x3F];
