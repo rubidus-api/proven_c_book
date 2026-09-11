@@ -4,6 +4,8 @@
 
 #include <windows.h>
 #include <bcrypt.h>
+#include <limits.h>
+#include "proven_sys_random_chunk.h"
 #if defined(_MSC_VER)
 /* MSVC links the import library from the source. GCC-family Windows toolchains
  * (mingw-w64) do not understand this pragma and reject it under
@@ -14,11 +16,36 @@
 bool proven_sys_random_bytes(void *buf, size_t len) {
     if (len == 0) return true;
     if (!buf) return false;
-    /* The modern, DLL-free Windows CSPRNG. BCRYPT_USE_SYSTEM_PREFERRED_RNG means no
-     * algorithm handle to open or close. */
-    NTSTATUS s = BCryptGenRandom(NULL, (PUCHAR)buf, (ULONG)len,
-                                 BCRYPT_USE_SYSTEM_PREFERRED_RNG);
-    return s == 0; /* STATUS_SUCCESS */
+
+    /*
+     * The modern, DLL-free Windows CSPRNG. BCRYPT_USE_SYSTEM_PREFERRED_RNG means no
+     * algorithm handle to open or close.
+     *
+     * Asked for in chunks of at most ULONG_MAX, because that is the type of the length
+     * argument. This used to be one cast of the whole size_t to ULONG: on 64-bit Windows a
+     * length above ULONG_MAX narrowed silently, only the low 32 bits were requested - a
+     * length of exactly 2^32 requested ZERO bytes - and the success of that short request
+     * was returned as success for the whole buffer. The caller then read bytes it had
+     * never written as fresh entropy. Ordinary seeding never asks for enough to reach it,
+     * which is exactly why it could sit here unnoticed.
+     *
+     * A failed chunk fails the whole call. There is no fallback to a PRNG: an entropy call
+     * that quietly substitutes something weaker is worse than one that says no. Failure may
+     * leave a filled prefix - the boolean API has nowhere to report how much - so a caller
+     * must discard the entire buffer, not keep what looks filled.
+     */
+    unsigned char *p = (unsigned char *)buf;
+    size_t remaining = len;
+    while (remaining > 0) {
+        size_t chunk = proven_sys_random_chunk(remaining, (size_t)ULONG_MAX);
+        NTSTATUS s = BCryptGenRandom(NULL, (PUCHAR)p, (ULONG)chunk,
+                                     BCRYPT_USE_SYSTEM_PREFERRED_RNG);
+        if (s != 0) return false; /* not STATUS_SUCCESS */
+        /* Advanced only after the OS said it filled them. */
+        p += chunk;
+        remaining -= chunk;
+    }
+    return true;
 }
 
 #else

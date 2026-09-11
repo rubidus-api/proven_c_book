@@ -70,6 +70,13 @@ typedef struct {
  */
 [[nodiscard]]
 proven_result_file_t proven_fs_open(proven_allocator_t scratch, proven_u8str_view_t path, proven_fs_mode_t mode);
+/*
+ * @note A failure says WHICH failure: PROVEN_ERR_NOT_FOUND when the name is not there,
+ *       PROVEN_ERR_PERMISSION when the caller may not, PROVEN_ERR_BUSY when something else
+ *       holds it. Everything else, including an exclusive-create collision, is
+ *       PROVEN_ERR_IO. These used to be one code, and one code is one a caller cannot act
+ *       on: asking the user, retrying, and giving up are three different answers.
+ */
 
 /**
  * @brief Closes an open file handle, and tells you whether the OS was happy about it.
@@ -576,6 +583,54 @@ proven_result_u8str_t proven_fs_read_all_u8str(proven_allocator_t alloc, proven_
  *       when a concurrent reader must never see a half-written file.
  */
 [[nodiscard]]
+
+/*
+ * ONE RULE FOR ALL THREE WHOLE-FILE REPLACEMENTS
+ * ----------------------------------------------
+ * proven_fs_write_file, proven_fs_write_file_atomic, proven_fs_write_file_durable and
+ * proven_fs_copy all REFUSE a destination whose owner-write bit is clear, with
+ * PROVEN_ERR_PERMISSION, and leave it exactly as it was.
+ *
+ * That bit is the only place either platform records "do not write this file": mode 0200
+ * on POSIX, the READONLY attribute on Windows, reported through the same bit.
+ *
+ * It is a rule because it used to be three answers to one question, on ONE platform:
+ * write_file refused (it opens the destination for writing), write_file_atomic succeeded
+ * (rename asks the DIRECTORY for permission, so the mark was never consulted), and copy
+ * succeeded AND left the file writable afterwards, because it carried the source's mode
+ * across - a protection the user set, gone, with nothing saying so. Which of the three a
+ * caller happened to reach for is not a decision about permissions.
+ *
+ * A caller who means it lifts the mark and calls again; that is one line, and it is
+ * visible. The refusal is deliberately the recoverable direction: replacing a protected
+ * file by accident is not.
+ *
+ * proven_fs_rename obeys it too, and has to: it REPLACES the destination, and it is what
+ * the atomic write is built on - so without it a caller refused by one function got the
+ * same result from the other, and the rule was one line of caller code from being void.
+ *
+ * proven_fs_remove is deliberately NOT covered. Deleting a name is a directory operation
+ * and POSIX has never let the file's own mode have a say in it; refusing there would break
+ * ordinary cleanup of read-only files for a rule about writing. The platforms do differ -
+ * Windows will not delete a read-only file - so remove reports that difference as
+ * PROVEN_ERR_PERMISSION rather than hiding it behind an I/O error.
+ *
+ * A destination another process holds open is PROVEN_ERR_BUSY, not PROVEN_ERR_PERMISSION -
+ * it is in use, not protected, and may work on the next try.
+ *
+ * A reader that allowed delete sharing (as proven_fs_open does) does NOT block it: the
+ * file is replaced and the reader keeps the old bytes, on POSIX and on Windows 10 1809 or
+ * later (the POSIX-semantics rename). Where that rename is unsupported - older Windows,
+ * FAT/exFAT and many network volumes - the library falls back to MoveFileExW, which refuses
+ * while ANY handle is open; that refusal is PROVEN_ERR_BUSY. Windows reports "busy" and
+ * "protected" alike as "access denied" there, so the library asks the file which it was:
+ * a best reading of the moment after the refusal.
+ *
+ * What this is NOT: a security boundary. The mode is read before the work and acted on
+ * after it, so a mode that changes in between is not caught, and anyone who can chmod the
+ * file can lift the mark. It is a guard against destroying protected data by accident,
+ * and it is only that.
+ */
 proven_err_t proven_fs_write_file(proven_allocator_t scratch, proven_u8str_view_t path, proven_mem_view_t data);
 
 /**

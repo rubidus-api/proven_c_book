@@ -25,9 +25,44 @@ typedef enum {
     PROVEN_SYS_FS_APPEND = 1 << 2,
     PROVEN_SYS_FS_CREATE = 1 << 3,
     PROVEN_SYS_FS_TRUNC  = 1 << 4,
-    PROVEN_SYS_FS_CREATE_NEW = 1 << 5
+    PROVEN_SYS_FS_CREATE_NEW = 1 << 5,
+    /**
+     * Create the file owner-only (POSIX mode 0600) instead of the default 0666 & ~umask.
+     *
+     * Only meaningful together with CREATE or CREATE_NEW, and only for a file this call
+     * actually creates: an existing file keeps the mode it already has. It exists because
+     * narrowing permissions after creation does not close the window - a descriptor another
+     * user opened during it stays open and stays readable. The mode has to be on the
+     * creating syscall itself.
+     *
+     * On Windows this is currently a no-op: confidentiality there is an ACL question, and
+     * the default DACL is inherited from the parent directory. Do not read a POSIX
+     * guarantee into the Windows branch.
+     */
+    PROVEN_SYS_FS_PRIVATE = 1 << 6
 } proven_sys_fs_mode_t;
 
+/** @brief Why an open did not happen. The three a caller can actually act on, and everything else. */
+typedef enum {
+    PROVEN_SYS_FS_OPEN_OK = 0,
+    PROVEN_SYS_FS_OPEN_NOT_FOUND,  /**< the name is not there */
+    PROVEN_SYS_FS_OPEN_DENIED,     /**< permission refused it */
+    PROVEN_SYS_FS_OPEN_BUSY,       /**< something else holds it right now */
+    PROVEN_SYS_FS_OPEN_ERROR       /**< anything else, including an exclusive-create collision */
+} proven_sys_fs_open_result_t;
+
+/**
+ * @brief Open, saying WHY when it fails.
+ *
+ * "Not there", "you may not", and "not right now" are three different problems with three
+ * different answers, and a caller told only that something went wrong can act on none of
+ * them. `out_reason` may be NULL.
+ */
+[[nodiscard]]
+proven_sys_file_handle_t proven_sys_fs_open_checked(const char *path, int flags,
+                                                    proven_sys_fs_open_result_t *out_reason);
+
+/** @brief Convenience wrapper over proven_sys_fs_open_checked; it cannot say why. */
 [[nodiscard]]
 proven_sys_file_handle_t proven_sys_fs_open(const char *path, int flags);
 
@@ -50,9 +85,58 @@ proven_sys_result_size_t proven_sys_fs_write(proven_sys_file_handle_t handle, co
 [[nodiscard]]
 proven_sys_result_size_t proven_sys_fs_size(proven_sys_file_handle_t handle);
 
+/** @brief Why a rename did not happen. "No" has more than one meaning and callers need them apart. */
+typedef enum {
+    PROVEN_SYS_FS_RENAME_OK = 0,
+    PROVEN_SYS_FS_RENAME_DENIED,   /**< permission refused it: the target is protected */
+    PROVEN_SYS_FS_RENAME_BUSY,     /**< something else holds it open right now */
+    PROVEN_SYS_FS_RENAME_ERROR     /**< anything else */
+} proven_sys_fs_rename_result_t;
+
+/**
+ * @brief Rename, saying WHY when it fails.
+ *
+ * A single boolean collapses "you may not" and "not right now" and "the disk is broken"
+ * into one answer, and a caller can act on all three differently: ask the user, retry,
+ * give up. The two the platforms actually produce here are a protected destination
+ * (a read-only file on Windows, a directory without write permission on POSIX) and a
+ * destination another process is holding open.
+ */
+[[nodiscard]]
+proven_sys_fs_rename_result_t proven_sys_fs_rename_checked(const char *src, const char *dest);
+
+/**
+ * @brief Rename `src` to `dest`, REPLACING `dest` if it already exists.
+ *
+ * Replacement is required, not incidental: the whole-file atomic writes rename a staging
+ * file over their target, and a rename that refuses an existing destination makes the
+ * second write to any name fail.
+ *
+ * Same volume only. On Windows this is MoveFileExW with MOVEFILE_REPLACE_EXISTING and
+ * without MOVEFILE_COPY_ALLOWED, so a cross-volume move fails rather than silently
+ * degrading into a copy-and-delete that is not atomic. The destination is never deleted
+ * first: that would open an interval in which the name does not exist.
+ *
+ * Not established by any test result here: the behaviour against a read-only destination,
+ * ACL and metadata handling, sharing modes, and symlinks. Those are native Windows
+ * questions and this workstation has never run a Windows binary.
+ */
 [[nodiscard]]
 bool proven_sys_fs_rename(const char *src, const char *dest);
+/* ^ convenience wrapper over proven_sys_fs_rename_checked; it cannot say why. */
 
+/**
+ * @brief Remove a name, saying WHY when it fails.
+ *
+ * Deleting is a DIRECTORY operation, and the two platforms disagree about whether the
+ * file's own mode has a say: POSIX unlink never consulted it, Windows DeleteFile refuses a
+ * read-only file outright. The library does not paper over that - it reports it, so a
+ * caller sees PROVEN_ERR_PERMISSION rather than a bare I/O error and can clear the mark.
+ */
+[[nodiscard]]
+proven_sys_fs_open_result_t proven_sys_fs_remove_checked(const char *path);
+
+/** @brief Convenience wrapper over proven_sys_fs_remove_checked; it cannot say why. */
 [[nodiscard]]
 bool proven_sys_fs_remove(const char *path);
 
@@ -134,6 +218,19 @@ bool proven_sys_fs_dir_next(proven_sys_dir_handle_t handle, proven_sys_dir_entry
 [[nodiscard]]
 bool proven_sys_fs_chmod(const char *path, unsigned int perms);
 
+/**
+ * @brief Set permissions through an OPEN HANDLE rather than by pathname.
+ *
+ * The pathname form has to resolve the name again, and between the creation and that
+ * second resolution the name can come to mean a different file. The handle cannot: it
+ * refers to the object that was opened and to nothing else.
+ *
+ * On Windows this maps the owner-write bit onto the read-only attribute, exactly as the
+ * pathname form does. Returns false if the OS reported an error.
+ */
+[[nodiscard]]
+bool proven_sys_fs_fchmod(proven_sys_file_handle_t handle, unsigned int perms);
+
 [[nodiscard]]
 bool proven_sys_fs_lock(proven_sys_file_handle_t handle, int type, bool wait);
 
@@ -149,6 +246,25 @@ typedef struct {
     unsigned long long gid;   /* group id (POSIX st_gid; 0 on Windows) */
 } proven_sys_fs_stat_t;
 
+/** @brief What a metadata lookup found: the file, nothing, or an error that is not "nothing". */
+typedef enum {
+    PROVEN_SYS_FS_STAT_OK = 0,
+    PROVEN_SYS_FS_STAT_NOT_FOUND,   /**< the name does not exist (ENOENT/ENOTDIR) */
+    PROVEN_SYS_FS_STAT_ERROR        /**< the lookup itself failed: permission, I/O, a bad handle */
+} proven_sys_fs_stat_result_t;
+
+/**
+ * @brief Metadata lookup that distinguishes "no such file" from "could not tell".
+ *
+ * A boolean answer collapses the two, and a caller that is about to write private bytes
+ * needs them apart: a missing target means there is no mode to carry across, while a
+ * failed lookup means the caller does not know what it is about to overwrite and must
+ * not guess.
+ */
+[[nodiscard]]
+proven_sys_fs_stat_result_t proven_sys_fs_stat_checked(const char *path, proven_sys_fs_stat_t *out_stat);
+
+/** @brief Convenience wrapper: metadata was retrieved. Cannot tell missing from failed. */
 [[nodiscard]]
 bool proven_sys_fs_stat(const char *path, proven_sys_fs_stat_t *out_stat);
 

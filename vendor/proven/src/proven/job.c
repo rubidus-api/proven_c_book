@@ -1,6 +1,7 @@
 #include "proven/job.h"
 #include "proven/memory.h"
 #include "proven/panic.h"
+#include "proven_internal_jobseq.h"
 #include "../../platform/proven_sys_thread.h"
 #include <stdatomic.h>
 
@@ -79,13 +80,13 @@ bool proven_job_execute_one(proven_job_sys_t *sys) {
     for (;;) {
         cell = &sys->queue.buffer[pos & sys->queue.buffer_mask];
         proven_size_t seq = atomic_load_explicit(&cell->sequence, memory_order_acquire);
-        proven_ptrdiff_t dif = (proven_ptrdiff_t)seq - (proven_ptrdiff_t)(pos + 1);
+        proven_job_cell_state_t state = proven_job_cell_state(seq, pos + 1);
         
-        if (dif == 0) {
+        if (state == PROVEN_JOB_CELL_READY) {
             if (atomic_compare_exchange_weak_explicit(&sys->queue.dequeue_pos, &pos, pos + 1, memory_order_relaxed, memory_order_relaxed)) {
                 break;
             }
-        } else if (dif < 0) {
+        } else if (state == PROVEN_JOB_CELL_BEHIND) {
             return false; // Queue is entirely empty
         } else {
             pos = atomic_load_explicit(&sys->queue.dequeue_pos, memory_order_relaxed);
@@ -174,6 +175,15 @@ proven_err_t proven_job_system_init(proven_allocator_t alloc, proven_size_t num_
     if (max_queue_capacity < 2 || (max_queue_capacity & (max_queue_capacity - 1)) != 0 || num_workers == 0) {
         return PROVEN_ERR_INVALID_ARG;
     }
+
+    /* The queue compares positions by modular distance, and that only tells ahead from
+     * behind while a live distance stays strictly inside half the counter range. A capacity
+     * at or past that limit cannot be allocated on any machine, but it must be refused HERE,
+     * before anything is allocated, rather than left to be a comparison that quietly means
+     * the opposite of what it says. */
+    if (max_queue_capacity > PROVEN_JOB_MAX_CAPACITY) {
+        return PROVEN_ERR_INVALID_ARG;
+    }
     
     if (!proven_alloc_is_valid(alloc)) return PROVEN_ERR_INVALID_ARG;
     
@@ -259,13 +269,13 @@ bool proven_job_submit(proven_job_sys_t *sys, void (*routine)(void*), void* arg)
     for (;;) {
         cell = &sys->queue.buffer[pos & sys->queue.buffer_mask];
         proven_size_t seq = atomic_load_explicit(&cell->sequence, memory_order_acquire);
-        proven_ptrdiff_t dif = (proven_ptrdiff_t)seq - (proven_ptrdiff_t)pos;
+        proven_job_cell_state_t state = proven_job_cell_state(seq, pos);
         
-        if (dif == 0) {
+        if (state == PROVEN_JOB_CELL_READY) {
             if (atomic_compare_exchange_weak_explicit(&sys->queue.enqueue_pos, &pos, pos + 1, memory_order_relaxed, memory_order_relaxed)) {
                 break; // Claimed successfully
             }
-        } else if (dif < 0) {
+        } else if (state == PROVEN_JOB_CELL_BEHIND) {
             proven_job_end_submit(sys);
             return false; // Queue is entirely full
         } else {

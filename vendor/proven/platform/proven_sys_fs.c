@@ -13,6 +13,7 @@
 #if defined(_WIN32) || defined(_WIN64)
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <string.h>
 #include <direct.h>
 #include <io.h>
 #else
@@ -81,8 +82,11 @@ static wchar_t *utf8_to_wide_alloc(const char *src) {
 }
 #endif
 
-proven_sys_file_handle_t proven_sys_fs_open(const char *path, int flags) {
+proven_sys_file_handle_t proven_sys_fs_open_checked(const char *path, int flags,
+                                                    proven_sys_fs_open_result_t *out_reason) {
+    proven_sys_fs_open_result_t reason = PROVEN_SYS_FS_OPEN_OK;
     if (!path) {
+        if (out_reason) *out_reason = PROVEN_SYS_FS_OPEN_ERROR;
 #if defined(_WIN32) || defined(_WIN64)
         return (proven_sys_file_handle_t){ .handle = NULL };
 #else
@@ -116,9 +120,25 @@ proven_sys_file_handle_t proven_sys_fs_open(const char *path, int flags) {
     DWORD share = FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE;
 
     HANDLE h = CreateFileW(wpath, access, share, NULL, disposition, FILE_ATTRIBUTE_NORMAL, NULL);
+    /* Read the error BEFORE the free: HeapFree can overwrite the thread's last-error value. */
+    DWORD open_error = (h == INVALID_HANDLE_VALUE) ? GetLastError() : 0;
     HeapFree(GetProcessHeap(), 0, wpath);
-    if (h == INVALID_HANDLE_VALUE) return (proven_sys_file_handle_t){ .handle = NULL };
-    
+    if (h == INVALID_HANDLE_VALUE) {
+        if (open_error == ERROR_FILE_NOT_FOUND || open_error == ERROR_PATH_NOT_FOUND) {
+            reason = PROVEN_SYS_FS_OPEN_NOT_FOUND;
+        } else if (open_error == ERROR_ACCESS_DENIED) {
+            reason = PROVEN_SYS_FS_OPEN_DENIED;
+        } else if (open_error == ERROR_SHARING_VIOLATION || open_error == ERROR_LOCK_VIOLATION) {
+            reason = PROVEN_SYS_FS_OPEN_BUSY;
+        } else {
+            reason = PROVEN_SYS_FS_OPEN_ERROR;
+        }
+        if (out_reason) *out_reason = reason;
+        SetLastError(open_error);
+        return (proven_sys_file_handle_t){ .handle = NULL };
+    }
+
+    if (out_reason) *out_reason = PROVEN_SYS_FS_OPEN_OK;
     return (proven_sys_file_handle_t){ .handle = (void*)h };
 #else
     int o_flags = 0;
@@ -138,10 +158,26 @@ proven_sys_file_handle_t proven_sys_fs_open(const char *path, int flags) {
     
     if (flags & PROVEN_SYS_FS_TRUNC)  o_flags |= O_TRUNC;
     
-    int fd = open(path, o_flags, 0666);
-    if (fd < 0) return (proven_sys_file_handle_t){ .fd = -1 };
+    /* The mode argument only matters when this call CREATES the file. PRIVATE means the
+     * file is owner-only from its first instant - not created wide and narrowed after,
+     * which leaves a window a descriptor can be opened in and never closes again. */
+    const int create_mode = (flags & PROVEN_SYS_FS_PRIVATE) ? 0600 : 0666;
+    int fd = open(path, o_flags, create_mode);
+    if (fd < 0) {
+        if (errno == ENOENT || errno == ENOTDIR) reason = PROVEN_SYS_FS_OPEN_NOT_FOUND;
+        else if (errno == EACCES || errno == EPERM || errno == EROFS) reason = PROVEN_SYS_FS_OPEN_DENIED;
+        else if (errno == EBUSY || errno == ETXTBSY) reason = PROVEN_SYS_FS_OPEN_BUSY;
+        else reason = PROVEN_SYS_FS_OPEN_ERROR;   /* EEXIST from an exclusive create lands here */
+        if (out_reason) *out_reason = reason;
+        return (proven_sys_file_handle_t){ .fd = -1 };
+    }
+    if (out_reason) *out_reason = PROVEN_SYS_FS_OPEN_OK;
     return (proven_sys_file_handle_t){ .fd = fd };
 #endif
+}
+
+proven_sys_file_handle_t proven_sys_fs_open(const char *path, int flags) {
+    return proven_sys_fs_open_checked(path, flags, NULL);
 }
 
 bool proven_sys_fs_close(proven_sys_file_handle_t handle) {
@@ -253,34 +289,198 @@ proven_sys_result_size_t proven_sys_fs_size(proven_sys_file_handle_t handle) {
 #endif
 }
 
-bool proven_sys_fs_rename(const char *src, const char *dest) {
+#if defined(_WIN32) || defined(_WIN64)
+/*
+ * MoveFileExW answers ERROR_ACCESS_DENIED to every refusal of a replacement - measured on
+ * Windows 11 (2026-09-11): a read-only destination, AND a destination another process holds
+ * open with any sharing mode, FILE_SHARE_DELETE included. It never reported a sharing
+ * violation. So its error cannot tell "protected" from "busy", and mapping it straight to
+ * DENIED told a caller to give up on a file that was merely in use.
+ *
+ * This asks the destination itself, after the fact. It is a HEURISTIC - the state can
+ * change between the failed rename and this probe - but each answer is what the file
+ * says now:
+ *   - READONLY attribute set                   -> DENIED (the user protected it)
+ *   - opening it for DELETE hits a sharing
+ *     violation                                -> BUSY   (someone holds it without DELETE sharing)
+ *   - that open is itself ACCESS_DENIED        -> DENIED (an ACL, not a holder)
+ *   - that open succeeds                       -> BUSY   (deletable yet not replaceable: a holder
+ *                                                          that allowed DELETE sharing - measured)
+ *   - anything else (gone, path trouble)       -> DENIED (the original answer, unrefined)
+ * ACL-denied cases were not reproduced on the test machine: a deny-DELETE entry on the file
+ * alone did not stop the replacement there (the directory's delete-child right won).
+ */
+/*
+ * FILE_RENAME_INFO with the Flags member (the header calls the class FileRenameInfoEx).
+ * Declared here because older mingw headers carry neither the class nor the flags.
+ */
+typedef struct {
+    DWORD flags;
+    HANDLE root_directory;
+    DWORD file_name_length;
+    WCHAR file_name[1];
+} proven_rename_info_ex_t;
+#define PROVEN_FILE_RENAME_INFO_EX_CLASS     22
+#define PROVEN_FILE_RENAME_REPLACE_IF_EXISTS 0x1u
+#define PROVEN_FILE_RENAME_POSIX_SEMANTICS   0x2u
+
+/* 0 on success, else the Windows error. Renames through a handle on the SOURCE. */
+static DWORD posix_rename_w(const wchar_t *wsrc, const wchar_t *wdest) {
+#if defined(PROVEN_WIN_RENAME_LEGACY_ONLY)
+    /* Test build: behave as Windows before 1809 does, so the fallback path gets run. */
+    (void)wsrc; (void)wdest;
+    return ERROR_INVALID_PARAMETER;
+#else
+    size_t name_bytes = wcslen(wdest) * sizeof(WCHAR);
+    if (name_bytes > (DWORD)-1 - sizeof(proven_rename_info_ex_t)) return ERROR_FILENAME_EXCED_RANGE;
+    DWORD info_size = (DWORD)(sizeof(proven_rename_info_ex_t) + name_bytes);
+    proven_rename_info_ex_t *info = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, info_size);
+    if (!info) return ERROR_NOT_ENOUGH_MEMORY;
+    info->flags = PROVEN_FILE_RENAME_REPLACE_IF_EXISTS | PROVEN_FILE_RENAME_POSIX_SEMANTICS;
+    info->root_directory = NULL;
+    info->file_name_length = (DWORD)name_bytes;
+    memcpy(info->file_name, wdest, name_bytes);
+
+    DWORD e = 0;
+    HANDLE h = CreateFileW(wsrc, DELETE | SYNCHRONIZE,
+                           FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                           NULL, OPEN_EXISTING, FILE_FLAG_OPEN_REPARSE_POINT, NULL);
+    if (h == INVALID_HANDLE_VALUE) {
+        e = GetLastError();
+    } else {
+        if (!SetFileInformationByHandle(h, (FILE_INFO_BY_HANDLE_CLASS)PROVEN_FILE_RENAME_INFO_EX_CLASS,
+                                        info, info_size)) {
+            e = GetLastError();
+        }
+        CloseHandle(h);
+    }
+    HeapFree(GetProcessHeap(), 0, info);
+    return e;
+#endif
+}
+
+/* The answers that mean "this Windows or this volume does not know the POSIX rename" -
+ * the ones, and the only ones, after which MoveFileExW is tried. */
+static bool posix_rename_unsupported(DWORD e) {
+    return e == ERROR_INVALID_PARAMETER || e == ERROR_INVALID_FUNCTION ||
+           e == ERROR_NOT_SUPPORTED || e == ERROR_CALL_NOT_IMPLEMENTED ||
+           e == ERROR_INVALID_LEVEL;
+}
+
+static proven_sys_fs_rename_result_t rename_denied_reason(const wchar_t *wdest) {
+    DWORD attrs = GetFileAttributesW(wdest);
+    if (attrs != INVALID_FILE_ATTRIBUTES && (attrs & FILE_ATTRIBUTE_READONLY)) {
+        return PROVEN_SYS_FS_RENAME_DENIED;
+    }
+    HANDLE probe = CreateFileW(wdest, DELETE,
+                               FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                               NULL, OPEN_EXISTING, 0, NULL);
+    if (probe != INVALID_HANDLE_VALUE) {
+        CloseHandle(probe);
+        return PROVEN_SYS_FS_RENAME_BUSY;
+    }
+    DWORD e = GetLastError();
+    if (e == ERROR_SHARING_VIOLATION || e == ERROR_LOCK_VIOLATION) return PROVEN_SYS_FS_RENAME_BUSY;
+    return PROVEN_SYS_FS_RENAME_DENIED;
+}
+#endif
+
+proven_sys_fs_rename_result_t proven_sys_fs_rename_checked(const char *src, const char *dest) {
 #if defined(_WIN32) || defined(_WIN64)
     wchar_t *wsrc = utf8_to_wide_alloc(src);
     wchar_t *wdest = utf8_to_wide_alloc(dest);
     if (!wsrc || !wdest) {
         if (wsrc) HeapFree(GetProcessHeap(), 0, wsrc);
         if (wdest) HeapFree(GetProcessHeap(), 0, wdest);
-        return false;
+        /* Not `false`: that is 0, and 0 is RENAME_OK - a failed conversion reported success. */
+        return PROVEN_SYS_FS_RENAME_ERROR;
     }
-    bool success = MoveFileW(wsrc, wdest) != 0;
+    /*
+     * MOVEFILE_REPLACE_EXISTING, because MoveFileW fails outright when the destination
+     * exists - and both whole-file atomic writes rename over their target, so on Windows
+     * the FIRST write to a name succeeded and every write after it failed.
+     *
+     * Deliberately NOT fixed by deleting the destination first: that opens an interval
+     * where the name does not exist at all, which is the one thing an atomic replacement
+     * exists to prevent, and it destroys the old file if the rename then fails.
+     *
+     * Deliberately WITHOUT MOVEFILE_COPY_ALLOWED: that flag lets Windows fall back to a
+     * copy-and-delete across volumes, which is not atomic and not what a caller asking for
+     * an atomic replacement is asking for. Same-volume semantics stay, and a cross-volume
+     * move keeps failing rather than silently becoming something weaker.
+     *
+     * The Windows error is preserved for diagnosis: HeapFree can overwrite the thread's
+     * last-error value, so it is saved before the frees and restored after them.
+     */
+    /*
+     * First the POSIX-semantics rename (Windows 10 1809+): it replaces a destination that a
+     * reader holds open with delete sharing - as proven_fs_open does - and the reader keeps
+     * the old bytes, which is what POSIX rename does. MoveFileExW refuses that case outright
+     * (measured on Windows 11, 2026-09-11), so without this an atomic write failed whenever
+     * anyone had the file open. Owner's decision: RFC-0006 Decision 2, option (b).
+     *
+     * Older Windows, and file systems that lack the semantics (FAT, exFAT, many network
+     * shares), answer "unsupported" to it - and only then is MoveFileExW tried. Any other
+     * answer is the real one and is not retried with a weaker primitive.
+     */
+    DWORD saved_error = posix_rename_w(wsrc, wdest);
+    if (posix_rename_unsupported(saved_error)) {
+        saved_error = MoveFileExW(wsrc, wdest, MOVEFILE_REPLACE_EXISTING) ? 0 : GetLastError();
+    }
+    proven_sys_fs_rename_result_t result = PROVEN_SYS_FS_RENAME_OK;
+    if (saved_error == ERROR_SHARING_VIOLATION || saved_error == ERROR_LOCK_VIOLATION) {
+        /* The POSIX rename says this plainly when the holder did not allow delete sharing. */
+        result = PROVEN_SYS_FS_RENAME_BUSY;
+    } else if (saved_error == ERROR_ACCESS_DENIED) {
+        /* MoveFileExW says ACCESS_DENIED for "in use" too; the POSIX rename says it for a
+         * read-only target. Asking the file settles both. */
+        result = rename_denied_reason(wdest);
+    } else if (saved_error != 0) {
+        result = PROVEN_SYS_FS_RENAME_ERROR;
+    }
     HeapFree(GetProcessHeap(), 0, wsrc);
     HeapFree(GetProcessHeap(), 0, wdest);
-    return success;
+    if (saved_error != 0) SetLastError(saved_error);
+    return result;
 #else
-    return rename(src, dest) == 0;
+    if (rename(src, dest) == 0) return PROVEN_SYS_FS_RENAME_OK;
+    /* POSIX refuses on the DIRECTORY's permissions, not the file's - replacing a
+     * read-only file is ordinary here and does not reach this branch at all. */
+    if (errno == EACCES || errno == EPERM || errno == EROFS) return PROVEN_SYS_FS_RENAME_DENIED;
+    if (errno == EBUSY || errno == ETXTBSY) return PROVEN_SYS_FS_RENAME_BUSY;
+    return PROVEN_SYS_FS_RENAME_ERROR;
+#endif
+}
+
+bool proven_sys_fs_rename(const char *src, const char *dest) {
+    return proven_sys_fs_rename_checked(src, dest) == PROVEN_SYS_FS_RENAME_OK;
+}
+
+proven_sys_fs_open_result_t proven_sys_fs_remove_checked(const char *path) {
+#if defined(_WIN32) || defined(_WIN64)
+    wchar_t *wpath = utf8_to_wide_alloc(path);
+    if (!wpath) return PROVEN_SYS_FS_OPEN_ERROR;
+    bool success = DeleteFileW(wpath) != 0;
+    DWORD e = success ? 0 : GetLastError();   /* before the free: HeapFree clobbers it */
+    HeapFree(GetProcessHeap(), 0, wpath);
+    if (success) return PROVEN_SYS_FS_OPEN_OK;
+    SetLastError(e);
+    /* A read-only file is ACCESS_DENIED here, and that is the case POSIX does not have. */
+    if (e == ERROR_ACCESS_DENIED) return PROVEN_SYS_FS_OPEN_DENIED;
+    if (e == ERROR_FILE_NOT_FOUND || e == ERROR_PATH_NOT_FOUND) return PROVEN_SYS_FS_OPEN_NOT_FOUND;
+    if (e == ERROR_SHARING_VIOLATION || e == ERROR_LOCK_VIOLATION) return PROVEN_SYS_FS_OPEN_BUSY;
+    return PROVEN_SYS_FS_OPEN_ERROR;
+#else
+    if (remove(path) == 0) return PROVEN_SYS_FS_OPEN_OK;
+    if (errno == ENOENT || errno == ENOTDIR) return PROVEN_SYS_FS_OPEN_NOT_FOUND;
+    if (errno == EACCES || errno == EPERM || errno == EROFS) return PROVEN_SYS_FS_OPEN_DENIED;
+    if (errno == EBUSY || errno == ETXTBSY) return PROVEN_SYS_FS_OPEN_BUSY;
+    return PROVEN_SYS_FS_OPEN_ERROR;
 #endif
 }
 
 bool proven_sys_fs_remove(const char *path) {
-#if defined(_WIN32) || defined(_WIN64)
-    wchar_t *wpath = utf8_to_wide_alloc(path);
-    if (!wpath) return false;
-    bool success = DeleteFileW(wpath) != 0;
-    HeapFree(GetProcessHeap(), 0, wpath);
-    return success;
-#else
-    return remove(path) == 0;
-#endif
+    return proven_sys_fs_remove_checked(path) == PROVEN_SYS_FS_OPEN_OK;
 }
 
 bool proven_sys_fs_mkdir(const char *path) {
@@ -537,6 +737,26 @@ bool proven_sys_fs_chmod(const char *path, unsigned int perms) {
 #endif
 }
 
+bool proven_sys_fs_fchmod(proven_sys_file_handle_t handle, unsigned int perms) {
+#if defined(_WIN32) || defined(_WIN64)
+    if (!handle.handle) return false;
+    HANDLE h = (HANDLE)handle.handle;
+    FILE_BASIC_INFO info;
+    if (!GetFileInformationByHandleEx(h, FileBasicInfo, &info, sizeof info)) return false;
+
+    /* Same mapping as the pathname form: the owner-write bit is the only one Windows
+     * has anywhere to put. This is not an ACL and does not pretend to be one. */
+    if (!(perms & 0200u)) info.FileAttributes |= FILE_ATTRIBUTE_READONLY;
+    else info.FileAttributes &= (DWORD)~((DWORD)FILE_ATTRIBUTE_READONLY);
+    if (info.FileAttributes == 0) info.FileAttributes = FILE_ATTRIBUTE_NORMAL;
+
+    return SetFileInformationByHandle(h, FileBasicInfo, &info, sizeof info) != 0;
+#else
+    if (handle.fd < 0) return false;
+    return fchmod(handle.fd, (mode_t)perms) == 0;
+#endif
+}
+
 bool proven_sys_fs_lock(proven_sys_file_handle_t handle, int type, bool wait) {
 #if defined(_WIN32) || defined(_WIN64)
     if (!handle.handle) return false;
@@ -562,23 +782,33 @@ bool proven_sys_fs_lock(proven_sys_file_handle_t handle, int type, bool wait) {
 #endif
 }
 
-bool proven_sys_fs_stat(const char *path, proven_sys_fs_stat_t *out_stat) {
-    if (!path || !out_stat) return false;
+proven_sys_fs_stat_result_t proven_sys_fs_stat_checked(const char *path, proven_sys_fs_stat_t *out_stat) {
+    if (!path || !out_stat) return PROVEN_SYS_FS_STAT_ERROR;
 #if defined(_WIN32) || defined(_WIN64)
     wchar_t *wpath = utf8_to_wide_alloc(path);
-    if (!wpath) return false;
+    if (!wpath) return PROVEN_SYS_FS_STAT_ERROR;
     
     // We use CreateFileW + GetFileInformationByHandle to get Volume/File ID for identity
     // FILE_FLAG_BACKUP_SEMANTICS is required to open directories
     HANDLE h = CreateFileW(wpath, 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 
                            NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_BACKUP_SEMANTICS, NULL);
+    /* Read the error BEFORE the free. HeapFree can overwrite the thread's last-error value,
+     * and "the file is not there" would then be indistinguishable from "the lookup failed" -
+     * which is the whole distinction this function exists to make. A missing target
+     * misreported as a failed lookup makes internal_write_file_atomic refuse to create a
+     * file it should have created. */
+    DWORD open_error = (h == INVALID_HANDLE_VALUE) ? GetLastError() : 0;
     HeapFree(GetProcessHeap(), 0, wpath);
-    if (h == INVALID_HANDLE_VALUE) return false;
+    if (h == INVALID_HANDLE_VALUE) {
+        return (open_error == ERROR_FILE_NOT_FOUND || open_error == ERROR_PATH_NOT_FOUND ||
+                open_error == ERROR_INVALID_NAME)
+            ? PROVEN_SYS_FS_STAT_NOT_FOUND : PROVEN_SYS_FS_STAT_ERROR;
+    }
 
     BY_HANDLE_FILE_INFORMATION info;
     if (!GetFileInformationByHandle(h, &info)) {
         CloseHandle(h);
-        return false;
+        return PROVEN_SYS_FS_STAT_ERROR;
     }
     CloseHandle(h);
 
@@ -589,7 +819,7 @@ bool proven_sys_fs_stat(const char *path, proven_sys_fs_stat_t *out_stat) {
         out_stat->size = 0;
     } else {
         uint64_t sz = ((uint64_t)info.nFileSizeHigh << 32) | info.nFileSizeLow;
-        if (sz > (uint64_t)PROVEN_SIZE_MAX) return false;
+        if (sz > (uint64_t)PROVEN_SIZE_MAX) return PROVEN_SYS_FS_STAT_ERROR;
         out_stat->size = (size_t)sz;
     }
     out_stat->mode = out_stat->is_dir ? 0755u : 0644u;
@@ -610,14 +840,19 @@ bool proven_sys_fs_stat(const char *path, proven_sys_fs_stat_t *out_stat) {
     out_stat->ino = ((unsigned long long)info.nFileIndexHigh << 32) | (unsigned long long)info.nFileIndexLow;
     out_stat->uid = 0;   /* Windows has no POSIX uid/gid; see proven_fs_stat_t docs */
     out_stat->gid = 0;
-    return true;
+    return PROVEN_SYS_FS_STAT_OK;
 #else
     struct stat st;
-    if (stat(path, &st) != 0) return false;
+    if (stat(path, &st) != 0) {
+        /* "It is not there" and "I could not find out" are different answers, and a caller
+         * about to overwrite a file needs them apart. */
+        return (errno == ENOENT || errno == ENOTDIR)
+            ? PROVEN_SYS_FS_STAT_NOT_FOUND : PROVEN_SYS_FS_STAT_ERROR;
+    }
     
     if (S_ISREG(st.st_mode)) {
-        if (st.st_size < 0) return false;
-        if ((uintmax_t)st.st_size > (uintmax_t)PROVEN_SIZE_MAX) return false;
+        if (st.st_size < 0) return PROVEN_SYS_FS_STAT_ERROR;
+        if ((uintmax_t)st.st_size > (uintmax_t)PROVEN_SIZE_MAX) return PROVEN_SYS_FS_STAT_ERROR;
         out_stat->size = (size_t)st.st_size;
     } else {
         out_stat->size = 0;
@@ -631,8 +866,12 @@ bool proven_sys_fs_stat(const char *path, proven_sys_fs_stat_t *out_stat) {
     out_stat->ino = (unsigned long long)st.st_ino;
     out_stat->uid = (unsigned long long)st.st_uid;
     out_stat->gid = (unsigned long long)st.st_gid;
-    return true;
+    return PROVEN_SYS_FS_STAT_OK;
 #endif
+}
+
+bool proven_sys_fs_stat(const char *path, proven_sys_fs_stat_t *out_stat) {
+    return proven_sys_fs_stat_checked(path, out_stat) == PROVEN_SYS_FS_STAT_OK;
 }
 
 bool proven_sys_fs_link(const char *oldpath, const char *newpath) {
