@@ -41,7 +41,7 @@ int main(void)
     printf("== what fork copies ==\n\n");
     printf("#DATA-BEGIN\n");
     show("parent0", "parent, 512 MB filled");
-    fflush(stdout);                     /* ★ 자식이 부모의 버퍼를 물려받지 않도록 */
+    fflush(stdout);                     /* keep the child from inheriting buffered parent output */
 
     pid_t kid = fork();
     if (kid == 0) {

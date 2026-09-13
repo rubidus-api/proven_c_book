@@ -1,10 +1,10 @@
 #!/bin/sh
-# 이름 붙은 주소 공간 --- *AVR 교차 컴파일러로* 짓는다.
+# Named address space --- built with an *AVR cross compiler*.
 #
-# ★ 이 예제는 x86 의 gcc 로는 빌드되지 않는다. `__flash` 는 AVR 백엔드의 낱말이다.
-#   그것이 이 절의 요점이기도 하다 --- 주소 공간이 여럿인 기계라야 있는 낱말이다.
-# ★ 도구가 없으면 건너뛰되 *건너뛴다고 말한다.* 조용히 빠지면 독자는 이것이
-#   지어 본 적 없는 코드라는 사실을 모른다.
+# This example does not build with x86 gcc: `__flash` belongs to the AVR backend.
+#   That is the point: the word exists on machines with multiple address spaces.
+# If the tool is absent, skip but say so. A silent skip would hide that this is
+#   code that was never built.
 set -eu
 cd "$(dirname "$0")"
 ws=$(cd ../../../.. && pwd)
