@@ -125,7 +125,7 @@ layout, measurements and memory-management hardware.
 
 - **Output comes from the examples.** All 223 listings have their execution output
   captured by verification scripts. The book records full verification under GCC 14
-  and cross-checks under Clang 19, with reasons for the 7 cross-check skips in
+  and cross-checks under Clang 22.1, with reasons for the 7 cross-check skips in
   [the skip list](docs/example-cross-skip.tsv).
 - **Standard rules and measurements are distinguished.** Code demonstrates the
   effects of optimization levels and the cost of memory access, with the measured
@@ -145,7 +145,7 @@ layout, measurements and memory-management hardware.
 
 > **What that verification covers.** It reaches exactly this far: *the examples
 > build and run in this environment, and the output on the page came from that
-> run* (x86-64 Linux, all of them under GCC 14.2, cross-checked with Clang 19.1
+> run* (x86-64 Linux, all of them under GCC 14.2, cross-checked with Clang 22.1
 > where 7 are skipped). It is not an audit of the book's prose against the
 > standard, not a security audit, and not validation by large-scale real use.
 > The prose is grounded separately, in clauses of the standard and primary
@@ -183,7 +183,7 @@ CC=clang scripts/verify-examples.sh     # cross-check with another compiler
 ```
 
 - A C23 compiler is required. What was actually measured is GCC 14.2 (all pass) and
-  Clang 19.1 (7 skipped); older versions were not tested, so nothing is promised for them.
+  Clang 22.1 (7 skipped); older versions were not tested, so nothing is promised for them.
 - Listings that `#include <proven...>` build `vendor/proven` alongside them
   automatically.
 
