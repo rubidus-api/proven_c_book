@@ -23,7 +23,9 @@ def main() -> int:
         print("check-privacy: 공용 검사 도구가 없다 --- 건너뛴다 "
               "(작업공간의 usr/bin/check-privacy)")
         return 0
-    args = [str(TOOL), "build/examples-out", "build/examples-out-en"]
+    # The shared checker scans tracked files by default. Build captures are ignored
+    # cache and are checked only by an explicit review command, never by the release gate.
+    args = [str(TOOL)]
     return os.spawnv(os.P_WAIT, str(TOOL), args)
 
 
