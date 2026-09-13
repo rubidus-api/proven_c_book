@@ -46,7 +46,7 @@ int main(void)
     }
     show("malloc", "right after malloc");
 
-    /* 쪽마다 한 바이트씩 --- 쪽 하나를 붙이는 데 접촉 한 번이면 된다. */
+    /* one byte per page: one touch brings one page in */
     for (size_t i = 0; i < want; i += 4096)
         p[i] = 1;
     show("touched", "after touching it all");
