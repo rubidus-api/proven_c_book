@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 This project follows Keep a Changelog.
 
+## [v0.93.1] - 2026-09-14
+
+실측 부록(O·P)의 예제를 aarch64 로 교차 실행해 보았다. ARM 실기가 없어 aarch64 GCC 16.1 로
+짓고 qemu 사용자 모드로 돌렸다 --- 그래서 *시간은 싣지 않고*, 에뮬레이터로도 드러나는 것만 본다.
+
+### Fixed
+- **aarch64 에서 캐시 크기가 「0 바이트」로 찍혔다.** aarch64 의 glibc 는 `sysconf` 로 캐시의 줄
+  크기만 답하고(`CTR_EL0`) 크기·연관도에는 0 을 돌려준다(glibc 2.44 소스). `clock_probe` 는
+  「0 KiB, 0-way」를 찍었고 `cache_ladder` 는 모든 크기를 주기억으로 분류했다 --- 부록 O 서두의
+  「다른 기계에서 돌려도 그 기계의 답이 나온다」가 거기서 깨져 있었다. 이제 0 이면
+  `/sys/devices/system/cpu/cpu0/cache` 를 읽고, 그것도 없으면 「unknown」을 찍는다. x86-64 출력은
+  그대로다(두 경로 모두 aarch64 에서 실행해 확인).
+
+### Changed
+- 부록 O·P 의 한계 상자에 교차 실행의 범위를 적었다 --- 열한 예제가 aarch64 에서 경고 없이 서고
+  끝까지 돈다. `promise`·`layout` 의 결론은 같다. 에뮬레이터는 시스템 호출을 호스트 커널에 넘기므로
+  첫 접촉 시간·`fork` 뒤 공유/사유 집계 같은 수는 ARM 의 증거가 못 되고, *ARM 실기의 수는 아직 없다.*
+
 ## [v0.93.0] - 2026-09-14
 
 두 외부 검토(agy·codex)의 지적을 하나씩 다시 확인해 처분했다(비공개 RFC-0051). 채택한 것만 고치고,

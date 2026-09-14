@@ -33,17 +33,68 @@ static long sum_kept(const int *a, size_t n)
 }
 static volatile long sink;
 
+/* ★ 캐시의 크기는 C 라이브러리가 CPU 에 물어서 채운다. x86-64 의 glibc 는 CPUID 로 답하지만,
+     aarch64 의 glibc(2.44 소스로 확인)는 줄 크기만 CTR_EL0 로 답하고 크기·연관도에는 *0* 을
+     돌려준다 --- 그 값을 담은 레지스터를 커널이 사용자 프로그램에 막아 두었기 때문이다.
+     그래서 0 이면, 커널이 부팅 때 읽어 sysfs 에 적어 둔 값을 본다. 그것도 없으면 0 이고,
+     찍는 쪽이 「모른다」고 말한다 --- 0 바이트짜리 캐시로 읽히게 두지 않는다. */
+static long sysfs_cache(int level, const char *field)
+{
+    const char *dir = "/sys/devices/system/cpu/cpu0/cache";
+    for (int i = 0; i < 16; i++) {
+        char path[128], buf[32];
+        snprintf(path, sizeof path, "%s/index%d/level", dir, i);
+        FILE *f = fopen(path, "r");
+        if (!f) break;
+        int lv = fgets(buf, sizeof buf, f) ? atoi(buf) : 0;
+        fclose(f);
+        snprintf(path, sizeof path, "%s/index%d/type", dir, i);
+        f = fopen(path, "r");
+        bool code_only = f && fgets(buf, sizeof buf, f) && strncmp(buf, "Instruction", 11) == 0;
+        if (f) fclose(f);
+        if (lv != level || code_only) continue;        /* 명령 전용 캐시는 건너뛴다 */
+        snprintf(path, sizeof path, "%s/index%d/%s", dir, i, field);
+        f = fopen(path, "r");
+        if (!f) return 0;
+        long v = 0;
+        if (fgets(buf, sizeof buf, f)) {
+            char *end;
+            v = strtol(buf, &end, 10);
+            if (*end == 'K') v *= 1024;                /* "32K" 꼴로 적혀 있다 */
+            else if (*end == 'M') v *= 1024 * 1024;
+        }
+        fclose(f);
+        return v;
+    }
+    return 0;
+}
+
+static long cache_value(int name, int level, const char *field)
+{
+    long v = sysconf(name);
+    return v > 0 ? v : sysfs_cache(level, field);
+}
+
 int main(void)
 {
     printf("== 1. this machine's numbers (the example reads them itself) ==\n");
+    const char *unknown = "unknown --- this system does not report it";
+    long l1 = cache_value(_SC_LEVEL1_DCACHE_SIZE, 1, "size");
+    long line = cache_value(_SC_LEVEL1_DCACHE_LINESIZE, 1, "coherency_line_size");
+    long ways = cache_value(_SC_LEVEL1_DCACHE_ASSOC, 1, "ways_of_associativity");
+    long l2 = cache_value(_SC_LEVEL2_CACHE_SIZE, 2, "size");
+    long l3 = cache_value(_SC_LEVEL3_CACHE_SIZE, 3, "size");
     printf("  %-22s %s\n", "L1 data cache", "");
-    printf("    size        : %ld bytes (%ld KiB)\n",
-           sysconf(_SC_LEVEL1_DCACHE_SIZE), sysconf(_SC_LEVEL1_DCACHE_SIZE) / 1024);
-    printf("    line size   : %ld bytes\n", sysconf(_SC_LEVEL1_DCACHE_LINESIZE));
-    printf("    associativity: %ld-way\n", sysconf(_SC_LEVEL1_DCACHE_ASSOC));
-    printf("  L2 cache      : %ld KiB\n", sysconf(_SC_LEVEL2_CACHE_SIZE) / 1024);
-    printf("  L3 cache      : %ld KiB (%.0f MiB)\n", sysconf(_SC_LEVEL3_CACHE_SIZE) / 1024,
-           sysconf(_SC_LEVEL3_CACHE_SIZE) / 1048576.0);
+    if (l1 > 0)   printf("    size        : %ld bytes (%ld KiB)\n", l1, l1 / 1024);
+    else          printf("    size        : %s\n", unknown);
+    if (line > 0) printf("    line size   : %ld bytes\n", line);
+    else          printf("    line size   : %s\n", unknown);
+    if (ways > 0) printf("    associativity: %ld-way\n", ways);
+    else          printf("    associativity: %s\n", unknown);
+    if (l2 > 0)   printf("  L2 cache      : %ld KiB\n", l2 / 1024);
+    else          printf("  L2 cache      : %s\n", unknown);
+    if (l3 > 0)   printf("  L3 cache      : %ld KiB (%.0f MiB)\n", l3 / 1024, l3 / 1048576.0);
+    else          printf("  L3 cache      : %s\n", unknown);
     printf("  page size     : %ld bytes\n", sysconf(_SC_PAGESIZE));
     printf("  logical cores : %ld\n\n", sysconf(_SC_NPROCESSORS_ONLN));
 
