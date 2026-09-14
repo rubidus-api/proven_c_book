@@ -64,15 +64,61 @@ static double sweep(size_t *buf, size_t n, long rounds)
     return (t1 - t0) / ((double)n * (double)rounds);
 }
 
+/* ★ 캐시의 크기는 C 라이브러리가 CPU 에 물어서 채운다. x86-64 의 glibc 는 CPUID 로 답하지만,
+     aarch64 의 glibc(2.44 소스로 확인)는 줄 크기만 CTR_EL0 로 답하고 크기·연관도에는 *0* 을
+     돌려준다 --- 그 값을 담은 레지스터를 커널이 사용자 프로그램에 막아 두었기 때문이다.
+     그래서 0 이면, 커널이 부팅 때 읽어 sysfs 에 적어 둔 값을 본다. 그것도 없으면 0 이고,
+     찍는 쪽이 「모른다」고 말한다 --- 0 바이트짜리 캐시로 읽히게 두지 않는다. */
+static long sysfs_cache(int level, const char *field)
+{
+    const char *dir = "/sys/devices/system/cpu/cpu0/cache";
+    for (int i = 0; i < 16; i++) {
+        char path[128], buf[32];
+        snprintf(path, sizeof path, "%s/index%d/level", dir, i);
+        FILE *f = fopen(path, "r");
+        if (!f) break;
+        int lv = fgets(buf, sizeof buf, f) ? atoi(buf) : 0;
+        fclose(f);
+        snprintf(path, sizeof path, "%s/index%d/type", dir, i);
+        f = fopen(path, "r");
+        bool code_only = f && fgets(buf, sizeof buf, f) && strncmp(buf, "Instruction", 11) == 0;
+        if (f) fclose(f);
+        if (lv != level || code_only) continue;        /* 명령 전용 캐시는 건너뛴다 */
+        snprintf(path, sizeof path, "%s/index%d/%s", dir, i, field);
+        f = fopen(path, "r");
+        if (!f) return 0;
+        long v = 0;
+        if (fgets(buf, sizeof buf, f)) {
+            char *end;
+            v = strtol(buf, &end, 10);
+            if (*end == 'K') v *= 1024;                /* "32K" 꼴로 적혀 있다 */
+            else if (*end == 'M') v *= 1024 * 1024;
+        }
+        fclose(f);
+        return v;
+    }
+    return 0;
+}
+
+static long cache_value(int name, int level, const char *field)
+{
+    long v = sysconf(name);
+    return v > 0 ? v : sysfs_cache(level, field);
+}
+
 int main(void)
 {
-    const long L1 = sysconf(_SC_LEVEL1_DCACHE_SIZE);
-    const long L2 = sysconf(_SC_LEVEL2_CACHE_SIZE);
-    const long L3 = sysconf(_SC_LEVEL3_CACHE_SIZE);
+    const long L1 = cache_value(_SC_LEVEL1_DCACHE_SIZE, 1, "size");
+    const long L2 = cache_value(_SC_LEVEL2_CACHE_SIZE, 2, "size");
+    const long L3 = cache_value(_SC_LEVEL3_CACHE_SIZE, 3, "size");
+    const bool known = L1 > 0 || L2 > 0 || L3 > 0;
 
     printf("== the caches of this machine ==\n");
-    printf("  L1 %ld KiB · L2 %ld KiB · L3 %ld KiB (%.0f MiB)\n\n",
-           L1 / 1024, L2 / 1024, L3 / 1024, L3 / 1048576.0);
+    if (known)
+        printf("  L1 %ld KiB · L2 %ld KiB · L3 %ld KiB (%.0f MiB)\n\n",
+               L1 / 1024, L2 / 1024, L3 / 1024, L3 / 1048576.0);
+    else
+        printf("  unknown --- this system does not report them, so the \"where\" column shows ?\n\n");
 
     printf("== time for one read, by working set size ==\n");
     printf("  it follows a random ring, so prefetching does not help --- pure latency.\n\n");
@@ -100,9 +146,11 @@ int main(void)
         long rounds = bytes < (1u << 22) ? 200 : 5;
         double seq = sweep(buf, n, rounds);
 
-        const char *where = (long)bytes <= L1 ? "L1"
-                          : (long)bytes <= L2 ? "L2"
-                          : (long)bytes <= L3 ? "L3" : "main memory";
+        /* 모르는 단은 건너뛴다 --- 크기 0 과 견주면 전부 「주기억」으로 읽힌다 */
+        const char *where = !known                          ? "?"
+                          : L1 > 0 && (long)bytes <= L1     ? "L1"
+                          : L2 > 0 && (long)bytes <= L2     ? "L2"
+                          : L3 > 0 && (long)bytes <= L3     ? "L3" : "main memory";
         if (base == 0) base = lat;
 
         char size_s[16];
