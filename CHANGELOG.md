@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 This project follows Keep a Changelog.
 
-## [Unreleased]
+## [v0.93.0] - 2026-09-14
 
 두 외부 검토(agy·codex)의 지적을 하나씩 다시 확인해 처분했다(비공개 RFC-0051). 채택한 것만 고치고,
 틀린 지적은 근거를 적어 기각했다 --- 예컨대 「복합 리터럴은 후위식이 아니다」는 N3220 §6.5.3.1
@@ -27,7 +27,9 @@ This project follows Keep a Changelog.
   99장의 근거 없는 「94개 예제」를 「proven 을 쓰는 예제 전부」로.
 - 101장 MISRA C:2025(2025년 3월)·C++26 의 발행 상태, 54장 N3322 는 C2y *작업 초안*이라는 것,
   102장 게이트 수(열아홉 → 스물셋, `check-counts.py` 가 센다), 19장 Pelles C 저자 이름의 한글 표기.
-- 85장 비교 교환(CAS)의 핵심 문장이 `#note` 장치에 들어가 **각주로 떨어져** 있던 것을 본문으로.
+- **블록으로 쓴 `#note[...]` 아홉 자리(양 판 18곳)가 PDF 에서 각주로 떨어져** 본문에 위첨자만 한 줄로
+  남아 있었다 --- 85장 CAS 의 핵심 문장, 36·82장과 부록 K 의 표준 인용, 13장·부록 P 의 곁말. `note` 는
+  v0.37 부터 각주 장치다. 전부 본문 문단으로 되돌렸다.
 - 91장 MinGW-w64 에서는 `-lbcrypt` 가 필요하다는 것을 플랫폼 상자에 적었다.
 - 영어판: 19장·94장의 끝나지 않은 문장, 101장 MISRA 표에 붙어 있던 엉뚱한 캡션(「빌드 도구가 하는 일」).
 

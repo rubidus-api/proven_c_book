@@ -8,7 +8,7 @@ Re-run it whenever the manuscript changes.
 ![Dependencies between chapters](dependency-graph-en.svg)
 
 - Chapters: **105**
-- Dependencies: **223**
+- Dependencies: **224**
 - Chapters leaning on nothing: 1
 
 ## Leaning on a later chapter
