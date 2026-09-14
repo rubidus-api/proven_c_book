@@ -789,10 +789,10 @@ sum via pointer+length: 55
     <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
 <span class="tok-x">}</span>
 </code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>call with three arguments:
-  evaluated the first argument (step 1)
+  evaluated the third argument (step 1)
   evaluated the second argument (step 2)
-  evaluated the third argument (step 3)
-  the callee got a=1 b=2 c=3
+  evaluated the first argument (step 3)
+  the callee got a=3 b=2 c=1
 one argument built from two calls:
   evaluated left of + (step 1)
   evaluated right of + (step 2)
@@ -839,7 +839,7 @@ i <strong><span class="tok-x">+=</span></strong> <span class="tok-n">1</span><sp
   argument 3 to 4: 4 bytes apart
   argument 4 to 5: 4 bytes apart
   argument 5 to 6: 4 bytes apart
-  argument 6 to 7: 40 bytes apart
+  argument 6 to 7: 152 bytes apart
   argument 7 to 8: 8 bytes apart
 the widest jump is between argument 6 and 7
 that jump is the seam between the register group and the stack group.

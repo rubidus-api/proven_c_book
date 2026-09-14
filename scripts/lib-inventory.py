@@ -65,7 +65,10 @@ def annex_b(text):
 
 
 def split_headers(body):
-    parts = re.split(r"(B\.\d+\s+[A-Za-z0-9 ,/\-]*?<([a-z]+\.h)>)", body)
+    # ★ 헤더 이름에 숫자(`iso646.h`)가, 절 제목에 밑줄(`B.24 _Noreturn <stdnoreturn.h>`)이
+    #   들어간다. `[a-z]+` 로 받던 동안 이 둘이 조용히 빠져 인벤토리가 29개였고,
+    #   부록 F 는 「스물아홉을 모두 실었다」고 적은 채 검사를 통과했다(RFC-0051 R-T1).
+    parts = re.split(r"(B\.\d+\s+[A-Za-z0-9_ ,/\-]*?<([a-z0-9]+\.h)>)", body)
     out = []
     for i in range(1, len(parts) - 1, 3):
         hdr, chunk = parts[i + 1], parts[i + 2]

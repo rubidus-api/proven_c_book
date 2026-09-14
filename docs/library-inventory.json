@@ -626,6 +626,11 @@
    "wchar_t"
   ]
  },
+ "iso646.h": {
+  "functions": [],
+  "macros": [],
+  "types": []
+ },
  "limits.h": {
   "functions": [],
   "macros": [
@@ -3713,6 +3718,11 @@
    "size_t",
    "wchar_t"
   ]
+ },
+ "stdnoreturn.h": {
+  "functions": [],
+  "macros": [],
+  "types": []
  },
  "string.h": {
   "functions": [
