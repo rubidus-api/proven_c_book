@@ -4,7 +4,7 @@
 `scripts/sync-status.py --write` 가 자동으로 갱신한다.
 The Korean edition is the source; this table is generated.
 
-- **synced** 126 · **stale** 0 · **pending** 5
+- **synced** 131 · **stale** 0 · **pending** 0
 
 | 원본 / source | 상태 / state |
 |---|---|
@@ -21,9 +21,9 @@ The Korean edition is the source; this table is generated.
 | `book/chapters/ch100.typ` | ✅ synced |
 | `book/chapters/ch101.typ` | ✅ synced |
 | `book/chapters/ch102.typ` | ✅ synced |
-| `book/chapters/ch103.typ` | ⏳ pending |
-| `book/chapters/ch104.typ` | ⏳ pending |
-| `book/chapters/ch105.typ` | ⏳ pending |
+| `book/chapters/ch103.typ` | ✅ synced |
+| `book/chapters/ch104.typ` | ✅ synced |
+| `book/chapters/ch105.typ` | ✅ synced |
 | `book/chapters/ch11.typ` | ✅ synced |
 | `book/chapters/ch12.typ` | ✅ synced |
 | `book/chapters/ch13.typ` | ✅ synced |
@@ -118,9 +118,9 @@ The Korean edition is the source; this table is generated.
 | `book/parts/part11s.typ` | ✅ synced |
 | `book/parts/part12.typ` | ✅ synced |
 | `book/front/preface.typ` | ✅ synced |
-| `book/front/reading-paths.typ` | ⏳ pending |
+| `book/front/reading-paths.typ` | ✅ synced |
 | `book/appendix/a1-operators.typ` | ✅ synced |
-| `book/appendix/a11-next.typ` | ⏳ pending |
+| `book/appendix/a11-next.typ` | ✅ synced |
 | `book/appendix/a12-postmortem.typ` | ✅ synced |
 | `book/appendix/a13-formats.typ` | ✅ synced |
 | `book/appendix/a14-baremetal.typ` | ✅ synced |

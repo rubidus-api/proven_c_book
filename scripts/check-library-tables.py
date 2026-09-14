@@ -164,6 +164,41 @@ def progress_claim(skip) -> int:
     return bad
 
 
+_KO_ALL = {29: "스물아홉", 30: "서른", 31: "서른하나", 32: "서른둘"}
+_EN_ALL = {29: "twenty-nine", 30: "thirty", 31: "thirty-one", 32: "thirty-two"}
+
+
+def every_header_has_section(inv, skip) -> int:
+    """인벤토리의 헤더마다 부록 F 에 절(`==` 제목)이 있는가, 서두의 헤더 수가 맞는가.
+
+    ★ 왜 --- 함수 대조만으로는 *함수가 없는 헤더*(`<iso646.h>` · `<stdnoreturn.h>`)가
+      빠져도 아무도 모른다. 게다가 인벤토리 생성기가 그 둘을 놓쳐 29개로 적혀 있었고,
+      서두는 「스물아홉을 모두 실었다」고 말했다. C23 부속서 B 는 31개다(RFC-0051 R-T1).
+      절 제목과 서두의 수를 인벤토리에 묶어 두면 한쪽만 고치는 일이 막힌다.
+    """
+    bad = 0
+    n = len(inv)
+    for lang, path in APPENDIX.items():
+        if not path.exists():
+            continue
+        text = path.read_text(encoding="utf-8")
+        heads = " ".join(l for l in text.split("\n") if l.startswith("== "))
+        for h in sorted(inv):
+            if h not in skip and f"<{h}>" not in heads:
+                print(f"  ⚠️  [{lang}] 부록 F 에 <{h}> 절이 없다")
+                bad += 1
+        word = (_KO_ALL if lang == "ko" else _EN_ALL).get(n)
+        intro = text.split("\n\n", 4)[:4]
+        claim = next((p for p in intro if "★" in p), "")
+        # 한국어는 조사가 붙으므로(「서른하나를」) 뒤쪽 경계를 보지 않는다. 다만
+        # 「서른」이 「서른하나」 안에서 맞지 않도록 짧은 수사에는 뒤 경계를 둔다.
+        tail = "" if lang == "ko" and len(word) > 2 else r"(?![가-힣a-z-])"
+        if word and claim and not re.search(rf"(?<![가-힣a-z-]){word}{tail}", claim):
+            print(f"  ⚠️  [{lang}] 부록 F 서두의 헤더 수가 실제({n}, 「{word}」)와 다르다")
+            bad += 1
+    return bad
+
+
 def main() -> int:
     if not INV.exists():
         print("check-library-tables: 인벤토리가 없다 --- "
@@ -205,6 +240,7 @@ def main() -> int:
     total_missing += header_rows()
     total_missing += progress_claim(skip)
     total_missing += caption_matches_section()
+    total_missing += every_header_has_section(inv, skip)
 
     if total_missing:
         print(f"check-library-tables: 빠진 항목 {total_missing}건")

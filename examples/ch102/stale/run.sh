@@ -7,6 +7,9 @@
 set -eu
 cd "$(dirname "$0")"
 
+cp greet.h greet.h.orig
+trap 'mv -f greet.h.orig greet.h 2>/dev/null || true' EXIT INT TERM
+
 for kind in broken fixed; do
     printf '== Makefile.%s\n' "$kind"
     make -s -f "Makefile.$kind" clean >/dev/null

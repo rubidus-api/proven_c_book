@@ -52,6 +52,10 @@ def main():
             f"「{n_parts}부 {n_chapters}장 + 부록 {span}」"
         )
 
+    m_ex = re.search(r"예제 (\d+)개의 실행 결과", ko)
+    if not m_ex:
+        bad.append("README.md: 「예제 N개의 실행 결과」 줄을 찾지 못했다")
+
     en = (ROOT / "README-en.md").read_text(encoding="utf-8")
     m = re.search(r"(\d+) parts, (\d+) chapters, appendices ([A-Z][–-][A-Z])", en)
     if not m:
@@ -64,13 +68,43 @@ def main():
             f"「{n_parts} parts, {n_chapters} chapters, appendices {span_en}」"
         )
 
+    m_ex_en = re.search(r"All (\d+) listings have their execution output", en)
+    if not m_ex_en:
+        bad.append("README-en.md: 「All N listings have their execution output」 줄이 없다")
+    elif m_ex and m_ex.group(1) != m_ex_en.group(1):
+        bad.append(
+            f"두 판의 예제 수 불일치: ko={m_ex.group(1)} vs en={m_ex_en.group(1)}"
+        )
+
+    # ★ 102장이 「게이트가 열아홉 개 있다(`scripts/check-*.py`)」고 적었는데 실제는
+    #   스물셋이었다(RFC-0051 R-T2). 검사기를 더할 때마다 낡는 문장이라 여기서 센다.
+    n_gates = len(list((ROOT / "scripts").glob("check-*.py")))
+    ko_num = {19: "열아홉", 20: "스무", 21: "스물한", 22: "스물두", 23: "스물세",
+              24: "스물네", 25: "스물다섯", 26: "스물여섯", 27: "스물일곱"}
+    en_num = {19: "nineteen", 20: "twenty", 21: "twenty-one", 22: "twenty-two",
+              23: "twenty-three", 24: "twenty-four", 25: "twenty-five",
+              26: "twenty-six", 27: "twenty-seven"}
+    for ed, pat, table in (
+        ("book", r"게이트가 (\S+) 개 있다\(`scripts/check-\*\.py`\)", ko_num),
+        ("book-en", r"has (\S+) such gates \(`scripts/check-\*\.py`\)", en_num),
+    ):
+        ch = (ROOT / ed / "chapters" / "ch102.typ")
+        if not ch.exists():
+            continue
+        g = re.search(pat, ch.read_text(encoding="utf-8"))
+        if not g:
+            bad.append(f"{ed}/chapters/ch102.typ: 게이트 수 문장을 찾지 못했다")
+        elif g.group(1) != table.get(n_gates):
+            bad.append(f"{ed}/chapters/ch102.typ: 게이트 「{g.group(1)}」 ≠ 실제 {n_gates}개")
+
     for line in bad:
         print("·  " + line, file=sys.stderr)
     if bad:
         print("check-counts: 적어 둔 규모가 실제와 다르다", file=sys.stderr)
         return 1
+    ex_count = m_ex.group(1) if m_ex else "?"
     print(
-        f"check-counts: {n_parts}부 {n_chapters}장 · 부록 {span} — "
+        f"check-counts: {n_parts}부 {n_chapters}장 · 부록 {span} · 예제 {ex_count}개 — "
         "적어 둔 숫자가 실제와 같다"
     )
     return 0
