@@ -699,6 +699,16 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
 <span class="tok-x">}</span>
 <strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">volatile</span></strong> <strong><span class="tok-t">long</span></strong> sink<span class="tok-x">;</span>
 
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> ★ aarch64 리눅스는 CTR_EL0 레지스터를 사용자 프로그램에도 읽게 열어 둔다(glibc 도 이것으로</span></em>
+<em><span class="tok-c">     줄 크기를 답한다). 안드로이드의 Bionic 은 sysconf 에 0 을 돌려주고, 폰 커널은 sysfs 의 크기</span></em>
+<em><span class="tok-c">     칸을 비워 두기도 해서(안드로이드 폰 실측) 마지막으로 이 레지스터를 직접 읽는다.</span></em>
+<em><span class="tok-c">     다만 계층 전체에서 *가장 작은* 줄 크기다. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#if</span></strong><span class="tok-p"> </span><strong><span class="tok-k">defined</span></strong><span class="tok-p">(__aarch64__) &amp;&amp; </span><strong><span class="tok-k">defined</span></strong><span class="tok-p">(__linux__)</span>
+<strong>__asm__</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">.text</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">.globl read_ctr_el0</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">.type read_ctr_el0, </span></strong><strong><span class="tok-s">%f</span></strong><strong><span class="tok-s">unction</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong>
+<strong>        </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">read_ctr_el0:</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">    mrs x0, ctr_el0</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">    ret</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<strong><span class="tok-t">unsigned</span></strong> <strong><span class="tok-t">long</span></strong> <strong>read_ctr_el0</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span><span class="tok-x">;</span>
+<strong><span class="tok-k">#endif</span></strong>
+
 <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ★ 캐시의 크기는 C 라이브러리가 CPU 에 물어서 채운다. x86-64 의 glibc 는 CPUID 로 답하지만,</span></em>
 <em><span class="tok-c">     aarch64 의 glibc(2.44 소스로 확인)는 줄 크기만 CTR_EL0 로 답하고 크기·연관도에는 *0* 을</span></em>
 <em><span class="tok-c">     돌려준다 --- 그 값을 담은 레지스터를 커널이 사용자 프로그램에 막아 두었기 때문이다.</span></em>
@@ -747,6 +757,10 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
     <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>unknown <strong><span class="tok-x">=</span></strong> <span class="tok-s">"</span><span class="tok-s">unknown --- this system does not report it</span><span class="tok-s">"</span><span class="tok-x">;</span>
     <strong><span class="tok-t">long</span></strong> l1 <strong><span class="tok-x">=</span></strong> <strong>cache_value</strong><strong><span class="tok-x">(</span></strong><strong>_SC_LEVEL1_DCACHE_SIZE</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">size</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
     <strong><span class="tok-t">long</span></strong> line <strong><span class="tok-x">=</span></strong> <strong>cache_value</strong><strong><span class="tok-x">(</span></strong><strong>_SC_LEVEL1_DCACHE_LINESIZE</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">coherency_line_size</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<strong><span class="tok-k">#if</span></strong><span class="tok-p"> </span><strong><span class="tok-k">defined</span></strong><span class="tok-p">(__aarch64__) &amp;&amp; </span><strong><span class="tok-k">defined</span></strong><span class="tok-p">(__linux__)</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>line <strong><span class="tok-x">&lt;=</span></strong> <span class="tok-n">0</span><span class="tok-x">)</span>
+        line <strong><span class="tok-x">=</span></strong> <span class="tok-n">4</span><strong><span class="tok-t">L</span></strong> <strong><span class="tok-x">&lt;&lt;</span></strong> <span class="tok-x">(</span><span class="tok-x">(</span><strong>read_ctr_el0</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">)</span></strong> <strong><span class="tok-x">>></span></strong> <span class="tok-n">16</span><span class="tok-x">)</span> <strong><span class="tok-x">&amp;</span></strong> <span class="tok-x">0x</span><span class="tok-n">f</span><span class="tok-x">)</span><span class="tok-x">;</span>
+<strong><span class="tok-k">#endif</span></strong>
     <strong><span class="tok-t">long</span></strong> ways <strong><span class="tok-x">=</span></strong> <strong>cache_value</strong><strong><span class="tok-x">(</span></strong><strong>_SC_LEVEL1_DCACHE_ASSOC</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">ways_of_associativity</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
     <strong><span class="tok-t">long</span></strong> l2 <strong><span class="tok-x">=</span></strong> <strong>cache_value</strong><strong><span class="tok-x">(</span></strong><strong>_SC_LEVEL2_CACHE_SIZE</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">2</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">size</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
     <strong><span class="tok-t">long</span></strong> l3 <strong><span class="tok-x">=</span></strong> <strong>cache_value</strong><strong><span class="tok-x">(</span></strong><strong>_SC_LEVEL3_CACHE_SIZE</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">3</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">size</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
@@ -875,37 +889,37 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
     Reading the clock costs more than that --- measured next.
 
 == 3. the cost of reading the clock ==
-  one clock_gettime : 16.8 ns
+  one clock_gettime : 16.7 ns
   smallest interval actually distinguishable : 17.0 ns
   * so anything shorter than this is never measured once. Repeat and divide.
     Every measurement in this appendix is built that way.
 
 == 4. trap one: the optimiser removes what you meant to measure ==
-  a sum whose result is discarded :          2 ns  (0.00 ns per element)
-  a sum whose result is used      :     216739 ns  (0.21 ns per element)
-  factor                          : 117156.3 x
+  a sum whose result is discarded :          5 ns  (0.00 ns per element)
+  a sum whose result is used      :     233513 ns  (0.22 ns per element)
+  factor                          : 49160.7 x
   * if the first is near zero, that code never ran. The compiler removed it as
     a value nobody uses. When the result says your code is infinitely fast,
     suspect this before suspecting the machine.
 
 == 5. trap two: the first round is slow (warming up) ==
-  filling the same 4 MiB --- first  :  1332528 ns
-                          second :   105882 ns
-  factor: 12.6 x
+  filling the same 4 MiB --- first  :  1358270 ns
+                          second :   113466 ns
+  factor: 12.0 x
   * the first round mixes in the cost of the OS attaching pages one by one (page faults).
     So warm up before measuring, and discard the warm-up rounds.
 
 == 6. trap three: one interruption drags the mean ==
   results over 201 rounds
-  minimum           12260 ns
-  median            12314 ns  &lt;- what this appendix uses
-  mean              12359 ns
-  99th percentile        12630 ns
-  maximum           16405 ns
-  mean / median = 1.00 x  (the further from 1, the more other work interfered)
+  minimum           12546 ns
+  median            12614 ns  &lt;- what this appendix uses
+  mean              12718 ns
+  99th percentile        12966 ns
+  maximum           27806 ns
+  mean / median = 1.01 x  (the further from 1, the more other work interfered)
   * this machine is shared. So the median is used rather than the mean, with the
     minimum alongside to show what it would be with no interference.
-</code></pre></div></div><p>The demonstration comes in six pieces. One at a time.</p><h4 id="sx3">1. The example reads the machine’s numbers itself<a class="plink" href="sec126.html#sx3" aria-label="Link to this section" title="Link to this section">#</a></h4><div></div><p><code>sysconf</code> is asked for the cache sizes, line size, page size and core count. The later demonstrations use those as <strong>the baseline</strong> — so instead of “past 32 KiB it slows down” we can say “past the L1 size it slows down”.</p><div class="dev platform"><p class="dev-label">Platform note. aarch64's C library does not know the cache sizes</p><div class="dev-body"><p>The cache values from <code>sysconf</code> are filled in by the C library asking the CPU. glibc on x86-64 answers with <code>CPUID</code>. glibc on aarch64 answers only the line size, from the <code>CTR_EL0</code> register — and that is the <strong>smallest</strong> line size in the whole hierarchy — and returns <strong>0</strong> for sizes and associativity. The kernel has closed the registers holding those values to user programs (glibc 2.44′s aarch64 <code>sysconf.c</code> says so in a comment).</p><p>Printed as is, that 0 becomes “a 0-byte cache”, and the latency curve later files every size under main memory — which is exactly what the aarch64 cross run produced. So when the answer is 0 the example reads what the kernel wrote at boot into <code>/sys/devices/system/cpu/cpu0/cache</code>, and if that is missing too it prints “unknown”. ★ <strong>“It gives that machine’s answer” holds only when the one asked knows the answer.</strong></p></div></div><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Item</strong></th><th><strong>Value</strong></th><th><strong>Where it is used later</strong></th></tr><tr><td>L1 data cache</td><td>32 KiB, 8-way, 64-byte lines</td><td>the first step of the latency curve; the stride experiment</td></tr><tr><td>L2 cache</td><td>256 KiB</td><td>the second step</td></tr><tr><td>L3 cache</td><td>16 MiB</td><td>the third step</td></tr><tr><td>page size</td><td>4 KiB</td><td>the TLB experiment; the first-touch cost</td></tr><tr><td>logical cores</td><td>16</td><td>the false sharing experiment</td></tr><tr><td>clock resolution</td><td>1 ns</td><td>the shortest thing that can be measured</td></tr><tr><td>TLB (translation lookaside buffer)</td><td>the cache holding translations</td><td>the page experiment</td></tr></table></div><span id="proven-float-698"></span><p class="float-caption">Table 105.2 — The numbers of the machine this was written on (as the example read them)</p></figure><h4 id="sx4">2 and 3. Resolution and cost are different things<a class="plink" href="sec126.html#sx4" aria-label="Link to this section" title="Link to this section">#</a></h4><div></div><p><code>clock_getres</code> answers one nanosecond. But actually calling <code>clock_gettime</code> once costs <strong>about 17 nanoseconds</strong> on this machine, and the smallest interval two reads can distinguish is the same.</p><p>★ From which one rule follows. <strong>Anything shorter than 17 nanoseconds is never measured once.</strong> It is repeated a million times and divided. Every demonstration in this appendix is built that way.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Size of the thing</strong></th><th><strong>Example</strong></th><th><strong>Method</strong></th><th><strong>Watch out for</strong></th></tr><tr><td>about one nanosecond</td><td>one addition, one branch</td><td>repeat millions of times and divide</td><td>the optimiser removes it entirely</td></tr><tr><td>tens to hundreds of ns</td><td>one access outside the cache</td><td>thousands of repeats + a dependency chain</td><td>prefetching hides it</td></tr><tr><td>microseconds</td><td>a system call, a signal</td><td>thousands of repeats</td><td>context switches mix in</td></tr><tr><td>milliseconds and above</td><td>a disk access, a large computation</td><td>several rounds of one each</td><td>caches and buffers change the result</td></tr></table></div><span id="proven-float-699"></span><p class="float-caption">Table 105.3 — What to measure how — the method depends on the size</p></figure><h4 id="sx5">4. The first trap — the optimiser removes what you meant to measure<a class="plink" href="sec126.html#sx5" aria-label="Link to this section" title="Link to this section">#</a></h4><div></div><p>The same sum is measured twice: once discarding the result, once using it. The demonstration printed <strong>3 ns against 216,713 ns</strong> — more than ten thousand times apart.</p><p>The first is not fast; it <strong>did not run</strong>. The compiler has the right to delete a computation whose value nobody uses (the as-if rule, chapter 14). A loop adding a million values disappeared entire.</p><div class="dev misconception"><p class="dev-label">A common misconception. <strong>if my code finished in 0 nanoseconds it must be very fast</strong></p><div class="dev-body">No. <strong>It did not run.</strong> Whenever a measurement gives an unbelievably good number, ask first whether the code was removed. There is a way to check — multiply the input by ten. If the time does not multiply by ten, that loop did not run.</div></div><h4 id="sx6">5. The second trap — the first round is slow<a class="plink" href="sec126.html#sx6" aria-label="Link to this section" title="Link to this section">#</a></h4><div></div><p>The same 4 MiB was filled twice, and the first was <strong>more than ten times</strong> slower. The reason is not computation but <strong>memory</strong>. The address <code>malloc</code> gave is not yet attached to real memory, and at each first touch the operating system attaches one page (page faults, chapter 12).</p><p>★ Writing this demonstration walked into trap 4 first. With nobody reading the filled result, <code>memset</code> disappeared entirely and produced the nonsense “4 MiB filled in 38 nanoseconds”. Only after adding a line that reads one byte afterwards did that tenfold appear. <strong>Traps do not arrive one at a time.</strong></p><h4 id="sx7">6. The third trap — one interruption drags the mean<a class="plink" href="sec126.html#sx7" aria-label="Link to this section" title="Link to this section">#</a></h4><div></div><p>Measure the same work 201 times and the values scatter. On this machine the minimum was 12,354 ns, the median 12,531, the maximum 21,834 — the maximum 1.7 times the median. That round had other work cutting in.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Value</strong></th><th><strong>What it says</strong></th><th><strong>Under interference</strong></th><th><strong>In this appendix</strong></th></tr><tr><td>minimum</td><td>“if nothing had interfered at all”</td><td>unshaken</td><td>stated alongside</td></tr><tr><td>median</td><td>“this is what it usually is”</td><td>barely moves</td><td><strong>used by default</strong></td></tr><tr><td>mean</td><td>total / count</td><td><strong>dragged by one outlier</strong></td><td>not used</td></tr><tr><td>maximum, 99th</td><td>“this is the worst”</td><td>that is the point of it</td><td>what matters in code with a deadline</td></tr></table></div><span id="proven-float-700"></span><p class="float-caption">Table 105.4 — Which representative value to use</p></figure><p>★ In code with a deadline (an audio callback, a control loop, an interrupt handler) the <strong>maximum is the design figure</strong>. “One millisecond on average” is no comfort — one late round and the sound breaks. “Measure the worst case” from the appendix on C without an operating system is the same story.</p><h3 id="sx8">The six disciplines of this appendix<a class="plink" href="sec126.html#sx8" aria-label="Link to this section" title="Link to this section">#</a></h3><div></div><p>What has been seen so far, written down as a contract. Every demonstration that follows keeps it.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Discipline</strong></th><th><strong>What it prevents</strong></th><th><strong>How it is kept</strong></th></tr><tr><td>measure the scale before measuring</td><td>measuring the clock itself</td><td>find the resolution and call cost first, and repeat anything shorter</td></tr><tr><td>keep it from being removed</td><td>reading deleted code as “fast”</td><td>a <code>volatile</code> sink, a dependency chain, using the return value</td></tr><tr><td>warm up, then measure</td><td>page faults and cold caches mixing in</td><td>run warm-up rounds and discard them</td></tr><tr><td>use the median</td><td>one interruption changing the conclusion</td><td>sort the rounds and take the middle, stating the minimum too</td></tr><tr><td>speak in ratios</td><td>reading this machine’s numbers as law</td><td>fix a baseline and record “how many times”</td></tr><tr><td>suspect the measurement first</td><td>wasting time blaming the machine</td><td>multiply the input by ten and see whether the time follows</td></tr></table></div><span id="proven-float-701"></span><p class="float-caption">Table 105.5 — Six disciplines for measuring</p></figure><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Why does a ratio last longer than a nanosecond figure?</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> Nanoseconds change with clock speed, generation and power state; the same code can be twice as fast on another machine. But <strong>the distance between L1 and main memory</strong>, or <strong>between a predicted and a mispredicted branch</strong>, comes from the structure and changes far more slowly. So “60 times L1” is more durable knowledge than “78 nanoseconds on this machine”.</p></div></div><h3 id="sx9">Measuring the memory ladder<a class="plink" href="sec126.html#sx9" aria-label="Link to this section" title="Link to this section">#</a></h3><div></div><p>With the scale ready, the first thing to measure: the ladder of chapter 12.</p><h4 id="sx10">First the principle — why a ladder appeared<a class="plink" href="sec126.html#sx10" aria-label="Link to this section" title="Link to this section">#</a></h4><div></div><p>CPUs got faster and main memory did not keep up. That gap widened over decades, and layers were inserted to fill it. Those are the caches.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Rung</strong></th><th><strong>Size (this machine)</strong></th><th><strong>Who fills it</strong></th><th><strong>What it holds</strong></th><th><strong>If it is not there</strong></th></tr><tr><td>registers</td><td>a few hundred bytes</td><td>the compiler</td><td>the values in use now</td><td>ask the cache</td></tr><tr><td>L1 data cache</td><td>32 KiB</td><td>hardware</td><td>lines just used</td><td>ask L2</td></tr><tr><td>L2 cache</td><td>256 KiB</td><td>hardware</td><td>lines recently used</td><td>ask L3</td></tr><tr><td>L3 cache</td><td>16 MiB</td><td>hardware</td><td>lines shared between cores</td><td>ask main memory</td></tr><tr><td>main memory (DRAM)</td><td>several GiB</td><td>the operating system</td><td>all of the program’s memory</td><td>fetch a page from disk</td></tr></table></div><span id="proven-float-702"></span><p class="float-caption">Table 105.6 — What each rung does</p></figure><p>Two things to note in advance; they are needed to read the measurements.</p><p><strong>First, a cache moves in “lines”, not bytes.</strong> On this machine a line is 64 bytes. Read one <code>int</code> (4 bytes) and the 64 bytes around it come up whole.</p><p><strong>Second, the machine guesses what will be read next.</strong> When addresses grow regularly, prefetching circuitry runs ahead and fetches them. So <strong>a program reading in order hardly feels slow memory at all.</strong></p><h4 id="sx11">So how must it be measured<a class="plink" href="sec126.html#sx11" aria-label="Link to this section" title="Link to this section">#</a></h4><div></div><p>Because of the second property, measuring “how far away memory is” while reading in order gives no answer — the machine has already fetched it. To see the latency you must make <strong>the next address impossible to know in advance</strong>.</p><p>The classic method: <strong>pointer chasing</strong> — link the array into a <strong>single ring</strong> in random order, so that the value just read tells you where to read next.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Condition</strong></th><th><strong>Why it is needed</strong></th><th><strong>If it is broken</strong></th></tr><tr><td>the next place is in the <strong>value</strong> just read</td><td>the machine cannot run ahead — one at a time</td><td>several accesses overlap and hide the latency</td></tr><tr><td>the order is random</td><td>it hides the pattern of addresses</td><td>prefetching works</td></tr><tr><td>the ring is <strong>one</strong> (it does not split into small rings)</td><td>the whole working set is walked evenly</td><td>only part is walked and it fits in cache</td></tr><tr><td>the result is written somewhere</td><td>so the optimiser cannot delete the loop</td><td>“0 nanoseconds” appears</td></tr></table></div><span id="proven-float-703"></span><p class="float-caption">Table 105.7 — What pointer chasing achieves</p></figure><div class="demo demo-src"><p class="demo-head"><code>examples-en/apx-measured/cache_ladder/cache_ladder.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> 기억의 사다리를 잰다 --- 작업 집합을 키워 가며 「한 번 읽는 데 드는 시간」을 본다.</span></em>
+</code></pre></div></div><p>The demonstration comes in six pieces. One at a time.</p><h4 id="sx3">1. The example reads the machine’s numbers itself<a class="plink" href="sec126.html#sx3" aria-label="Link to this section" title="Link to this section">#</a></h4><div></div><p><code>sysconf</code> is asked for the cache sizes, line size, page size and core count. The later demonstrations use those as <strong>the baseline</strong> — so instead of “past 32 KiB it slows down” we can say “past the L1 size it slows down”.</p><div class="dev platform"><p class="dev-label">Platform note. aarch64's C library does not know the cache sizes</p><div class="dev-body"><p>The cache values from <code>sysconf</code> are filled in by the C library asking the CPU. glibc on x86-64 answers with <code>CPUID</code>. glibc on aarch64 answers only the line size, from the <code>CTR_EL0</code> register — and that is the <strong>smallest</strong> line size in the whole hierarchy — and returns <strong>0</strong> for sizes and associativity. The kernel has closed the registers holding those values to user programs (glibc 2.44′s aarch64 <code>sysconf.c</code> says so in a comment).</p><p>Printed as is, that 0 becomes “a 0-byte cache”, and the latency curve later files every size under main memory — which is exactly what the aarch64 cross run produced. So when the answer is 0 the example reads what the kernel wrote at boot into <code>/sys/devices/system/cpu/cpu0/cache</code>, and if that is missing too it prints “unknown”.</p><p>Run on an Android phone (clang in Termux), it was emptier still. Android’s C library (Bionic) returns 0 even for the line size, and the kernel’s sysfs records only each cache’s level and type, leaving the size fields empty. So on aarch64 Linux the example finally reads <code>CTR_EL0</code> itself to get <strong>at least the line size</strong> — a register the kernel leaves readable to user programs, and the very value glibc answers with. ★ <strong>“It gives that machine’s answer” holds only when the one asked knows the answer.</strong></p></div></div><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Item</strong></th><th><strong>Value</strong></th><th><strong>Where it is used later</strong></th></tr><tr><td>L1 data cache</td><td>32 KiB, 8-way, 64-byte lines</td><td>the first step of the latency curve; the stride experiment</td></tr><tr><td>L2 cache</td><td>256 KiB</td><td>the second step</td></tr><tr><td>L3 cache</td><td>16 MiB</td><td>the third step</td></tr><tr><td>page size</td><td>4 KiB</td><td>the TLB experiment; the first-touch cost</td></tr><tr><td>logical cores</td><td>16</td><td>the false sharing experiment</td></tr><tr><td>clock resolution</td><td>1 ns</td><td>the shortest thing that can be measured</td></tr><tr><td>TLB (translation lookaside buffer)</td><td>the cache holding translations</td><td>the page experiment</td></tr></table></div><span id="proven-float-698"></span><p class="float-caption">Table 105.2 — The numbers of the machine this was written on (as the example read them)</p></figure><h4 id="sx4">2 and 3. Resolution and cost are different things<a class="plink" href="sec126.html#sx4" aria-label="Link to this section" title="Link to this section">#</a></h4><div></div><p><code>clock_getres</code> answers one nanosecond. But actually calling <code>clock_gettime</code> once costs <strong>about 17 nanoseconds</strong> on this machine, and the smallest interval two reads can distinguish is the same.</p><p>★ From which one rule follows. <strong>Anything shorter than 17 nanoseconds is never measured once.</strong> It is repeated a million times and divided. Every demonstration in this appendix is built that way.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Size of the thing</strong></th><th><strong>Example</strong></th><th><strong>Method</strong></th><th><strong>Watch out for</strong></th></tr><tr><td>about one nanosecond</td><td>one addition, one branch</td><td>repeat millions of times and divide</td><td>the optimiser removes it entirely</td></tr><tr><td>tens to hundreds of ns</td><td>one access outside the cache</td><td>thousands of repeats + a dependency chain</td><td>prefetching hides it</td></tr><tr><td>microseconds</td><td>a system call, a signal</td><td>thousands of repeats</td><td>context switches mix in</td></tr><tr><td>milliseconds and above</td><td>a disk access, a large computation</td><td>several rounds of one each</td><td>caches and buffers change the result</td></tr></table></div><span id="proven-float-699"></span><p class="float-caption">Table 105.3 — What to measure how — the method depends on the size</p></figure><h4 id="sx5">4. The first trap — the optimiser removes what you meant to measure<a class="plink" href="sec126.html#sx5" aria-label="Link to this section" title="Link to this section">#</a></h4><div></div><p>The same sum is measured twice: once discarding the result, once using it. The demonstration printed <strong>3 ns against 216,713 ns</strong> — more than ten thousand times apart.</p><p>The first is not fast; it <strong>did not run</strong>. The compiler has the right to delete a computation whose value nobody uses (the as-if rule, chapter 14). A loop adding a million values disappeared entire.</p><div class="dev misconception"><p class="dev-label">A common misconception. <strong>if my code finished in 0 nanoseconds it must be very fast</strong></p><div class="dev-body">No. <strong>It did not run.</strong> Whenever a measurement gives an unbelievably good number, ask first whether the code was removed. There is a way to check — multiply the input by ten. If the time does not multiply by ten, that loop did not run.</div></div><h4 id="sx6">5. The second trap — the first round is slow<a class="plink" href="sec126.html#sx6" aria-label="Link to this section" title="Link to this section">#</a></h4><div></div><p>The same 4 MiB was filled twice, and the first was <strong>more than ten times</strong> slower. The reason is not computation but <strong>memory</strong>. The address <code>malloc</code> gave is not yet attached to real memory, and at each first touch the operating system attaches one page (page faults, chapter 12).</p><p>★ Writing this demonstration walked into trap 4 first. With nobody reading the filled result, <code>memset</code> disappeared entirely and produced the nonsense “4 MiB filled in 38 nanoseconds”. Only after adding a line that reads one byte afterwards did that tenfold appear. <strong>Traps do not arrive one at a time.</strong></p><h4 id="sx7">6. The third trap — one interruption drags the mean<a class="plink" href="sec126.html#sx7" aria-label="Link to this section" title="Link to this section">#</a></h4><div></div><p>Measure the same work 201 times and the values scatter. On this machine the minimum was 12,354 ns, the median 12,531, the maximum 21,834 — the maximum 1.7 times the median. That round had other work cutting in.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Value</strong></th><th><strong>What it says</strong></th><th><strong>Under interference</strong></th><th><strong>In this appendix</strong></th></tr><tr><td>minimum</td><td>“if nothing had interfered at all”</td><td>unshaken</td><td>stated alongside</td></tr><tr><td>median</td><td>“this is what it usually is”</td><td>barely moves</td><td><strong>used by default</strong></td></tr><tr><td>mean</td><td>total / count</td><td><strong>dragged by one outlier</strong></td><td>not used</td></tr><tr><td>maximum, 99th</td><td>“this is the worst”</td><td>that is the point of it</td><td>what matters in code with a deadline</td></tr></table></div><span id="proven-float-700"></span><p class="float-caption">Table 105.4 — Which representative value to use</p></figure><p>★ In code with a deadline (an audio callback, a control loop, an interrupt handler) the <strong>maximum is the design figure</strong>. “One millisecond on average” is no comfort — one late round and the sound breaks. “Measure the worst case” from the appendix on C without an operating system is the same story.</p><h3 id="sx8">The six disciplines of this appendix<a class="plink" href="sec126.html#sx8" aria-label="Link to this section" title="Link to this section">#</a></h3><div></div><p>What has been seen so far, written down as a contract. Every demonstration that follows keeps it.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Discipline</strong></th><th><strong>What it prevents</strong></th><th><strong>How it is kept</strong></th></tr><tr><td>measure the scale before measuring</td><td>measuring the clock itself</td><td>find the resolution and call cost first, and repeat anything shorter</td></tr><tr><td>keep it from being removed</td><td>reading deleted code as “fast”</td><td>a <code>volatile</code> sink, a dependency chain, using the return value</td></tr><tr><td>warm up, then measure</td><td>page faults and cold caches mixing in</td><td>run warm-up rounds and discard them</td></tr><tr><td>use the median</td><td>one interruption changing the conclusion</td><td>sort the rounds and take the middle, stating the minimum too</td></tr><tr><td>speak in ratios</td><td>reading this machine’s numbers as law</td><td>fix a baseline and record “how many times”</td></tr><tr><td>suspect the measurement first</td><td>wasting time blaming the machine</td><td>multiply the input by ten and see whether the time follows</td></tr></table></div><span id="proven-float-701"></span><p class="float-caption">Table 105.5 — Six disciplines for measuring</p></figure><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Why does a ratio last longer than a nanosecond figure?</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> Nanoseconds change with clock speed, generation and power state; the same code can be twice as fast on another machine. But <strong>the distance between L1 and main memory</strong>, or <strong>between a predicted and a mispredicted branch</strong>, comes from the structure and changes far more slowly. So “60 times L1” is more durable knowledge than “78 nanoseconds on this machine”.</p></div></div><h3 id="sx9">Measuring the memory ladder<a class="plink" href="sec126.html#sx9" aria-label="Link to this section" title="Link to this section">#</a></h3><div></div><p>With the scale ready, the first thing to measure: the ladder of chapter 12.</p><h4 id="sx10">First the principle — why a ladder appeared<a class="plink" href="sec126.html#sx10" aria-label="Link to this section" title="Link to this section">#</a></h4><div></div><p>CPUs got faster and main memory did not keep up. That gap widened over decades, and layers were inserted to fill it. Those are the caches.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Rung</strong></th><th><strong>Size (this machine)</strong></th><th><strong>Who fills it</strong></th><th><strong>What it holds</strong></th><th><strong>If it is not there</strong></th></tr><tr><td>registers</td><td>a few hundred bytes</td><td>the compiler</td><td>the values in use now</td><td>ask the cache</td></tr><tr><td>L1 data cache</td><td>32 KiB</td><td>hardware</td><td>lines just used</td><td>ask L2</td></tr><tr><td>L2 cache</td><td>256 KiB</td><td>hardware</td><td>lines recently used</td><td>ask L3</td></tr><tr><td>L3 cache</td><td>16 MiB</td><td>hardware</td><td>lines shared between cores</td><td>ask main memory</td></tr><tr><td>main memory (DRAM)</td><td>several GiB</td><td>the operating system</td><td>all of the program’s memory</td><td>fetch a page from disk</td></tr></table></div><span id="proven-float-702"></span><p class="float-caption">Table 105.6 — What each rung does</p></figure><p>Two things to note in advance; they are needed to read the measurements.</p><p><strong>First, a cache moves in “lines”, not bytes.</strong> On this machine a line is 64 bytes. Read one <code>int</code> (4 bytes) and the 64 bytes around it come up whole.</p><p><strong>Second, the machine guesses what will be read next.</strong> When addresses grow regularly, prefetching circuitry runs ahead and fetches them. So <strong>a program reading in order hardly feels slow memory at all.</strong></p><h4 id="sx11">So how must it be measured<a class="plink" href="sec126.html#sx11" aria-label="Link to this section" title="Link to this section">#</a></h4><div></div><p>Because of the second property, measuring “how far away memory is” while reading in order gives no answer — the machine has already fetched it. To see the latency you must make <strong>the next address impossible to know in advance</strong>.</p><p>The classic method: <strong>pointer chasing</strong> — link the array into a <strong>single ring</strong> in random order, so that the value just read tells you where to read next.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Condition</strong></th><th><strong>Why it is needed</strong></th><th><strong>If it is broken</strong></th></tr><tr><td>the next place is in the <strong>value</strong> just read</td><td>the machine cannot run ahead — one at a time</td><td>several accesses overlap and hide the latency</td></tr><tr><td>the order is random</td><td>it hides the pattern of addresses</td><td>prefetching works</td></tr><tr><td>the ring is <strong>one</strong> (it does not split into small rings)</td><td>the whole working set is walked evenly</td><td>only part is walked and it fits in cache</td></tr><tr><td>the result is written somewhere</td><td>so the optimiser cannot delete the loop</td><td>“0 nanoseconds” appears</td></tr></table></div><span id="proven-float-703"></span><p class="float-caption">Table 105.7 — What pointer chasing achieves</p></figure><div class="demo demo-src"><p class="demo-head"><code>examples-en/apx-measured/cache_ladder/cache_ladder.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> 기억의 사다리를 잰다 --- 작업 집합을 키워 가며 「한 번 읽는 데 드는 시간」을 본다.</span></em>
 <em><span class="tok-c">   비결은 *포인터 추적*이다: 다음에 읽을 자리가 지금 읽은 값에 들어 있으면, 기계가</span></em>
 <em><span class="tok-c">   미리 가져올 수 없고 한 번에 하나씩만 진행된다. 그래서 처리량이 아니라 *지연*이 보인다. </span></em><em><span class="tok-c">*/</span></em>
 <strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><span class="tok-p">_POSIX_C_SOURCE</span><span class="tok-p"> </span><span class="tok-n">200809</span><strong><span class="tok-t">L</span></strong>
@@ -1087,22 +1101,22 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
   it follows a random ring, so prefetching does not help --- pure latency.
 
   working set  where      random access  factor     sequential
-  4 KiB        L1             1.43 ns     1.0x     0.38 ns
-  8 KiB        L1             1.43 ns     1.0x     0.37 ns
+  4 KiB        L1             1.44 ns     1.0x     0.38 ns
+  8 KiB        L1             1.44 ns     1.0x     0.37 ns
   16 KiB       L1             1.44 ns     1.0x     0.37 ns
   32 KiB       L1             1.44 ns     1.0x     0.37 ns
   64 KiB       L2             2.53 ns     1.8x     0.37 ns
-  128 KiB      L2             3.58 ns     2.5x     0.37 ns
-  256 KiB      L2             5.05 ns     3.5x     0.38 ns
-  512 KiB      L3             9.66 ns     6.7x     0.39 ns
-  1 MiB        L3            12.60 ns     8.8x     0.39 ns
-  2 MiB        L3            14.06 ns     9.8x     0.39 ns
-  4 MiB        L3            14.86 ns    10.4x     0.39 ns
-  8 MiB        L3            18.23 ns    12.7x     0.42 ns
-  16 MiB       L3            44.00 ns    30.7x     0.54 ns
-  32 MiB       main memory    66.21 ns    46.2x     0.56 ns
-  64 MiB       main memory    79.53 ns    55.5x     0.58 ns
-  128 MiB      main memory    85.55 ns    59.7x     0.57 ns
+  128 KiB      L2             3.25 ns     2.3x     0.37 ns
+  256 KiB      L2             5.04 ns     3.5x     0.37 ns
+  512 KiB      L3             9.24 ns     6.4x     0.38 ns
+  1 MiB        L3            12.08 ns     8.4x     0.39 ns
+  2 MiB        L3            13.41 ns     9.3x     0.39 ns
+  4 MiB        L3            14.38 ns    10.0x     0.59 ns
+  8 MiB        L3            22.45 ns    15.6x     0.42 ns
+  16 MiB       L3            51.64 ns    36.0x     0.55 ns
+  32 MiB       main memory    72.15 ns    50.3x     0.58 ns
+  64 MiB       main memory    82.27 ns    57.3x     0.58 ns
+  128 MiB      main memory    89.10 ns    62.1x     0.58 ns
 
 == how to read this ==
   1. reading down the table shows steps. Wherever the working set passes
@@ -1132,9 +1146,43 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
 
 <strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">volatile</span></strong> <strong><span class="tok-t">long</span></strong> sink<span class="tok-x">;</span>
 
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> ★ aarch64 리눅스는 CTR_EL0 레지스터를 사용자 프로그램에도 읽게 열어 둔다(glibc 도 이것으로</span></em>
+<em><span class="tok-c">     줄 크기를 답한다). 안드로이드의 Bionic 은 sysconf 에 0 을 돌려주고, 폰 커널은 sysfs 의 크기</span></em>
+<em><span class="tok-c">     칸을 비워 두기도 해서(안드로이드 폰 실측) 마지막으로 이 레지스터를 직접 읽는다.</span></em>
+<em><span class="tok-c">     다만 계층 전체에서 *가장 작은* 줄 크기다. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#if</span></strong><span class="tok-p"> </span><strong><span class="tok-k">defined</span></strong><span class="tok-p">(__aarch64__) &amp;&amp; </span><strong><span class="tok-k">defined</span></strong><span class="tok-p">(__linux__)</span>
+<strong>__asm__</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">.text</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">.globl read_ctr_el0</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">.type read_ctr_el0, </span></strong><strong><span class="tok-s">%f</span></strong><strong><span class="tok-s">unction</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong>
+<strong>        </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">read_ctr_el0:</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">    mrs x0, ctr_el0</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">    ret</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<strong><span class="tok-t">unsigned</span></strong> <strong><span class="tok-t">long</span></strong> <strong>read_ctr_el0</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span><span class="tok-x">;</span>
+<strong><span class="tok-k">#endif</span></strong>
+
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">long</span></strong> <strong>cache_line</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">long</span></strong> v <strong><span class="tok-x">=</span></strong> <strong>sysconf</strong><strong><span class="tok-x">(</span></strong><strong>_SC_LEVEL1_DCACHE_LINESIZE</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>v <strong><span class="tok-x">></span></strong> <span class="tok-n">0</span><span class="tok-x">)</span>
+        <strong><span class="tok-k">return</span></strong> v<span class="tok-x">;</span>
+    FILE <strong><span class="tok-x">*</span></strong>f <strong><span class="tok-x">=</span></strong> <strong>fopen</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">/sys/devices/system/cpu/cpu0/cache/index0/coherency_line_size</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">r</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>f<span class="tok-x">)</span> <span class="tok-x">{</span>
+        <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong>fscanf</strong><strong><span class="tok-x">(</span></strong><strong>f</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%ld</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>v</strong><strong><span class="tok-x">)</span></strong> <strong><span class="tok-x">!=</span></strong> <span class="tok-n">1</span><span class="tok-x">)</span>
+            v <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+        <strong>fclose</strong><strong><span class="tok-x">(</span></strong><strong>f</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>v <strong><span class="tok-x">></span></strong> <span class="tok-n">0</span><span class="tok-x">)</span>
+            <strong><span class="tok-k">return</span></strong> v<span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+<strong><span class="tok-k">#if</span></strong><span class="tok-p"> </span><strong><span class="tok-k">defined</span></strong><span class="tok-p">(__aarch64__) &amp;&amp; </span><strong><span class="tok-k">defined</span></strong><span class="tok-p">(__linux__)</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">4</span><strong><span class="tok-t">L</span></strong> <strong><span class="tok-x">&lt;&lt;</span></strong> <span class="tok-x">(</span><span class="tok-x">(</span><strong>read_ctr_el0</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">)</span></strong> <strong><span class="tok-x">>></span></strong> <span class="tok-n">16</span><span class="tok-x">)</span> <strong><span class="tok-x">&amp;</span></strong> <span class="tok-x">0x</span><span class="tok-n">f</span><span class="tok-x">)</span><span class="tok-x">;</span>
+<strong><span class="tok-k">#else</span></strong>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>                                  <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 모른다 --- 부르는 쪽이 밝힌다 </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#endif</span></strong>
+<span class="tok-x">}</span>
+
 <strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
 <span class="tok-x">{</span>
-    <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">long</span></strong> line <strong><span class="tok-x">=</span></strong> <strong>sysconf</strong><strong><span class="tok-x">(</span></strong><strong>_SC_LEVEL1_DCACHE_LINESIZE</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-t">long</span></strong> line <strong><span class="tok-x">=</span></strong> <strong>cache_line</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>line <strong><span class="tok-x">&lt;=</span></strong> <span class="tok-n">0</span><span class="tok-x">)</span> <span class="tok-x">{</span>                         <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 모르면 흔한 값을 쓰되, 가정이라고 밝힌다 </span></em><em><span class="tok-c">*/</span></em>
+        line <strong><span class="tok-x">=</span></strong> <span class="tok-n">64</span><span class="tok-x">;</span>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">(this system does not report its cache line --- 64 bytes is assumed below)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
     <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">size_t</span></strong> BUF <strong><span class="tok-x">=</span></strong> <span class="tok-n">64</span><strong><span class="tok-t">u</span></strong> <strong><span class="tok-x">&lt;&lt;</span></strong> <span class="tok-n">20</span><span class="tok-x">;</span>            <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 64 MiB --- L3(16 MiB)보다 크게 </span></em><em><span class="tok-c">*/</span></em>
     <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">long</span></strong> TOUCH <strong><span class="tok-x">=</span></strong> <span class="tok-n">2000000</span><span class="tok-x">;</span>              <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 걸음 폭이 달라도 *접근 횟수는 같게* </span></em><em><span class="tok-c">*/</span></em>
     <strong><span class="tok-t">unsigned</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>buf <strong><span class="tok-x">=</span></strong> <strong>malloc</strong><strong><span class="tok-x">(</span></strong><strong>BUF</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
@@ -1225,17 +1273,17 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
   stride     each           factor     lines touched    bytes fetched in vain
   1              0.64 ns     1.0x  0.016            0 bytes
   2              0.65 ns     1.0x  0.031            0 bytes
-  4              0.69 ns     1.1x  0.062            0 bytes
-  8              0.78 ns     1.2x  0.125            0 bytes
+  4              0.67 ns     1.0x  0.062            0 bytes
+  8              0.77 ns     1.2x  0.125            0 bytes
   16             1.01 ns     1.6x  0.250            0 bytes
-  32             1.77 ns     2.7x  0.500            0 bytes
-  64             3.32 ns     5.2x  1.000            63 bytes
-  128            5.03 ns     7.8x  1.000            63 bytes
-  256            6.02 ns     9.4x  1.000            63 bytes
-  512            6.68 ns    10.4x  1.000            63 bytes
-  1024           7.20 ns    11.2x  1.000            63 bytes
-  2048           7.62 ns    11.8x  1.000            63 bytes
-  4096           6.69 ns    10.4x  1.000            63 bytes
+  32             1.62 ns     2.6x  0.500            0 bytes
+  64             3.18 ns     5.0x  1.000            63 bytes
+  128            6.13 ns     9.6x  1.000            63 bytes
+  256            6.29 ns     9.9x  1.000            63 bytes
+  512            6.99 ns    11.0x  1.000            63 bytes
+  1024           7.80 ns    12.3x  1.000            63 bytes
+  2048           7.71 ns    12.1x  1.000            63 bytes
+  4096           6.69 ns    10.5x  1.000            63 bytes
 
   * the cost rises until the stride reaches 64 bytes (the line size), and
     then flattens. A stride narrower than a line uses one line several times,
@@ -1247,8 +1295,8 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
   4194304 elements --- 224 MiB in total
 
   layout                             per element     factor bytes used per line
-  array of structs (AoS) --- reading x only   2.762 ns      2.3x  8 / 56
-  structs of arrays (SoA) --- reading the x array only   1.195 ns      1.0x  64 / 64
+  array of structs (AoS) --- reading x only   2.891 ns      2.4x  8 / 56
+  structs of arrays (SoA) --- reading the x array only   1.202 ns      1.0x  64 / 64
 
   * the same values were added the same number of times. Only the layout changed.
     In the array of structs, 56 bytes are fetched to use 8 --- the rest merely
@@ -1398,8 +1446,20 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
     <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">    sweep the same data fall to a 512th. But madvise is a request, not an order.</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
     <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">    The </span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">backed by huge pages</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s"> figure above says whether the request was taken ---</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
     <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">    if both runs are backed alike, similar times are only to be expected.</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
-    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">    (this machine uses huge pages by default, so even the </span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">normal pages</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s"> run</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
-    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">     may already have some mixed in.)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 이 문장은 큰 쪽이 기본값인 기계에서만 참이다 --- 설정을 읽고 나서 말한다 </span></em><em><span class="tok-c">*/</span></em>
+    FILE <strong><span class="tok-x">*</span></strong>thp <strong><span class="tok-x">=</span></strong> <strong>fopen</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">/sys/kernel/mm/transparent_hugepage/enabled</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">r</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-t">char</span></strong> mode_s<span class="tok-x">[</span><span class="tok-n">64</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-s">"</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>thp<span class="tok-x">)</span> <span class="tok-x">{</span>
+        <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong><strong>fgets</strong><strong><span class="tok-x">(</span></strong><strong>mode_s</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> mode_s</strong><strong><span class="tok-x">,</span></strong><strong> thp</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span>
+            mode_s<span class="tok-x">[</span><span class="tok-n">0</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-s">'</span><span class="tok-n">\0</span><span class="tok-s">'</span><span class="tok-x">;</span>
+        <strong>fclose</strong><strong><span class="tok-x">(</span></strong><strong>thp</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong>strstr</strong><strong><span class="tok-x">(</span></strong><strong>mode_s</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">[always]</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">    (this machine uses huge pages by default, so even the </span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">normal pages</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s"> run</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">     may already have some mixed in.)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span> <strong><span class="tok-k">else</span></strong> <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong>thp<span class="tok-x">)</span> <span class="tok-x">{</span>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">    (this kernel offers no transparent huge pages at all, so the request cannot be taken.)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
 
     <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">== 3. the cost of touching a page for the first time ==</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
     <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">size_t</span></strong> fp <strong><span class="tok-x">=</span></strong> <span class="tok-n">32768</span><span class="tok-x">;</span>                        <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 128 MiB </span></em><em><span class="tok-c">*/</span></em>
@@ -1429,12 +1489,12 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
 
   pages      data touched each         factor
   16         64 KiB           3.44 ns    1.0x
-  64         256 KiB          7.26 ns    2.1x
-  256        1 MiB           14.86 ns    4.3x
-  1024       4 MiB           15.37 ns    4.5x
-  4096       16 MiB          32.60 ns    9.5x
-  16384      64 MiB          73.73 ns   21.4x
-  65536      256 MiB         87.84 ns   25.5x
+  64         256 KiB          6.02 ns    1.7x
+  256        1 MiB           15.97 ns    4.6x
+  1024       4 MiB           15.94 ns    4.6x
+  4096       16 MiB          36.29 ns   10.5x
+  16384      64 MiB          78.08 ns   22.7x
+  65536      256 MiB         90.91 ns   26.4x
 
   * the data is small (8 bytes per page), and yet more pages costs more.
     The bottleneck is address translation, not the cache. When the table
@@ -1445,9 +1505,9 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
   normal pages advised         backed by huge pages: 0 KiB (0%)
   huge pages advised           backed by huge pages: 0 KiB (0%)
   the same 256 MiB is walked the same way.
-  normal pages (4 KiB)            87.62 ns
-  huge pages advised (MADV_HUGEPAGE)    87.11 ns
-  difference: 1.01 x --- no great difference in this run
+  normal pages (4 KiB)            90.82 ns
+  huge pages advised (MADV_HUGEPAGE)    90.86 ns
+  difference: 1.00 x --- no great difference in this run
   * one huge page replaces 512 pages of 4 KiB, so the translations needed to
     sweep the same data fall to a 512th. But madvise is a request, not an order.
     The "backed by huge pages" figure above says whether the request was taken ---
@@ -1456,9 +1516,9 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
      may already have some mixed in.)
 
 == 3. the cost of touching a page for the first time ==
-  touching a page the first time :   1072.1 ns
-  touching an already-mapped page:      8.7 ns
-  factor: 123 x
+  touching a page the first time :   1123.4 ns
+  touching an already-mapped page:      8.6 ns
+  factor: 131 x
   * the address `malloc` returned is not memory yet. At each first touch the
     operating system attaches one page --- and that is its cost. Allocate a large
     buffer and measure at once and this cost is mixed in entire (hence warming up).
@@ -1613,27 +1673,27 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
   the two arrays hold exactly the same contents --- only sortedness differs.
 
                                      random order sorted order sorted/random
-  source with an if (plain -O2)          0.649 ns     0.650 ns    1.00 x
-  code that kept a real branch           3.909 ns     0.783 ns    5.00 x
-  code with the branch turned into arithmetic     0.631 ns     0.629 ns    1.00 x
+  source with an if (plain -O2)          0.648 ns     0.641 ns    1.01 x
+  code that kept a real branch           3.907 ns     0.787 ns    4.97 x
+  code with the branch turned into arithmetic     0.619 ns     0.625 ns    0.99 x
 
   * the first two rows have the same source. Only the compiler settings differ.
     In the first, the compiler turned the `if` into a conditional move (cmov), so
     there is no branch to predict and sorting brings no gain. That is why the
     famous "sorted arrays are faster" story often fails to reproduce today.
 
-  extra time per element in the real-branch version: 3.126 ns
-  / a miss probability of 0.5 = about 6.3 ns per misprediction
+  extra time per element in the real-branch version: 3.120 ns
+  / a miss probability of 0.5 = about 6.2 ns per misprediction
 
 == how regular must it be to be predicted ==
   the same number of trues, with only the pattern changed.
 
   pattern                              each note
-  always true                      0.487 ns always predicted
-  alternating                      0.833 ns short periods are memorised
-  one in four                      0.907 ns short periods are memorised
-  one in sixteen                   1.038 ns short periods are memorised
-  random                           3.893 ns cannot be predicted
+  always true                      0.503 ns always predicted
+  alternating                      0.839 ns short periods are memorised
+  one in four                      0.908 ns short periods are memorised
+  one in sixteen                   1.047 ns short periods are memorised
+  random                           3.904 ns cannot be predicted
 
 == how to read this ==
   0. today's compilers turn a short `if` into branchless code. So to measure
@@ -1671,6 +1731,44 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
 
 <strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">long</span></strong> line_size<span class="tok-x">;</span>
 
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> ★ aarch64 리눅스는 CTR_EL0 레지스터를 사용자 프로그램에도 읽게 열어 둔다(glibc 도 이것으로</span></em>
+<em><span class="tok-c">     줄 크기를 답한다). 안드로이드의 Bionic 은 sysconf 에 0 을 돌려주고, 폰 커널은 sysfs 의 크기</span></em>
+<em><span class="tok-c">     칸을 비워 두기도 해서(안드로이드 폰 실측) 마지막으로 이 레지스터를 직접 읽는다.</span></em>
+<em><span class="tok-c">     다만 계층 전체에서 *가장 작은* 줄 크기다. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#if</span></strong><span class="tok-p"> </span><strong><span class="tok-k">defined</span></strong><span class="tok-p">(__aarch64__) &amp;&amp; </span><strong><span class="tok-k">defined</span></strong><span class="tok-p">(__linux__)</span>
+<strong>__asm__</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">.text</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">.globl read_ctr_el0</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">.type read_ctr_el0, </span></strong><strong><span class="tok-s">%f</span></strong><strong><span class="tok-s">unction</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong>
+<strong>        </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">read_ctr_el0:</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">    mrs x0, ctr_el0</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">    ret</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<strong><span class="tok-t">unsigned</span></strong> <strong><span class="tok-t">long</span></strong> <strong>read_ctr_el0</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span><span class="tok-x">;</span>
+<strong><span class="tok-k">#endif</span></strong>
+
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">long</span></strong> <strong>cache_line</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">long</span></strong> v <strong><span class="tok-x">=</span></strong> <strong>sysconf</strong><strong><span class="tok-x">(</span></strong><strong>_SC_LEVEL1_DCACHE_LINESIZE</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>v <strong><span class="tok-x">></span></strong> <span class="tok-n">0</span><span class="tok-x">)</span>
+        <strong><span class="tok-k">return</span></strong> v<span class="tok-x">;</span>
+    FILE <strong><span class="tok-x">*</span></strong>f <strong><span class="tok-x">=</span></strong> <strong>fopen</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">/sys/devices/system/cpu/cpu0/cache/index0/coherency_line_size</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">r</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>f<span class="tok-x">)</span> <span class="tok-x">{</span>
+        <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong>fscanf</strong><strong><span class="tok-x">(</span></strong><strong>f</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%ld</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>v</strong><strong><span class="tok-x">)</span></strong> <strong><span class="tok-x">!=</span></strong> <span class="tok-n">1</span><span class="tok-x">)</span>
+            v <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+        <strong>fclose</strong><strong><span class="tok-x">(</span></strong><strong>f</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>v <strong><span class="tok-x">></span></strong> <span class="tok-n">0</span><span class="tok-x">)</span>
+            <strong><span class="tok-k">return</span></strong> v<span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+<strong><span class="tok-k">#if</span></strong><span class="tok-p"> </span><strong><span class="tok-k">defined</span></strong><span class="tok-p">(__aarch64__) &amp;&amp; </span><strong><span class="tok-k">defined</span></strong><span class="tok-p">(__linux__)</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">4</span><strong><span class="tok-t">L</span></strong> <strong><span class="tok-x">&lt;&lt;</span></strong> <span class="tok-x">(</span><span class="tok-x">(</span><strong>read_ctr_el0</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">)</span></strong> <strong><span class="tok-x">>></span></strong> <span class="tok-n">16</span><span class="tok-x">)</span> <strong><span class="tok-x">&amp;</span></strong> <span class="tok-x">0x</span><span class="tok-n">f</span><span class="tok-x">)</span><span class="tok-x">;</span>
+<strong><span class="tok-k">#else</span></strong>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>                                  <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 모른다 --- 부르는 쪽이 밝힌다 </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#endif</span></strong>
+<span class="tok-x">}</span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> ★ aligned_alloc(C11) 대신 posix_memalign 을 쓴다. _POSIX_C_SOURCE 를 정의하면 안드로이드의</span></em>
+<em><span class="tok-c">     Bionic 은 C11 선언을 감춘다 --- Termux 의 clang 에서 「선언되지 않은 함수」로 멈췄다. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong><span class="tok-x">*</span></strong><strong>page_aligned</strong><span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong> bytes<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">void</span></strong> <strong><span class="tok-x">*</span></strong>p <strong><span class="tok-x">=</span></strong> <span class="tok-n">NULL</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <strong>posix_memalign</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>p</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">4096</span></strong><strong><span class="tok-x">,</span></strong><strong> bytes</strong><strong><span class="tok-x">)</span></strong> <strong><span class="tok-x">==</span></strong> <span class="tok-n">0</span> <strong><span class="tok-x">?</span></strong> p <strong><span class="tok-x">:</span></strong> <span class="tok-n">NULL</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
 <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── ① 각자 제 칸을 올린다 (칸 사이의 거리를 바꿔 가며) ── </span></em><em><span class="tok-c">*/</span></em>
 <strong><span class="tok-t">struct</span></strong> slot <span class="tok-x">{</span> <strong><span class="tok-k">volatile</span></strong> <strong><span class="tok-t">long</span></strong> v<span class="tok-x">;</span> <span class="tok-x">}</span><span class="tok-x">;</span>
 <strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">unsigned</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>arena<span class="tok-x">;</span>
@@ -1705,7 +1803,11 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
 
 <strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
 <span class="tok-x">{</span>
-    line_size <strong><span class="tok-x">=</span></strong> <strong>sysconf</strong><strong><span class="tok-x">(</span></strong><strong>_SC_LEVEL1_DCACHE_LINESIZE</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    line_size <strong><span class="tok-x">=</span></strong> <strong>cache_line</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>line_size <strong><span class="tok-x">&lt;=</span></strong> <span class="tok-n">0</span><span class="tok-x">)</span> <span class="tok-x">{</span>
+        line_size <strong><span class="tok-x">=</span></strong> <span class="tok-n">64</span><span class="tok-x">;</span>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">(this system does not report its cache line --- 64 bytes is assumed below)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
     <strong><span class="tok-t">long</span></strong> cores <strong><span class="tok-x">=</span></strong> <strong>sysconf</strong><strong><span class="tok-x">(</span></strong><strong>_SC_NPROCESSORS_ONLN</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
     <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">== this machine ==</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">  cache line </span></strong><strong><span class="tok-s">%ld</span></strong><strong><span class="tok-s"> bytes · </span></strong><strong><span class="tok-s">%ld</span></strong><strong><span class="tok-s"> logical cores</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> line_size</strong><strong><span class="tok-x">,</span></strong><strong> cores</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
@@ -1713,7 +1815,7 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
 <em><span class="tok-c">       버려(s = ITERS) 0.005 나노초 같은 헛값이 나온다 --- M1 의 첫 함정이다.</span></em>
 <em><span class="tok-c">       그래서 뒤의 실험과 똑같은 경로(volatile 칸 올리기)를 한 스레드로 돌려 기준을 잡는다. </span></em><em><span class="tok-c">*/</span></em>
     slot_gap <strong><span class="tok-x">=</span></strong> <span class="tok-n">128</span><span class="tok-x">;</span>
-    arena <strong><span class="tok-x">=</span></strong> <strong>aligned_alloc</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">4096</span></strong><strong><span class="tok-x">,</span></strong><strong> slot_gap </strong><strong><span class="tok-x">*</span></strong><strong> </strong><strong><span class="tok-n">8</span></strong><strong> </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">4096</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    arena <strong><span class="tok-x">=</span></strong> <strong>page_aligned</strong><strong><span class="tok-x">(</span></strong><strong>slot_gap </strong><strong><span class="tok-x">*</span></strong><strong> </strong><strong><span class="tok-n">8</span></strong><strong> </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">4096</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
     <strong>memset</strong><strong><span class="tok-x">(</span></strong><strong>arena</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">,</span></strong><strong> slot_gap </strong><strong><span class="tok-x">*</span></strong><strong> </strong><strong><span class="tok-n">8</span></strong><strong> </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">4096</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
     <strong><span class="tok-t">double</span></strong> bs<span class="tok-x">[</span>ROUNDS<span class="tok-x">]</span><span class="tok-x">;</span>
     <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> r <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> r <strong><span class="tok-x">&lt;</span></strong> ROUNDS<span class="tok-x">;</span> r<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> bs<span class="tok-x">[</span>r<span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <strong>run</strong><strong><span class="tok-x">(</span></strong><strong>bump</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">,</span></strong><strong> ITERS</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">NULL</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
@@ -1733,7 +1835,7 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
     <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">#DATA-BEGIN</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
     <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong> gap <strong><span class="tok-x">=</span></strong> <span class="tok-n">8</span><span class="tok-x">;</span> gap <strong><span class="tok-x">&lt;=</span></strong> <span class="tok-n">256</span><span class="tok-x">;</span> gap <strong><span class="tok-x">*=</span></strong> <span class="tok-n">2</span><span class="tok-x">)</span> <span class="tok-x">{</span>
         slot_gap <strong><span class="tok-x">=</span></strong> gap<span class="tok-x">;</span>
-        arena <strong><span class="tok-x">=</span></strong> <strong>aligned_alloc</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">4096</span></strong><strong><span class="tok-x">,</span></strong><strong> gap </strong><strong><span class="tok-x">*</span></strong><strong> </strong><strong><span class="tok-n">8</span></strong><strong> </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">4096</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        arena <strong><span class="tok-x">=</span></strong> <strong>page_aligned</strong><strong><span class="tok-x">(</span></strong><strong>gap </strong><strong><span class="tok-x">*</span></strong><strong> </strong><strong><span class="tok-n">8</span></strong><strong> </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">4096</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
         <strong>memset</strong><strong><span class="tok-x">(</span></strong><strong>arena</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">,</span></strong><strong> gap </strong><strong><span class="tok-x">*</span></strong><strong> </strong><strong><span class="tok-n">8</span></strong><strong> </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">4096</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
         <strong><span class="tok-t">double</span></strong> s<span class="tok-x">[</span>ROUNDS<span class="tok-x">]</span><span class="tok-x">;</span>
         <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> r <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> r <strong><span class="tok-x">&lt;</span></strong> ROUNDS<span class="tok-x">;</span> r<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> s<span class="tok-x">[</span>r<span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <strong>run</strong><strong><span class="tok-x">(</span></strong><strong>bump</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">2</span></strong><strong><span class="tok-x">,</span></strong><strong> ITERS</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">NULL</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
@@ -1756,7 +1858,7 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
         <strong><span class="tok-t">double</span></strong> v<span class="tok-x">[</span><span class="tok-n">2</span><span class="tok-x">]</span><span class="tok-x">;</span>
         <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> k <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> k <strong><span class="tok-x">&lt;</span></strong> <span class="tok-n">2</span><span class="tok-x">;</span> k<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
             slot_gap <strong><span class="tok-x">=</span></strong> k <strong><span class="tok-x">?</span></strong> <span class="tok-n">128</span> <strong><span class="tok-x">:</span></strong> <span class="tok-n">8</span><span class="tok-x">;</span>
-            arena <strong><span class="tok-x">=</span></strong> <strong>aligned_alloc</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">4096</span></strong><strong><span class="tok-x">,</span></strong><strong> slot_gap </strong><strong><span class="tok-x">*</span></strong><strong> </strong><strong><span class="tok-n">16</span></strong><strong> </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">4096</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+            arena <strong><span class="tok-x">=</span></strong> <strong>page_aligned</strong><strong><span class="tok-x">(</span></strong><strong>slot_gap </strong><strong><span class="tok-x">*</span></strong><strong> </strong><strong><span class="tok-n">16</span></strong><strong> </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">4096</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
             <strong>memset</strong><strong><span class="tok-x">(</span></strong><strong>arena</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">,</span></strong><strong> slot_gap </strong><strong><span class="tok-x">*</span></strong><strong> </strong><strong><span class="tok-n">16</span></strong><strong> </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">4096</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
             <strong><span class="tok-t">double</span></strong> s<span class="tok-x">[</span>ROUNDS<span class="tok-x">]</span><span class="tok-x">;</span>
             <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> r <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> r <strong><span class="tok-x">&lt;</span></strong> ROUNDS<span class="tok-x">;</span> r<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> s<span class="tok-x">[</span>r<span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <strong>run</strong><strong><span class="tok-x">(</span></strong><strong>bump</strong><strong><span class="tok-x">,</span></strong><strong> th</strong><strong><span class="tok-x">,</span></strong><strong> ITERS</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">NULL</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
@@ -1791,22 +1893,22 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
   cache line 64 bytes · 16 logical cores
 
 == 1. the baseline ==
-  one thread incrementing its own slot : 1.565 ns each
+  one thread incrementing its own slot : 1.570 ns each
   (measured on a local variable the compiler folds the loop away, so it is no baseline)
 
 == 2. two threads each incrementing their own slot --- only the distance changes ==
   the two threads never touch each other's data. And yet…
 
   with two threads, a perfect split would make each increment half the
-  baseline (0.783 ns). Anything above that is the loss.
+  baseline (0.785 ns). Anything above that is the loss.
 
   distance       per increment    vs perfect scaling same line?
-  8                   1.138 ns       1.45x  same line --- false sharing
-  16                  1.134 ns       1.45x  same line --- false sharing
-  32                  1.140 ns       1.46x  same line --- false sharing
-  64                  0.784 ns       1.00x  different lines
+  8                   1.154 ns       1.47x  same line --- false sharing
+  16                  1.145 ns       1.46x  same line --- false sharing
+  32                  1.124 ns       1.43x  same line --- false sharing
+  64                  0.779 ns       0.99x  different lines
   128                 0.783 ns       1.00x  different lines
-  256                 0.784 ns       1.00x  different lines
+  256                 0.782 ns       1.00x  different lines
 
   * the two threads touch different variables. But in the same cache line the
     line is passed back and forth between the cores --- that is false sharing.
@@ -1814,17 +1916,17 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
 
 == 3. adding threads --- sharing a line, and apart ==
   threads    same line (8 bytes apart) different lines (128 bytes) factor
-  2                 1.143 ns        0.785 ns    1.5x
-  4                 0.723 ns        0.392 ns    1.8x
-  8                 0.724 ns        0.196 ns    3.7x
+  2                 1.141 ns        0.784 ns    1.5x
+  4                 0.729 ns        0.392 ns    1.9x
+  8                 0.900 ns        0.208 ns    4.3x
 
 == 4. when several really do touch one value ==
-  uncontended increment (baseline)        1.565 ns each
-  atomic increment --- 1 thread           5.213 ns each
-  atomic increment --- 2 threads         12.657 ns each
-  atomic increment --- 4 threads         17.204 ns each
-  increment under a lock --- 1 thread     16.930 ns each
-  increment under a lock --- 2 threads     56.331 ns each
+  uncontended increment (baseline)        1.570 ns each
+  atomic increment --- 1 thread           5.230 ns each
+  atomic increment --- 2 threads         19.410 ns each
+  atomic increment --- 4 threads         17.355 ns each
+  increment under a lock --- 1 thread     16.773 ns each
+  increment under a lock --- 2 threads     60.561 ns each
 
   * uncontended (one thread), the atomic costs 3x and the lock 11x.
     But when several contend for one value it jumps several fold again --- one
@@ -2013,21 +2115,21 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
 
 == 1. denormals --- numbers very close to zero ==
   the smallest normal double: 2.22507e-308
-  array filled with normals (1.0)    0.287 ns per element
-  array filled with denormals    20.526 ns per element
-  -> the denormal side is 71.6 x slower
+  array filled with normals (1.0)    0.286 ns per element
+  array filled with denormals    20.548 ns per element
+  -> the denormal side is 71.7 x slower
   * here the magnitude of a value alone changes the time. On some machines it is
     tens of times; on recent chips it is almost nothing --- so measure before speaking.
     (this is the accident where audio processing slows suddenly as a sound fades.)
 
 == 2. float and double ==
-  double (8 bytes)                0.287 ns per element
+  double (8 bytes)                0.288 ns per element
   float  (4 bytes)                0.286 ns per element
-  -> the float side is 1.00 x faster --- odd: no difference
+  -> the float side is 1.01 x faster --- odd: no difference
 
   measuring the same computation again, this time allowing vector instructions:
   double (vectors allowed)        0.573 ns per element
-  float  (vectors allowed)        0.287 ns per element
+  float  (vectors allowed)        0.286 ns per element
   -> this time the float side is 2.00 x faster
   * the benefit of narrower width appears only with vector instructions. But
     floating-point addition is not associative (reordering changes the result),
@@ -2038,10 +2140,10 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
 == 3. the operations cost differently ==
   operation                per element    vs multiply
   multiply  a*b               0.309 ns      1.0x
-  add       a+b               0.505 ns      1.6x
-  divide    a/b               1.146 ns      3.7x
-  sqrt      sqrt(a)           1.720 ns      5.6x
-  sin(a)                      8.948 ns     29.0x
+  add       a+b               0.506 ns      1.6x
+  divide    a/b               1.147 ns      3.7x
+  sqrt      sqrt(a)           1.721 ns      5.6x
+  sin(a)                      7.814 ns     25.3x
 
   * multiply and add cost about the same. Divide is several times, trigonometry tens.
     Hence the common trick of one divide for a reciprocal and many multiplies.

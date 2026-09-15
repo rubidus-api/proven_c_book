@@ -19,9 +19,43 @@ static int cmp_d(const void *a, const void *b)
 
 static volatile long sink;
 
+/* ★ aarch64 리눅스는 CTR_EL0 레지스터를 사용자 프로그램에도 읽게 열어 둔다(glibc 도 이것으로
+     줄 크기를 답한다). 안드로이드의 Bionic 은 sysconf 에 0 을 돌려주고, 폰 커널은 sysfs 의 크기
+     칸을 비워 두기도 해서(안드로이드 폰 실측) 마지막으로 이 레지스터를 직접 읽는다.
+     다만 계층 전체에서 *가장 작은* 줄 크기다. */
+#if defined(__aarch64__) && defined(__linux__)
+__asm__(".text\n.globl read_ctr_el0\n.type read_ctr_el0, %function\n"
+        "read_ctr_el0:\n    mrs x0, ctr_el0\n    ret\n");
+unsigned long read_ctr_el0(void);
+#endif
+
+static long cache_line(void)
+{
+    long v = sysconf(_SC_LEVEL1_DCACHE_LINESIZE);
+    if (v > 0)
+        return v;
+    FILE *f = fopen("/sys/devices/system/cpu/cpu0/cache/index0/coherency_line_size", "r");
+    if (f) {
+        if (fscanf(f, "%ld", &v) != 1)
+            v = 0;
+        fclose(f);
+        if (v > 0)
+            return v;
+    }
+#if defined(__aarch64__) && defined(__linux__)
+    return 4L << ((read_ctr_el0() >> 16) & 0xf);
+#else
+    return 0;                                  /* 모른다 --- 부르는 쪽이 밝힌다 */
+#endif
+}
+
 int main(void)
 {
-    const long line = sysconf(_SC_LEVEL1_DCACHE_LINESIZE);
+    long line = cache_line();
+    if (line <= 0) {                         /* 모르면 흔한 값을 쓰되, 가정이라고 밝힌다 */
+        line = 64;
+        printf("(this system does not report its cache line --- 64 bytes is assumed below)\n");
+    }
     const size_t BUF = 64u << 20;            /* 64 MiB --- L3(16 MiB)보다 크게 */
     const long TOUCH = 2000000;              /* 걸음 폭이 달라도 *접근 횟수는 같게* */
     unsigned char *buf = malloc(BUF);

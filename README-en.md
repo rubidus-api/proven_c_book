@@ -25,7 +25,7 @@ foundation to memory management, error handling, libraries and project structure
   typeset edition). Always current, independently of releases:
   [web](https://rubidus-api.github.io/proven_c_book/style-specimen.html) ·
   [PDF](https://rubidus-api.github.io/proven_c_book/style-specimen.pdf)
-- 13 parts, 105 chapters, appendices A–Q and an index — 1,265 pages in English, 1,195 in Korean
+- 13 parts, 105 chapters, appendices A–Q and an index — 1,268 pages in English, 1,199 in Korean
 - The change log lives in [CHANGELOG.md](CHANGELOG.md).
 
 ## Beyond the first C textbook
