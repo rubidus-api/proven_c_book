@@ -694,6 +694,13 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
     <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">#DATA </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-s">%ld</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-s">%ld</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> key</strong><strong><span class="tok-x">,</span></strong><strong> vsz</strong><strong><span class="tok-x">,</span></strong><strong> rss</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 <span class="tok-x">}</span>
 
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> Make the buffer memory that can be seen from outside. Held only by a local pointer, the</span></em>
+<em><span class="tok-c">   compiler treats it as memory nobody reads and removes the malloc and the per-page writes</span></em>
+<em><span class="tok-c">   entirely --- Clang 22 did, and the 8 GiB promise vanished. It survived only by chance</span></em>
+<em><span class="tok-c">   under this machine's GCC 14 (a phone run exposed it). Stored once in a volatile global,</span></em>
+<em><span class="tok-c">   outside calls (fopen) must be assumed able to see that memory. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong><strong><span class="tok-k">volatile</span></strong> held<span class="tok-x">;</span>
+
 <strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
 <span class="tok-x">{</span>
     <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">size_t</span></strong> GIB <strong><span class="tok-x">=</span></strong> <span class="tok-n">1024</span><strong><span class="tok-t">u</span></strong> <strong><span class="tok-x">*</span></strong> <span class="tok-n">1024</span><strong><span class="tok-t">u</span></strong> <strong><span class="tok-x">*</span></strong> <span class="tok-n">1024</span><strong><span class="tok-t">u</span></strong><span class="tok-x">;</span>
@@ -705,6 +712,7 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
     <strong>show</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">before</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">before the request</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
     <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>p <strong><span class="tok-x">=</span></strong> <strong>malloc</strong><strong><span class="tok-x">(</span></strong><strong>want</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    held <strong><span class="tok-x">=</span></strong> p<span class="tok-x">;</span>
     <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong>p<span class="tok-x">)</span> <span class="tok-x">{</span>
         <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">#DATA-END</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
         <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">  * this machine refused the promise; the point below still holds.</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
@@ -805,9 +813,9 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
 <span class="tok-x">}</span>
 </code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>== what a page costs the first time it is touched ==
 
-  first touch          1081.6 ns per page
-  touched again           8.3 ns per page
-  factor                129.8 x
+  first touch          1269.0 ns per page
+  touched again          10.5 ns per page
+  factor                120.8 x
 
   * the second write is a write. The first one is a fault, a page, a zeroing
     and an entry in the page table -- the bill for the memory that was
@@ -859,10 +867,18 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
     <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">#DATA </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-s">%ld</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-s">%ld</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> key</strong><strong><span class="tok-x">,</span></strong><strong> sh</strong><strong><span class="tok-x">,</span></strong><strong> pr</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 <span class="tok-x">}</span>
 
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> Make the buffer memory that can be seen from outside. Held only by a local pointer, the</span></em>
+<em><span class="tok-c">   compiler treats it as memory nobody reads and removes the malloc, the fill and the writes</span></em>
+<em><span class="tok-c">   entirely --- Clang 22 did, and GCC 16 removed the parent's fill. It survived only by chance</span></em>
+<em><span class="tok-c">   under this machine's GCC 14 (a phone run exposed it). Stored once in a volatile global,</span></em>
+<em><span class="tok-c">   outside calls (fopen, fork) must be assumed able to see that memory. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong><strong><span class="tok-k">volatile</span></strong> held<span class="tok-x">;</span>
+
 <strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
 <span class="tok-x">{</span>
     <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">size_t</span></strong> N <strong><span class="tok-x">=</span></strong> <span class="tok-n">512</span><strong><span class="tok-t">u</span></strong> <strong><span class="tok-x">*</span></strong> <span class="tok-n">1024</span> <strong><span class="tok-x">*</span></strong> <span class="tok-n">1024</span><span class="tok-x">;</span>
     <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>p <strong><span class="tok-x">=</span></strong> <strong>malloc</strong><strong><span class="tok-x">(</span></strong><strong>N</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    held <strong><span class="tok-x">=</span></strong> p<span class="tok-x">;</span>
     <strong><span class="tok-t">long</span></strong> sum <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
 
     <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong>p<span class="tok-x">)</span> <span class="tok-x">{</span> <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">not enough memory for the experiment.</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> <span class="tok-x">}</span>

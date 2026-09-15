@@ -28,6 +28,13 @@ static void show(const char *key, const char *when)
     printf("#DATA %s %ld %ld\n", key, vsz, rss);
 }
 
+/* Make the buffer memory that can be seen from outside. Held only by a local pointer, the
+   compiler treats it as memory nobody reads and removes the malloc and the per-page writes
+   entirely --- Clang 22 did, and the 8 GiB promise vanished. It survived only by chance
+   under this machine's GCC 14 (a phone run exposed it). Stored once in a volatile global,
+   outside calls (fopen) must be assumed able to see that memory. */
+static char *volatile held;
+
 int main(void)
 {
     const size_t GIB = 1024u * 1024u * 1024u;
@@ -39,6 +46,7 @@ int main(void)
     show("before", "before the request");
 
     char *p = malloc(want);
+    held = p;
     if (!p) {
         printf("#DATA-END\n");
         puts("\n  * this machine refused the promise; the point below still holds.");

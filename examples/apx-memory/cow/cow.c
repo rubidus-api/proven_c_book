@@ -47,10 +47,17 @@ static void show(const char *key, const char *who)
     printf("#DATA %s %ld %ld\n", key, sh, pr);
 }
 
+/* ★ 버퍼를 *바깥에서도 보이는 기억*으로 만든다. 지역 포인터로만 쥐고 있으면 컴파일러는
+     「아무도 읽지 않는 기억」으로 보고 malloc·memset·쓰기를 통째로 지운다 --- Clang 22 는 그랬고
+     GCC 16 은 부모의 채우기를 지웠다. 이 기계의 GCC 14 에서만 우연히 살아 있었다(폰에서 드러났다).
+     volatile 전역에 한 번 담으면, 바깥 호출(fopen·fork)이 그 기억을 볼 수 있다고 가정해야 한다. */
+static char *volatile held;
+
 int main(void)
 {
     const size_t N = 512u * 1024 * 1024;
     char *p = malloc(N);
+    held = p;
     long sum = 0;
 
     if (!p) { puts("not enough memory for the experiment."); return 0; }

@@ -889,34 +889,34 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
     Reading the clock costs more than that --- measured next.
 
 == 3. the cost of reading the clock ==
-  one clock_gettime : 16.8 ns
+  one clock_gettime : 16.7 ns
   smallest interval actually distinguishable : 17.0 ns
   * so anything shorter than this is never measured once. Repeat and divide.
     Every measurement in this appendix is built that way.
 
 == 4. trap one: the optimiser removes what you meant to measure ==
-  a sum whose result is discarded :         22 ns  (0.00 ns per element)
-  a sum whose result is used      :     396816 ns  (0.38 ns per element)
-  factor                          : 17794.4 x
+  a sum whose result is discarded :          2 ns  (0.00 ns per element)
+  a sum whose result is used      :     211495 ns  (0.20 ns per element)
+  factor                          : 120854.3 x
   * if the first is near zero, that code never ran. The compiler removed it as
     a value nobody uses. When the result says your code is infinitely fast,
     suspect this before suspecting the machine.
 
 == 5. trap two: the first round is slow (warming up) ==
-  filling the same 4 MiB --- first  :  1406475 ns
-                          second :   129745 ns
-  factor: 10.8 x
+  filling the same 4 MiB --- first  :  1339212 ns
+                          second :   110557 ns
+  factor: 12.1 x
   * the first round mixes in the cost of the OS attaching pages one by one (page faults).
     So warm up before measuring, and discard the warm-up rounds.
 
 == 6. trap three: one interruption drags the mean ==
   results over 201 rounds
-  minimum           12543 ns
-  median            12816 ns  &lt;- what this appendix uses
-  mean              13028 ns
-  99th percentile        17278 ns
-  maximum           22884 ns
-  mean / median = 1.02 x  (the further from 1, the more other work interfered)
+  minimum           12366 ns
+  median            12409 ns  &lt;- what this appendix uses
+  mean              12438 ns
+  99th percentile        12643 ns
+  maximum           15717 ns
+  mean / median = 1.00 x  (the further from 1, the more other work interfered)
   * this machine is shared. So the median is used rather than the mean, with the
     minimum alongside to show what it would be with no interference.
 </code></pre></div></div><p>시연이 여섯 토막으로 되어 있다. 하나씩 읽는다.</p><h4 id="sx3">① 기계의 숫자를 예제가 스스로 읽는다<a class="plink" href="sec119.html#sx3" aria-label="이 절의 주소" title="이 절의 주소">#</a></h4><div></div><p><code>sysconf</code> 로 캐시 크기·줄 크기·쪽 크기·코어 수를 물어본다. 이 부록의 뒤쪽 시연들이 이 숫자를 <strong>기준선</strong>으로 쓴다 — 「32 KiB 를 넘어서면 느려진다」가 아니라 「L1 크기를 넘어서면 느려진다」고 말할 수 있게 된다.</p><div class="dev platform"><p class="dev-label">플랫폼 노트. aarch64 의 C 라이브러리는 캐시 크기를 모른다</p><div class="dev-body"><p><code>sysconf</code> 의 캐시 값은 C 라이브러리가 CPU 에 물어서 채운다. x86-64 의 glibc 는 <code>CPUID</code> 로 답한다. aarch64 의 glibc 는 줄 크기만 <code>CTR_EL0</code> 레지스터로 답하고 — 그것도 계층 전체에서 <strong>가장 작은</strong> 줄 크기다 — 크기와 연관도에는 <strong>0</strong> 을 돌려준다. 그 값이 든 레지스터를 커널이 사용자 프로그램에 막아 두었기 때문이다(glibc 2.44 의 aarch64 <code>sysconf.c</code> 가 주석으로 밝힌다).</p><p>그 0 을 그대로 찍으면 「0 바이트 캐시」가 되고, 뒤의 지연 곡선은 모든 크기를 주기억으로 분류한다 — aarch64 교차 실행에서 실제로 그렇게 나왔다. 그래서 예제는 0 이면 커널이 부팅 때 읽어 <code>/sys/devices/system/cpu/cpu0/cache</code> 에 적어 둔 값을 보고, 그것도 없으면 「모른다」고 찍는다.</p><p>안드로이드 폰(Termux 의 clang)에서 돌려 보니 더 비어 있었다. 안드로이드의 C 라이브러리(Bionic)는 줄 크기까지 0 이고, 커널의 sysfs 도 캐시의 단계와 종류만 적고 크기 칸은 비워 두었다. 그래서 aarch64 리눅스에서는 마지막으로 <code>CTR_EL0</code> 을 직접 읽어 <strong>줄 크기만은</strong> 얻는다 — 커널이 사용자 프로그램에도 읽게 열어 둔 레지스터이고, glibc 가 답하는 값도 이것이다. ★ <strong>「그 기계의 답이 나온다」는 약속은 묻는 쪽이 답을 알 때만 지켜진다.</strong></p></div></div><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>항목</strong></th><th><strong>값</strong></th><th><strong>뒤에서 어디에 쓰이나</strong></th></tr><tr><td>L1 자료 캐시</td><td>32 KiB, 8-way, 줄 64바이트</td><td>지연 곡선의 첫 계단, 걸음 폭 실험</td></tr><tr><td>L2 캐시</td><td>256 KiB</td><td>둘째 계단</td></tr><tr><td>L3 캐시</td><td>16 MiB</td><td>셋째 계단</td></tr><tr><td>쪽 크기</td><td>4 KiB</td><td>TLB 실험, 첫 접촉 비용</td></tr><tr><td>논리 코어</td><td>16개</td><td>거짓 공유 실험</td></tr><tr><td>시계 해상도</td><td>1 나노초</td><td>잴 수 있는 가장 짧은 것</td></tr><tr><td>TLB(translation lookaside buffer)</td><td>번역 결과를 담아 두는 캐시</td><td>쪽 실험</td></tr></table></div><span id="proven-float-698"></span><p class="float-caption">표 105.2 — 이 부록을 쓴 기계의 숫자 (예제가 읽은 값)</p></figure><h4 id="sx4">② 해상도와 ③ 값은 다르다<a class="plink" href="sec119.html#sx4" aria-label="이 절의 주소" title="이 절의 주소">#</a></h4><div></div><p><code>clock_getres</code> 는 1 나노초라고 답한다. 그러나 실제로 <code>clock_gettime</code> 을 한 번 부르는 데 이 기계에서 <strong>약 17 나노초</strong>가 들고, 두 번 읽어 구별되는 최소 간격도 그만큼이다.</p><p>★ 그래서 규칙이 하나 나온다. <strong>17 나노초보다 짧은 일은 한 번 재지 않는다.</strong> 대신 백만 번 반복하고 나눈다. 이 부록의 모든 시연이 그렇게 되어 있다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>재려는 일의 크기</strong></th><th><strong>보기</strong></th><th><strong>방법</strong></th><th><strong>주의</strong></th></tr><tr><td>1 나노초 안팎</td><td>덧셈 하나, 분기 하나</td><td>수백만 번 반복해 나눈다</td><td>최적화가 통째로 지운다</td></tr><tr><td>수십 ~ 수백 나노초</td><td>캐시 밖 접근 하나</td><td>수천 번 반복 + 의존 사슬</td><td>미리 가져오기가 가려 준다</td></tr><tr><td>마이크로초 단위</td><td>시스템 호출, 신호</td><td>수천 번 반복</td><td>문맥 전환이 섞인다</td></tr><tr><td>밀리초 이상</td><td>디스크 접근, 큰 계산</td><td>한 번씩 여러 회차</td><td>캐시·버퍼가 결과를 바꾼다</td></tr></table></div><span id="proven-float-699"></span><p class="float-caption">표 105.3 — 무엇을 어떻게 재나 — 크기에 따라 방법이 다르다</p></figure><h4 id="sx5">④ 첫 번째 함정 — 최적화가 재려던 것을 지운다<a class="plink" href="sec119.html#sx5" aria-label="이 절의 주소" title="이 절의 주소">#</a></h4><div></div><p>같은 합계를 두 번 잰다. 하나는 결과를 버리고, 하나는 결과를 쓴다. 시연의 출력이 <strong>3 나노초 대 21만 나노초</strong>, 곧 만 배가 넘는 차이였다.</p><p>앞의 것은 빠른 것이 아니라 <strong>실행되지 않은 것</strong>이다. 컴파일러는 「아무도 안 쓰는 값을 만드는 계산」을 지울 권리가 있다(14장의 as-if 규칙). 100만 개를 더하는 루프가 통째로 사라졌다.</p><div class="dev misconception"><p class="dev-label">흔한 오해. <strong>내 코드가 0 나노초에 끝났다면 아주 빠른 것이다</strong></p><div class="dev-body">아니다. <strong>실행되지 않은 것이다.</strong> 측정에서 「믿기 어려울 만큼 좋은 수」가 나오면 언제나 코드가 사라졌는지부터 본다. 확인하는 방법도 있다 — 입력을 열 배로 늘려 보라. 시간이 열 배가 되지 않으면 그 루프는 돌지 않은 것이다.</div></div><h4 id="sx6">⑤ 두 번째 함정 — 첫 회는 느리다<a class="plink" href="sec119.html#sx6" aria-label="이 절의 주소" title="이 절의 주소">#</a></h4><div></div><p>같은 4 MiB 를 두 번 채웠는데 첫 번째가 <strong>열 배 넘게</strong> 느렸다. 이유는 계산이 아니라 <strong>기억</strong>에 있다. <code>malloc</code> 이 준 주소는 아직 진짜 기억에 붙어 있지 않고, 처음 건드리는 순간마다 운영체제가 쪽을 하나씩 붙여 준다(12장의 쪽 부재).</p><p>★ 이 시연을 쓰다가 ④ 의 함정에 먼저 걸렸다. 채운 결과를 아무도 읽지 않자 <code>memset</code> 이 통째로 사라져 「4 MiB 를 38 나노초에 채웠다」는 헛것이 나온 것이다. 잰 뒤에 한 바이트를 읽는 줄을 넣고서야 그 열 배가 보였다. <strong>함정은 하나씩 오지 않는다.</strong></p><h4 id="sx7">⑥ 세 번째 함정 — 평균은 한 번의 방해에 끌려간다<a class="plink" href="sec119.html#sx7" aria-label="이 절의 주소" title="이 절의 주소">#</a></h4><div></div><p>같은 일을 201번 재면 값이 흩어진다. 이 기계에서 최솟값 12,354 나노초, 중앙값 12,531, 최댓값 21,834 — 최댓값이 중앙값의 1.7배다. 남의 일이 끼어든 회차다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>값</strong></th><th><strong>무엇을 말하나</strong></th><th><strong>방해에</strong></th><th><strong>이 부록에서</strong></th></tr><tr><td>최솟값</td><td>「방해가 전혀 없었다면」</td><td>흔들리지 않는다</td><td>함께 적는다</td></tr><tr><td>중앙값</td><td>「보통 이렇다」</td><td>거의 안 흔들린다</td><td><strong>기본값으로 쓴다</strong></td></tr><tr><td>평균</td><td>총합 ÷ 횟수</td><td><strong>한 번에 끌려간다</strong></td><td>쓰지 않는다</td></tr><tr><td>최댓값·99번째</td><td>「최악이 이렇다」</td><td>그 자체가 목적</td><td>마감이 있는 코드에서 중요</td></tr></table></div><span id="proven-float-700"></span><p class="float-caption">표 105.4 — 어떤 대표값을 쓸 것인가</p></figure><p>★ 마감이 있는 코드(오디오 콜백, 제어 루프, 인터럽트 처리기)에서는 오히려 <strong>최댓값이 설계값</strong>이다. 「평균 1 밀리초」는 위안이 되지 않는다 — 한 번 늦으면 소리가 끊긴다. 「OS 없이 도는 C」 부록에서 본 「최악을 잰다」가 같은 이야기다.</p><h3 id="sx8">이 부록의 여섯 규율<a class="plink" href="sec119.html#sx8" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>지금까지 본 것을 계약으로 적어 둔다. 뒤의 모든 시연이 이 규율을 지킨다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>규율</strong></th><th><strong>무엇을 막나</strong></th><th><strong>어떻게 지키나</strong></th></tr><tr><td>재기 전에 저울을 잰다</td><td>시계 자신을 재는 일</td><td>해상도와 호출 값을 먼저 구하고, 그보다 짧은 것은 반복해 나눈다</td></tr><tr><td>지워지지 않게 한다</td><td>사라진 코드를 「빠르다」고 읽는 일</td><td><code>volatile</code> 싱크·의존 사슬·반환값 사용</td></tr><tr><td>데운 뒤에 잰다</td><td>쪽 부재와 차가운 캐시가 섞이는 일</td><td>데우기 회차를 돌리고 버린다</td></tr><tr><td>중앙값을 쓴다</td><td>한 번의 방해가 결론을 바꾸는 일</td><td>여러 회차를 정렬해 가운데를 쓰고, 최솟값을 함께 적는다</td></tr><tr><td>배수로 말한다</td><td>이 기계의 수를 법칙으로 읽는 일</td><td>기준선을 정해 「몇 배」로 적는다</td></tr><tr><td>이상하면 측정을 먼저 의심한다</td><td>기계를 탓하며 시간을 버리는 일</td><td>입력을 열 배로 늘려 시간이 열 배가 되는지 본다</td></tr></table></div><span id="proven-float-701"></span><p class="float-caption">표 105.5 — 측정의 여섯 규율</p></figure><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 왜 「배수」가 「나노초」보다 오래 가는가?</p></div><div class="dev qa-a"><p><span class="dev-label">답.</span> 나노초는 클록 속도·세대·전력 상태에 따라 바뀐다. 같은 코드가 다른 기계에서 두 배 빠를 수 있다. 그런데 <strong>L1 과 주기억의 거리</strong>, <strong>예측된 분기와 실패한 분기의 거리</strong> 같은 것은 구조에서 나오는 값이라 훨씬 천천히 변한다. 그래서 「이 기계에서 78 나노초」보다 「L1 의 60배」가 더 오래 쓸모 있는 지식이다.</p></div></div><h3 id="sx9">기억의 사다리를 재다<a class="plink" href="sec119.html#sx9" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>이제 저울이 준비되었으니 첫 번째 것을 잰다. 12장가 말한 사다리다.</p><h4 id="sx10">먼저 원리 — 왜 사다리가 생겼는가<a class="plink" href="sec119.html#sx10" aria-label="이 절의 주소" title="이 절의 주소">#</a></h4><div></div><p>CPU 는 빨라졌는데 주기억은 그만큼 빨라지지 않았다. 이 격차가 수십 년 동안 벌어졌고, 그 틈을 메우려고 중간층이 하나씩 끼어들었다. 그것이 캐시다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>칸</strong></th><th><strong>크기(이 기계)</strong></th><th><strong>누가 채우나</strong></th><th><strong>무엇을 담나</strong></th><th><strong>못 찾으면</strong></th></tr><tr><td>레지스터</td><td>수백 바이트</td><td>컴파일러</td><td>지금 쓰는 값</td><td>캐시에 묻는다</td></tr><tr><td>L1 자료 캐시</td><td>32 KiB</td><td>하드웨어</td><td>방금 쓴 줄</td><td>L2 에 묻는다</td></tr><tr><td>L2 캐시</td><td>256 KiB</td><td>하드웨어</td><td>최근에 쓴 줄</td><td>L3 에 묻는다</td></tr><tr><td>L3 캐시</td><td>16 MiB</td><td>하드웨어</td><td>코어들이 함께 쓰는 줄</td><td>주기억에 묻는다</td></tr><tr><td>주기억(DRAM)</td><td>수 GiB</td><td>운영체제</td><td>프로그램의 기억 전부</td><td>디스크에서 쪽을 가져온다</td></tr></table></div><span id="proven-float-702"></span><p class="float-caption">표 105.6 — 사다리의 각 칸이 하는 일</p></figure><p>두 가지를 미리 짚어 둔다. 뒤의 측정을 읽을 때 필요하다.</p><p><strong>첫째, 캐시는 바이트 단위가 아니라 「줄」 단위로 움직인다.</strong> 이 기계의 줄은 64바이트다. <code>int</code> 하나(4바이트)를 읽어도 그 둘레 64바이트가 통째로 올라온다.</p><p><strong>둘째, 기계는 다음에 무엇을 읽을지 짐작한다.</strong> 주소가 규칙적으로 늘어나면 「미리 가져오기」 회로가 앞질러 가져다 놓는다. 그래서 <strong>순서대로 읽는 프로그램은 느린 기억을 거의 못 느낀다.</strong></p><h4 id="sx11">그래서 어떻게 재야 하는가<a class="plink" href="sec119.html#sx11" aria-label="이 절의 주소" title="이 절의 주소">#</a></h4><div></div><p>둘째 성질 때문에, 순서대로 읽으면서 「기억이 얼마나 먼가」를 재면 답이 안 나온다. 기계가 미리 가져와 버리니까. 지연을 보려면 <strong>다음에 읽을 자리를 미리 알 수 없게</strong> 만들어야 한다.</p><p>방법이 고전적이다. <strong>포인터 추적</strong>(pointer chasing) — 배열을 무작위 순서의 <strong>고리 하나</strong>로 엮고, 지금 읽은 값이 다음에 읽을 자리를 알려 주게 한다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>조건</strong></th><th><strong>왜 필요한가</strong></th><th><strong>안 지키면</strong></th></tr><tr><td>다음 자리가 지금 읽은 <strong>값</strong>에 들어 있다</td><td>기계가 앞질러 갈 수 없다 — 한 번에 하나씩만</td><td>여러 접근이 겹쳐 일어나 지연이 가려진다</td></tr><tr><td>순서가 무작위다</td><td>주소의 규칙을 못 찾게 한다</td><td>미리 가져오기가 듣는다</td></tr><tr><td>고리가 <strong>하나</strong>다(작은 고리로 안 갈라진다)</td><td>작업 집합 전체를 고르게 밟는다</td><td>일부만 도느라 캐시에 다 들어가 버린다</td></tr><tr><td>결과를 어딘가에 쓴다</td><td>최적화가 루프를 지우지 못하게</td><td>「0 나노초」가 나온다</td></tr></table></div><span id="proven-float-703"></span><p class="float-caption">표 105.7 — 포인터 추적이 하는 일</p></figure><div class="demo demo-src"><p class="demo-head"><code>examples/apx-measured/cache_ladder/cache_ladder.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> 기억의 사다리를 잰다 --- 작업 집합을 키워 가며 「한 번 읽는 데 드는 시간」을 본다.</span></em>
@@ -1101,22 +1101,22 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
   it follows a random ring, so prefetching does not help --- pure latency.
 
   working set  where      random access  factor     sequential
-  4 KiB        L1             1.44 ns     1.0x     0.38 ns
-  8 KiB        L1             1.44 ns     1.0x     0.60 ns
-  16 KiB       L1             1.49 ns     1.0x     0.37 ns
-  32 KiB       L1             1.48 ns     1.0x     0.61 ns
-  64 KiB       L2             2.63 ns     1.8x     0.59 ns
-  128 KiB      L2             3.84 ns     2.7x     0.37 ns
-  256 KiB      L2             5.18 ns     3.6x     0.40 ns
-  512 KiB      L3            10.65 ns     7.4x     0.39 ns
-  1 MiB        L3            13.59 ns     9.4x     0.63 ns
-  2 MiB        L3            21.31 ns    14.8x     0.40 ns
-  4 MiB        L3            32.56 ns    22.6x     0.82 ns
-  8 MiB        L3            62.18 ns    43.1x     0.78 ns
-  16 MiB       L3            76.93 ns    53.3x     0.60 ns
-  32 MiB       main memory    86.48 ns    60.0x     0.68 ns
-  64 MiB       main memory    90.29 ns    62.6x     0.69 ns
-  128 MiB      main memory    94.63 ns    65.6x     0.64 ns
+  4 KiB        L1             1.43 ns     1.0x     0.38 ns
+  8 KiB        L1             1.43 ns     1.0x     0.37 ns
+  16 KiB       L1             1.43 ns     1.0x     0.37 ns
+  32 KiB       L1             1.44 ns     1.0x     0.37 ns
+  64 KiB       L2             2.52 ns     1.8x     0.37 ns
+  128 KiB      L2             3.00 ns     2.1x     0.37 ns
+  256 KiB      L2             5.17 ns     3.6x     0.37 ns
+  512 KiB      L3             9.29 ns     6.5x     0.38 ns
+  1 MiB        L3            12.10 ns     8.4x     0.38 ns
+  2 MiB        L3            13.51 ns     9.4x     0.38 ns
+  4 MiB        L3            14.45 ns    10.1x     0.38 ns
+  8 MiB        L3            17.00 ns    11.9x     0.41 ns
+  16 MiB       L3            48.36 ns    33.7x     0.52 ns
+  32 MiB       main memory    66.32 ns    46.2x     0.56 ns
+  64 MiB       main memory    78.79 ns    54.9x     0.57 ns
+  128 MiB      main memory    86.35 ns    60.2x     0.58 ns
 
 == how to read this ==
   1. reading down the table shows steps. Wherever the working set passes
@@ -1271,19 +1271,19 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
 
 == varying the stride --- the number of accesses fixed at 2000000 ==
   stride     each           factor     lines touched    bytes fetched in vain
-  1              0.65 ns     1.0x  0.016            0 bytes
-  2              0.66 ns     1.0x  0.031            0 bytes
-  4              0.70 ns     1.1x  0.062            0 bytes
-  8              0.80 ns     1.2x  0.125            0 bytes
-  16             1.20 ns     1.8x  0.250            0 bytes
-  32             2.84 ns     4.4x  0.500            0 bytes
-  64             3.98 ns     6.1x  1.000            63 bytes
-  128            5.85 ns     9.0x  1.000            63 bytes
-  256            7.07 ns    10.8x  1.000            63 bytes
-  512            8.35 ns    12.8x  1.000            63 bytes
-  1024           8.85 ns    13.5x  1.000            63 bytes
-  2048           9.18 ns    14.0x  1.000            63 bytes
-  4096           8.61 ns    13.2x  1.000            63 bytes
+  1              0.64 ns     1.0x  0.016            0 bytes
+  2              0.65 ns     1.0x  0.031            0 bytes
+  4              0.67 ns     1.0x  0.062            0 bytes
+  8              0.77 ns     1.2x  0.125            0 bytes
+  16             1.02 ns     1.6x  0.250            0 bytes
+  32             1.65 ns     2.6x  0.500            0 bytes
+  64             3.19 ns     5.0x  1.000            63 bytes
+  128            4.89 ns     7.7x  1.000            63 bytes
+  256            5.61 ns     8.8x  1.000            63 bytes
+  512            6.59 ns    10.3x  1.000            63 bytes
+  1024           7.04 ns    11.1x  1.000            63 bytes
+  2048           7.47 ns    11.7x  1.000            63 bytes
+  4096           6.63 ns    10.4x  1.000            63 bytes
 
   * the cost rises until the stride reaches 64 bytes (the line size), and
     then flattens. A stride narrower than a line uses one line several times,
@@ -1295,8 +1295,8 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
   4194304 elements --- 224 MiB in total
 
   layout                             per element     factor bytes used per line
-  array of structs (AoS) --- reading x only   3.236 ns      2.7x  8 / 56
-  structs of arrays (SoA) --- reading the x array only   1.207 ns      1.0x  64 / 64
+  array of structs (AoS) --- reading x only   2.774 ns      2.3x  8 / 56
+  structs of arrays (SoA) --- reading the x array only   1.199 ns      1.0x  64 / 64
 
   * the same values were added the same number of times. Only the layout changed.
     In the array of structs, 56 bytes are fetched to use 8 --- the rest merely
@@ -1488,13 +1488,13 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
   only 8 bytes are touched per page. Little data, but the page count grows.
 
   pages      data touched each         factor
-  16         64 KiB           3.48 ns    1.0x
-  64         256 KiB          8.65 ns    2.5x
-  256        1 MiB           15.14 ns    4.4x
-  1024       4 MiB           15.39 ns    4.4x
-  4096       16 MiB          43.55 ns   12.5x
-  16384      64 MiB          88.17 ns   25.4x
-  65536      256 MiB        100.67 ns   29.0x
+  16         64 KiB           3.44 ns    1.0x
+  64         256 KiB          7.66 ns    2.2x
+  256        1 MiB           14.63 ns    4.3x
+  1024       4 MiB           14.61 ns    4.2x
+  4096       16 MiB          32.71 ns    9.5x
+  16384      64 MiB          75.74 ns   22.0x
+  65536      256 MiB         88.05 ns   25.6x
 
   * the data is small (8 bytes per page), and yet more pages costs more.
     The bottleneck is address translation, not the cache. When the table
@@ -1505,9 +1505,9 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
   normal pages advised         backed by huge pages: 0 KiB (0%)
   huge pages advised           backed by huge pages: 0 KiB (0%)
   the same 256 MiB is walked the same way.
-  normal pages (4 KiB)           116.58 ns
-  huge pages advised (MADV_HUGEPAGE)   115.88 ns
-  difference: 1.01 x --- no great difference in this run
+  normal pages (4 KiB)            89.99 ns
+  huge pages advised (MADV_HUGEPAGE)    90.66 ns
+  difference: 0.99 x --- no great difference in this run
   * one huge page replaces 512 pages of 4 KiB, so the translations needed to
     sweep the same data fall to a 512th. But madvise is a request, not an order.
     The "backed by huge pages" figure above says whether the request was taken ---
@@ -1516,9 +1516,9 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
      may already have some mixed in.)
 
 == 3. the cost of touching a page for the first time ==
-  touching a page the first time :   1417.0 ns
-  touching an already-mapped page:      8.7 ns
-  factor: 163 x
+  touching a page the first time :   1117.9 ns
+  touching an already-mapped page:      9.0 ns
+  factor: 124 x
   * the address `malloc` returned is not memory yet. At each first touch the
     operating system attaches one page --- and that is its cost. Allocate a large
     buffer and measure at once and this cost is mixed in entire (hence warming up).
@@ -1673,27 +1673,27 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
   the two arrays hold exactly the same contents --- only sortedness differs.
 
                                      random order sorted order sorted/random
-  source with an if (plain -O2)          0.665 ns     0.711 ns    0.94 x
-  code that kept a real branch           3.977 ns     0.793 ns    5.02 x
-  code with the branch turned into arithmetic     0.635 ns     0.632 ns    1.01 x
+  source with an if (plain -O2)          0.646 ns     0.625 ns    1.03 x
+  code that kept a real branch           3.900 ns     0.788 ns    4.95 x
+  code with the branch turned into arithmetic     0.628 ns     0.623 ns    1.01 x
 
   * the first two rows have the same source. Only the compiler settings differ.
     In the first, the compiler turned the `if` into a conditional move (cmov), so
     there is no branch to predict and sorting brings no gain. That is why the
     famous "sorted arrays are faster" story often fails to reproduce today.
 
-  extra time per element in the real-branch version: 3.184 ns
-  / a miss probability of 0.5 = about 6.4 ns per misprediction
+  extra time per element in the real-branch version: 3.113 ns
+  / a miss probability of 0.5 = about 6.2 ns per misprediction
 
 == how regular must it be to be predicted ==
   the same number of trues, with only the pattern changed.
 
   pattern                              each note
-  always true                      0.498 ns always predicted
-  alternating                      0.842 ns short periods are memorised
-  one in four                      0.982 ns short periods are memorised
-  one in sixteen                   1.061 ns short periods are memorised
-  random                           4.245 ns cannot be predicted
+  always true                      0.478 ns always predicted
+  alternating                      0.838 ns short periods are memorised
+  one in four                      0.912 ns short periods are memorised
+  one in sixteen                   1.038 ns short periods are memorised
+  random                           3.905 ns cannot be predicted
 
 == how to read this ==
   0. today's compilers turn a short `if` into branchless code. So to measure
@@ -1903,12 +1903,12 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
   baseline (0.783 ns). Anything above that is the loss.
 
   distance       per increment    vs perfect scaling same line?
-  8                   1.132 ns       1.45x  same line --- false sharing
-  16                  1.075 ns       1.37x  same line --- false sharing
-  32                  1.093 ns       1.40x  same line --- false sharing
-  64                  0.793 ns       1.01x  different lines
-  128                 0.785 ns       1.00x  different lines
-  256                 0.783 ns       1.00x  different lines
+  8                   1.123 ns       1.44x  same line --- false sharing
+  16                  1.135 ns       1.45x  same line --- false sharing
+  32                  1.109 ns       1.42x  same line --- false sharing
+  64                  0.784 ns       1.00x  different lines
+  128                 0.782 ns       1.00x  different lines
+  256                 0.785 ns       1.00x  different lines
 
   * the two threads touch different variables. But in the same cache line the
     line is passed back and forth between the cores --- that is false sharing.
@@ -1916,19 +1916,19 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
 
 == 3. adding threads --- sharing a line, and apart ==
   threads    same line (8 bytes apart) different lines (128 bytes) factor
-  2                 1.102 ns        0.782 ns    1.4x
-  4                 0.727 ns        0.393 ns    1.9x
-  8                 0.883 ns        0.241 ns    3.7x
+  2                 1.114 ns        0.783 ns    1.4x
+  4                 0.699 ns        0.393 ns    1.8x
+  8                 0.916 ns        0.196 ns    4.7x
 
 == 4. when several really do touch one value ==
   uncontended increment (baseline)        1.565 ns each
-  atomic increment --- 1 thread           5.515 ns each
-  atomic increment --- 2 threads         21.363 ns each
-  atomic increment --- 4 threads         24.573 ns each
-  increment under a lock --- 1 thread     17.765 ns each
-  increment under a lock --- 2 threads     69.892 ns each
+  atomic increment --- 1 thread           5.219 ns each
+  atomic increment --- 2 threads         17.654 ns each
+  atomic increment --- 4 threads         24.070 ns each
+  increment under a lock --- 1 thread     16.606 ns each
+  increment under a lock --- 2 threads     60.393 ns each
 
-  * uncontended (one thread), the atomic costs 4x and the lock 11x.
+  * uncontended (one thread), the atomic costs 3x and the lock 11x.
     But when several contend for one value it jumps several fold again --- one
     line has to be owned exclusively by each core in turn.
   * hence the discipline: count separately, and combine once at the end.
@@ -2115,21 +2115,21 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
 
 == 1. denormals --- numbers very close to zero ==
   the smallest normal double: 2.22507e-308
-  array filled with normals (1.0)    0.288 ns per element
-  array filled with denormals    20.969 ns per element
-  -> the denormal side is 72.9 x slower
+  array filled with normals (1.0)    0.289 ns per element
+  array filled with denormals    20.850 ns per element
+  -> the denormal side is 72.2 x slower
   * here the magnitude of a value alone changes the time. On some machines it is
     tens of times; on recent chips it is almost nothing --- so measure before speaking.
     (this is the accident where audio processing slows suddenly as a sound fades.)
 
 == 2. float and double ==
-  double (8 bytes)                0.287 ns per element
-  float  (4 bytes)                0.287 ns per element
-  -> the float side is 1.00 x faster --- odd: no difference
+  double (8 bytes)                0.293 ns per element
+  float  (4 bytes)                0.290 ns per element
+  -> the float side is 1.01 x faster --- odd: no difference
 
   measuring the same computation again, this time allowing vector instructions:
-  double (vectors allowed)        0.576 ns per element
-  float  (vectors allowed)        0.288 ns per element
+  double (vectors allowed)        0.574 ns per element
+  float  (vectors allowed)        0.286 ns per element
   -> this time the float side is 2.00 x faster
   * the benefit of narrower width appears only with vector instructions. But
     floating-point addition is not associative (reordering changes the result),
@@ -2139,11 +2139,11 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
 
 == 3. the operations cost differently ==
   operation                per element    vs multiply
-  multiply  a*b               0.315 ns      1.0x
-  add       a+b               0.516 ns      1.6x
-  divide    a/b               1.155 ns      3.7x
-  sqrt      sqrt(a)           1.727 ns      5.5x
-  sin(a)                     10.111 ns     32.1x
+  multiply  a*b               0.308 ns      1.0x
+  add       a+b               0.507 ns      1.6x
+  divide    a/b               1.148 ns      3.7x
+  sqrt      sqrt(a)           1.730 ns      5.6x
+  sin(a)                      7.727 ns     25.1x
 
   * multiply and add cost about the same. Divide is several times, trigonometry tens.
     Hence the common trick of one divide for a reciprocal and many multiplies.
