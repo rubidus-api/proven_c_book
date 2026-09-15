@@ -33,6 +33,16 @@ static long sum_kept(const int *a, size_t n)
 }
 static volatile long sink;
 
+/* ★ aarch64 리눅스는 CTR_EL0 레지스터를 사용자 프로그램에도 읽게 열어 둔다(glibc 도 이것으로
+     줄 크기를 답한다). 안드로이드의 Bionic 은 sysconf 에 0 을 돌려주고, 폰 커널은 sysfs 의 크기
+     칸을 비워 두기도 해서(안드로이드 폰 실측) 마지막으로 이 레지스터를 직접 읽는다.
+     다만 계층 전체에서 *가장 작은* 줄 크기다. */
+#if defined(__aarch64__) && defined(__linux__)
+__asm__(".text\n.globl read_ctr_el0\n.type read_ctr_el0, %function\n"
+        "read_ctr_el0:\n    mrs x0, ctr_el0\n    ret\n");
+unsigned long read_ctr_el0(void);
+#endif
+
 /* ★ 캐시의 크기는 C 라이브러리가 CPU 에 물어서 채운다. x86-64 의 glibc 는 CPUID 로 답하지만,
      aarch64 의 glibc(2.44 소스로 확인)는 줄 크기만 CTR_EL0 로 답하고 크기·연관도에는 *0* 을
      돌려준다 --- 그 값을 담은 레지스터를 커널이 사용자 프로그램에 막아 두었기 때문이다.
@@ -81,6 +91,10 @@ int main(void)
     const char *unknown = "unknown --- this system does not report it";
     long l1 = cache_value(_SC_LEVEL1_DCACHE_SIZE, 1, "size");
     long line = cache_value(_SC_LEVEL1_DCACHE_LINESIZE, 1, "coherency_line_size");
+#if defined(__aarch64__) && defined(__linux__)
+    if (line <= 0)
+        line = 4L << ((read_ctr_el0() >> 16) & 0xf);
+#endif
     long ways = cache_value(_SC_LEVEL1_DCACHE_ASSOC, 1, "ways_of_associativity");
     long l2 = cache_value(_SC_LEVEL2_CACHE_SIZE, 2, "size");
     long l3 = cache_value(_SC_LEVEL3_CACHE_SIZE, 3, "size");

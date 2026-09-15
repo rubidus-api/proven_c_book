@@ -11,6 +11,12 @@
 #include <setjmp.h>
 #include <unistd.h>
 #include <sys/mman.h>
+#if defined(__ANDROID__)
+/* ★ Termux 가 겨누는 옛 안드로이드 API 에서는 Bionic 이 memfd_create 선언을 감춘다(API 30 부터
+     보인다). 시스템 호출은 커널에 있으므로 번호로 직접 부른다. */
+#include <sys/syscall.h>
+#define memfd_create(name, flags) ((int)syscall(__NR_memfd_create, (name), (flags)))
+#endif
 
 static sigjmp_buf back;
 

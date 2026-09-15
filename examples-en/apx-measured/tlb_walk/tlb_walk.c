@@ -140,8 +140,20 @@ int main(void)
     printf("    sweep the same data fall to a 512th. But madvise is a request, not an order.\n");
     printf("    The \"backed by huge pages\" figure above says whether the request was taken ---\n");
     printf("    if both runs are backed alike, similar times are only to be expected.\n");
-    printf("    (this machine uses huge pages by default, so even the \"normal pages\" run\n");
-    printf("     may already have some mixed in.)\n");
+    /* 이 문장은 큰 쪽이 기본값인 기계에서만 참이다 --- 설정을 읽고 나서 말한다 */
+    FILE *thp = fopen("/sys/kernel/mm/transparent_hugepage/enabled", "r");
+    char mode_s[64] = "";
+    if (thp) {
+        if (!fgets(mode_s, sizeof mode_s, thp))
+            mode_s[0] = '\0';
+        fclose(thp);
+    }
+    if (strstr(mode_s, "[always]")) {
+        printf("    (this machine uses huge pages by default, so even the \"normal pages\" run\n");
+        printf("     may already have some mixed in.)\n");
+    } else if (!thp) {
+        printf("    (this kernel offers no transparent huge pages at all, so the request cannot be taken.)\n");
+    }
 
     printf("\n== 3. the cost of touching a page for the first time ==\n");
     const size_t fp = 32768;                        /* 128 MiB */

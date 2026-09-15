@@ -24,6 +24,44 @@ static int cmp_d(const void *a, const void *b)
 
 static long line_size;
 
+/* ★ aarch64 리눅스는 CTR_EL0 레지스터를 사용자 프로그램에도 읽게 열어 둔다(glibc 도 이것으로
+     줄 크기를 답한다). 안드로이드의 Bionic 은 sysconf 에 0 을 돌려주고, 폰 커널은 sysfs 의 크기
+     칸을 비워 두기도 해서(안드로이드 폰 실측) 마지막으로 이 레지스터를 직접 읽는다.
+     다만 계층 전체에서 *가장 작은* 줄 크기다. */
+#if defined(__aarch64__) && defined(__linux__)
+__asm__(".text\n.globl read_ctr_el0\n.type read_ctr_el0, %function\n"
+        "read_ctr_el0:\n    mrs x0, ctr_el0\n    ret\n");
+unsigned long read_ctr_el0(void);
+#endif
+
+static long cache_line(void)
+{
+    long v = sysconf(_SC_LEVEL1_DCACHE_LINESIZE);
+    if (v > 0)
+        return v;
+    FILE *f = fopen("/sys/devices/system/cpu/cpu0/cache/index0/coherency_line_size", "r");
+    if (f) {
+        if (fscanf(f, "%ld", &v) != 1)
+            v = 0;
+        fclose(f);
+        if (v > 0)
+            return v;
+    }
+#if defined(__aarch64__) && defined(__linux__)
+    return 4L << ((read_ctr_el0() >> 16) & 0xf);
+#else
+    return 0;                                  /* 모른다 --- 부르는 쪽이 밝힌다 */
+#endif
+}
+
+/* ★ aligned_alloc(C11) 대신 posix_memalign 을 쓴다. _POSIX_C_SOURCE 를 정의하면 안드로이드의
+     Bionic 은 C11 선언을 감춘다 --- Termux 의 clang 에서 「선언되지 않은 함수」로 멈췄다. */
+static void *page_aligned(size_t bytes)
+{
+    void *p = NULL;
+    return posix_memalign(&p, 4096, bytes) == 0 ? p : NULL;
+}
+
 /* ── ① 각자 제 칸을 올린다 (칸 사이의 거리를 바꿔 가며) ── */
 struct slot { volatile long v; };
 static unsigned char *arena;
@@ -58,7 +96,11 @@ static double run(void *(*fn)(void *), int threads, long iters_each, void **args
 
 int main(void)
 {
-    line_size = sysconf(_SC_LEVEL1_DCACHE_LINESIZE);
+    line_size = cache_line();
+    if (line_size <= 0) {
+        line_size = 64;
+        printf("(this system does not report its cache line --- 64 bytes is assumed below)\n");
+    }
     long cores = sysconf(_SC_NPROCESSORS_ONLN);
     printf("== this machine ==\n  cache line %ld bytes · %ld logical cores\n\n", line_size, cores);
 
@@ -66,7 +108,7 @@ int main(void)
        버려(s = ITERS) 0.005 나노초 같은 헛값이 나온다 --- M1 의 첫 함정이다.
        그래서 뒤의 실험과 똑같은 경로(volatile 칸 올리기)를 한 스레드로 돌려 기준을 잡는다. */
     slot_gap = 128;
-    arena = aligned_alloc(4096, slot_gap * 8 + 4096);
+    arena = page_aligned(slot_gap * 8 + 4096);
     memset(arena, 0, slot_gap * 8 + 4096);
     double bs[ROUNDS];
     for (int r = 0; r < ROUNDS; r++) bs[r] = run(bump, 1, ITERS, NULL);
@@ -86,7 +128,7 @@ int main(void)
     printf("#DATA-BEGIN\n");
     for (size_t gap = 8; gap <= 256; gap *= 2) {
         slot_gap = gap;
-        arena = aligned_alloc(4096, gap * 8 + 4096);
+        arena = page_aligned(gap * 8 + 4096);
         memset(arena, 0, gap * 8 + 4096);
         double s[ROUNDS];
         for (int r = 0; r < ROUNDS; r++) s[r] = run(bump, 2, ITERS, NULL);
@@ -109,7 +151,7 @@ int main(void)
         double v[2];
         for (int k = 0; k < 2; k++) {
             slot_gap = k ? 128 : 8;
-            arena = aligned_alloc(4096, slot_gap * 16 + 4096);
+            arena = page_aligned(slot_gap * 16 + 4096);
             memset(arena, 0, slot_gap * 16 + 4096);
             double s[ROUNDS];
             for (int r = 0; r < ROUNDS; r++) s[r] = run(bump, th, ITERS, NULL);

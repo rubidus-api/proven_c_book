@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 This project follows Keep a Changelog.
 
+## [Unreleased]
+
+안드로이드 폰(Termux, clang, Bionic)에서 실측 부록 예제를 처음으로 *ARM 실기*에서 돌렸다. 에뮬레이터로는
+드러나지 않던 이식성 결함이 여섯 예제에서 나왔다.
+
+### Added
+- `scripts/termux-arm-report.sh` --- Termux 에서 받아 실행하면 부록 O·P 예제를 책의 `run.sh` 옵션으로 짓고
+  돌려 기기·코어·sysfs 캐시·`sysconf`·`CTR_EL0` 과 함께 한 보고서로 모은다. 한 스레드 예제는 가장 빠른 코어에
+  묶고, GCC 전용 예제와 기억이 모자라는 예제는 까닭을 적고 건너뛴다.
+
+### Fixed
+- `layout` --- Termux 가 겨누는 옛 안드로이드 API 에서 Bionic 이 `memfd_create` 선언을 감춰 빌드가 멈췄다. 안드로이드에서는 시스템 호출로 부른다.
+- `false_sharing` --- `_POSIX_C_SOURCE` 아래에서 Bionic 이 C11 `aligned_alloc` 을 감춘다. `posix_memalign` 으로.
+- `cow` --- `/proc/self/smaps_rollup` 을 못 읽으면 -1 을 1024 로 나눠 **「0 MB」** 로 찍었다. 이제 `smaps` 를 더하고, 그것도 못 읽으면 unavailable 이라 말한다.
+- `stride` · `false_sharing` · `clock_probe` --- Bionic 은 캐시 줄 크기까지 0 이라 「0 bytes」「-1 bytes」가 찍혔다. sysfs 도 비어 있으면 aarch64 리눅스에서는 `CTR_EL0` 을 직접 읽고, 그래도 모르면 64 바이트를 가정한다고 밝힌다.
+- `tlb_walk` --- 「이 기계는 큰 쪽을 기본으로 쓴다」는 x86 기계의 문장을 THP 설정이 `[always]` 일 때만 찍는다.
+- 부록 O 의 aarch64 상자에 안드로이드에서 확인한 사실을 보탰다. x86-64 출력은 여섯 예제 모두 그대로다.
+
 ## [v0.93.1] - 2026-09-14
 
 실측 부록(O·P)의 예제를 aarch64 로 교차 실행해 보았다. ARM 실기가 없어 aarch64 GCC 16.1 로

@@ -1338,8 +1338,8 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
 <span class="tok-x">}</span>
 </code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>== measured on this machine (mean of 200000) ==
   one ordinary function call     :      1.9 ns
-  raising and handling one signal:   2194.7 ns
-  ratio                          :   1180.3 times
+  raising and handling one signal:   2320.2 ns
+  ratio                          :   1243.7 times
 
   the handler ran 201000 times (a check that none were missed)
 
@@ -1350,10 +1350,10 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
 
   from it, how many per second can be borne:
   events/s         CPU used         note
-  1000             0.22%            comfortable
-  10000            2.19%            comfortable
-  100000           21.95%           workable, but the margin is thin
-  1000000          219.47%          impossible --- it would do nothing but handle them
+  1000             0.23%            comfortable
+  10000            2.32%            comfortable
+  100000           23.20%           workable, but the margin is thin
+  1000000          232.02%          impossible --- it would do nothing but handle them
 
   * again, this is the cost of an operating system signal. A hardware interrupt
     is usually far cheaper (a few hundred nanoseconds). But the *shape* of the
