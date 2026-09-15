@@ -13,8 +13,10 @@
 #   - 충전기를 꽂고 화면을 켜 둔 채로 돌린다(절전·발열이 수를 바꾼다).
 #   - 8 GB 를 건드리는 promise 예제는 여유 기억이 충분할 때만 돈다. 억지로 돌리려면 FULL=1.
 #   - 예제는 기본으로 main 에서 받는다. 특정 판은 REF=v0.93.1 처럼 태그를 준다.
-#   - `pkg install util-linux` 로 taskset 이 있으면, 한 스레드 예제는 가장 빠른 코어에 묶어 돌린다
-#     (big/little 코어가 섞인 폰에서는 어느 코어에 올라가느냐가 수를 바꾼다). 묶지 않으려면 PIN=none.
+#   - `pkg install util-linux` 로 taskset 이 있으면, 한 스레드 예제는 가장 빠른 코어와 *같은 종류의
+#     코어 묶음*에 묶어 돌린다(big/little 이 섞인 폰에서는 어느 코어에 올라가느냐가 수를 바꾼다).
+#     한 코어가 아니라 묶음인 까닭: 안드로이드는 쉬는 코어를 수시로 끈다 --- 꺼진 코어 하나에 묶으면
+#     taskset 이 Invalid argument 로 실패한다(실제로 그랬다). 묶지 않으려면 PIN=none.
 #
 # 이 스크립트는 기기에 아무것도 설치하지 않는다 --- clang 이 없으면 설치 명령을 알려 주고 멈춘다.
 set -u
@@ -24,7 +26,7 @@ BASE=${BASE:-https://raw.githubusercontent.com/rubidus-api/proven_c_book/$REF}
 WORK=${WORK:-$HOME/proven-arm-work}
 STAMP=$(date +%Y%m%d-%H%M)
 REPORT=${REPORT:-$HOME/proven-arm-report-$STAMP.txt}
-SCRIPT_VERSION=2
+SCRIPT_VERSION=3
 
 EXAMPLES="apx-measured/clock_probe apx-measured/cache_ladder apx-measured/stride
 apx-measured/tlb_walk apx-measured/branch apx-measured/false_sharing apx-measured/fp_cost
@@ -69,7 +71,8 @@ kv "android" "$(prop ro.build.version.release) (sdk $(prop ro.build.version.sdk)
 kv "maker/model" "$(prop ro.product.manufacturer) $(prop ro.product.model)"
 kv "soc" "$(prop ro.soc.manufacturer) $(prop ro.soc.model) / $(prop ro.board.platform)"
 kv "compiler" "$($CC --version 2>/dev/null | head -1)"
-kv "online cpus" "$(nproc 2>/dev/null)"
+kv "online cpus" "$(readv /sys/devices/system/cpu/online) (at start; Android switches idle cores off)"
+kv "THP enabled" "$(readv /sys/kernel/mm/transparent_hugepage/enabled)"
 kv "MemTotal" "$(awk '/^MemTotal/{print $2" kB"}' /proc/meminfo)"
 kv "MemAvailable" "$(awk '/^MemAvailable/{print $2" kB"}' /proc/meminfo)"
 kv "battery temp" "$(readv /sys/class/power_supply/battery/temp) (0.1 C) at start"
@@ -86,6 +89,7 @@ while [ "$i" -lt "$ncpu" ]; do
         p==c && /^CPU implementer/ {imp=$4}
         p==c && /^CPU part/ {print imp" "$4; exit}' /proc/cpuinfo 2>/dev/null)
     kv "cpu$i" "${part:-?} | $(readv $d/cpufreq/cpuinfo_max_freq) kHz | $(readv $d/cpufreq/scaling_governor)"
+    eval "part_$i=\"\${part:-?}\""
     i=$((i + 1))
 done
 
@@ -141,13 +145,23 @@ avail_kb=$(awk '/^MemAvailable/{print $2}' /proc/meminfo)
 # 책이 「GCC 에서만 뜻이 있다」고 적어 둔 예제(교차 검증 건너뜀 목록의 toolchain 줄)
 skiplist=$(curl -fsSL "$BASE/docs/example-cross-skip.tsv" 2>/dev/null)
 
-# 가장 빠른 코어(최대 주파수가 가장 높은 것)
+# 가장 빠른 코어(최대 주파수가 가장 높은 것)와, 그와 같은 종류(CPU part)의 코어 묶음
 fast=$(for f in /sys/devices/system/cpu/cpu[0-9]*/cpufreq/cpuinfo_max_freq; do
            [ -r "$f" ] && printf '%s %s\n' "$(cat "$f")" "$(echo "$f" | sed 's#.*/cpu\([0-9]*\)/cpufreq.*#\1#')"
        done | sort -n | tail -1 | awk '{print $2}')
+cluster=""
+if [ -n "$fast" ]; then
+    eval "fpart=\"\${part_$fast:-?}\""
+    i=0
+    while [ "$i" -lt "$ncpu" ]; do
+        eval "pp=\"\${part_$i:-?}\""
+        [ "$pp" = "$fpart" ] && cluster="${cluster:+$cluster,}$i"
+        i=$((i + 1))
+    done
+fi
 PIN=${PIN:-auto}
 if [ "$PIN" = auto ]; then
-    if command -v taskset >/dev/null 2>&1 && [ -n "$fast" ]; then PIN=$fast; else PIN=none; fi
+    if command -v taskset >/dev/null 2>&1 && [ -n "$cluster" ]; then PIN=$cluster; else PIN=none; fi
 fi
 need_kb() {                 # 예제마다 필요한 여유 기억(대략)
     case "$1" in
@@ -163,7 +177,7 @@ say "== examples (built with the book's own run.sh flags, CC=$CC) =="
 if [ "$PIN" = none ]; then
     say "  single-thread examples are NOT pinned to a core$(command -v taskset >/dev/null 2>&1 || echo ' (pkg install util-linux for taskset)')"
 else
-    say "  single-thread examples pinned to cpu$PIN (taskset); multi-thread ones are not"
+    say "  single-thread examples pinned to cpus $PIN, the fastest core's kind (taskset); multi-thread ones are not"
 fi
 for ex in $EXAMPLES; do
     name=${ex##*/}
@@ -189,11 +203,68 @@ for ex in $EXAMPLES; do
     case "$ex" in apx-measured/false_sharing) ;; *) [ "$PIN" != none ] && runner="taskset -c $PIN" ;; esac
     ( cd "$dir" && $runner timeout 900 sh ./run.sh ) >"$dir/out.txt" 2>&1
     rc=$?
-    grep -v '^#DATA' "$dir/out.txt" | tee -a "$REPORT"
+    if [ -n "$runner" ] && grep -q "^taskset:" "$dir/out.txt"; then
+        say "  (pinning failed: $(grep -m1 '^taskset:' "$dir/out.txt") --- running unpinned)"
+        runner="unpinned after taskset failed"
+        ( cd "$dir" && timeout 900 sh ./run.sh ) >"$dir/out.txt" 2>&1
+        rc=$?
+    fi
+    # 붙여 넣는 길에서 깨지지 않게 흔한 비 ASCII 기호를 바꿔 싣는다
+    grep -v '^#DATA' "$dir/out.txt" | sed 's/·/|/g; s/…/.../g; s/—/---/g' | tee -a "$REPORT"
     say "  [exit $rc | $(( $(date +%s) - start )) s${runner:+ | $runner}]"
 done
 
 say ""
+say "== diagnosis: what /proc/self/smaps says after filling 64 MiB (cow reported 0 MB here) =="
+cat > "$WORK/smapsdiag.c" <<'EOF2'
+#define _POSIX_C_SOURCE 200809L
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+static void dump(const char *path, const char *keys[])
+{
+    FILE *f = fopen(path, "r");
+    char line[256];
+    if (!f) { printf("  %s: cannot open\n", path); return; }
+    long sum[8] = {0}; int seen[8] = {0}; int lines = 0;
+    while (fgets(line, sizeof line, f)) {
+        lines++;
+        for (int k = 0; keys[k]; k++) {
+            size_t n = strlen(keys[k]); long v;
+            if (strncmp(line, keys[k], n) == 0 && sscanf(line + n, " %ld", &v) == 1) { sum[k] += v; seen[k]++; }
+        }
+    }
+    fclose(f);
+    printf("  %s: %d lines\n", path, lines);
+    for (int k = 0; keys[k]; k++)
+        printf("    %-16s %9ld kB (%d entries)\n", keys[k], sum[k], seen[k]);
+}
+int main(void)
+{
+    const size_t N = 64u << 20;
+    char *p = malloc(N);
+    if (!p) { puts("  malloc failed"); return 0; }
+    memset(p, 7, N);
+    long check = 0;                 /* 읽어서 찍는다 --- 안 그러면 -O2 가 memset 을 통째로 지운다 */
+    for (size_t i = 0; i < N; i += 4096) check += p[i];
+    printf("  filled %zu MiB (check %ld)\n", N >> 20, check);
+    const char *roll[] = {"Rss:", "Pss:", "Shared_Dirty:", "Private_Dirty:", "Anonymous:", "Swap:", "AnonHugePages:", 0};
+    dump("/proc/self/smaps_rollup", roll);
+    dump("/proc/self/smaps", roll);
+    const char *st[] = {"VmRSS:", "RssAnon:", "VmSwap:", 0};
+    dump("/proc/self/status", st);
+    free(p);
+    return 0;
+}
+EOF2
+if $CC -std=c23 -O2 -o "$WORK/smapsdiag" "$WORK/smapsdiag.c" >"$WORK/smapsdiag.log" 2>&1; then
+    "$WORK/smapsdiag" | tee -a "$REPORT"
+else
+    say "  (could not build the smaps probe)"; sed 's/^/    /' "$WORK/smapsdiag.log" | tee -a "$REPORT"
+fi
+
+say ""
+kv "online cpus" "$(readv /sys/devices/system/cpu/online) (at end)"
 kv "battery temp" "$(readv /sys/class/power_supply/battery/temp) (0.1 C) at end"
 say "===== END OF REPORT ====="
 echo
