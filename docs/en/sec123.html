@@ -889,34 +889,34 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
     Reading the clock costs more than that --- measured next.
 
 == 3. the cost of reading the clock ==
-  one clock_gettime : 16.7 ns
+  one clock_gettime : 16.6 ns
   smallest interval actually distinguishable : 17.0 ns
   * so anything shorter than this is never measured once. Repeat and divide.
     Every measurement in this appendix is built that way.
 
 == 4. trap one: the optimiser removes what you meant to measure ==
-  a sum whose result is discarded :          5 ns  (0.00 ns per element)
-  a sum whose result is used      :     233513 ns  (0.22 ns per element)
-  factor                          : 49160.7 x
+  a sum whose result is discarded :          4 ns  (0.00 ns per element)
+  a sum whose result is used      :     228945 ns  (0.22 ns per element)
+  factor                          : 54510.7 x
   * if the first is near zero, that code never ran. The compiler removed it as
     a value nobody uses. When the result says your code is infinitely fast,
     suspect this before suspecting the machine.
 
 == 5. trap two: the first round is slow (warming up) ==
-  filling the same 4 MiB --- first  :  1358270 ns
-                          second :   113466 ns
-  factor: 12.0 x
+  filling the same 4 MiB --- first  :  1339854 ns
+                          second :   109191 ns
+  factor: 12.3 x
   * the first round mixes in the cost of the OS attaching pages one by one (page faults).
     So warm up before measuring, and discard the warm-up rounds.
 
 == 6. trap three: one interruption drags the mean ==
   results over 201 rounds
-  minimum           12546 ns
-  median            12614 ns  &lt;- what this appendix uses
-  mean              12718 ns
-  99th percentile        12966 ns
-  maximum           27806 ns
-  mean / median = 1.01 x  (the further from 1, the more other work interfered)
+  minimum           12451 ns
+  median            12522 ns  &lt;- what this appendix uses
+  mean              12542 ns
+  99th percentile        12652 ns
+  maximum           15937 ns
+  mean / median = 1.00 x  (the further from 1, the more other work interfered)
   * this machine is shared. So the median is used rather than the mean, with the
     minimum alongside to show what it would be with no interference.
 </code></pre></div></div><p>The demonstration comes in six pieces. One at a time.</p><h4 id="sx3">1. The example reads the machine’s numbers itself<a class="plink" href="sec126.html#sx3" aria-label="Link to this section" title="Link to this section">#</a></h4><div></div><p><code>sysconf</code> is asked for the cache sizes, line size, page size and core count. The later demonstrations use those as <strong>the baseline</strong> — so instead of “past 32 KiB it slows down” we can say “past the L1 size it slows down”.</p><div class="dev platform"><p class="dev-label">Platform note. aarch64's C library does not know the cache sizes</p><div class="dev-body"><p>The cache values from <code>sysconf</code> are filled in by the C library asking the CPU. glibc on x86-64 answers with <code>CPUID</code>. glibc on aarch64 answers only the line size, from the <code>CTR_EL0</code> register — and that is the <strong>smallest</strong> line size in the whole hierarchy — and returns <strong>0</strong> for sizes and associativity. The kernel has closed the registers holding those values to user programs (glibc 2.44′s aarch64 <code>sysconf.c</code> says so in a comment).</p><p>Printed as is, that 0 becomes “a 0-byte cache”, and the latency curve later files every size under main memory — which is exactly what the aarch64 cross run produced. So when the answer is 0 the example reads what the kernel wrote at boot into <code>/sys/devices/system/cpu/cpu0/cache</code>, and if that is missing too it prints “unknown”.</p><p>Run on an Android phone (clang in Termux), it was emptier still. Android’s C library (Bionic) returns 0 even for the line size, and the kernel’s sysfs records only each cache’s level and type, leaving the size fields empty. So on aarch64 Linux the example finally reads <code>CTR_EL0</code> itself to get <strong>at least the line size</strong> — a register the kernel leaves readable to user programs, and the very value glibc answers with. ★ <strong>“It gives that machine’s answer” holds only when the one asked knows the answer.</strong></p></div></div><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Item</strong></th><th><strong>Value</strong></th><th><strong>Where it is used later</strong></th></tr><tr><td>L1 data cache</td><td>32 KiB, 8-way, 64-byte lines</td><td>the first step of the latency curve; the stride experiment</td></tr><tr><td>L2 cache</td><td>256 KiB</td><td>the second step</td></tr><tr><td>L3 cache</td><td>16 MiB</td><td>the third step</td></tr><tr><td>page size</td><td>4 KiB</td><td>the TLB experiment; the first-touch cost</td></tr><tr><td>logical cores</td><td>16</td><td>the false sharing experiment</td></tr><tr><td>clock resolution</td><td>1 ns</td><td>the shortest thing that can be measured</td></tr><tr><td>TLB (translation lookaside buffer)</td><td>the cache holding translations</td><td>the page experiment</td></tr></table></div><span id="proven-float-698"></span><p class="float-caption">Table 105.2 — The numbers of the machine this was written on (as the example read them)</p></figure><h4 id="sx4">2 and 3. Resolution and cost are different things<a class="plink" href="sec126.html#sx4" aria-label="Link to this section" title="Link to this section">#</a></h4><div></div><p><code>clock_getres</code> answers one nanosecond. But actually calling <code>clock_gettime</code> once costs <strong>about 17 nanoseconds</strong> on this machine, and the smallest interval two reads can distinguish is the same.</p><p>★ From which one rule follows. <strong>Anything shorter than 17 nanoseconds is never measured once.</strong> It is repeated a million times and divided. Every demonstration in this appendix is built that way.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Size of the thing</strong></th><th><strong>Example</strong></th><th><strong>Method</strong></th><th><strong>Watch out for</strong></th></tr><tr><td>about one nanosecond</td><td>one addition, one branch</td><td>repeat millions of times and divide</td><td>the optimiser removes it entirely</td></tr><tr><td>tens to hundreds of ns</td><td>one access outside the cache</td><td>thousands of repeats + a dependency chain</td><td>prefetching hides it</td></tr><tr><td>microseconds</td><td>a system call, a signal</td><td>thousands of repeats</td><td>context switches mix in</td></tr><tr><td>milliseconds and above</td><td>a disk access, a large computation</td><td>several rounds of one each</td><td>caches and buffers change the result</td></tr></table></div><span id="proven-float-699"></span><p class="float-caption">Table 105.3 — What to measure how — the method depends on the size</p></figure><h4 id="sx5">4. The first trap — the optimiser removes what you meant to measure<a class="plink" href="sec126.html#sx5" aria-label="Link to this section" title="Link to this section">#</a></h4><div></div><p>The same sum is measured twice: once discarding the result, once using it. The demonstration printed <strong>3 ns against 216,713 ns</strong> — more than ten thousand times apart.</p><p>The first is not fast; it <strong>did not run</strong>. The compiler has the right to delete a computation whose value nobody uses (the as-if rule, chapter 14). A loop adding a million values disappeared entire.</p><div class="dev misconception"><p class="dev-label">A common misconception. <strong>if my code finished in 0 nanoseconds it must be very fast</strong></p><div class="dev-body">No. <strong>It did not run.</strong> Whenever a measurement gives an unbelievably good number, ask first whether the code was removed. There is a way to check — multiply the input by ten. If the time does not multiply by ten, that loop did not run.</div></div><h4 id="sx6">5. The second trap — the first round is slow<a class="plink" href="sec126.html#sx6" aria-label="Link to this section" title="Link to this section">#</a></h4><div></div><p>The same 4 MiB was filled twice, and the first was <strong>more than ten times</strong> slower. The reason is not computation but <strong>memory</strong>. The address <code>malloc</code> gave is not yet attached to real memory, and at each first touch the operating system attaches one page (page faults, chapter 12).</p><p>★ Writing this demonstration walked into trap 4 first. With nobody reading the filled result, <code>memset</code> disappeared entirely and produced the nonsense “4 MiB filled in 38 nanoseconds”. Only after adding a line that reads one byte afterwards did that tenfold appear. <strong>Traps do not arrive one at a time.</strong></p><h4 id="sx7">6. The third trap — one interruption drags the mean<a class="plink" href="sec126.html#sx7" aria-label="Link to this section" title="Link to this section">#</a></h4><div></div><p>Measure the same work 201 times and the values scatter. On this machine the minimum was 12,354 ns, the median 12,531, the maximum 21,834 — the maximum 1.7 times the median. That round had other work cutting in.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Value</strong></th><th><strong>What it says</strong></th><th><strong>Under interference</strong></th><th><strong>In this appendix</strong></th></tr><tr><td>minimum</td><td>“if nothing had interfered at all”</td><td>unshaken</td><td>stated alongside</td></tr><tr><td>median</td><td>“this is what it usually is”</td><td>barely moves</td><td><strong>used by default</strong></td></tr><tr><td>mean</td><td>total / count</td><td><strong>dragged by one outlier</strong></td><td>not used</td></tr><tr><td>maximum, 99th</td><td>“this is the worst”</td><td>that is the point of it</td><td>what matters in code with a deadline</td></tr></table></div><span id="proven-float-700"></span><p class="float-caption">Table 105.4 — Which representative value to use</p></figure><p>★ In code with a deadline (an audio callback, a control loop, an interrupt handler) the <strong>maximum is the design figure</strong>. “One millisecond on average” is no comfort — one late round and the sound breaks. “Measure the worst case” from the appendix on C without an operating system is the same story.</p><h3 id="sx8">The six disciplines of this appendix<a class="plink" href="sec126.html#sx8" aria-label="Link to this section" title="Link to this section">#</a></h3><div></div><p>What has been seen so far, written down as a contract. Every demonstration that follows keeps it.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Discipline</strong></th><th><strong>What it prevents</strong></th><th><strong>How it is kept</strong></th></tr><tr><td>measure the scale before measuring</td><td>measuring the clock itself</td><td>find the resolution and call cost first, and repeat anything shorter</td></tr><tr><td>keep it from being removed</td><td>reading deleted code as “fast”</td><td>a <code>volatile</code> sink, a dependency chain, using the return value</td></tr><tr><td>warm up, then measure</td><td>page faults and cold caches mixing in</td><td>run warm-up rounds and discard them</td></tr><tr><td>use the median</td><td>one interruption changing the conclusion</td><td>sort the rounds and take the middle, stating the minimum too</td></tr><tr><td>speak in ratios</td><td>reading this machine’s numbers as law</td><td>fix a baseline and record “how many times”</td></tr><tr><td>suspect the measurement first</td><td>wasting time blaming the machine</td><td>multiply the input by ten and see whether the time follows</td></tr></table></div><span id="proven-float-701"></span><p class="float-caption">Table 105.5 — Six disciplines for measuring</p></figure><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Why does a ratio last longer than a nanosecond figure?</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> Nanoseconds change with clock speed, generation and power state; the same code can be twice as fast on another machine. But <strong>the distance between L1 and main memory</strong>, or <strong>between a predicted and a mispredicted branch</strong>, comes from the structure and changes far more slowly. So “60 times L1” is more durable knowledge than “78 nanoseconds on this machine”.</p></div></div><h3 id="sx9">Measuring the memory ladder<a class="plink" href="sec126.html#sx9" aria-label="Link to this section" title="Link to this section">#</a></h3><div></div><p>With the scale ready, the first thing to measure: the ladder of chapter 12.</p><h4 id="sx10">First the principle — why a ladder appeared<a class="plink" href="sec126.html#sx10" aria-label="Link to this section" title="Link to this section">#</a></h4><div></div><p>CPUs got faster and main memory did not keep up. That gap widened over decades, and layers were inserted to fill it. Those are the caches.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Rung</strong></th><th><strong>Size (this machine)</strong></th><th><strong>Who fills it</strong></th><th><strong>What it holds</strong></th><th><strong>If it is not there</strong></th></tr><tr><td>registers</td><td>a few hundred bytes</td><td>the compiler</td><td>the values in use now</td><td>ask the cache</td></tr><tr><td>L1 data cache</td><td>32 KiB</td><td>hardware</td><td>lines just used</td><td>ask L2</td></tr><tr><td>L2 cache</td><td>256 KiB</td><td>hardware</td><td>lines recently used</td><td>ask L3</td></tr><tr><td>L3 cache</td><td>16 MiB</td><td>hardware</td><td>lines shared between cores</td><td>ask main memory</td></tr><tr><td>main memory (DRAM)</td><td>several GiB</td><td>the operating system</td><td>all of the program’s memory</td><td>fetch a page from disk</td></tr></table></div><span id="proven-float-702"></span><p class="float-caption">Table 105.6 — What each rung does</p></figure><p>Two things to note in advance; they are needed to read the measurements.</p><p><strong>First, a cache moves in “lines”, not bytes.</strong> On this machine a line is 64 bytes. Read one <code>int</code> (4 bytes) and the 64 bytes around it come up whole.</p><p><strong>Second, the machine guesses what will be read next.</strong> When addresses grow regularly, prefetching circuitry runs ahead and fetches them. So <strong>a program reading in order hardly feels slow memory at all.</strong></p><h4 id="sx11">So how must it be measured<a class="plink" href="sec126.html#sx11" aria-label="Link to this section" title="Link to this section">#</a></h4><div></div><p>Because of the second property, measuring “how far away memory is” while reading in order gives no answer — the machine has already fetched it. To see the latency you must make <strong>the next address impossible to know in advance</strong>.</p><p>The classic method: <strong>pointer chasing</strong> — link the array into a <strong>single ring</strong> in random order, so that the value just read tells you where to read next.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Condition</strong></th><th><strong>Why it is needed</strong></th><th><strong>If it is broken</strong></th></tr><tr><td>the next place is in the <strong>value</strong> just read</td><td>the machine cannot run ahead — one at a time</td><td>several accesses overlap and hide the latency</td></tr><tr><td>the order is random</td><td>it hides the pattern of addresses</td><td>prefetching works</td></tr><tr><td>the ring is <strong>one</strong> (it does not split into small rings)</td><td>the whole working set is walked evenly</td><td>only part is walked and it fits in cache</td></tr><tr><td>the result is written somewhere</td><td>so the optimiser cannot delete the loop</td><td>“0 nanoseconds” appears</td></tr></table></div><span id="proven-float-703"></span><p class="float-caption">Table 105.7 — What pointer chasing achieves</p></figure><div class="demo demo-src"><p class="demo-head"><code>examples-en/apx-measured/cache_ladder/cache_ladder.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> 기억의 사다리를 잰다 --- 작업 집합을 키워 가며 「한 번 읽는 데 드는 시간」을 본다.</span></em>
@@ -1101,22 +1101,22 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
   it follows a random ring, so prefetching does not help --- pure latency.
 
   working set  where      random access  factor     sequential
-  4 KiB        L1             1.44 ns     1.0x     0.38 ns
-  8 KiB        L1             1.44 ns     1.0x     0.37 ns
-  16 KiB       L1             1.44 ns     1.0x     0.37 ns
+  4 KiB        L1             1.43 ns     1.0x     0.60 ns
+  8 KiB        L1             1.43 ns     1.0x     0.37 ns
+  16 KiB       L1             1.44 ns     1.0x     0.39 ns
   32 KiB       L1             1.44 ns     1.0x     0.37 ns
-  64 KiB       L2             2.53 ns     1.8x     0.37 ns
-  128 KiB      L2             3.25 ns     2.3x     0.37 ns
-  256 KiB      L2             5.04 ns     3.5x     0.37 ns
-  512 KiB      L3             9.24 ns     6.4x     0.38 ns
-  1 MiB        L3            12.08 ns     8.4x     0.39 ns
-  2 MiB        L3            13.41 ns     9.3x     0.39 ns
-  4 MiB        L3            14.38 ns    10.0x     0.59 ns
-  8 MiB        L3            22.45 ns    15.6x     0.42 ns
-  16 MiB       L3            51.64 ns    36.0x     0.55 ns
-  32 MiB       main memory    72.15 ns    50.3x     0.58 ns
-  64 MiB       main memory    82.27 ns    57.3x     0.58 ns
-  128 MiB      main memory    89.10 ns    62.1x     0.58 ns
+  64 KiB       L2             2.53 ns     1.8x     0.38 ns
+  128 KiB      L2             3.05 ns     2.1x     0.37 ns
+  256 KiB      L2             5.77 ns     4.0x     0.38 ns
+  512 KiB      L3            10.15 ns     7.1x     0.39 ns
+  1 MiB        L3            12.99 ns     9.1x     0.39 ns
+  2 MiB        L3            14.53 ns    10.1x     0.39 ns
+  4 MiB        L3            15.27 ns    10.6x     0.39 ns
+  8 MiB        L3            18.18 ns    12.7x     0.40 ns
+  16 MiB       L3            43.14 ns    30.1x     0.52 ns
+  32 MiB       main memory    65.83 ns    45.9x     0.57 ns
+  64 MiB       main memory    79.40 ns    55.3x     0.59 ns
+  128 MiB      main memory    87.04 ns    60.7x     0.57 ns
 
 == how to read this ==
   1. reading down the table shows steps. Wherever the working set passes
@@ -1272,18 +1272,18 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
 == varying the stride --- the number of accesses fixed at 2000000 ==
   stride     each           factor     lines touched    bytes fetched in vain
   1              0.64 ns     1.0x  0.016            0 bytes
-  2              0.65 ns     1.0x  0.031            0 bytes
-  4              0.67 ns     1.0x  0.062            0 bytes
-  8              0.77 ns     1.2x  0.125            0 bytes
-  16             1.01 ns     1.6x  0.250            0 bytes
+  2              0.64 ns     1.0x  0.031            0 bytes
+  4              0.67 ns     1.1x  0.062            0 bytes
+  8              0.76 ns     1.2x  0.125            0 bytes
+  16             1.02 ns     1.6x  0.250            0 bytes
   32             1.62 ns     2.6x  0.500            0 bytes
-  64             3.18 ns     5.0x  1.000            63 bytes
-  128            6.13 ns     9.6x  1.000            63 bytes
-  256            6.29 ns     9.9x  1.000            63 bytes
-  512            6.99 ns    11.0x  1.000            63 bytes
-  1024           7.80 ns    12.3x  1.000            63 bytes
-  2048           7.71 ns    12.1x  1.000            63 bytes
-  4096           6.69 ns    10.5x  1.000            63 bytes
+  64             3.10 ns     4.9x  1.000            63 bytes
+  128            4.83 ns     7.6x  1.000            63 bytes
+  256            5.65 ns     8.9x  1.000            63 bytes
+  512            6.64 ns    10.5x  1.000            63 bytes
+  1024           7.03 ns    11.1x  1.000            63 bytes
+  2048           7.51 ns    11.8x  1.000            63 bytes
+  4096           6.57 ns    10.4x  1.000            63 bytes
 
   * the cost rises until the stride reaches 64 bytes (the line size), and
     then flattens. A stride narrower than a line uses one line several times,
@@ -1295,8 +1295,8 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
   4194304 elements --- 224 MiB in total
 
   layout                             per element     factor bytes used per line
-  array of structs (AoS) --- reading x only   2.891 ns      2.4x  8 / 56
-  structs of arrays (SoA) --- reading the x array only   1.202 ns      1.0x  64 / 64
+  array of structs (AoS) --- reading x only   2.728 ns      2.3x  8 / 56
+  structs of arrays (SoA) --- reading the x array only   1.200 ns      1.0x  64 / 64
 
   * the same values were added the same number of times. Only the layout changed.
     In the array of structs, 56 bytes are fetched to use 8 --- the rest merely
@@ -1488,13 +1488,13 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
   only 8 bytes are touched per page. Little data, but the page count grows.
 
   pages      data touched each         factor
-  16         64 KiB           3.44 ns    1.0x
-  64         256 KiB          6.02 ns    1.7x
-  256        1 MiB           15.97 ns    4.6x
-  1024       4 MiB           15.94 ns    4.6x
-  4096       16 MiB          36.29 ns   10.5x
-  16384      64 MiB          78.08 ns   22.7x
-  65536      256 MiB         90.91 ns   26.4x
+  16         64 KiB           3.45 ns    1.0x
+  64         256 KiB          7.67 ns    2.2x
+  256        1 MiB           14.85 ns    4.3x
+  1024       4 MiB           14.86 ns    4.3x
+  4096       16 MiB          31.56 ns    9.2x
+  16384      64 MiB          74.49 ns   21.6x
+  65536      256 MiB         88.71 ns   25.7x
 
   * the data is small (8 bytes per page), and yet more pages costs more.
     The bottleneck is address translation, not the cache. When the table
@@ -1505,8 +1505,8 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
   normal pages advised         backed by huge pages: 0 KiB (0%)
   huge pages advised           backed by huge pages: 0 KiB (0%)
   the same 256 MiB is walked the same way.
-  normal pages (4 KiB)            90.82 ns
-  huge pages advised (MADV_HUGEPAGE)    90.86 ns
+  normal pages (4 KiB)            90.49 ns
+  huge pages advised (MADV_HUGEPAGE)    90.23 ns
   difference: 1.00 x --- no great difference in this run
   * one huge page replaces 512 pages of 4 KiB, so the translations needed to
     sweep the same data fall to a 512th. But madvise is a request, not an order.
@@ -1516,9 +1516,9 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
      may already have some mixed in.)
 
 == 3. the cost of touching a page for the first time ==
-  touching a page the first time :   1123.4 ns
-  touching an already-mapped page:      8.6 ns
-  factor: 131 x
+  touching a page the first time :   1117.5 ns
+  touching an already-mapped page:      9.0 ns
+  factor: 124 x
   * the address `malloc` returned is not memory yet. At each first touch the
     operating system attaches one page --- and that is its cost. Allocate a large
     buffer and measure at once and this cost is mixed in entire (hence warming up).
@@ -1673,27 +1673,27 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
   the two arrays hold exactly the same contents --- only sortedness differs.
 
                                      random order sorted order sorted/random
-  source with an if (plain -O2)          0.648 ns     0.641 ns    1.01 x
-  code that kept a real branch           3.907 ns     0.787 ns    4.97 x
-  code with the branch turned into arithmetic     0.619 ns     0.625 ns    0.99 x
+  source with an if (plain -O2)          0.648 ns     0.649 ns    1.00 x
+  code that kept a real branch           4.006 ns     0.776 ns    5.16 x
+  code with the branch turned into arithmetic     0.615 ns     0.607 ns    1.01 x
 
   * the first two rows have the same source. Only the compiler settings differ.
     In the first, the compiler turned the `if` into a conditional move (cmov), so
     there is no branch to predict and sorting brings no gain. That is why the
     famous "sorted arrays are faster" story often fails to reproduce today.
 
-  extra time per element in the real-branch version: 3.120 ns
-  / a miss probability of 0.5 = about 6.2 ns per misprediction
+  extra time per element in the real-branch version: 3.230 ns
+  / a miss probability of 0.5 = about 6.5 ns per misprediction
 
 == how regular must it be to be predicted ==
   the same number of trues, with only the pattern changed.
 
   pattern                              each note
-  always true                      0.503 ns always predicted
-  alternating                      0.839 ns short periods are memorised
+  always true                      0.709 ns always predicted
+  alternating                      0.838 ns short periods are memorised
   one in four                      0.908 ns short periods are memorised
-  one in sixteen                   1.047 ns short periods are memorised
-  random                           3.904 ns cannot be predicted
+  one in sixteen                   1.045 ns short periods are memorised
+  random                           3.932 ns cannot be predicted
 
 == how to read this ==
   0. today's compilers turn a short `if` into branchless code. So to measure
@@ -1893,22 +1893,22 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
   cache line 64 bytes · 16 logical cores
 
 == 1. the baseline ==
-  one thread incrementing its own slot : 1.570 ns each
+  one thread incrementing its own slot : 1.567 ns each
   (measured on a local variable the compiler folds the loop away, so it is no baseline)
 
 == 2. two threads each incrementing their own slot --- only the distance changes ==
   the two threads never touch each other's data. And yet…
 
   with two threads, a perfect split would make each increment half the
-  baseline (0.785 ns). Anything above that is the loss.
+  baseline (0.783 ns). Anything above that is the loss.
 
   distance       per increment    vs perfect scaling same line?
-  8                   1.154 ns       1.47x  same line --- false sharing
-  16                  1.145 ns       1.46x  same line --- false sharing
-  32                  1.124 ns       1.43x  same line --- false sharing
-  64                  0.779 ns       0.99x  different lines
+  8                   1.144 ns       1.46x  same line --- false sharing
+  16                  1.102 ns       1.41x  same line --- false sharing
+  32                  1.155 ns       1.47x  same line --- false sharing
+  64                  0.784 ns       1.00x  different lines
   128                 0.783 ns       1.00x  different lines
-  256                 0.782 ns       1.00x  different lines
+  256                 0.786 ns       1.00x  different lines
 
   * the two threads touch different variables. But in the same cache line the
     line is passed back and forth between the cores --- that is false sharing.
@@ -1916,17 +1916,17 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
 
 == 3. adding threads --- sharing a line, and apart ==
   threads    same line (8 bytes apart) different lines (128 bytes) factor
-  2                 1.141 ns        0.784 ns    1.5x
-  4                 0.729 ns        0.392 ns    1.9x
-  8                 0.900 ns        0.208 ns    4.3x
+  2                 1.134 ns        0.784 ns    1.4x
+  4                 0.673 ns        0.393 ns    1.7x
+  8                 0.626 ns        0.196 ns    3.2x
 
 == 4. when several really do touch one value ==
-  uncontended increment (baseline)        1.570 ns each
-  atomic increment --- 1 thread           5.230 ns each
-  atomic increment --- 2 threads         19.410 ns each
-  atomic increment --- 4 threads         17.355 ns each
-  increment under a lock --- 1 thread     16.773 ns each
-  increment under a lock --- 2 threads     60.561 ns each
+  uncontended increment (baseline)        1.567 ns each
+  atomic increment --- 1 thread           5.318 ns each
+  atomic increment --- 2 threads         14.152 ns each
+  atomic increment --- 4 threads         17.822 ns each
+  increment under a lock --- 1 thread     16.817 ns each
+  increment under a lock --- 2 threads     69.192 ns each
 
   * uncontended (one thread), the atomic costs 3x and the lock 11x.
     But when several contend for one value it jumps several fold again --- one
@@ -2115,17 +2115,17 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
 
 == 1. denormals --- numbers very close to zero ==
   the smallest normal double: 2.22507e-308
-  array filled with normals (1.0)    0.286 ns per element
-  array filled with denormals    20.548 ns per element
-  -> the denormal side is 71.7 x slower
+  array filled with normals (1.0)    0.288 ns per element
+  array filled with denormals    20.519 ns per element
+  -> the denormal side is 71.3 x slower
   * here the magnitude of a value alone changes the time. On some machines it is
     tens of times; on recent chips it is almost nothing --- so measure before speaking.
     (this is the accident where audio processing slows suddenly as a sound fades.)
 
 == 2. float and double ==
-  double (8 bytes)                0.288 ns per element
+  double (8 bytes)                0.286 ns per element
   float  (4 bytes)                0.286 ns per element
-  -> the float side is 1.01 x faster --- odd: no difference
+  -> the float side is 1.00 x faster --- odd: no difference
 
   measuring the same computation again, this time allowing vector instructions:
   double (vectors allowed)        0.573 ns per element
@@ -2139,11 +2139,11 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
 
 == 3. the operations cost differently ==
   operation                per element    vs multiply
-  multiply  a*b               0.309 ns      1.0x
-  add       a+b               0.506 ns      1.6x
+  multiply  a*b               0.308 ns      1.0x
+  add       a+b               0.505 ns      1.6x
   divide    a/b               1.147 ns      3.7x
-  sqrt      sqrt(a)           1.721 ns      5.6x
-  sin(a)                      7.814 ns     25.3x
+  sqrt      sqrt(a)           1.720 ns      5.6x
+  sin(a)                      7.798 ns     25.3x
 
   * multiply and add cost about the same. Divide is several times, trigonometry tens.
     Hence the common trick of one divide for a reciprocal and many multiplies.

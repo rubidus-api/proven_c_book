@@ -694,6 +694,12 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
     <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">#DATA </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-s">%ld</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-s">%ld</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> key</strong><strong><span class="tok-x">,</span></strong><strong> vsz</strong><strong><span class="tok-x">,</span></strong><strong> rss</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 <span class="tok-x">}</span>
 
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> ★ 버퍼를 *바깥에서도 보이는 기억*으로 만든다. 지역 포인터로만 쥐고 있으면 컴파일러는</span></em>
+<em><span class="tok-c">     「아무도 읽지 않는 기억」으로 보고 malloc 과 쪽마다의 쓰기를 통째로 지운다 --- Clang 22 는 그랬고</span></em>
+<em><span class="tok-c">     8 GiB 약속이 아예 사라졌다. 이 기계의 GCC 14 에서만 우연히 살아 있었다(폰에서 드러났다).</span></em>
+<em><span class="tok-c">     volatile 전역에 한 번 담으면, 바깥 호출(fopen)이 그 기억을 볼 수 있다고 가정해야 한다. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong><strong><span class="tok-k">volatile</span></strong> held<span class="tok-x">;</span>
+
 <strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
 <span class="tok-x">{</span>
     <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">size_t</span></strong> GIB <strong><span class="tok-x">=</span></strong> <span class="tok-n">1024</span><strong><span class="tok-t">u</span></strong> <strong><span class="tok-x">*</span></strong> <span class="tok-n">1024</span><strong><span class="tok-t">u</span></strong> <strong><span class="tok-x">*</span></strong> <span class="tok-n">1024</span><strong><span class="tok-t">u</span></strong><span class="tok-x">;</span>
@@ -705,6 +711,7 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
     <strong>show</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">before</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">before the request</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
     <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>p <strong><span class="tok-x">=</span></strong> <strong>malloc</strong><strong><span class="tok-x">(</span></strong><strong>want</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    held <strong><span class="tok-x">=</span></strong> p<span class="tok-x">;</span>
     <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong>p<span class="tok-x">)</span> <span class="tok-x">{</span>
         <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">#DATA-END</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
         <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">  * this machine refused the promise; the point below still holds.</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
@@ -807,9 +814,9 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
 <span class="tok-x">}</span>
 </code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>== what a page costs the first time it is touched ==
 
-  first touch          1084.6 ns per page
-  touched again           8.4 ns per page
-  factor                129.2 x
+  first touch          1059.8 ns per page
+  touched again           8.6 ns per page
+  factor                123.4 x
 
   * the second write is a write. The first one is a fault, a page, a zeroing
     and an entry in the page table -- the bill for the memory that was
@@ -863,10 +870,17 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
     <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">#DATA </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-s">%ld</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-s">%ld</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> key</strong><strong><span class="tok-x">,</span></strong><strong> sh</strong><strong><span class="tok-x">,</span></strong><strong> pr</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 <span class="tok-x">}</span>
 
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> ★ 버퍼를 *바깥에서도 보이는 기억*으로 만든다. 지역 포인터로만 쥐고 있으면 컴파일러는</span></em>
+<em><span class="tok-c">     「아무도 읽지 않는 기억」으로 보고 malloc·memset·쓰기를 통째로 지운다 --- Clang 22 는 그랬고</span></em>
+<em><span class="tok-c">     GCC 16 은 부모의 채우기를 지웠다. 이 기계의 GCC 14 에서만 우연히 살아 있었다(폰에서 드러났다).</span></em>
+<em><span class="tok-c">     volatile 전역에 한 번 담으면, 바깥 호출(fopen·fork)이 그 기억을 볼 수 있다고 가정해야 한다. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong><strong><span class="tok-k">volatile</span></strong> held<span class="tok-x">;</span>
+
 <strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
 <span class="tok-x">{</span>
     <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">size_t</span></strong> N <strong><span class="tok-x">=</span></strong> <span class="tok-n">512</span><strong><span class="tok-t">u</span></strong> <strong><span class="tok-x">*</span></strong> <span class="tok-n">1024</span> <strong><span class="tok-x">*</span></strong> <span class="tok-n">1024</span><span class="tok-x">;</span>
     <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>p <strong><span class="tok-x">=</span></strong> <strong>malloc</strong><strong><span class="tok-x">(</span></strong><strong>N</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    held <strong><span class="tok-x">=</span></strong> p<span class="tok-x">;</span>
     <strong><span class="tok-t">long</span></strong> sum <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
 
     <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong>p<span class="tok-x">)</span> <span class="tok-x">{</span> <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">not enough memory for the experiment.</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> <span class="tok-x">}</span>

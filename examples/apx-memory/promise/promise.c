@@ -28,6 +28,12 @@ static void show(const char *key, const char *when)
     printf("#DATA %s %ld %ld\n", key, vsz, rss);
 }
 
+/* ★ 버퍼를 *바깥에서도 보이는 기억*으로 만든다. 지역 포인터로만 쥐고 있으면 컴파일러는
+     「아무도 읽지 않는 기억」으로 보고 malloc 과 쪽마다의 쓰기를 통째로 지운다 --- Clang 22 는 그랬고
+     8 GiB 약속이 아예 사라졌다. 이 기계의 GCC 14 에서만 우연히 살아 있었다(폰에서 드러났다).
+     volatile 전역에 한 번 담으면, 바깥 호출(fopen)이 그 기억을 볼 수 있다고 가정해야 한다. */
+static char *volatile held;
+
 int main(void)
 {
     const size_t GIB = 1024u * 1024u * 1024u;
@@ -39,6 +45,7 @@ int main(void)
     show("before", "before the request");
 
     char *p = malloc(want);
+    held = p;
     if (!p) {
         printf("#DATA-END\n");
         puts("\n  * this machine refused the promise; the point below still holds.");

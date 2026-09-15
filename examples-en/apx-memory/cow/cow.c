@@ -45,10 +45,18 @@ static void show(const char *key, const char *who)
     printf("#DATA %s %ld %ld\n", key, sh, pr);
 }
 
+/* Make the buffer memory that can be seen from outside. Held only by a local pointer, the
+   compiler treats it as memory nobody reads and removes the malloc, the fill and the writes
+   entirely --- Clang 22 did, and GCC 16 removed the parent's fill. It survived only by chance
+   under this machine's GCC 14 (a phone run exposed it). Stored once in a volatile global,
+   outside calls (fopen, fork) must be assumed able to see that memory. */
+static char *volatile held;
+
 int main(void)
 {
     const size_t N = 512u * 1024 * 1024;
     char *p = malloc(N);
+    held = p;
     long sum = 0;
 
     if (!p) { puts("not enough memory for the experiment."); return 0; }
