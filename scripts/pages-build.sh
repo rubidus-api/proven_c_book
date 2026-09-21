@@ -41,7 +41,7 @@ if [ -z "$ver" ]; then
 fi
 [ -n "$ver" ] || { echo "pages-build: 판 번호를 알 수 없다" >&2; exit 1; }
 
-tokfile=${GH_TOKEN_FILE:-"$root/../github-personal-access-token"}
+tokfile=${GH_TOKEN_FILE:-"$root/../secrets/github-personal-access-token"}
 [ -f "$tokfile" ] || { echo "pages-build: 인증서를 찾지 못했다 (GH_TOKEN_FILE)" >&2; exit 1; }
 tok=$(tr -d '\n\r ' < "$tokfile")
 
