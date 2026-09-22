@@ -13,8 +13,8 @@
 // the scheme, so compare it with PROVEN_VERSION_ENCODE, never against one of the old date numbers.
 #define PROVEN_VERSION_MAJOR  0
 #define PROVEN_VERSION_MINOR  1
-#define PROVEN_VERSION_PATCH  0
-#define PROVEN_VERSION_STRING "proven_c_lib-v0.1.0"
+#define PROVEN_VERSION_PATCH  1
+#define PROVEN_VERSION_STRING "proven_c_lib-v0.1.1"
 
 // One integer for #if: MAJOR * 1000000 + MINOR * 1000 + PATCH.
 //   #if PROVEN_VERSION_NUM >= PROVEN_VERSION_ENCODE(0, 1, 0)
