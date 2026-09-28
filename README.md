@@ -1,10 +1,10 @@
+**한국어** | [English](README-en.md) — **Proven C Book v0.94.1** — [PDF(ko)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.94.1/proven_c_book-v0.94.1-ko.pdf) · [PDF(en)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.94.1/proven_c_book-v0.94.1-en.pdf) · [ZIP(ko)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.94.1/proven_c_book-v0.94.1-ko.zip) · [ZIP(en)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.94.1/proven_c_book-v0.94.1-en.zip) · [ZIP(all)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.94.1/proven_c_book-v0.94.1-all.zip)
+
 # Proven C Book — 프로븐 C 라이브러리와 함께하는 현대적 C 입문
 
 **C의 원리를 배우고, C로 프로그램을 설계하는 데까지 이어지는 책이다.**
 처음 배우는 독자에게는 기계와 언어의 바탕을, 입문서를 마친 독자에게는
 메모리·오류 처리·라이브러리·프로젝트 구성으로 나아가는 길을 안내한다.
-
-*[English README](README-en.md)*
 
 > 포인터와 구조체를 배웠다. 이제 문자열의 길이는 누가 관리하고, 메모리는
 > 누가 해제하며, 함수가 실패하면 원래 데이터는 어떻게 되는가?
