@@ -1,11 +1,11 @@
+[한국어](README.md) | **English** — **Proven C Book v0.94.1** — [PDF(ko)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.94.1/proven_c_book-v0.94.1-ko.pdf) · [PDF(en)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.94.1/proven_c_book-v0.94.1-en.pdf) · [ZIP(ko)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.94.1/proven_c_book-v0.94.1-ko.zip) · [ZIP(en)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.94.1/proven_c_book-v0.94.1-en.zip) · [ZIP(all)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.94.1/proven_c_book-v0.94.1-all.zip)
+
 # Proven C Book — An Introduction to Modern C with the Proven C Library
 
 **Learn how C works, then use that understanding to design C programs.**
 For a first-time programmer, the book builds a foundation in the machine and the
 language. For readers who have finished an introductory text, it connects that
 foundation to memory management, error handling, libraries and project structure.
-
-*[한국어판 README](README.md)*
 
 > You have learned pointers and structs. Who keeps track of string lengths now?
 > Who frees the memory? When a function fails, what happens to the original data?
