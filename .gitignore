@@ -86,3 +86,23 @@ examples-en/**/*.o
 examples-en/**/*.d
 examples/ch102/stale/demo
 examples-en/ch102/stale/demo
+
+# ── Private layout (links into the private sibling; kit 0.10.0) ──
+/scripts/README.md
+/scripts/check-tools.sh
+/scripts/project-check.sh
+/scripts/new-plan.sh
+/scripts/archive-plan.sh
+/scripts/changelog-entry.sh
+/docs/agents
+/scripts/gate.sh
+/scripts/context-budget.sh
+/scripts/brief.sh
+/scripts/worklog.sh
+/docs/rfc
+/docs/research
+/docs/benchmark
+/docs/backlogs
+/docs/plans
+/docs/requirements
+/docs/resources
