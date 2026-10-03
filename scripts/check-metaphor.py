@@ -34,13 +34,22 @@ MARKUP = r"[*_`\]」』]*"          # 낱말과 조사 사이에 낄 수 있는 
 JOSA = "를은는이가다에로와의처럼란"
 
 # 한국어: 명사 「지도」만. 앞 글자가 한글이면 조사 「-지도」이므로 뺀다.
-KO = re.compile(rf"(?<![가-힣])지도(?={MARKUP}[{JOSA}]|{MARKUP}(?:$|\s|\)|\]|」|·))")
+# 「기억 지도(#chref(…))」·「"주소 지도"」처럼 괄호나 따옴표가 바로 붙는 자리도 명사다
+# (RFC-0052 에서 놓친 것을 둘 찾았다).
+KO = re.compile(rf'(?<![가-힣])지도(?={MARKUP}[{JOSA}]|{MARKUP}(?:$|\s|\)|\]|」|·|\(|"))')
 
 # 「무늬」 --- 되풀이되는 코드의 *짜임*을 가리키는 데 쓰고 있었다(102곳). 무늬는
 # 표면의 장식이라 구조를 뜻하지 못한다(저자 지시 2026-08-16).
 #     이름 붙은 기법·되풀이되는 방식  → 패턴
 #     그냥 「같은 종류의 것」          → 꼴
 KO_PATTERN = re.compile("무늬")
+
+# 「지리」·「구획」·「풍경」 --- 한 자리에서 분위기를 내고 사라지는 문학적 낱말(RFC-0052,
+# 이슈 #2). 대응표가 없으니 입문 독자는 그것이 기술적으로 무엇인지 스스로 풀어야 한다.
+# 「지리」는 RFC-0022 의 원칙(C 에는 지리가 없다)을 정면으로 어기고 있었다.
+#     기억이 놓인 모양 → 배치 / 쓰임으로 나눈 부분 → 구역 / 형편·판세 → 평이한 말
+KO_PLAIN = re.compile(r"(?<![가-힣])(?:지리|구획|풍경)")
+EN_PLAIN = re.compile(r"\b(?:geograph\w*|districts?)\b", re.I)
 
 # 영어: 비유로 쓰인 map 만. 아래는 *진짜* map 이라 세지 않는다.
 EN = re.compile(r"\bmaps?\b", re.I)
@@ -54,6 +63,8 @@ EN_OK = re.compile(
 
 HINT = ("지도 → 배치(공간) · 갈래(분류) · 지형(판세) · 밑그림/길잡이(큰 틀).  "
         "RFC-0022 §2.1")
+HINT_PLAIN = ("지리 → 배치 · 구획 → 구역 · 풍경 → 평이한 말(형편·상황·…) / "
+              "geography → layout · districts → regions.  RFC-0052 §3 규율 4")
 HINT_PATTERN = ("무늬 → 패턴(이름 붙은 기법·되풀이되는 방식) · 꼴(같은 종류의 것).  "
                 "무늬는 표면의 장식이지 구조가 아니다.")
 
@@ -103,16 +114,20 @@ def main() -> int:
     pattern_hits = (scan("book", KO_PATTERN) + scan("examples", KO_PATTERN))
     bad = [h for h in hits if (h[0], h[2]) not in allowed]
     bad_pattern = [h for h in pattern_hits if (h[0], h[2]) not in allowed]
+    plain_hits = scan("book", KO_PLAIN) + scan("book-en", EN_PLAIN)
+    bad_plain = [h for h in plain_hits if (h[0], h[2]) not in allowed]
 
-    for name, ln, word, ctx in (bad + bad_pattern)[:30]:
+    for name, ln, word, ctx in (bad + bad_pattern + bad_plain)[:30]:
         print(f"  ⚠️  {name}:{ln}  [{word}]  …{ctx}…")
+    if bad_plain:
+        print(f"     {HINT_PLAIN}")
     if bad_pattern:
         print(f"     {HINT_PATTERN}")
     if bad:
         print(f"     {HINT}")
         print("     그 자리에서 옳다고 판단했다면 docs/metaphor-allow.tsv 에 올린다.")
-    bad = bad + bad_pattern
-    hits = hits + pattern_hits
+    bad = bad + bad_pattern + bad_plain
+    hits = hits + pattern_hits + plain_hits
     allowed_n = len(hits) - len(bad)
     tail = f" (허용 목록 {allowed_n}건)" if allowed_n else ""
     print(f"check-metaphor: 비유 낱말 규율 --- "

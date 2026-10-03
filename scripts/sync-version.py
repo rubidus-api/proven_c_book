@@ -45,6 +45,8 @@ def fix(path: pathlib.Path, ver: str) -> bool:
     else:  # README
         out = re.sub(r"((?:현재 판|Current edition)\*{0,2}:\s*\*{0,2})v[\d.]+",
                      r"\g<1>" + ver, out)
+        # 맨 윗줄의 제목 「**Proven C Book vX.Y.Z**」(f61c8411 에서 생겼는데 여기서 놓쳤다)
+        out = re.sub(r"(\*\*Proven C Book )v[\d.]+(\*\*)", r"\g<1>" + ver + r"\g<2>", out)
         # 내려받기 링크의 파일 이름과, 릴리스 URL 의 태그 부분을 함께 옮긴다
         out = re.sub(r"proven_c_book-v[\d.]+-", f"proven_c_book-{ver}-", out)
         out = re.sub(r"(/releases/download/)v[\d.]+/", r"\g<1>" + ver + "/", out)
