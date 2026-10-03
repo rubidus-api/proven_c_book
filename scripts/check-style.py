@@ -54,14 +54,31 @@ WARN_KO = ["존재한다", "가능하다", "제공한다", "를 통해", "을 �
 WARN_EN = ["in order to", "the fact that", "Moreover", "essentially", "In summary",
            "Let us", "In other words", "Note that", "robust", "vital", "seamless"]
 
+# ★ 낱말이 아니라 *꼴*로 잡는 주의 (RFC-0052, 이슈 #2). 평가하는 낱말이 긴 명사절
+#   주어 바로 뒤에 붙는 꼴 --- 「어디서든 보이고 언제나 살아 있다는 것이 장점이자
+#   위험이다 — …」. 독자는 「위험」을 읽는 순간 아직 *무엇이* 위험한지 모른다.
+#   사실 → 결과 → 평가 순서로 다시 쓰라는 신호다. 사실을 먼저 다 말한 뒤의 「…다는
+#   점이 핵심이다」처럼 옳은 자리도 잡으므로 기준선으로만 다룬다(늘면 실패).
+#   줄이 바뀌어도 한 문장이므로 공백을 접어서 본다.
+WARN_RE_KO = {
+    "~다는 것이 [평가어]": re.compile(
+        r"(?:다|라)는 (?:것|점)이\s(?:[^\s.?!—]+\s){0,2}?"
+        r"(?:장점|위험|문제|핵심|요점|강점|함정|약점)"),
+}
+WARN_RE_EN = {
+    "both its strength and its danger": re.compile(
+        r"\bboth (?:its|the|a) (?:strength|advantage|blessing)s? and "
+        r"(?:its|the|a) (?:danger|weakness|risk|curse)s?\b", re.I),
+}
+
 NOTE_KO = ["첫째", "둘째", "셋째", "넷째", "짚는다", "셈이다", "그것이다",
            "핵심이다", "정리하면", "요약하면", "는 것이다", "즉 ", "곧 "]
 NOTE_EN = ["First,", "Second,", "Third,", "In fact,", "Therefore,"]
 
 
 def files():
-    for tree, forb, warn, note in (("book", FORBID_KO, WARN_KO, NOTE_KO),
-                                   ("book-en", FORBID_EN, WARN_EN, NOTE_EN)):
+    for tree, forb, warn, note in (("book", FORBID_KO, WARN_KO + [WARN_RE_KO], NOTE_KO),
+                                   ("book-en", FORBID_EN, WARN_EN + [WARN_RE_EN], NOTE_EN)):
         base = ROOT / tree
         for sub in ("chapters", "appendix", "front", "back", "parts"):
             d = base / sub
@@ -74,7 +91,16 @@ def files():
 
 
 def count(text, pats):
-    out = {p: text.count(p) for p in pats if text.count(p)}
+    out = {}
+    for p in pats:
+        if isinstance(p, dict):                       # 꼴로 잡는 주의(RFC-0052)
+            flat = re.sub(r"\s+", " ", text)
+            for label, rx in p.items():
+                n = len(rx.findall(flat))
+                if n:
+                    out[label] = n
+        elif text.count(p):
+            out[p] = text.count(p)
     # ★ 「활용」은 「재활용」(이 책이 일부러 쓰는 비유)과 갈라야 해서 따로 센다
     n = len(re.findall(r"(?<!재)활용", text))
     if n:
