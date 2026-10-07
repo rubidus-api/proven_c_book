@@ -19,6 +19,7 @@
 import pathlib
 import re
 import sys
+from chapters import is_draft   # chapters/ 안의 작업 폴더는 원고가 아니다
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 KO, EN = ROOT / "book", ROOT / "book-en"
@@ -53,7 +54,7 @@ def main():
 
     # ① 맨 숫자 참조가 남았는가
     for base, pat in ((KO, BARE_KO), (EN, BARE_EN)):
-        for path in sorted(base.rglob("*.typ")):
+        for path in [p for p in sorted(base.rglob("*.typ")) if not is_draft(p)]:
             if path.name in SKIP:
                 continue
             for m in pat.finditer(prose(path)):
@@ -66,7 +67,7 @@ def main():
     #   않는 조사를 쓰거나 문장을 바꾼다.
     #   장 참조는 해당 없다. 언제나 「…장」으로 끝나므로 조사가 변하지 않는다.
     VAR_JOSA = re.compile(r'#(?:tblref|figref)\([^()]*\)(?:/\*\*/)?(이|가|은|는|을|를)(?![가-힣])')
-    for path in sorted(KO.rglob("*.typ")):
+    for path in [p for p in sorted(KO.rglob("*.typ")) if not is_draft(p)]:
         if path.name in SKIP:
             continue
         for m in VAR_JOSA.finditer(path.read_text(encoding="utf-8")):
@@ -80,7 +81,7 @@ def main():
     #   장이고 무엇이 값인지 기호로 가를 수 없다. (2026-08-31 저자 지시)
     STRUCT_TILDE = re.compile(r"제\s*\d+\s*\\?~\s*\d+\s*[부장]|[Pp]arts?\s+[IVX]+\s*\\?~")
     for base in (KO, EN):
-        for path in sorted(base.rglob("*.typ")):
+        for path in [p for p in sorted(base.rglob("*.typ")) if not is_draft(p)]:
             if path.name in SKIP:
                 continue
             for m in STRUCT_TILDE.finditer(path.read_text(encoding="utf-8")):
@@ -102,7 +103,7 @@ def main():
             cids += re.findall(r'"([^"]+)"', m.group(1))
         order = {cid: i for i, cid in enumerate(cids, 1)}
     for base in (KO, EN):
-        for path in sorted(base.rglob("*.typ")):
+        for path in [p for p in sorted(base.rglob("*.typ")) if not is_draft(p)]:
             if path.name in SKIP:
                 continue
             for m in re.finditer(r"#chrefs\(([^()]*)\)", path.read_text(encoding="utf-8")):

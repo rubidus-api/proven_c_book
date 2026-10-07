@@ -51,7 +51,7 @@ def header_rows():
                         #   ★ 둘 이상일 수 있다 --- 80장은 `<signal.h>` 를 *소개*하고
                         #     81장이 그것으로 한 장을 쓴다. 그 중 하나를 가리키면 된다.
     for i, cid in enumerate(ids, 1):
-        text = (ROOT / "book" / "chapters" / f"ch{i:02d}.typ").read_text(encoding="utf-8")
+        text = (ROOT / "book" / "chapters" / f"ch{i:03d}.typ").read_text(encoding="utf-8")
         title = next((l for l in text.split("\n") if l.startswith("= ")), "")
         for h in re.findall(r"<([a-z0-9_]+\.h)>", title):
             owner.setdefault(h, []).append(cid)

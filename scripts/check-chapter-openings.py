@@ -116,7 +116,7 @@ def check(edition: str, lang: str) -> list[str]:
     problems = []
     for path in chapters:
         rel = f"{edition}/chapters/{path.name}"
-        is_first = path.stem == "ch01"
+        is_first = path.stem == "ch001"
         problems += check_file(path, rel, is_first, lang)
     return problems
 

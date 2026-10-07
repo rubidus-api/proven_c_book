@@ -62,3 +62,17 @@ def expand(text, lang="ko"):
 
 def lang_of(path):
     return "en" if "book-en" in str(path) else "ko"
+
+
+def is_draft(path) -> bool:
+    """`chapters/` 안의 *하위 폴더*에 든 파일인가 (저자 지시 2026-10-04).
+
+    저자는 다시 쓰는 장을 `book/chapters/<작업 폴더>/ch001.typ` 처럼 장 폴더 안에
+    둔다. 원고는 `chapters/` 바로 아래 파일뿐이다 --- 그 아래 폴더의 사본까지 세면
+    표·각주 수가 부풀고(check-editions) 같은 문장이 두 번 잡힌다. 원고를 하위
+    폴더까지 훑는 검사는 이 함수로 그런 파일을 건너뛴다.
+    """
+    parts = pathlib.Path(path).parts
+    if "chapters" not in parts:
+        return False
+    return len(parts) - parts.index("chapters") > 2

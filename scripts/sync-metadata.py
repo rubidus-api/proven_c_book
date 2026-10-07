@@ -23,6 +23,7 @@ import pathlib
 import re
 import subprocess
 import sys
+from chapters import is_draft   # chapters/ 안의 작업 폴더는 원고가 아니다
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
@@ -63,7 +64,7 @@ def last_change() -> str:
     except Exception:
         pass
     newest = 0.0
-    for f in (ROOT / "book").rglob("*.typ"):
+    for f in (p for p in (ROOT / "book").rglob("*.typ") if not is_draft(p)):
         newest = max(newest, f.stat().st_mtime)
     return datetime.date.fromtimestamp(newest).isoformat() if newest else ""
 

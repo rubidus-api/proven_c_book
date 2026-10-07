@@ -26,6 +26,7 @@
 import pathlib
 import re
 import sys
+from chapters import is_draft   # chapters/ 안의 작업 폴더는 원고가 아니다
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 ALLOW = ROOT / "docs" / "metaphor-allow.tsv"
@@ -88,7 +89,7 @@ def scan(edition, pattern, skip=None):
     base = ROOT / edition
     if not base.exists():
         return hits
-    for f in sorted(base.rglob("*")):
+    for f in [p for p in sorted(base.rglob("*")) if not is_draft(p)]:
         if f.suffix not in (".typ", ".svg", ".c", ".h"):
             continue
         # 장 참조 호출(`#chref("stdlib-map")`)은 산문이 아니다 --- id 에 든 낱말이

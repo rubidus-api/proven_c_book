@@ -53,7 +53,7 @@ def main():
 
     for ed, pat in (("book", CLAIM_KO), ("book-en", CLAIM_EN)):
         for i in range(1, 104):
-            path = ROOT / ed / "chapters" / f"ch{i:02d}.typ"
+            path = ROOT / ed / "chapters" / f"ch{i:03d}.typ"
             if not path.exists():
                 continue
             name, first, last = next(p for p in ranges if p[1] <= i <= p[2])

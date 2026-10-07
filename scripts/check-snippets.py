@@ -24,6 +24,7 @@ import pathlib
 import re
 import subprocess
 import sys
+from chapters import is_draft   # chapters/ 안의 작업 폴더는 원고가 아니다
 import tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -39,7 +40,7 @@ AVR_WORDS = re.compile(r"\b__(?:flash|flashx|memx)\b")
 
 def snippets():
     for base in ("book", "book-en"):
-        for f in sorted((ROOT / base).rglob("*.typ")):
+        for f in [p for p in sorted((ROOT / base).rglob("*.typ")) if not is_draft(p)]:
             text = f.read_text(encoding="utf-8")
             for i, m in enumerate(BLOCK.finditer(text)):
                 yield f"{f.relative_to(ROOT)}#{i + 1}", m.group(1)
