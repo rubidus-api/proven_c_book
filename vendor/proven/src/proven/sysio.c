@@ -1,5 +1,7 @@
 #include "proven/sysio.h"
 #include "proven/heap.h"
+#include "proven/utf.h"
+#include "proven_internal_console.h"
 #include "../../platform/proven_sys_io.h"
 #include "../../platform/proven_sys_env.h"
 #include "../../platform/proven_sys_mem.h"
@@ -49,22 +51,77 @@ proven_file_t proven_sysio_stderr(void) {
  * place for the same bug.
  */
 
+static proven_sys_io_handle_t sys_handle(proven_file_t f) {
+#if defined(_WIN32) || defined(_WIN64)
+    return (proven_sys_io_handle_t){ .handle = f.internal.ptr };
+#else
+    return (proven_sys_io_handle_t){ .fd = f.internal.fd };
+#endif
+}
+
+/* The console edge: proven_internal_console.h does the text, the PAL does the units. */
+static proven_result_size_t console_write_units(void *ctx, const proven_u16 *u, proven_size_t n) {
+    proven_sys_result_size_t r = proven_sys_io_console_write_u16(sys_handle(*(const proven_file_t *)ctx), u, n);
+    return (proven_result_size_t){ r.err, r.value };
+}
+
+static proven_result_size_t console_read_units(void *ctx, proven_u16 *u, proven_size_t cap) {
+    proven_sys_result_size_t r = proven_sys_io_console_read_u16(sys_handle(*(const proven_file_t *)ctx), u, cap);
+    return (proven_result_size_t){ r.err, r.value };
+}
+
+static proven_console_io_t console_io(proven_file_t *file) {
+    return (proven_console_io_t){ file, console_write_units, console_read_units };
+}
+
+static proven_result_size_t std_console_write(void *ctx, proven_mem_view_t chunk) {
+    proven_sysio_std_t *st = ctx;
+    return proven_console_write_utf8(console_io(&st->file), &st->carry, chunk.ptr, chunk.size);
+}
+
+static proven_err_t std_console_flush(void *ctx) {
+    proven_sysio_std_t *st = ctx;
+    return proven_console_flush(&st->carry);
+}
+
+static proven_result_size_t std_console_read(void *ctx, proven_mem_mut_t dest) {
+    proven_sysio_std_t *st = ctx;
+    return proven_console_read_utf8(console_io(&st->file), &st->carry, dest.ptr, dest.size);
+}
+
+/* Park `file` in `st` and decide, once, whether it is a console. */
+static void std_bind(proven_sysio_std_t *st, proven_file_t file) {
+    st->file = file;
+    st->console = proven_sys_io_is_console(sys_handle(file));
+    st->carry = (proven_sysio_carry_t){0};
+}
+
+static proven_writer_t std_writer(proven_sysio_std_t *st) {
+    if (st->console) return (proven_writer_t){ st, std_console_write, std_console_flush };
+    return proven_writer_from_file(&st->file);
+}
+
+static proven_reader_t std_reader(proven_sysio_std_t *st) {
+    if (st->console) return (proven_reader_t){ st, std_console_read };
+    return proven_reader_from_file(&st->file);
+}
+
 proven_writer_t proven_sysio_stdout_writer(proven_sysio_std_t *st) {
     if (!st) return (proven_writer_t){0};
-    st->file = proven_sysio_stdout();
-    return proven_writer_from_file(&st->file);
+    std_bind(st, proven_sysio_stdout());
+    return std_writer(st);
 }
 
 proven_writer_t proven_sysio_stderr_writer(proven_sysio_std_t *st) {
     if (!st) return (proven_writer_t){0};
-    st->file = proven_sysio_stderr();
-    return proven_writer_from_file(&st->file);
+    std_bind(st, proven_sysio_stderr());
+    return std_writer(st);
 }
 
 proven_reader_t proven_sysio_stdin_reader(proven_sysio_std_t *st) {
     if (!st) return (proven_reader_t){0};
-    st->file = proven_sysio_stdin();
-    return proven_reader_from_file(&st->file);
+    std_bind(st, proven_sysio_stdin());
+    return std_reader(st);
 }
 
 // -----------------------------------------------------------------------------
@@ -74,9 +131,8 @@ proven_reader_t proven_sysio_stdin_reader(proven_sysio_std_t *st) {
 proven_writer_t proven_sysio_file_buffered(proven_sysio_out_t *st, proven_file_t file, proven_mem_mut_t buf) {
     if (!st || !buf.ptr || buf.size == 0) return (proven_writer_t){0};
 
-    st->std.file = file;
-    proven_writer_t inner = proven_writer_from_file(&st->std.file);
-    return proven_writer_buffered(&st->buffered, inner, buf);
+    std_bind(&st->std, file);
+    return proven_writer_buffered(&st->buffered, std_writer(&st->std), buf);
 }
 
 proven_writer_t proven_sysio_stdout_buffered(proven_sysio_out_t *st, proven_mem_mut_t buf) {
@@ -90,8 +146,8 @@ proven_writer_t proven_sysio_stdout_buffered(proven_sysio_out_t *st, proven_mem_
 proven_err_t proven_sysio_lines_open(proven_sysio_lines_t *st, proven_file_t file, proven_mem_mut_t buf) {
     if (!st || !buf.ptr || buf.size == 0) return PROVEN_ERR_INVALID_ARG;
 
-    st->std.file = file;
-    proven_reader_t inner = proven_reader_from_file(&st->std.file);
+    std_bind(&st->std, file);
+    proven_reader_t inner = std_reader(&st->std);
 
     /* Do not assume this succeeds just because the guards above passed. If the two ever drift
      * apart, discarding the result leaves st->buffered uninitialised and the first read_line
@@ -118,10 +174,30 @@ proven_result_u8str_view_t proven_sysio_read_line(proven_sysio_lines_t *st) {
      * inner reader pointing into the original storage, which may be gone. One assignment makes
      * the implied contract true instead of a footgun.
      */
-    st->buffered.inner = proven_reader_from_file(&st->std.file);
+    st->buffered.inner = std_reader(&st->std);
 
     return proven_reader_read_line(&st->buffered);
 }
+
+#ifndef PROVEN_NO_U16STR
+proven_err_t proven_sysio_u16_lines_open(proven_sysio_u16_lines_t *st, proven_file_t file,
+                                         proven_text_encoding_t enc, proven_u16 *buf, proven_size_t cap) {
+    if (!st) return PROVEN_ERR_INVALID_ARG;
+    std_bind(&st->std, file);
+    return proven_u16_reader_init(&st->reader, std_reader(&st->std), enc, buf, cap);
+}
+
+proven_err_t proven_sysio_stdin_u16_lines(proven_sysio_u16_lines_t *st, proven_u16 *buf, proven_size_t cap) {
+    return proven_sysio_u16_lines_open(st, proven_sysio_stdin(), PROVEN_TEXT_UTF8, buf, cap);
+}
+
+proven_result_u16str_view_t proven_sysio_read_u16_line(proven_sysio_u16_lines_t *st) {
+    if (!st) return (proven_result_u16str_view_t){ .err = PROVEN_ERR_INVALID_ARG };
+    /* Same self-pointer as proven_sysio_read_line, same one-line cure. */
+    st->reader.inner = std_reader(&st->std);
+    return proven_u16_reader_read_line(&st->reader);
+}
+#endif /* PROVEN_NO_U16STR */
 
 // -----------------------------------------------------------------------------
 // Buffered Scanner for sysio (Safe for pipes/stdin)
@@ -137,6 +213,7 @@ proven_result_u8str_view_t proven_sysio_read_line(proven_sysio_lines_t *st) {
     if (!alloc_res.value.ptr) return PROVEN_ERR_INVALID_ARG;
 
     scanner->file = file;
+    scanner->console = proven_sys_io_is_console(sys_handle(file));
     scanner->alloc = alloc;
     scanner->capacity = buffer_capacity;
     scanner->cursor = 0;
@@ -185,7 +262,15 @@ static proven_err_t scanner_fill(proven_sysio_scanner_t *scanner, proven_size_t 
 #endif
 
     proven_size_t request_size = scanner->capacity - scanner->length;
-    proven_sys_result_size_t read_res = proven_sys_io_read_once(handle, (char*)(scanner->buffer + scanner->length), request_size);
+    proven_sys_result_size_t read_res;
+    if (scanner->console) {
+        /* A console gives UTF-16; the scanner parses UTF-8. Convert at the edge. */
+        proven_result_size_t cr = proven_console_read_utf8(console_io(&scanner->file), &scanner->carry,
+                                                           scanner->buffer + scanner->length, request_size);
+        read_res = (proven_sys_result_size_t){ cr.err, cr.value };
+    } else {
+        read_res = proven_sys_io_read_once(handle, (char*)(scanner->buffer + scanner->length), request_size);
+    }
 
     if (!proven_is_ok(read_res.err)) {
         /*
@@ -625,14 +710,18 @@ proven_err_t proven_sysio_print_impl(proven_file_t file, const char *fmt, const 
         return fmt_res.err;
     }
 
-#if defined(_WIN32) || defined(_WIN64)
-    proven_sys_io_handle_t handle = { .handle = file.internal.ptr };
-#else
-    proven_sys_io_handle_t handle = { .fd = file.internal.fd };
-#endif
-
-    proven_sys_result_size_t w_res = proven_sys_io_write_all(handle, str.internal.ptr, str.internal.len);
-    proven_err_t err = proven_is_ok(w_res.err) ? PROVEN_OK : w_res.err;
+    proven_sys_io_handle_t handle = sys_handle(file);
+    proven_err_t err;
+    if (proven_sys_io_is_console(handle)) {
+        /* A whole formatted text, so nothing is carried between calls: a character left open
+         * at the end is a character the text never finished. */
+        proven_sysio_carry_t carry = {0};
+        proven_result_size_t c_res = proven_console_write_utf8(console_io(&file), &carry, str.internal.ptr, str.internal.len);
+        err = proven_is_ok(c_res.err) ? proven_console_finish(&carry) : c_res.err;
+    } else {
+        proven_sys_result_size_t w_res = proven_sys_io_write_all(handle, str.internal.ptr, str.internal.len);
+        err = proven_is_ok(w_res.err) ? PROVEN_OK : w_res.err;
+    }
 
     if (used_heap && str.internal.ptr) heap.free_fn(heap.ctx, str.internal.ptr);
     return err;
@@ -828,6 +917,15 @@ proven_result_u8str_t proven_env_get(proven_allocator_t alloc, proven_u8str_view
         }
     } else {
         result = (proven_result_u8str_t){ .err = pal_err };
+    }
+
+    /* Strict text (B-039, RFC-0009 D-003): a value that is not UTF-8 is an error, on POSIX
+     * as on Windows, where the PAL already refuses a lone surrogate. getenv hands back
+     * whatever bytes were put there. */
+    if (proven_is_ok(result.err) &&
+        proven_utf8_to_utf16_size(proven_u8str_as_view(&result.value)).err != PROVEN_OK) {
+        proven_u8str_destroy(alloc, &result.value);
+        result = (proven_result_u8str_t){ .err = PROVEN_ERR_INVALID_ENCODING };
     }
 
 cleanup_key:

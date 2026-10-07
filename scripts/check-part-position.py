@@ -52,7 +52,9 @@ def main():
     bad = 0
 
     for ed, pat in (("book", CLAIM_KO), ("book-en", CLAIM_EN)):
-        for i in range(1, 104):
+        # ★ 끝을 숫자로 적지 않는다 --- 「104」로 적어 둔 동안 장이 105 로 늘어
+        #   마지막 두 장을 보지 않고 있었다(2026-10-08). 등록부가 끝을 정한다.
+        for i in range(1, ranges[-1][2] + 1):
             path = ROOT / ed / "chapters" / f"ch{i:03d}.typ"
             if not path.exists():
                 continue

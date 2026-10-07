@@ -1613,7 +1613,7 @@ FIGS = {
     "measure-traps": (fig_measure_traps, {
         "ko": dict(title="측정의 세 함정 --- 잰 수가 이상하면 먼저 여기를 본다",
                    panels=[dict(t="① 지워짐", rows=["내가 쓴 코드", "컴파일러", "실행된 코드"],
-                                gone="✗ 지워짐",
+                                gone="× 지워짐",
                                 why=["결과를 아무도 안 쓰면", "계산이 통째로 사라진다"],
                                 fix=["→ 결과를 volatile 에 넣거나", "   반환값을 쓴다"]),
                            dict(t="② 데우기", rows=["첫 회", "둘째 회", "셋째 회…"],

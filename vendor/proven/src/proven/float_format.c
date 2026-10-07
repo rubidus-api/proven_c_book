@@ -5,6 +5,15 @@
 #include <limits.h>
 #include <string.h>
 
+/* The special-value spellings ("NaN", "-Inf", ...) are short literals; their length is counted
+ * here rather than with strlen, which is not among the runtime services a freestanding build
+ * requires (memcpy, memmove, memset, memcmp - B-034). */
+static proven_size_t float_fmt_cstr_len(const char *s) {
+    proven_size_t n = 0;
+    while (s[n] != '\0') ++n;
+    return n;
+}
+
 /* Upper bound on decimal digits a full-capacity exact value can produce. */
 #define PROVEN_FLOAT_FMT_DIGITS_MAX ((PROVEN_FLOAT_BIGINT_LIMBS * 20u) + 4u)
 /* Highest fixed precision the exact path accepts (capacity still bounds it). */
@@ -158,7 +167,7 @@ static proven_err_t proven_float_format_build_shortest_f64(char *buf, proven_siz
     }
     if (exp == 0x7ffull) {
         const char *s = (bits & 0x000fffffffffffffull) ? "NaN" : (negative ? "-Inf" : "Inf");
-        proven_size_t len = (proven_size_t)strlen(s);
+        proven_size_t len = float_fmt_cstr_len(s);
         if (len + 1u > buf_cap) return PROVEN_ERR_OUT_OF_BOUNDS;
         memcpy(buf, s, len + 1u);
         if (written_out) *written_out = len;
@@ -187,7 +196,7 @@ static proven_err_t proven_float_format_build_shortest_f32(char *buf, proven_siz
     }
     if (exp == 0xffu) {
         const char *s = (bits & 0x007fffffu) ? "NaN" : (negative ? "-Inf" : "Inf");
-        proven_size_t len = (proven_size_t)strlen(s);
+        proven_size_t len = float_fmt_cstr_len(s);
         if (len + 1u > buf_cap) return PROVEN_ERR_OUT_OF_BOUNDS;
         memcpy(buf, s, len + 1u);
         if (written_out) *written_out = len;
@@ -224,7 +233,7 @@ static proven_err_t proven_float_format_fixed_f_exact(char *buf, proven_size_t b
     }
     if (exp == 0x7ffull) {
         const char *special = frac != 0u ? "NaN" : (sign ? "-Inf" : "Inf");
-        proven_size_t len = (proven_size_t)strlen(special);
+        proven_size_t len = float_fmt_cstr_len(special);
         if (len + 1u > buf_cap) {
             return PROVEN_ERR_OUT_OF_BOUNDS;
         }
@@ -305,7 +314,7 @@ static proven_err_t proven_float_format_e_exact(char *buf, proven_size_t buf_cap
     }
     if (exp == 0x7ffull) {
         const char *special = frac != 0u ? "NaN" : (sign ? "-Inf" : "Inf");
-        proven_size_t len = (proven_size_t)strlen(special);
+        proven_size_t len = float_fmt_cstr_len(special);
         if (len + 1u > buf_cap) {
             return PROVEN_ERR_OUT_OF_BOUNDS;
         }

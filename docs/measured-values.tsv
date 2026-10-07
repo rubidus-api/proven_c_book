@@ -1,0 +1,16 @@
+# 재는 예제가 반드시 내야 하는 핵심 값 (scripts/check-measured-values.py)
+#
+# 교차 검증은 종료 코드만 본다. 그래서 컴파일러가 채우기를 통째로 지워 `cow` 가
+# 0 MB, `promise` 가 2 MB 를 찍어도 통과했다(2026-09-15). 여기 적은 값은 어느
+# 컴파일러로 짓든 나와야 하는 것이다 --- 예제가 *요청한 크기*에서 오는 수라서
+# 기계의 빠르기와 무관하다. 시간처럼 기계마다 다른 값은 여기 올리지 않는다.
+#
+# 대상은 x86-64 리눅스다(쪽 크기와 기억 집계가 다른 기계에서는 건너뛴다고 말한다).
+#
+# 형식: 예제 출력<TAB>정규식(괄호 하나가 값)<TAB>기대값<TAB>허용 오차<TAB>무엇인가
+apx-memory/cow/run.sh.out	parent, 512 MB filled\s+shared\s+\d+ MB\s+private\s+(\d+) MB	512	8	부모가 채운 512 MB 가 실제로 사적 기억이 된다
+apx-memory/cow/run.sh.out	child, just forked\s+shared\s+(\d+) MB	512	8	fork 직후 자식은 그 512 MB 를 나눠 쓴다
+apx-memory/cow/run.sh.out	child, wrote every page\s+shared\s+\d+ MB\s+private\s+(\d+) MB	512	8	자식이 쓰면 512 MB 가 복사된다
+apx-memory/promise/run.sh.out	right after malloc\s+map\s+(\d+) MB	8194	16	malloc 직후 주소 공간이 8 GB 늘어난다
+apx-memory/promise/run.sh.out	right after malloc\s+map\s+\d+ MB\s+real\s+(\d+) MB	1	15	malloc 직후에는 실제 기억이 늘지 않는다
+apx-memory/promise/run.sh.out	after touching it all\s+map\s+\d+ MB\s+real\s+(\d+) MB	8193	16	전부 만지면 실제 기억이 8 GB 늘어난다

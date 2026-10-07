@@ -30,6 +30,25 @@
 
 // Internal helper for UTF-8 to Wide conversion on Windows
 #if defined(_WIN32) || defined(_WIN64)
+/*
+ * UTF-8 to UTF-16 and nothing else: no GetFullPathNameW. For text that is not a path to open
+ * now - a symlink's TARGET, which the link resolves later from its own directory. Passing it
+ * through utf8_to_wide_alloc made every relative target absolute against the CURRENT directory,
+ * so "sub/rel -> t" pointed at ./t instead of sub/t (B-033, measured on Windows 11).
+ */
+static wchar_t *utf8_to_wide_plain(const char *src) {
+    if (!src) return NULL;
+    int len = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, src, -1, NULL, 0);
+    if (len <= 0) return NULL;
+    wchar_t *dst = HeapAlloc(GetProcessHeap(), 0, (size_t)len * sizeof(wchar_t));
+    if (!dst) return NULL;
+    if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, src, -1, dst, len) <= 0) {
+        HeapFree(GetProcessHeap(), 0, dst);
+        return NULL;
+    }
+    return dst;
+}
+
 static wchar_t *utf8_to_wide_alloc(const char *src) {
     if (!src) return NULL;
     int len = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, src, -1, NULL, 0);
@@ -130,6 +149,8 @@ proven_sys_file_handle_t proven_sys_fs_open_checked(const char *path, int flags,
             reason = PROVEN_SYS_FS_OPEN_DENIED;
         } else if (open_error == ERROR_SHARING_VIOLATION || open_error == ERROR_LOCK_VIOLATION) {
             reason = PROVEN_SYS_FS_OPEN_BUSY;
+        } else if (open_error == ERROR_FILE_EXISTS || open_error == ERROR_ALREADY_EXISTS) {
+            reason = PROVEN_SYS_FS_OPEN_EXISTS;
         } else {
             reason = PROVEN_SYS_FS_OPEN_ERROR;
         }
@@ -167,7 +188,8 @@ proven_sys_file_handle_t proven_sys_fs_open_checked(const char *path, int flags,
         if (errno == ENOENT || errno == ENOTDIR) reason = PROVEN_SYS_FS_OPEN_NOT_FOUND;
         else if (errno == EACCES || errno == EPERM || errno == EROFS) reason = PROVEN_SYS_FS_OPEN_DENIED;
         else if (errno == EBUSY || errno == ETXTBSY) reason = PROVEN_SYS_FS_OPEN_BUSY;
-        else reason = PROVEN_SYS_FS_OPEN_ERROR;   /* EEXIST from an exclusive create lands here */
+        else if (errno == EEXIST) reason = PROVEN_SYS_FS_OPEN_EXISTS;
+        else reason = PROVEN_SYS_FS_OPEN_ERROR;
         if (out_reason) *out_reason = reason;
         return (proven_sys_file_handle_t){ .fd = -1 };
     }
@@ -213,7 +235,9 @@ proven_sys_result_size_t proven_sys_fs_read(proven_sys_file_handle_t handle, voi
         return (proven_sys_result_size_t){ PROVEN_OK, (size_t)read_bytes };
     } else {
         DWORD err = GetLastError();
-        if (err == ERROR_HANDLE_EOF) return (proven_sys_result_size_t){ PROVEN_ERR_EOF, 0 };
+        /* A pipe whose writer has closed says BROKEN_PIPE where read(2) returns 0: that is
+         * the end of the stream, not a fault. */
+        if (err == ERROR_HANDLE_EOF || err == ERROR_BROKEN_PIPE) return (proven_sys_result_size_t){ PROVEN_ERR_EOF, 0 };
         return (proven_sys_result_size_t){ PROVEN_ERR_IO, 0 };
     }
 #else
@@ -417,7 +441,7 @@ proven_sys_fs_rename_result_t proven_sys_fs_rename_checked(const char *src, cons
      * reader holds open with delete sharing - as proven_fs_open does - and the reader keeps
      * the old bytes, which is what POSIX rename does. MoveFileExW refuses that case outright
      * (measured on Windows 11, 2026-09-11), so without this an atomic write failed whenever
-     * anyone had the file open. Owner's decision: RFC-0006 Decision 2, option (b).
+     * anyone had the file open. Owner's decision: RFC-0008 Decision 2, option (b).
      *
      * Older Windows, and file systems that lack the semantics (FAT, exFAT, many network
      * shares), answer "unsupported" to it - and only then is MoveFileExW tried. Any other
@@ -462,6 +486,16 @@ proven_sys_fs_open_result_t proven_sys_fs_remove_checked(const char *path) {
     if (!wpath) return PROVEN_SYS_FS_OPEN_ERROR;
     bool success = DeleteFileW(wpath) != 0;
     DWORD e = success ? 0 : GetLastError();   /* before the free: HeapFree clobbers it */
+    if (!success && e == ERROR_ACCESS_DENIED) {
+        /* A directory is ACCESS_DENIED to DeleteFileW. POSIX remove() deletes an empty
+         * directory, and so does this: RemoveDirectoryW, which also removes a directory
+         * symlink or junction itself rather than what it points to. */
+        DWORD attr = GetFileAttributesW(wpath);
+        if (attr != INVALID_FILE_ATTRIBUTES && (attr & FILE_ATTRIBUTE_DIRECTORY)) {
+            success = RemoveDirectoryW(wpath) != 0;
+            e = success ? 0 : GetLastError();
+        }
+    }
     HeapFree(GetProcessHeap(), 0, wpath);
     if (success) return PROVEN_SYS_FS_OPEN_OK;
     SetLastError(e);
@@ -635,9 +669,22 @@ int proven_sys_fs_dir_step(proven_sys_dir_handle_t handle, proven_sys_dir_entry_
         break;
     }
 
-    // Convert back from Wide to UTF-8
-    int required_size = WideCharToMultiByte(CP_UTF8, 0, wd->fd.cFileName, -1, NULL, 0, NULL, NULL);
+    out_entry->is_symlink = (wd->fd.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0;
+    out_entry->is_dir = (wd->fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
+    out_entry->is_regular = !out_entry->is_dir && !out_entry->is_symlink;
+    uint64_t sz = ((uint64_t)wd->fd.nFileSizeHigh << 32) | wd->fd.nFileSizeLow;
+    if (sz > (uint64_t)PROVEN_SIZE_MAX) out_entry->size = PROVEN_SIZE_MAX;
+    else out_entry->size = (size_t)sz;
+
+    /* Convert back from UTF-16 to UTF-8. WC_ERR_INVALID_CHARS: NTFS allows a lone surrogate
+     * in a name, and without the flag it became U+FFFD - a name that, opened, reaches a
+     * different file or none (RFC-0009 D-003). Such an entry is reported, not renamed. */
+    int required_size = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, wd->fd.cFileName, -1, NULL, 0, NULL, NULL);
     if (required_size <= 0) {
+        if (GetLastError() == ERROR_NO_UNICODE_TRANSLATION) {
+            out_entry->name = NULL;
+            return 2;
+        }
         return -1; // Conversion failed
     } else {
         if (!wd->utf8_name || wd->utf8_cap < (size_t)required_size) {
@@ -646,7 +693,7 @@ int proven_sys_fs_dir_step(proven_sys_dir_handle_t handle, proven_sys_dir_entry_
             wd->utf8_cap = (size_t)required_size;
         }
         if (wd->utf8_name) {
-            int n = WideCharToMultiByte(CP_UTF8, 0, wd->fd.cFileName, -1, wd->utf8_name, required_size, NULL, NULL);
+            int n = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, wd->fd.cFileName, -1, wd->utf8_name, required_size, NULL, NULL);
             if (n <= 0) {
                 return -1;
             } else {
@@ -656,12 +703,6 @@ int proven_sys_fs_dir_step(proven_sys_dir_handle_t handle, proven_sys_dir_entry_
             return -1; // Allocation failed
         }
     }
-    out_entry->is_symlink = (wd->fd.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0;
-    out_entry->is_dir = (wd->fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
-    out_entry->is_regular = !out_entry->is_dir && !out_entry->is_symlink;
-    uint64_t sz = ((uint64_t)wd->fd.nFileSizeHigh << 32) | wd->fd.nFileSizeLow;
-    if (sz > (uint64_t)PROVEN_SIZE_MAX) out_entry->size = PROVEN_SIZE_MAX;
-    else out_entry->size = (size_t)sz;
     return 1;
 #else
     DIR *d = (DIR*)handle.internal;
@@ -686,9 +727,38 @@ int proven_sys_fs_dir_step(proven_sys_dir_handle_t handle, proven_sys_dir_entry_
          * link fails the follow and lands in the fallback below, which reports OTHER: it
          * cannot be opened, so calling it a file would be the lie that started this.
          */
-        struct stat lst;
-        out_entry->is_symlink = (fstatat(dirfd(d), entry->d_name, &lst, AT_SYMLINK_NOFOLLOW) == 0) &&
-                                S_ISLNK(lst.st_mode);
+#if defined(DT_UNKNOWN) && defined(DT_LNK) && defined(DT_DIR) && defined(DT_REG)
+        /*
+         * readdir's d_type already says what most entries are (RFC-0009 P-102): it cost two
+         * metadata calls per entry to learn it again, about 40% of a listing. Anything d_type
+         * names that is not a link is exactly that - no symlink to follow - so a directory or
+         * a special file needs no call at all, and a regular file one, for its size. Only a
+         * link, or a filesystem that does not fill d_type in (DT_UNKNOWN), takes both.
+         */
+        unsigned char dt = entry->d_type;
+        if (dt == DT_DIR) {
+            out_entry->is_symlink = false;
+            out_entry->is_dir = true;
+            out_entry->is_regular = false;
+            out_entry->size = 0;
+            return 1;
+        }
+        if (dt != DT_UNKNOWN && dt != DT_LNK && dt != DT_REG) {
+            out_entry->is_symlink = false;   /* a FIFO, socket or device */
+            out_entry->is_dir = false;
+            out_entry->is_regular = false;
+            out_entry->size = 0;
+            return 1;
+        }
+        if (dt == DT_REG) {
+            out_entry->is_symlink = false;
+        } else
+#endif
+        {
+            struct stat lst;
+            out_entry->is_symlink = (fstatat(dirfd(d), entry->d_name, &lst, AT_SYMLINK_NOFOLLOW) == 0) &&
+                                    S_ISLNK(lst.st_mode);
+        }
 
         if (fstatat(dirfd(d), entry->d_name, &st, 0) == 0) {
             out_entry->is_dir = S_ISDIR(st.st_mode);
@@ -892,24 +962,73 @@ bool proven_sys_fs_link(const char *oldpath, const char *newpath) {
 #endif
 }
 
-bool proven_sys_fs_symlink(const char *target, const char *linkpath) {
+proven_sys_fs_open_result_t proven_sys_fs_symlink_checked(const char *target, const char *linkpath) {
 #if defined(_WIN32) || defined(_WIN64)
-    wchar_t *wtarget = utf8_to_wide_alloc(target);
+    wchar_t *wtarget = utf8_to_wide_plain(target);   /* stored as written, never made absolute */
     wchar_t *wlink = utf8_to_wide_alloc(linkpath);
     if (!wtarget || !wlink) {
         if (wtarget) HeapFree(GetProcessHeap(), 0, wtarget);
         if (wlink) HeapFree(GetProcessHeap(), 0, wlink);
-        return false;
+        return PROVEN_SYS_FS_OPEN_ERROR;
     }
-    DWORD flags = SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE;
-    // Note: requires checking if target is a directory for the flag
-    bool success = CreateSymbolicLinkW(wlink, wtarget, flags) != 0;
+    for (wchar_t *p = wtarget; *p; ++p) {
+        if (*p == L'/') *p = L'\\';
+    }
+
+    /* Where the link will look: an absolute target as it is; a relative one from the directory
+     * that will hold the link. The probe is built in UTF-8 and handed to utf8_to_wide_alloc,
+     * which normalises it with GetFullPathNameW BEFORE adding any \\?\ prefix - a \\?\ path
+     * is taken literally, so joining a relative "..\\dir" onto an already-prefixed long link
+     * path made the probe fail and a directory get a FILE link (code review). */
+    bool absolute = target[0] == '\\' || target[0] == '/' || (target[0] && target[1] == ':');
+    char *joined = NULL;
+    const char *probe8 = target;
+    if (!absolute) {
+        size_t dir_len = strlen(linkpath);
+        while (dir_len > 0 && linkpath[dir_len - 1] != '\\' && linkpath[dir_len - 1] != '/' && linkpath[dir_len - 1] != ':') --dir_len;
+        size_t t_len = strlen(target);
+        joined = (char *)HeapAlloc(GetProcessHeap(), 0, dir_len + t_len + 1);
+        if (!joined) {
+            HeapFree(GetProcessHeap(), 0, wtarget);
+            HeapFree(GetProcessHeap(), 0, wlink);
+            return PROVEN_SYS_FS_OPEN_ERROR;
+        }
+        memcpy(joined, linkpath, dir_len);
+        memcpy(joined + dir_len, target, t_len + 1);
+        probe8 = joined;
+    }
+    wchar_t *probe = utf8_to_wide_alloc(probe8);
+    DWORD attrs = probe ? GetFileAttributesW(probe) : INVALID_FILE_ATTRIBUTES;
+    if (probe) HeapFree(GetProcessHeap(), 0, probe);
+    DWORD flags = (attrs != INVALID_FILE_ATTRIBUTES && (attrs & FILE_ATTRIBUTE_DIRECTORY))
+                      ? SYMBOLIC_LINK_FLAG_DIRECTORY : 0;
+
+    /* ALLOW_UNPRIVILEGED_CREATE lets Developer Mode create links without elevation. Windows
+     * before 10 1703 rejects the flag itself as an invalid parameter; retry without it. */
+    bool ok = CreateSymbolicLinkW(wlink, wtarget, flags | SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE) != 0;
+    DWORD e = ok ? 0 : GetLastError();
+    if (!ok && e == ERROR_INVALID_PARAMETER) {
+        ok = CreateSymbolicLinkW(wlink, wtarget, flags) != 0;
+        e = ok ? 0 : GetLastError();
+    }
+    if (joined) HeapFree(GetProcessHeap(), 0, joined);
     HeapFree(GetProcessHeap(), 0, wtarget);
     HeapFree(GetProcessHeap(), 0, wlink);
-    return success;
+    if (ok) return PROVEN_SYS_FS_OPEN_OK;
+    SetLastError(e);
+    if (e == ERROR_PRIVILEGE_NOT_HELD || e == ERROR_ACCESS_DENIED) return PROVEN_SYS_FS_OPEN_DENIED;
+    if (e == ERROR_PATH_NOT_FOUND) return PROVEN_SYS_FS_OPEN_NOT_FOUND;
+    return PROVEN_SYS_FS_OPEN_ERROR;
 #else
-    return symlink(target, linkpath) == 0;
+    if (symlink(target, linkpath) == 0) return PROVEN_SYS_FS_OPEN_OK;
+    if (errno == ENOENT || errno == ENOTDIR) return PROVEN_SYS_FS_OPEN_NOT_FOUND;
+    if (errno == EACCES || errno == EPERM || errno == EROFS) return PROVEN_SYS_FS_OPEN_DENIED;
+    return PROVEN_SYS_FS_OPEN_ERROR;
 #endif
+}
+
+bool proven_sys_fs_symlink(const char *target, const char *linkpath) {
+    return proven_sys_fs_symlink_checked(target, linkpath) == PROVEN_SYS_FS_OPEN_OK;
 }
 
 #if !defined(_WIN32) && !defined(_WIN64)

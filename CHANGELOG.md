@@ -4,6 +4,42 @@ All notable changes to this project will be documented in this file.
 
 This project follows Keep a Changelog.
 
+## [v0.95.0] - 2026-10-08
+
+함께 싣는 proven 을 v0.6.0 으로 올리고, 제12부의 서술을 그 판에 맞췄다. 장 참조 곁의 시제와 색인 표시의 오기도 고쳤다.
+
+### Changed
+- **proven v0.6.0.** `vendor/proven/` 의 스냅샷이 v0.1.1 에서 v0.6.0 이 되었다. 두 판의 예제 223 개가 새 판으로
+  빌드·실행된다(GCC 14.2 전수, Clang 22.1 교차). 새 판 때문에 출력이 달라진 proven 예제는 에러 코드를 전부 찍는
+  92장의 것 하나다 --- 주소와 시간을 찍는 예제는 실행할 때마다 달라지므로 여기서 세지 않았다.
+- **에러 코드(92장).** 코드는 열일곱 개다 --- 배타적 생성이 이미 있는 이름을 만났을 때의 `PROVEN_ERR_EXISTS` 가
+  늘었다. `PROVEN_ERR_LAST`(이 판의 마지막 코드)와 `PROVEN_ERR_RESERVED_END`(proven 이 넘지 않겠다고 약속한 끝)를
+  소개했고, 예제의 반복문도 `PROVEN_ERR_LAST` 까지 돈다.
+- **컨테이너(97장).** 배열의 가운데를 고치는 함수들(`insert`·`remove_at`·`swap_remove`·`extend`·`truncate`·`clear`)과
+  맵을 전부 훑는 `proven_map_iter_*`·`proven_map_len` 을 실었다. 기본 맵은 정수 키도 프로세스마다 다른 비밀로 해시한다.
+- **바깥 세계(98장).** `CREATE_NEW` 가 돌려주는 코드, 상한을 받는 `proven_fs_read_all_bounded`, 원자적 쓰기가 남기는
+  임시 파일의 이름과 `proven_fs_is_staging_name`, 난수원이 없으면 거짓을 돌려주는 `proven_random_u64_checked`.
+- **작업 시스템(99장).** `proven_job_submit` 의 `false` 는 「가득 참」과 「닫힘」 둘을 뜻한다. 둘을 가르는
+  `proven_job_submit_ex` 와, 제출한 일감이 끝나기를 기다리는 작업 묶음(`proven_job_group_*`)을 실었다.
+- **라이브러리의 처지(91·99장, 참고 문헌).** 실린 판의 이름(`v26.07.23…` → v0.6.0), MSVC·`clang-cl` 은 지원하지
+  않는다는 것, 라이브러리 저장소에 실수 읽기·쓰기 벤치마크가 있다는 것.
+
+### Fixed
+- 장 참조 곁의 시제 일곱 곳 --- 앞 장을 「볼」로 가리킨 곳(5·85장), 뒷장을 「본」·「배운」·「쓴」으로 가리킨 곳
+  (18·41·46·63장). 41장의 「선언 읽기」는 그것을 가르치는 65장을 가리키게 했다.
+- 엉뚱한 낱말에 붙은 색인 표시 --- 13장의 「넣기(vendoring)」·「자리(one-past-the-end)」, 14장의 「파일(file)」,
+  16장의 「리눅스(glibc)」는 지웠고, 12장의 「외부(external)」는 「외부 단편화」, 4장의 「관대한 기계(x86)」는
+  「버스 폴트」가 되었다. 「통째로 넣기」(101장)·「끝 다음 자리」(38장)는 그 말이 실제로 나오는 자리로 옮겼다.
+- 표 제목 넷 --- 에러 코드 표의 「무시된 오류가 낳은 사고」(92장), 파일을 통째로 읽고 쓰는 함수 표의 「스트림 함수」와
+  장 요약표의 「시간과 난수 API」(98장), proven 검증 범위 표의 「코루틴」(99장).
+
+### Added
+- `check-chapter-tense.py` --- 장 참조에 바로 붙은 「본·볼」「다음 장」이 실제 순서와 맞는지 본다.
+- `check-measured-values.py` --- 재는 예제(`cow`·`promise`)가 낸 *값*을 본다. `verify-examples.sh` 가 끝에서 부르므로
+  기준 컴파일러와 교차 컴파일러의 출력이 같은 표에 대어진다. 종료 코드만 보던 교차 검증의 구멍을 메운다.
+- `check-vendor-version.py` --- 원고가 적은 proven 판이 `vendor/` 의 스냅샷과 같은지 본다.
+- `check-part-position.py` 가 장의 끝을 등록부에서 읽는다(숫자로 적혀 있어 마지막 두 장을 보지 않았다).
+
 ## [v0.94.2] - 2026-10-04
 
 독자 제보(이슈 #2)를 받아 제1~3부(1~19장)를 다시 읽고, 정보의 순서가 거꾸로 된 문장과 뜻을 풀어야 하는 문학적

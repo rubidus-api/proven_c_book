@@ -44,13 +44,15 @@ typedef struct {
      *
      * false (the default from proven_map_create): string keys are hashed with SipHash-2-4
      * under a per-process random key, so an attacker who controls the keys cannot compute
-     * collisions and flood one bucket - the HashDoS attack that turns O(1) into O(n²).
+     * collisions and flood one bucket - the HashDoS attack that turns O(1) into O(n^2).
      *
      * true (from proven_map_create_trusted): string keys use FNV-1a, which is faster and
      * needs no randomness, and is the right choice when every key comes from your own code.
      *
-     * Integer keys ignore this - they always use a bit-mix finaliser. Read-only; set it by
-     * choosing which create function you call.
+     * Integer keys follow the same choice: SipHash-1-3 of the key's 8 bytes under the same
+     * secret by default, a public bit-mix finaliser when trusted. (Before RFC-0009 S-001 they
+     * always used the finaliser, whose inverse is public.) Read-only; set it by choosing
+     * which create function you call.
      */
     bool trusted_keys;
 } proven_map_t;
@@ -68,18 +70,19 @@ typedef struct {
  * @brief Create a map. String keys are hashed with a keyed, HashDoS-resistant hash by
  *        default; see proven_map_create_trusted for the fast path when you trust the keys.
  *
- * @note The keyed hash draws a per-process secret from the OS CSPRNG the first time a
- *       string-key map is created. On a freestanding target, which has no CSPRNG, string
- *       keys fall back to FNV-1a and are NOT HashDoS-resistant - there is no attacker model
- *       on a target with no OS, and no entropy to key with.
+ * @note The keyed hash draws a per-process secret from the OS CSPRNG the first time a key is
+ *       hashed. Integer keys are keyed too (SipHash-1-3), since ids from a request are as
+ *       attacker-chosen as strings. On a freestanding target, which has no CSPRNG, keys fall
+ *       back to the unkeyed functions and are NOT HashDoS-resistant - there is no attacker
+ *       model on a target with no OS, and no entropy to key with.
  */
 [[nodiscard]] proven_result_map_t proven_map_create(proven_allocator_t alloc, proven_size_t init_cap, proven_key_type_t key_type, proven_size_t elem_size, proven_size_t align);
 
 /**
  * @brief Create a map that hashes string keys with fast FNV-1a, for keys you trust.
  *
- * Identical to proven_map_create except that string keys are hashed with unkeyed FNV-1a
- * instead of keyed SipHash. Use it when every key is chosen by your own program - build a
+ * Identical to proven_map_create except that keys are hashed without the secret: string keys
+ * with FNV-1a, integer keys with a bit-mix finaliser. Use it when every key is chosen by your own program - build a
  * lookup table of your own identifiers, dedup a batch of your own blobs - where the extra
  * cost of a keyed hash buys nothing because there is no adversary choosing the keys.
  *
@@ -99,8 +102,8 @@ typedef struct {
  *        the key, exposed so you can inspect a table's distribution and so the keyed-vs-fast
  *        choice is observable rather than a claim.
  *
- * For a default (untrusted) string-key map this is keyed SipHash; for a trusted one it is
- * FNV-1a; for an integer-key map it is the bit-mix finaliser. The map hashes into its bucket
+ * For a default (untrusted) map this is keyed SipHash (2-4 for strings, 1-3 for integers);
+ * for a trusted one it is FNV-1a for strings and the bit-mix finaliser for integers. The map hashes into its bucket
  * array by masking this value, so a poor spread here is a poor spread there.
  */
 [[nodiscard]] proven_u64 proven_map_hash(const proven_map_t *map, proven_map_key_t key);
@@ -152,9 +155,62 @@ typedef struct {
 
 void proven_map_destroy(proven_map_t *map);
 
+/**
+ * @brief The number of entries in the map. 0 for NULL.
+ */
+[[nodiscard]] proven_size_t proven_map_len(const proven_map_t *map);
+
+/**
+ * @brief A cursor over a map's entries, in bucket order (not insertion order, and not
+ *        stable from one process to the next for a keyed map).
+ *
+ * Fill it with proven_map_iter_init, then call proven_map_iter_next until it returns
+ * PROVEN_ERR_EOF. The fields are the iterator's own; do not set them.
+ */
+typedef struct {
+    proven_map_t     *map;
+    proven_size_t     next;      /* the bucket to look at next */
+    const void       *storage;   /* the bucket array when the walk started */
+    proven_size_t     cap;
+} proven_map_iter_t;
+
+/**
+ * @brief Start a walk over every entry of `map`.
+ */
+[[nodiscard]] proven_map_iter_t proven_map_iter_init(proven_map_t *map);
+
+/**
+ * @brief The next entry: its key and a pointer to its value. PROVEN_ERR_EOF after the last.
+ *
+ * Allowed during a walk: removing any entry, including the one just returned (proven_map_remove
+ * leaves the slot in place; a removed entry not yet reached is not returned), and changing a
+ * value through `*out_value` or by proven_map_set on a key that is already there.
+ *
+ * Not allowed: adding a new key, proven_map_reserve, or anything else that can grow or rehash
+ * the map - entries move, so the walk could skip or repeat them. The iterator notices that the
+ * bucket array changed and returns PROVEN_ERR_INVALID_STATE instead of reading it; start a new
+ * walk. (proven_map_destroy during a walk is a use-after-free like any other.)
+ *
+ * @param out_key   the entry's key. For a string-key map the view points into the map (owned
+ *                  keys) or at the caller's bytes (borrowed keys); an owned key's bytes are
+ *                  freed when that entry is removed.
+ * @param out_value the entry's value, in the map's storage; same lifetime rules as
+ *                  proven_map_get_mut. Either out pointer may be NULL.
+ */
+[[nodiscard]] proven_err_t proven_map_iter_next(proven_map_iter_t *it, proven_map_key_t *out_key, void **out_value);
+
 // -------------------------------------------------------------
 // Type-Safe Strict Macro Wrappers
 // -------------------------------------------------------------
+
+/*
+ * The wrappers below take a key view and a value as macro arguments. *
+ * MACRO ARGUMENTS AND COMPOUND LITERALS (RFC-0009 X-008). These are function-like macros, and
+ * the preprocessor splits arguments at every top-level comma - including the one inside a
+ * compound literal's braces. `(proven_u8str_view_t){ p, n }` passed as an argument becomes two
+ * arguments, and the error names a macro you did not write. Pass a variable or a PROVEN_LIT,
+ * or put the compound literal in parentheses: `((proven_u8str_view_t){ p, n })`.
+ */
 
 #define PROVEN_MAP_INIT_INT(alloc, type, init_cap) \
     proven_map_create((alloc), (init_cap), PROVEN_KEY_TYPE_INT, sizeof(type), alignof(type))

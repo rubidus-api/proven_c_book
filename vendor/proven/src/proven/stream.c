@@ -165,15 +165,18 @@ proven_writer_t proven_writer_from_buffer(proven_writer_buf_t *state) {
 
 /* --- buffering over another writer -------------------------------------- */
 
-static proven_err_t writer_buffered_flush(void *ctx) {
-    proven_writer_buffered_t *s = (proven_writer_buffered_t *)ctx;
-    if (!s) return PROVEN_ERR_INVALID_ARG;
-
+/*
+ * Send the buffer to the inner writer, WITHOUT flushing the inner writer. A drain because the
+ * buffer is full is not a flush anyone asked for: calling the inner flush there told a console
+ * writer its text had ended at an arbitrary byte, and cost a stacked buffered writer a drain of
+ * its own on every one of ours.
+ */
+static proven_err_t writer_buffered_drain(proven_writer_buffered_t *s) {
     /* A writer that has already lost bytes cannot report success, whatever it does now.
      * The stream it was producing has a hole in it and the receiver cannot see that. */
     if (!proven_is_ok(s->err)) return s->err;
 
-    if (s->len == 0) return proven_writer_flush(s->inner);
+    if (s->len == 0) return PROVEN_OK;
 
     /*
      * Drop exactly what went out, and keep exactly what did not.
@@ -202,6 +205,14 @@ static proven_err_t writer_buffered_flush(void *ctx) {
     }
 
     s->len = 0;
+    return PROVEN_OK;
+}
+
+static proven_err_t writer_buffered_flush(void *ctx) {
+    proven_writer_buffered_t *s = (proven_writer_buffered_t *)ctx;
+    if (!s) return PROVEN_ERR_INVALID_ARG;
+    proven_err_t e = writer_buffered_drain(s);
+    if (!proven_is_ok(e)) return e;
     return proven_writer_flush(s->inner);
 }
 
@@ -220,7 +231,7 @@ static proven_result_size_t writer_buffered_write(void *ctx, proven_mem_view_t c
     /* A chunk bigger than the whole buffer is passed straight through: buffering it
      * would mean either failing or splitting it, and neither helps anyone. */
     if (chunk.size >= s->buf.size) {
-        res.err = writer_buffered_flush(s);
+        res.err = writer_buffered_drain(s);
         if (!proven_is_ok(res.err)) return res;
         res = proven_writer_write_partial(s->inner, chunk);
         if (!proven_is_ok(res.err)) {
@@ -238,7 +249,7 @@ static proven_result_size_t writer_buffered_write(void *ctx, proven_mem_view_t c
     }
 
     if (chunk.size > s->buf.size - s->len) {
-        res.err = writer_buffered_flush(s);
+        res.err = writer_buffered_drain(s);
         if (!proven_is_ok(res.err)) return res;
     }
 
@@ -403,6 +414,7 @@ static proven_result_size_t reader_buffered_read(void *ctx, proven_mem_mut_t des
     proven_size_t n = have < dest.size ? have : dest.size;
     proven_sys_mem_copy(dest.ptr, s->buf.ptr + s->cursor, n);
     s->cursor += n;
+    s->scanned = s->scanned > n ? s->scanned - n : 0;   /* still relative to the cursor */
     res.err = PROVEN_OK;
     res.value = n;
     return res;
@@ -420,6 +432,7 @@ proven_reader_t proven_reader_buffered(proven_reader_buffered_t *state, proven_r
     state->err = PROVEN_OK;
     state->peek = 0;
     state->has_peek = false;   /* a stack-declared state holds garbage here otherwise */
+    state->scanned = 0;
     return (proven_reader_t){ .ctx = state, .read_fn = reader_buffered_read };
 }
 
@@ -431,18 +444,24 @@ proven_result_u8str_view_t proven_reader_read_line(proven_reader_buffered_t *s) 
     }
 
     for (;;) {
-        /* Is there a newline in what we already hold? */
-        for (proven_size_t i = s->cursor; i < s->len; ++i) {
-            if (s->buf.ptr[i] != (proven_byte_t)'\n') continue;
-
+        /* Is there a newline in what we already hold? Search only the bytes not searched
+         * before (RFC-0009 P-104): the byte loop restarted at the cursor after every refill,
+         * so a 16 KB line arriving a byte at a time cost 4.8 us per byte. */
+        proven_size_t from = s->cursor + s->scanned;
+        if (from > s->len) from = s->len;   /* a caller-zeroed or older state */
+        const proven_byte_t *nl = (const proven_byte_t *)proven_sys_mem_chr(s->buf.ptr + from, '\n', s->len - from);
+        if (nl) {
+            proven_size_t i = (proven_size_t)(nl - s->buf.ptr);
             proven_size_t end = i;
             if (end > s->cursor && s->buf.ptr[end - 1] == (proven_byte_t)'\r') --end;
 
             res.err = PROVEN_OK;
             res.val = (proven_u8str_view_t){ .ptr = s->buf.ptr + s->cursor, .size = end - s->cursor };
             s->cursor = i + 1;   /* step over the newline */
+            s->scanned = 0;
             return res;
         }
+        s->scanned = s->len - s->cursor;   /* all of it searched; compaction keeps this valid */
 
         /* No newline yet.
          *
@@ -495,6 +514,7 @@ proven_result_u8str_view_t proven_reader_read_line(proven_reader_buffered_t *s) 
                 res.err = PROVEN_OK;
                 res.val = (proven_u8str_view_t){ .ptr = s->buf.ptr, .size = s->len };
                 s->cursor = s->len;
+                s->scanned = 0;
                 return res;
             }
 
@@ -506,6 +526,7 @@ proven_result_u8str_view_t proven_reader_read_line(proven_reader_buffered_t *s) 
                 res.err = PROVEN_OK;
                 res.val = (proven_u8str_view_t){ .ptr = s->buf.ptr, .size = end };
                 s->cursor = s->len;   /* the newline itself is consumed, not stored */
+                s->scanned = 0;
                 s->has_peek = false;
                 return res;
             }
@@ -532,6 +553,7 @@ proven_result_u8str_view_t proven_reader_read_line(proven_reader_buffered_t *s) 
                 res.err = PROVEN_OK;
                 res.val = (proven_u8str_view_t){ .ptr = s->buf.ptr + s->cursor, .size = s->len - s->cursor };
                 s->cursor = s->len;
+                s->scanned = 0;
                 return res;
             }
             res.err = PROVEN_ERR_EOF;
@@ -539,6 +561,304 @@ proven_result_u8str_view_t proven_reader_read_line(proven_reader_buffered_t *s) 
         }
     }
 }
+
+// -------------------------------------------------------------
+// UTF-16 text
+// -------------------------------------------------------------
+
+#ifndef PROVEN_NO_U16STR
+
+static bool text_enc_is_concrete(proven_text_encoding_t enc) {
+    return enc == PROVEN_TEXT_UTF8 || enc == PROVEN_TEXT_UTF16LE || enc == PROVEN_TEXT_UTF16BE;
+}
+
+proven_err_t proven_writer_write_bom(proven_writer_t w, proven_text_encoding_t enc) {
+    static const proven_byte_t bom8[] = { 0xEF, 0xBB, 0xBF };
+    static const proven_byte_t bomle[] = { 0xFF, 0xFE };
+    static const proven_byte_t bombe[] = { 0xFE, 0xFF };
+    switch (enc) {
+    case PROVEN_TEXT_UTF8:    return proven_writer_write(w, (proven_mem_view_t){ bom8, sizeof bom8 });
+    case PROVEN_TEXT_UTF16LE: return proven_writer_write(w, (proven_mem_view_t){ bomle, sizeof bomle });
+    case PROVEN_TEXT_UTF16BE: return proven_writer_write(w, (proven_mem_view_t){ bombe, sizeof bombe });
+    default:                  return PROVEN_ERR_INVALID_ARG;
+    }
+}
+
+proven_err_t proven_writer_write_u16(proven_writer_t w, proven_u16str_view_t text, proven_text_encoding_t enc) {
+    if (!proven_writer_is_valid(w) || !text_enc_is_concrete(enc)) return PROVEN_ERR_INVALID_ARG;
+    if (text.size > 0 && !text.ptr) return PROVEN_ERR_INVALID_ARG;
+
+    /* Validate the whole text first: malformed text must write nothing, and a writer cannot
+     * take back what it has already sent. */
+    proven_result_size_t need = proven_utf16_to_utf8_size(text.ptr, text.size);
+    if (!proven_is_ok(need.err)) return need.err;
+
+    proven_byte_t chunk[256];
+    proven_size_t done = 0;
+    while (done < text.size) {
+        proven_size_t n_bytes, n_units;
+        if (enc == PROVEN_TEXT_UTF8) {
+            proven_utf_step_t st = proven_utf16_to_utf8_partial(text.ptr + done, text.size - done, chunk, sizeof chunk);
+            if (st.err != PROVEN_OK && st.err != PROVEN_ERR_OUT_OF_BOUNDS) return st.err;
+            n_bytes = st.written;
+            n_units = st.consumed;
+        } else {
+            /* Byte order is decided here, by shifting, never by the host's own layout. */
+            n_units = text.size - done;
+            if (n_units > sizeof chunk / 2) n_units = sizeof chunk / 2;
+            for (proven_size_t i = 0; i < n_units; ++i) {
+                proven_u16 u = text.ptr[done + i];
+                proven_byte_t hi = (proven_byte_t)(u >> 8), lo = (proven_byte_t)(u & 0xFFu);
+                chunk[2 * i]     = (enc == PROVEN_TEXT_UTF16LE) ? lo : hi;
+                chunk[2 * i + 1] = (enc == PROVEN_TEXT_UTF16LE) ? hi : lo;
+            }
+            n_bytes = n_units * 2;
+        }
+        proven_err_t e = proven_writer_write(w, (proven_mem_view_t){ chunk, n_bytes });
+        if (!proven_is_ok(e)) return e;
+        done += n_units;
+    }
+    return PROVEN_OK;
+}
+
+proven_err_t proven_u16_reader_init(proven_u16_reader_t *st, proven_reader_t inner, proven_text_encoding_t enc,
+                                    proven_u16 *buf, proven_size_t cap) {
+    if (!st || !proven_reader_is_valid(inner) || !buf || cap < 2) return PROVEN_ERR_INVALID_ARG;
+    if (!text_enc_is_concrete(enc) && enc != PROVEN_TEXT_AUTO) return PROVEN_ERR_INVALID_ARG;
+    *st = (proven_u16_reader_t){0};
+    st->inner = inner;
+    st->enc = enc;
+    st->buf = buf;
+    st->cap = cap;
+    st->err = PROVEN_OK;
+    st->bom_checked = (enc != PROVEN_TEXT_AUTO);
+    return PROVEN_OK;
+}
+
+/* Top up the raw staging area. False when the source is exhausted or broke (st->err says).
+ *
+ * 1 KiB, and consumed bytes are skipped with a cursor rather than moved after every decode: a
+ * 64-byte area cost one read of the source per 64 bytes - some 16,000 read() calls for a 1 MiB
+ * file through sysio, against 256 for the byte line reader (code review). The tail is moved to
+ * the front only here, once per refill. */
+static bool u16r_read_raw(proven_u16_reader_t *st) {
+    if (st->eof) return false;
+    if (st->raw_pos > 0) {
+        proven_size_t keep = st->raw_len - st->raw_pos;
+        if (keep > 0) proven_sys_mem_move(st->raw, st->raw + st->raw_pos, keep);
+        st->raw_len = keep;
+        st->raw_pos = 0;
+    }
+    if (st->raw_len == sizeof st->raw) return true;
+    proven_result_size_t r = proven_reader_read(st->inner,
+        (proven_mem_mut_t){ st->raw + st->raw_len, sizeof st->raw - st->raw_len });
+    st->raw_len += r.value;
+    if (r.err == PROVEN_ERR_EOF || (proven_is_ok(r.err) && r.value == 0)) {
+        st->eof = true;
+        return r.value > 0;
+    }
+    if (!proven_is_ok(r.err)) {
+        st->err = r.err;
+        return false;
+    }
+    return true;
+}
+
+/* Decode the staged bytes into dest. `consumed` is in bytes, `written` in units; the stop
+ * reasons are utf.h's. */
+static proven_utf_step_t u16r_decode_raw(proven_u16_reader_t *st, proven_u16 *dest, proven_size_t cap) {
+    if (st->enc == PROVEN_TEXT_UTF8) {
+        return proven_utf8_to_utf16_partial((proven_u8str_view_t){ st->raw + st->raw_pos, st->raw_len - st->raw_pos }, dest, cap);
+    }
+
+    proven_utf_step_t out = { PROVEN_OK, 0, 0 };
+    proven_u16 units[sizeof ((proven_u16_reader_t *)0)->raw / 2];
+    const proven_byte_t *raw = st->raw + st->raw_pos;
+    proven_size_t raw_n = st->raw_len - st->raw_pos;
+    proven_size_t n = raw_n / 2;
+    /* Decode and validate only what this call can hand out, plus one unit to see whether the
+     * last one taken is half of a pair (RFC-0009 P-103). The whole staged area - up to 512
+     * units - used to be validated on every call, so reading with cap 2 cost 261 ns a unit. */
+    proven_size_t m = n;
+    bool more_staged = false;
+    if (cap < m) {
+        m = cap + 1;
+        more_staged = true;
+    }
+    for (proven_size_t i = 0; i < m; ++i) {
+        proven_byte_t a = raw[2 * i], b = raw[2 * i + 1];
+        units[i] = (st->enc == PROVEN_TEXT_UTF16LE) ? (proven_u16)(a | (b << 8)) : (proven_u16)((a << 8) | b);
+    }
+    /* Validate as whole characters by converting to UTF-8 into scratch nobody reads: this is
+     * the one place that already knows a lone surrogate from half a pair. */
+    proven_byte_t scratch[sizeof units / sizeof units[0] * 3];
+    proven_utf_step_t v = proven_utf16_to_utf8_partial(units, m, scratch, sizeof scratch);
+    proven_size_t take = v.consumed;
+    if (take > cap) {
+        take = cap;
+        if (take > 0 && units[take - 1] >= 0xD800u && units[take - 1] <= 0xDBFFu) --take;
+        out.err = PROVEN_ERR_OUT_OF_BOUNDS;
+    } else if (v.err == PROVEN_ERR_INVALID_ENCODING) {
+        out.err = PROVEN_ERR_INVALID_ENCODING;
+    } else if (v.consumed < m && more_staged) {
+        /* The unit after the last one examined is staged: a high surrogate at the end of the
+         * window has its partner there, so this is "no room", not "need more input". */
+        out.err = PROVEN_ERR_OUT_OF_BOUNDS;
+    } else if (v.consumed < m || (raw_n & 1u)) {
+        out.err = PROVEN_ERR_NEED_MORE;   /* a trailing high surrogate, or an odd byte */
+    }
+    for (proven_size_t i = 0; i < take; ++i) dest[i] = units[i];
+    out.written = take;
+    out.consumed = take * 2;
+    return out;
+}
+
+static void u16r_check_bom(proven_u16_reader_t *st) {
+    while (st->raw_len - st->raw_pos < 3 && u16r_read_raw(st)) {}
+    const proven_byte_t *r = st->raw + st->raw_pos;
+    proven_size_t avail = st->raw_len - st->raw_pos;
+    proven_size_t skip = 0;
+    if (avail >= 3 && r[0] == 0xEF && r[1] == 0xBB && r[2] == 0xBF) { st->enc = PROVEN_TEXT_UTF8; skip = 3; }
+    else if (avail >= 2 && r[0] == 0xFF && r[1] == 0xFE)            { st->enc = PROVEN_TEXT_UTF16LE; skip = 2; }
+    else if (avail >= 2 && r[0] == 0xFE && r[1] == 0xFF)            { st->enc = PROVEN_TEXT_UTF16BE; skip = 2; }
+    else                                                                  { st->enc = PROVEN_TEXT_UTF8; }
+    st->raw_pos += skip;
+    st->bom_checked = true;
+}
+
+/*
+ * Decode at least one whole character into dest, or say why not: OK with units, EOF, or the
+ * sticky error. OUT_OF_BOUNDS with nothing written means the next character is a surrogate
+ * pair and `cap` is 1.
+ */
+static proven_result_size_t u16r_decode(proven_u16_reader_t *st, proven_u16 *dest, proven_size_t cap) {
+    proven_result_size_t res = { PROVEN_OK, 0 };
+    if (!proven_is_ok(st->err)) { res.err = st->err; return res; }
+    if (st->peek_len > 0) {
+        if (cap < st->peek_len) { res.err = PROVEN_ERR_OUT_OF_BOUNDS; return res; }
+        for (proven_size_t i = 0; i < st->peek_len; ++i) dest[i] = st->peek[i];
+        res.value = st->peek_len;
+        st->peek_len = 0;
+        return res;
+    }
+    if (!st->bom_checked) {
+        u16r_check_bom(st);
+        if (!proven_is_ok(st->err)) { res.err = st->err; return res; }
+    }
+
+    for (;;) {
+        proven_utf_step_t d = u16r_decode_raw(st, dest, cap);
+        st->raw_pos += d.consumed;
+        if (d.written > 0) { res.value = d.written; return res; }
+        if (d.err == PROVEN_ERR_INVALID_ENCODING) {
+            st->err = PROVEN_ERR_INVALID_ENCODING;
+            res.err = st->err;
+            return res;
+        }
+        if (d.err == PROVEN_ERR_OUT_OF_BOUNDS) { res.err = PROVEN_ERR_OUT_OF_BOUNDS; return res; }
+
+        /* Nothing decodable is staged: fetch more, or finish. */
+        if (!u16r_read_raw(st)) {
+            if (!proven_is_ok(st->err)) { res.err = st->err; return res; }
+            if (st->raw_len > st->raw_pos) {
+                /* The source ended inside a character. */
+                st->err = PROVEN_ERR_INVALID_ENCODING;
+                res.err = st->err;
+                return res;
+            }
+            res.err = PROVEN_ERR_EOF;
+            return res;
+        }
+    }
+}
+
+proven_result_u16str_view_t proven_u16_reader_read_line(proven_u16_reader_t *st) {
+    proven_result_u16str_view_t res = {0};
+    if (!st || !st->buf) { res.err = PROVEN_ERR_INVALID_ARG; return res; }
+
+    for (;;) {
+        for (proven_size_t i = st->cursor; i < st->len; ++i) {
+            if (st->buf[i] != (proven_u16)'\n') continue;
+            proven_size_t end = i;
+            if (end > st->cursor && st->buf[end - 1] == (proven_u16)'\r') --end;
+            res.val = (proven_u16str_view_t){ st->buf + st->cursor, end - st->cursor };
+            st->cursor = i + 1;
+            return res;
+        }
+
+        if (st->cursor > 0) {
+            proven_size_t keep = st->len - st->cursor;
+            if (keep > 0) proven_sys_mem_move(st->buf, st->buf + st->cursor, keep * sizeof(proven_u16));
+            st->len = keep;
+            st->cursor = 0;
+        }
+
+        proven_result_size_t r = { PROVEN_ERR_OUT_OF_BOUNDS, 0 };
+        if (st->len < st->cap) r = u16r_decode(st, st->buf + st->len, st->cap - st->len);
+
+        if (r.err == PROVEN_ERR_OUT_OF_BOUNDS) {
+            /* No room for the next character. As in proven_reader_read_line, that is an error
+             * only if the line goes on: look at one more character first. A newline means the
+             * line exactly fills the buffer; the end of the text means it is the last line. */
+            if (st->peek_len == 0) {
+                /* Exactly one character: one unit, or two if it is a surrogate pair. A single
+                 * decode into two units could take the newline AND the next line's first
+                 * character, and the newline would no longer be the whole peek. */
+                proven_result_size_t p = u16r_decode(st, st->peek, 1);
+                if (p.err == PROVEN_ERR_OUT_OF_BOUNDS) p = u16r_decode(st, st->peek, 2);
+                if (p.err == PROVEN_ERR_EOF) {
+                    res.val = (proven_u16str_view_t){ st->buf, st->len };
+                    st->cursor = st->len;
+                    return res;
+                }
+                if (!proven_is_ok(p.err)) { res.err = p.err; return res; }
+                st->peek_len = p.value;
+            }
+            if (st->peek_len == 1 && st->peek[0] == (proven_u16)'\n') {
+                proven_size_t end = st->len;
+                if (end > 0 && st->buf[end - 1] == (proven_u16)'\r') --end;
+                res.val = (proven_u16str_view_t){ st->buf, end };
+                st->cursor = st->len;
+                st->peek_len = 0;
+                return res;
+            }
+            res.err = PROVEN_ERR_OUT_OF_BOUNDS;
+            return res;
+        }
+        if (r.err == PROVEN_ERR_EOF) {
+            if (st->len > 0) {
+                res.val = (proven_u16str_view_t){ st->buf, st->len };
+                st->cursor = st->len;
+                return res;
+            }
+            res.err = PROVEN_ERR_EOF;
+            return res;
+        }
+        if (!proven_is_ok(r.err)) { res.err = r.err; return res; }
+        st->len += r.value;
+    }
+}
+
+proven_result_size_t proven_u16_reader_read(proven_u16_reader_t *st, proven_u16 *dest, proven_size_t cap) {
+    proven_result_size_t res = { PROVEN_OK, 0 };
+    if (!st || !st->buf || !dest || cap < 2) { res.err = PROVEN_ERR_INVALID_ARG; return res; }
+
+    if (st->cursor < st->len) {
+        proven_size_t n = st->len - st->cursor;
+        if (n > cap) {
+            n = cap;
+            proven_u16 last = st->buf[st->cursor + n - 1];
+            if (last >= 0xD800u && last <= 0xDBFFu) --n;   /* never half a pair */
+        }
+        for (proven_size_t i = 0; i < n; ++i) dest[i] = st->buf[st->cursor + i];
+        st->cursor += n;
+        res.value = n;
+        return res;
+    }
+    return u16r_decode(st, dest, cap);
+}
+
+#endif /* PROVEN_NO_U16STR */
 
 // -------------------------------------------------------------
 // Formatting straight into a writer

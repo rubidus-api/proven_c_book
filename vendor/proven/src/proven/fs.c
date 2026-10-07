@@ -3,6 +3,10 @@
 #include "../../platform/proven_sys_io.h"
 #include "proven/array.h"
 #include "proven/algorithm.h"
+#include "proven/random.h"
+#include "proven/utf.h"
+#include "../../platform/proven_sys_time.h"
+#include <stdatomic.h>
 
 /* Starting capacity when the source reports no usable size (streams, /proc). */
 #define INTERNAL_SLURP_CHUNK ((proven_size_t)65536)
@@ -83,15 +87,15 @@ static proven_result_file_t internal_fs_open_with(proven_allocator_t scratch, pr
     proven_sys_file_handle_t sh = proven_sys_fs_open_checked(path_buf, pal_flags | extra_pal_flags, &why);
     internal_cstr_free(scratch, path_buf);
 
-    /* "It went wrong" is not an answer a caller can act on. These three are: the name is not
-     * there, the caller may not, or something else holds it right now. Everything else stays
-     * PROVEN_ERR_IO, including an exclusive-create collision, which has no error of its own
-     * and is not worth inventing one for. */
+    /* "It went wrong" is not an answer a caller can act on. These four are: the name is not
+     * there, the caller may not, something else holds it right now, or an exclusive create
+     * found the name taken. Everything else stays PROVEN_ERR_IO. */
     proven_err_t open_err = PROVEN_ERR_IO;
     switch (why) {
         case PROVEN_SYS_FS_OPEN_NOT_FOUND: open_err = PROVEN_ERR_NOT_FOUND; break;
         case PROVEN_SYS_FS_OPEN_DENIED:    open_err = PROVEN_ERR_PERMISSION; break;
         case PROVEN_SYS_FS_OPEN_BUSY:      open_err = PROVEN_ERR_BUSY; break;
+        case PROVEN_SYS_FS_OPEN_EXISTS:    open_err = PROVEN_ERR_EXISTS; break;
         default: break;
     }
 
@@ -575,6 +579,24 @@ static int compare_fs_entries(const void *a, const void *b) {
     return 0;
 }
 
+/*
+ * One directory step with the strict-text rule applied (RFC-0009 D-003): an entry whose name
+ * is not valid text is step 2, on every platform. Windows' PAL reports it itself (a lone
+ * surrogate); POSIX hands back the kernel's bytes, checked here. Nothing is substituted - a
+ * listed name that is not the real one opens a different file, or none.
+ */
+static int internal_dir_step_text(proven_sys_dir_handle_t dh, proven_sys_dir_entry_t *se) {
+    int step = proven_sys_fs_dir_step(dh, se);
+    if (step == 1) {
+        proven_u8str_view_t name = proven_u8str_view_from_cstr(se->name);
+        if (proven_utf8_to_utf16_size(name).err != PROVEN_OK) {
+            se->name = NULL;
+            return 2;
+        }
+    }
+    return step;
+}
+
 proven_result_array_t proven_fs_list(proven_allocator_t alloc, proven_u8str_view_t path) {
     proven_result_array_t res = {0};
     internal_result_cstr_t p_res = internal_view_to_cstr(alloc, path);
@@ -599,7 +621,7 @@ proven_result_array_t proven_fs_list(proven_allocator_t alloc, proven_u8str_view
 
     proven_sys_dir_entry_t se;
     int step;
-    while ((step = proven_sys_fs_dir_step(dh, &se)) == 1) {
+    while ((step = internal_dir_step_text(dh, &se)) == 1) {
         proven_fs_entry_t entry = {0};
         entry.type = se.is_dir ? PROVEN_FS_TYPE_DIR
                   : se.is_regular ? PROVEN_FS_TYPE_FILE
@@ -628,10 +650,12 @@ proven_result_array_t proven_fs_list(proven_allocator_t alloc, proven_u8str_view
         }
     }
     proven_sys_fs_dir_close(dh);
-    if (step < 0) {
-        /* Half a listing reported as a whole one is how a backup silently skips files. */
+    if (step != 0) {
+        /* Half a listing reported as a whole one is how a backup silently skips files. That
+         * includes leaving out an entry whose name is not valid text: the whole list is
+         * refused, and proven_fs_dir_next reports such an entry on its own and goes on. */
         proven_fs_list_destroy(alloc, &a_res.value);
-        res.err = PROVEN_ERR_IO;
+        res.err = step == 2 ? PROVEN_ERR_INVALID_ENCODING : PROVEN_ERR_IO;
         return res;
     }
 
@@ -680,7 +704,8 @@ static internal_slurp_t internal_read_to_eof(proven_allocator_t alloc,
                                              proven_file_t f,
                                              proven_byte_t *ptr,
                                              proven_size_t cap,
-                                             proven_size_t align) {
+                                             proven_size_t align,
+                                             proven_size_t limit) {
     internal_slurp_t res = {0};
     proven_size_t len = 0;
 
@@ -703,14 +728,26 @@ static internal_slurp_t internal_read_to_eof(proven_allocator_t alloc,
                 return res;
             }
 
-            /* The source really does have more than its size promised. Now grow,
-             * and keep the byte the probe already consumed. */
-            proven_size_t new_cap;
-            if (PROVEN_CKD_MUL(&new_cap, cap, (proven_size_t)2)) {
+            /* The source really does have more than its size promised. Past the
+             * caller's bound is the end of it: the bytes are not wanted, and a source
+             * that never ends (/dev/zero, a FIFO with a writer that does not stop)
+             * would otherwise grow the buffer until the allocator refuses. */
+            if (len >= limit) {
                 alloc.free_fn(alloc.ctx, ptr);
-                res.err = PROVEN_ERR_OVERFLOW;
+                res.err = PROVEN_ERR_OUT_OF_BOUNDS;
                 return res;
             }
+            /* Now grow, and keep the byte the probe already consumed. */
+            proven_size_t new_cap;
+            if (PROVEN_CKD_MUL(&new_cap, cap, (proven_size_t)2)) {
+                if (limit == PROVEN_SIZE_MAX) {
+                    alloc.free_fn(alloc.ctx, ptr);
+                    res.err = PROVEN_ERR_OVERFLOW;
+                    return res;
+                }
+                new_cap = limit;
+            }
+            if (new_cap > limit) new_cap = limit;   /* limit > len here, so new_cap > cap */
             proven_result_mem_mut_t grow = alloc.realloc_fn(alloc.ctx, ptr, cap, new_cap, align);
             if (!proven_is_ok(grow.err)) {
                 /* realloc is failure-atomic: `ptr` is still the live allocation. */
@@ -733,6 +770,11 @@ static internal_slurp_t internal_read_to_eof(proven_allocator_t alloc,
         }
         if (r.value == 0) break;
         len += r.value; /* r.value <= cap - len, so this cannot overflow */
+        if (len > limit) {
+            alloc.free_fn(alloc.ctx, ptr);
+            res.err = PROVEN_ERR_OUT_OF_BOUNDS;
+            return res;
+        }
     }
 
     res.err = PROVEN_OK;
@@ -758,7 +800,8 @@ static internal_slurp_t internal_read_to_eof(proven_allocator_t alloc,
 static internal_slurp_t internal_slurp_path(proven_allocator_t alloc,
                                             proven_u8str_view_t path,
                                             proven_size_t extra,
-                                            proven_size_t align) {
+                                            proven_size_t align,
+                                            proven_size_t limit) {
     internal_slurp_t res = {0};
 
     proven_result_file_t f_res = proven_fs_open(alloc, path, PROVEN_FS_READ);
@@ -779,9 +822,19 @@ static internal_slurp_t internal_slurp_path(proven_allocator_t alloc,
      * the capacity is never 0, so testing the capacity would leave a size-0
      * source (a pipe, a /proc entry) starting from a one-byte buffer and
      * doubling its way up. */
+    /* A file that says it is larger than the bound is refused before anything is
+     * allocated. One whose size lies (/proc, a FIFO) is caught while reading. */
+    if (s_res.value > limit) {
+        (void)proven_fs_close(f);
+        res.err = PROVEN_ERR_OUT_OF_BOUNDS;
+        return res;
+    }
+
     proven_size_t cap;
     if (s_res.value == 0) {
         cap = INTERNAL_SLURP_CHUNK;
+        /* Unknown size: start no larger than the bound needs (and never at 0). */
+        if (limit < cap && limit + extra < cap) cap = limit + extra > 0 ? limit + extra : 1;
     } else if (PROVEN_CKD_ADD(&cap, s_res.value, extra)) {
         (void)proven_fs_close(f);
         res.err = PROVEN_ERR_OVERFLOW;
@@ -795,19 +848,20 @@ static internal_slurp_t internal_slurp_path(proven_allocator_t alloc,
         return res;
     }
 
-    res = internal_read_to_eof(alloc, f, m_res.value.ptr, cap, align);
+    res = internal_read_to_eof(alloc, f, m_res.value.ptr, cap, align, limit);
     (void)proven_fs_close(f);
     return res;
 }
 
-proven_result_mem_mut_t proven_fs_read_all(proven_allocator_t alloc, proven_u8str_view_t path) {
+static proven_result_mem_mut_t internal_read_all(proven_allocator_t alloc, proven_u8str_view_t path,
+                                                 proven_size_t limit) {
     proven_result_mem_mut_t res = {0};
     if (!proven_alloc_is_valid(alloc)) {
         res.err = PROVEN_ERR_INVALID_ARG;
         return res;
     }
 
-    internal_slurp_t s = internal_slurp_path(alloc, path, 0, 1);
+    internal_slurp_t s = internal_slurp_path(alloc, path, 0, 1, limit);
     if (!proven_is_ok(s.err)) {
         res.err = s.err;
         return res;
@@ -835,6 +889,15 @@ proven_result_mem_mut_t proven_fs_read_all(proven_allocator_t alloc, proven_u8st
     return res;
 }
 
+proven_result_mem_mut_t proven_fs_read_all(proven_allocator_t alloc, proven_u8str_view_t path) {
+    return internal_read_all(alloc, path, PROVEN_SIZE_MAX);
+}
+
+proven_result_mem_mut_t proven_fs_read_all_bounded(proven_allocator_t alloc, proven_u8str_view_t path,
+                                                   proven_size_t max_bytes) {
+    return internal_read_all(alloc, path, max_bytes);
+}
+
 proven_result_u8str_t proven_fs_read_all_u8str(proven_allocator_t alloc, proven_u8str_view_t path) {
     proven_result_u8str_t res = {0};
     if (!proven_alloc_is_valid(alloc)) {
@@ -849,7 +912,7 @@ proven_result_u8str_t proven_fs_read_all_u8str(proven_allocator_t alloc, proven_
      * it at that alignment. A block must be reallocated with the alignment it
      * was allocated with, so the string this returns has to be allocated exactly
      * as proven_u8str_create would have allocated it. */
-    internal_slurp_t s = internal_slurp_path(alloc, path, 1, PROVEN_DEFAULT_ALIGNMENT);
+    internal_slurp_t s = internal_slurp_path(alloc, path, 1, PROVEN_DEFAULT_ALIGNMENT, PROVEN_SIZE_MAX);
     if (!proven_is_ok(s.err)) {
         res.err = s.err;
         return res;
@@ -950,7 +1013,61 @@ static proven_err_t internal_refuse_if_protected(proven_allocator_t scratch, pro
 
 /* Longest basename most filesystems accept. The temp sibling has to fit too. */
 #define INTERNAL_NAME_MAX ((proven_size_t)255)
-#define INTERNAL_TMP_SUFFIX_LEN ((proven_size_t)8)   /* ".pvtmpNN", no NUL */
+#define INTERNAL_TMP_TAG_LEN ((proven_size_t)6)      /* ".pvtmp" */
+#define INTERNAL_TMP_RAND_LEN ((proven_size_t)13)    /* 64 bits in base 32 (5 bits a character) */
+#define INTERNAL_TMP_SUFFIX_LEN (INTERNAL_TMP_TAG_LEN + INTERNAL_TMP_RAND_LEN)   /* no NUL */
+#define INTERNAL_TMP_ATTEMPTS 16
+
+/* Lower case only: on a case-insensitive filesystem two suffixes that differ only in case would
+ * be one name, and the 64 bits would quietly be fewer. */
+static const char internal_tmp_alphabet[] = "0123456789abcdefghijklmnopqrstuv";   /* 32 + NUL */
+
+static bool internal_is_tmp_char(proven_byte_t c) {
+    return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'v');
+}
+
+/*
+ * 64 bits for one staging name. They come from the library's entropy source, so the name
+ * cannot be predicted - a fixed list of names (".pvtmp00" .. ".pvtmp07" until RFC-0009 D-001)
+ * let eight crashed writers, or anyone who could write the directory, block every later
+ * replacement of the path. A process-wide counter, the clock and an address are mixed in so
+ * two attempts still differ if the entropy source fails; the names are then guessable, but a
+ * collision costs one more attempt, never a write through someone else's file (CREATE_NEW).
+ */
+static proven_u64 internal_tmp_bits(const void *salt) {
+    static _Atomic proven_u64 counter;
+    proven_u64 r = 0;
+    if (!proven_random_bytes(&r, sizeof r)) r = 0;
+    proven_u64 x = atomic_fetch_add_explicit(&counter, 1, memory_order_relaxed)
+                 ^ ((proven_u64)proven_sys_time_now_ns() << 20)
+                 ^ (proven_u64)(proven_uintptr_t)salt;
+    /* splitmix64 finaliser: spreads the counter and clock over all 64 bits. */
+    x += 0x9E3779B97F4A7C15ull;
+    x = (x ^ (x >> 30)) * 0xBF58476D1CE4E5B9ull;
+    x = (x ^ (x >> 27)) * 0x94D049BB133111EBull;
+    x ^= x >> 31;
+    return r ^ x;
+}
+
+bool proven_fs_is_staging_name(proven_u8str_view_t name) {
+    if (name.size > 0 && !name.ptr) return false;
+    static const proven_byte_t tag[6] = { '.', 'p', 'v', 't', 'm', 'p' };
+    /* Earlier versions used ".pvtmp" and two decimal digits; their leftovers are still ours. */
+    for (int form = 0; form < 2; ++form) {
+        proven_size_t rand_len = form == 0 ? INTERNAL_TMP_RAND_LEN : 2;
+        proven_size_t suffix = INTERNAL_TMP_TAG_LEN + rand_len;
+        if (name.size <= suffix) continue;
+        const proven_byte_t *s = name.ptr + (name.size - suffix);
+        bool ok = true;
+        for (proven_size_t i = 0; i < INTERNAL_TMP_TAG_LEN && ok; ++i) ok = s[i] == tag[i];
+        for (proven_size_t i = 0; i < rand_len && ok; ++i) {
+            proven_byte_t c = s[INTERNAL_TMP_TAG_LEN + i];
+            ok = form == 0 ? internal_is_tmp_char(c) : (c >= '0' && c <= '9');
+        }
+        if (ok) return true;
+    }
+    return false;
+}
 
 /*
  * Writes `data` to a sibling temp file and renames it over `path`.
@@ -1022,7 +1139,7 @@ static proven_err_t internal_write_file_atomic(proven_allocator_t scratch, prove
     if (path.size == 0 || !path.ptr) return PROVEN_ERR_INVALID_ARG;
     if (view_has_nul(path)) return PROVEN_ERR_INVALID_ARG;
 
-    /* The temp name is "<path>.pvtmpNN". A basename may legally run right up to
+    /* The temp name is "<path>.pvtmp" and 13 random characters. A basename may legally run right up to
      * NAME_MAX, and write_file would accept it - so trim the copied basename by
      * however much the suffix needs rather than producing a name the filesystem
      * will reject. The trimmed stem is only ever a temp file, and CREATE_NEW
@@ -1076,19 +1193,22 @@ static proven_err_t internal_write_file_atomic(proven_allocator_t scratch, prove
     bool have_target_perms = !target_missing && target.type == PROVEN_FS_TYPE_FILE;
 
     proven_result_file_t f_res = {0};
-    f_res.err = PROVEN_ERR_BUSY;
+    f_res.err = PROVEN_ERR_EXISTS;
 
-    /* A handful of attempts, not a hundred: this loop exists to step over a temp
-     * name a concurrent writer already holds, and every attempt costs an open()
-     * and a path allocation. proven_fs_open collapses errno, so a persistent
-     * failure (no write permission on the directory, say) looks the same as a
-     * collision - and there is no point paying for it a hundred times. */
-    for (int attempt = 0; attempt < 8; ++attempt) {
+    /* Only a collision is worth another attempt: a random name that is taken is someone
+     * else's staging file (or a planted one), and the next random name will not be. Any
+     * other failure - no write permission on the directory, a missing directory - would
+     * fail the same way every time, so it is returned at once. Sixteen collisions in a row
+     * on 64 random bits do not happen by chance; that is PROVEN_ERR_EXISTS. */
+    for (int attempt = 0; attempt < INTERNAL_TMP_ATTEMPTS; ++attempt) {
         proven_byte_t *s = tmp + stem;
         s[0] = '.'; s[1] = 'p'; s[2] = 'v'; s[3] = 't'; s[4] = 'm'; s[5] = 'p';
-        s[6] = (proven_byte_t)('0' + (attempt / 10));
-        s[7] = (proven_byte_t)('0' + (attempt % 10));
-        s[8] = 0;
+        proven_u64 bits = internal_tmp_bits(tmp);
+        for (proven_size_t i = 0; i < INTERNAL_TMP_RAND_LEN; ++i) {
+            s[INTERNAL_TMP_TAG_LEN + i] = (proven_byte_t)internal_tmp_alphabet[bits & 31u];
+            bits >>= 5;
+        }
+        s[INTERNAL_TMP_SUFFIX_LEN] = 0;
 
         /*
          * PRIVATE when we are carrying an existing target's mode across: the staging file
@@ -1105,7 +1225,7 @@ static proven_err_t internal_write_file_atomic(proven_allocator_t scratch, prove
         int private_flag = have_target_perms ? PROVEN_SYS_FS_PRIVATE : 0;
         f_res = internal_fs_open_with(scratch, tmp_view,
             (proven_fs_mode_t)(PROVEN_FS_WRITE | PROVEN_FS_CREATE_NEW), private_flag);
-        if (proven_is_ok(f_res.err)) break;
+        if (f_res.err != PROVEN_ERR_EXISTS) break;
     }
     if (!proven_is_ok(f_res.err)) {
         scratch.free_fn(scratch.ctx, tmp);
@@ -1250,13 +1370,16 @@ proven_err_t proven_fs_dir_next(proven_fs_dir_t *dir, proven_fs_dir_entry_t *out
 
     proven_sys_dir_entry_t se = {0};
     proven_sys_dir_handle_t dh = { .internal = dir->internal };
-    int step = proven_sys_fs_dir_step(dh, &se);
+    int step = internal_dir_step_text(dh, &se);
     if (step == 0) return PROVEN_ERR_EOF;
     if (step < 0) return PROVEN_ERR_IO;   /* a failed read is not an empty directory */
 
     /* Borrowed: the name points into the iterator's own storage, which is what lets a
-     * huge directory be walked without an allocation per entry. */
-    out_entry->name = proven_u8str_view_from_cstr(se.name);
+     * huge directory be walked without an allocation per entry. An entry whose name is not
+     * valid text is reported with an empty name and PROVEN_ERR_INVALID_ENCODING; the next
+     * call goes on with the next entry. */
+    out_entry->name = step == 2 ? (proven_u8str_view_t){ .ptr = (const proven_u8 *)"", .size = 0 }
+                                : proven_u8str_view_from_cstr(se.name);
     /* A symlink, FIFO, socket or device is neither. It used to be reported as a regular
      * file, which told the caller it could open it and read bytes out of it - and a
      * dangling symlink cannot even be opened. */
@@ -1265,7 +1388,7 @@ proven_err_t proven_fs_dir_next(proven_fs_dir_t *dir, proven_fs_dir_entry_t *out
                     : PROVEN_FS_TYPE_OTHER;
     out_entry->is_symlink = se.is_symlink;
     out_entry->size = se.size;
-    return PROVEN_OK;
+    return step == 2 ? PROVEN_ERR_INVALID_ENCODING : PROVEN_OK;
 }
 
 void proven_fs_dir_close(proven_fs_dir_t *dir) {
@@ -1369,10 +1492,15 @@ proven_err_t proven_fs_symlink(proven_allocator_t scratch, proven_u8str_view_t t
         return l_res.err;
     }
     
-    bool success = proven_sys_fs_symlink(t_res.value, l_res.value);
+    proven_sys_fs_open_result_t why = proven_sys_fs_symlink_checked(t_res.value, l_res.value);
     internal_cstr_free(scratch, t_res.value);
     internal_cstr_free(scratch, l_res.value);
-    return success ? PROVEN_OK : PROVEN_ERR_IO;
+    switch (why) {
+        case PROVEN_SYS_FS_OPEN_OK:        return PROVEN_OK;
+        case PROVEN_SYS_FS_OPEN_NOT_FOUND: return PROVEN_ERR_NOT_FOUND;   /* the link's directory */
+        case PROVEN_SYS_FS_OPEN_DENIED:    return PROVEN_ERR_PERMISSION;  /* Windows: no Developer Mode or privilege */
+        default:                           return PROVEN_ERR_IO;
+    }
 }
 
 proven_err_t proven_fs_link(proven_allocator_t scratch, proven_u8str_view_t oldpath, proven_u8str_view_t newpath) {
@@ -1701,6 +1829,19 @@ proven_err_t proven_fs_walk_next(proven_fs_walk_t *walk, proven_fs_walk_entry_t 
             walk_truncate(s, top->path_len);
             s->depth--;
             continue;
+        }
+        if (e == PROVEN_ERR_INVALID_ENCODING) {
+            /* An entry whose name is not valid text (RFC-0009 D-003). Report it - with the
+             * directory it is in as `path` and an empty `name`, since it has no name the
+             * library can give - and keep reading this directory: the read itself did not
+             * fail. Not descended into, whatever it is. */
+            out_entry->path = walk_path(s);
+            out_entry->name = de.name;
+            out_entry->type = de.type;
+            out_entry->size = de.size;
+            out_entry->depth = s->depth - 1;
+            out_entry->is_symlink = de.is_symlink;
+            return e;
         }
         if (!proven_is_ok(e)) {
             /*

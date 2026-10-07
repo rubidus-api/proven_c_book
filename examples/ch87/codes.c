@@ -20,6 +20,7 @@ static const char *name_of(proven_err_t e)
     case PROVEN_ERR_BUSY:             return "BUSY (someone else is using it)";
     case PROVEN_ERR_PERMISSION:       return "PERMISSION (not allowed)";
     case PROVEN_ERR_INVALID_FORMAT:   return "INVALID_FORMAT (wrong format)";
+    case PROVEN_ERR_EXISTS:           return "EXISTS (the name is already taken)";
     }
     return "(unknown)";
 }
@@ -27,7 +28,7 @@ static const char *name_of(proven_err_t e)
 int main(void)
 {
     proven_println("-- every error code --");
-    for (int i = PROVEN_OK; i <= PROVEN_ERR_INVALID_FORMAT; i++)
+    for (int i = PROVEN_OK; i <= PROVEN_ERR_LAST; i++)
         proven_println("{:>2}  {}", PROVEN_ARG(i), PROVEN_ARG(name_of((proven_err_t)i)));
 
     proven_println("");

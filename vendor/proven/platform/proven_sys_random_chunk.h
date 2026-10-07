@@ -4,7 +4,7 @@
 #include <stddef.h>
 
 /*
- * RFC-0006 H-006. The Windows entropy source is BCryptGenRandom, whose length argument is
+ * RFC-0008 H-006. The Windows entropy source is BCryptGenRandom, whose length argument is
  * a ULONG. proven_sys_random_bytes takes a size_t, and it used to cast the whole length to
  * ULONG once. On 64-bit Windows a length above ULONG_MAX narrows silently: only the low 32
  * bits are requested - possibly zero bytes - and STATUS_SUCCESS for that short request is

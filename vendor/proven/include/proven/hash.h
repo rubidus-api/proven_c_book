@@ -13,7 +13,7 @@
  * | You are... | Use | Why not the others |
  * |---|---|---|
  * | hashing keys into YOUR OWN hash table, trusted input | `proven_hash_bytes` (FNV-1a) | fast; a cryptographic hash would be 50x slower for no benefit |
- * | hashing keys from UNTRUSTED input into a table | `proven_hash_keyed` (SipHash-2-4) | FNV lets an attacker collide every key into one bucket and turn your O(1) table into O(n²) |
+ * | hashing keys from UNTRUSTED input into a table | `proven_hash_keyed` (SipHash-2-4) | FNV lets an attacker collide every key into one bucket and turn your O(1) table into O(n^2) |
  * | checking data did not get CORRUPTED in transit or on disk | `proven_crc32` | a checksum, not a hash; interoperates with gzip/zlib/PNG, which all use this exact CRC |
  * | fingerprinting content: dedup, content-addressing, "are these two files the same" | `proven_sha256` | the only one here safe against a deliberately-constructed collision |
  *

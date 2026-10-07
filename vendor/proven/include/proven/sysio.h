@@ -13,16 +13,16 @@
  * @file sysio.h
  * @brief The standard streams, and the console I/O that replaces <stdio.h>.
  *
- * stdin, stdout and stderr are files, and — since this header met `stream.h` — they are also
+ * stdin, stdout and stderr are files, and - since this header met `stream.h` - they are also
  * writers and readers. That is the whole point of the bridge below: everything `stream.h` can
  * do to a byte sink or a byte source, it can now do to a standard stream. You can
  * `proven_fprintln` to stderr, wrap stdout in a buffered writer so a thousand small prints
- * cost one syscall instead of a thousand, and read stdin a line at a time — which, until this
+ * cost one syscall instead of a thousand, and read stdin a line at a time - which, until this
  * bridge existed, there was no way to do at all.
  *
  * The direct calls (`proven_print`, `proven_println`, `proven_eprint`) are unchanged and
  * remain unbuffered: what they write is on its way out before they return, so nothing is lost
- * if the program dies. Buffering is opt-in precisely because it is not free of consequence —
+ * if the program dies. Buffering is opt-in precisely because it is not free of consequence --
  * buffered output that is never flushed is output that never happened.
  */
 
@@ -53,26 +53,58 @@
  * @brief Somewhere to keep a standard handle, so a writer or reader can point at it.
  *
  * `proven_writer_from_file` takes a `proven_file_t *`, and the file has to outlive the
- * writer — so it cannot be a temporary. This struct is that storage, and it is yours: declare
+ * writer - so it cannot be a temporary. This struct is that storage, and it is yours: declare
  * one on the stack next to the writer that uses it.
  *
  * @warning **Do not copy or move these state structs once a writer or reader has been made
  *          from one.** The writer holds a pointer INTO the struct, so a copy leaves the
- *          original addressed and the copy inert — and if the original goes out of scope, the
+ *          original addressed and the copy inert - and if the original goes out of scope, the
  *          writer is left pointing at dead storage. This is the same rule that governs
  *          `stream.h`'s own state structs (`proven_writer_buffered_t` and friends): the state
  *          stays where you declared it, for as long as the writer or reader lives.
- *          (`proven_sysio_lines_t` is the exception — `proven_sysio_read_line` re-binds it on
+ *          (`proven_sysio_lines_t` is the exception - `proven_sysio_read_line` re-binds it on
  *          every call, so a line reader may be moved.)
  */
+/**
+ * @brief Text in flight at a Windows console edge. Not for the caller to touch.
+ *
+ * Writing: the first bytes of a UTF-8 character whose rest is in the next write - a buffered
+ * writer flushes at its buffer size, not at a character boundary. Reading: UTF-8 bytes
+ * converted but not yet handed out, a high surrogate waiting for its low half, and whether the
+ * console has already produced malformed text that the next read must report.
+ */
+typedef struct {
+    proven_byte_t bytes[4];
+    proven_u8     len;
+    proven_u16    high;
+    bool          has_high;
+    bool          broken;
+} proven_sysio_carry_t;
+
 typedef struct {
     proven_file_t file;
+
+    /**
+     * @brief Set when `file` is a Windows console; always false on POSIX.
+     *
+     * A console decodes the bytes it is given in its own code page, so UTF-8 written to it
+     * with WriteFile is mojibake unless someone ran `chcp 65001` - and reading it with
+     * ReadFile returns code-page bytes, not UTF-8. So the writers and readers made from this
+     * struct talk to a console in UTF-16 (WriteConsoleW / ReadConsoleW), converting at the
+     * edge, and the rest of the program never sees anything but UTF-8. Files, pipes and
+     * redirected streams are not consoles and keep getting the bytes exactly as written.
+     *
+     * `proven_writer_from_file` / `proven_reader_from_file` on a console handle are byte-exact
+     * and do NOT convert: make console writers and readers here.
+     */
+    bool console;
+    proven_sysio_carry_t carry;
 } proven_sysio_std_t;
 
 /** @brief An unbuffered writer over stdout. Every write is a write syscall. */
 [[nodiscard]] proven_writer_t proven_sysio_stdout_writer(proven_sysio_std_t *st);
 
-/** @brief An unbuffered writer over stderr. Every write is a write syscall — which is what
+/** @brief An unbuffered writer over stderr. Every write is a write syscall - which is what
  *         you want for an error: it is out before the next line of code runs. */
 [[nodiscard]] proven_writer_t proven_sysio_stderr_writer(proven_sysio_std_t *st);
 
@@ -99,7 +131,7 @@ typedef struct {
  *
  * @warning **You must flush it.** Nothing reaches the terminal until the buffer fills or you
  *          call `proven_writer_flush`. Buffered output that is never flushed is output that
- *          never happened — and unlike C's `stdout`, nothing here flushes behind your back at
+ *          never happened - and unlike C's `stdout`, nothing here flushes behind your back at
  *          exit, because a library that registers an atexit handler you did not ask for is a
  *          library that owns your process. Flush before you return, and flush before you
  *          print anything to stderr that is supposed to appear after it.
@@ -138,7 +170,7 @@ typedef struct {
 /**
  * @brief Open a line reader over stdin.
  *
- * Reading stdin a line at a time — the single most common thing a program does with it — had
+ * Reading stdin a line at a time - the single most common thing a program does with it - had
  * no route through this library: the choices were the token scanner, or reading the whole of
  * a stream that may never end. This is the missing one.
  */
@@ -153,6 +185,38 @@ typedef struct {
  * @note "\r\n" is handled; a final line with no trailing newline is still returned.
  */
 [[nodiscard]] proven_result_u8str_view_t proven_sysio_read_line(proven_sysio_lines_t *st);
+
+#ifndef PROVEN_NO_U16STR
+/**
+ * @brief A UTF-16 line reader over a standard stream or a file.
+ *
+ * The u16 twin of proven_sysio_lines_t: lines come back as `proven_u16str_view_t`, decoded
+ * from `enc` (stream.h's proven_u16_reader_t does the work). For the text a person types or
+ * pipes in, that is PROVEN_TEXT_UTF8; for a file whose encoding you do not control,
+ * PROVEN_TEXT_AUTO lets a byte order mark decide.
+ */
+typedef struct {
+    proven_sysio_std_t  std;
+    proven_u16_reader_t reader;
+} proven_sysio_u16_lines_t;
+
+/**
+ * @brief Open a UTF-16 line reader over `file`, reading `enc`, through `buf` of `cap` units.
+ * @return PROVEN_ERR_INVALID_ARG for a null state, a buffer under 2 units, or a bad encoding.
+ */
+[[nodiscard]] proven_err_t proven_sysio_u16_lines_open(proven_sysio_u16_lines_t *st, proven_file_t file,
+                                                       proven_text_encoding_t enc, proven_u16 *buf, proven_size_t cap);
+
+/** @brief Open a UTF-16 line reader over stdin, which is read as UTF-8. */
+[[nodiscard]] proven_err_t proven_sysio_stdin_u16_lines(proven_sysio_u16_lines_t *st, proven_u16 *buf, proven_size_t cap);
+
+/**
+ * @brief The next line as UTF-16, without its newline. PROVEN_ERR_EOF when the input is done.
+ * @note The view points into `buf` and lasts until the next call. The struct may be moved
+ *       between calls: its reader is re-bound to it each time, as proven_sysio_read_line does.
+ */
+[[nodiscard]] proven_result_u16str_view_t proven_sysio_read_u16_line(proven_sysio_u16_lines_t *st);
+#endif /* PROVEN_NO_U16STR */
 
 // -----------------------------------------------------------------------------
 // Buffered Scanner for sysio (Safe for pipes/stdin)
@@ -197,6 +261,8 @@ typedef struct {
     proven_size_t cursor;
     proven_size_t length;
     bool eof;
+    bool console;               /**< a Windows console: read as UTF-16, handed out as UTF-8 */
+    proven_sysio_carry_t carry; /**< see proven_sysio_std_t; not for the caller to touch */
 } proven_sysio_scanner_t;
 
 /**
@@ -238,6 +304,10 @@ void proven_sysio_scanner_deinit(proven_sysio_scanner_t *scanner);
  * The view remains valid only until the next scanner scan call or scanner
  * deinitialization, either of which may refill, compact, or free that buffer.
  */
+/*
+ * MACRO SUPPORT for proven_sysio_scanner_scan (RFC-0009 X-004).
+ * Not a stable interface: the signature may change in any MINOR release. Call the macro.
+ */
 [[nodiscard]]
 proven_err_t proven_sysio_scanner_scan_impl(proven_sysio_scanner_t *scanner, const char *fmt, const proven_scan_arg_t *args, size_t args_count);
 
@@ -257,6 +327,10 @@ proven_err_t proven_sysio_scanner_scan_impl(proven_sysio_scanner_t *scanner, con
  * and are used as printf is - a failed write to a console is conventionally
  * ignored. The scan entry points above and below are annotated, because
  * dropping their error means reading data that was never parsed. */
+/*
+ * MACRO SUPPORT for proven_print, proven_println, proven_eprint and proven_eprintln (RFC-0009 X-004).
+ * Not a stable interface: the signature may change in any MINOR release. Call the macro.
+ */
 proven_err_t proven_sysio_print_impl(proven_file_t handle, const char *fmt, const proven_arg_t *args, size_t args_count);
 /**
  * @brief Type-safe formatted scanning from a file descriptor.
@@ -273,6 +347,10 @@ proven_err_t proven_sysio_print_impl(proven_file_t handle, const char *fmt, cons
  * but this helper's input buffer is local to the call and cannot safely escape.
  * Use proven_sysio_scanner_t when the caller needs a borrowed string result; its
  * result remains valid only until the next scan call or scanner deinitialization.
+ */
+/*
+ * MACRO SUPPORT for proven_scan_fmt_from_file and proven_scan_fmt_from_stdin (RFC-0009 X-004).
+ * Not a stable interface: the signature may change in any MINOR release. Call the macro.
  */
 [[nodiscard]]
 proven_err_t proven_sysio_scan_chunk_impl(proven_file_t handle, const char *fmt, const proven_scan_arg_t *args, size_t args_count);
@@ -335,6 +413,13 @@ proven_err_t proven_sysio_scan_chunk_impl(proven_file_t handle, const char *fmt,
  * @param alloc The allocator to securely hold the resulting string.
  * @param key The environment variable name view.
  * @return An error if not found, or a dynamically allocated string containing the value.
+ *
+ * @note PROVEN_ERR_NOT_FOUND when the variable is not set. A variable set to the empty string
+ *       is PROVEN_OK with an empty string, on every platform.
+ * @note PROVEN_ERR_INVALID_ENCODING when the value is not valid text: bytes that are not
+ *       UTF-8 on POSIX, a lone surrogate on Windows. Nothing is substituted - the strict rule
+ *       of the rest of the library. A program that must pass such a value through untouched
+ *       has to read it with the platform's own call.
  */
 [[nodiscard]] proven_result_u8str_t proven_env_get(proven_allocator_t alloc, proven_u8str_view_t key);
 

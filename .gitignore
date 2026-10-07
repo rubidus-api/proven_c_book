@@ -106,3 +106,7 @@ examples-en/ch102/stale/demo
 /docs/plans
 /docs/requirements
 /docs/resources
+
+# 예제가 실행 중에 자기 폴더에 짓는 것 --- 원본이 아니다
+/examples/ch102/golden/wordcount
+/examples-en/ch102/golden/wordcount

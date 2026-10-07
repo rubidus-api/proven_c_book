@@ -4,6 +4,7 @@
 #include "proven/types.h"
 #include "proven/error.h"
 #include "proven/allocator.h"
+#include <stdatomic.h>
 
 /**
  * @file job.h
@@ -79,5 +80,51 @@ bool proven_job_submit(proven_job_sys_t *sys, void (*routine)(void*), void* arg)
  */
 [[nodiscard]]
 bool proven_job_execute_one(proven_job_sys_t *sys);
+
+/**
+ * @brief proven_job_submit, saying why a refusal happened (RFC-0009 X-003).
+ *
+ * @return PROVEN_OK when queued; PROVEN_ERR_AGAIN when the queue is full - retry, or run a job
+ *         yourself with proven_job_execute_one; PROVEN_ERR_INVALID_STATE when the system is
+ *         closed - stop submitting; PROVEN_ERR_INVALID_ARG for a NULL system. proven_job_submit
+ *         returns false for all three, which call for opposite responses.
+ */
+[[nodiscard]]
+proven_err_t proven_job_submit_ex(proven_job_sys_t *sys, void (*routine)(void*), void* arg);
+
+/**
+ * @brief A count of submitted jobs that have not finished, to wait on a batch.
+ *
+ * Initialise with proven_job_group_init, submit with proven_job_group_submit, then
+ * proven_job_group_wait. A group may be reused once its wait has returned. It lives as long
+ * as any job submitted to it: do not let it go out of scope before the wait.
+ */
+typedef struct {
+    _Atomic(proven_size_t) pending;
+} proven_job_group_t;
+
+void proven_job_group_init(proven_job_group_t *group);
+
+/**
+ * @brief Submit a job counted by `group`. Same results as proven_job_submit_ex; a refused job
+ *        is not counted.
+ */
+[[nodiscard]]
+proven_err_t proven_job_group_submit(proven_job_sys_t *sys, proven_job_group_t *group,
+                                     void (*routine)(void*), void* arg);
+
+/** @brief How many of the group's jobs have not finished yet. 0 for NULL. */
+[[nodiscard]]
+proven_size_t proven_job_group_pending(proven_job_group_t *group);
+
+/**
+ * @brief Return once every job submitted to `group` has finished.
+ *
+ * The waiting thread helps: while the group has pending jobs it runs queued jobs itself
+ * (proven_job_execute_one - any job, not only this group's) and yields when the queue is
+ * empty. So a wait from a thread that is not a worker makes progress even when every worker
+ * is busy, and what the jobs wrote is visible after it returns.
+ */
+void proven_job_group_wait(proven_job_sys_t *sys, proven_job_group_t *group);
 
 #endif /* PROVEN_JOB_H */

@@ -169,4 +169,39 @@ const void* proven_sys_mem_chr(const void* s, int c, proven_size_t n);
 
 #endif /* PROVEN_FREESTANDING */
 
+/**
+ * @brief Finds the LAST byte equal to `c` in the first `n` bytes of `s`, or NULL.
+ *
+ * Portable word-at-a-time scan from the end, in every configuration: memrchr is a GNU/BSD
+ * extension that mingw and macOS do not have, and asking for it would mean _GNU_SOURCE in the
+ * PAL. The 8-byte loads are assembled by byte copies (no alignment or aliasing UB) and never
+ * read before `s`.
+ */
+static inline const void* proven_sys_mem_rchr(const void* s, int c, proven_size_t n) {
+    if (!s || n == 0) return (const void*)0;
+    const unsigned char *base = (const unsigned char *)s;
+    unsigned char target = (unsigned char)c;
+    const proven_u64 ones = (proven_u64)0x0101010101010101ull;
+    const proven_u64 highs = (proven_u64)0x8080808080808080ull;
+    proven_u64 cmask = ones * (proven_u64)target;
+    while (n >= 8u) {
+        const unsigned char *p = base + n - 8u;
+        proven_u64 w = 0;
+        unsigned char *wp = (unsigned char *)&w;
+        for (int i = 0; i < 8; ++i) wp[i] = p[i];
+        proven_u64 x = w ^ cmask;
+        if (((x - ones) & ~x & highs) != 0u) {
+            for (proven_size_t i = 8u; i-- > 0u;) {
+                if (p[i] == target) return (const void*)(p + i);
+            }
+        }
+        n -= 8u;
+    }
+    while (n > 0u) {
+        --n;
+        if (base[n] == target) return (const void*)(base + n);
+    }
+    return (const void*)0;
+}
+
 #endif /* PROVEN_PLATFORM_SYS_MEM_H */

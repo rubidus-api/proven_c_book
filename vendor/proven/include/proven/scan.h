@@ -73,6 +73,23 @@ void proven_scan_skip_whitespace(proven_scan_t *scan);
 [[nodiscard]] proven_result_u64_t proven_scan_u64(proven_scan_t *scan);
 
 /**
+ * @brief Extract a 64-bit unsigned integer written in hexadecimal.
+ *
+ * Digits 0-9, a-f and A-F, with an optional "0x" or "0X" in front - taken only when a hex digit
+ * follows it, as strtoul takes it, so "0xg" scans as 0 and leaves "xg". No sign. Leading
+ * whitespace is skipped; a value above 2^64 - 1 is PROVEN_ERR_OVERFLOW; anything else that is
+ * not a hex digit is PROVEN_ERR_INVALID_ARG. Failure leaves the cursor after the whitespace.
+ * In a format string, `{:x}` (or `{:X}`) reads any integer argument this way.
+ */
+[[nodiscard]] proven_result_u64_t proven_scan_u64_hex(proven_scan_t *scan);
+
+/**
+ * @brief Extract a 64-bit signed integer written in hexadecimal: an optional sign, then what
+ *        proven_scan_u64_hex reads. "-8000000000000000" is the smallest value.
+ */
+[[nodiscard]] proven_result_i64_t proven_scan_i64_hex(proven_scan_t *scan);
+
+/**
  * @brief Extract a 64-bit floating point number.
  * Failure restores the cursor to its original position.
  *
@@ -228,9 +245,17 @@ static inline proven_scan_arg_t proven_scan_arg_identity(proven_scan_arg_t v) { 
  * If transactional parsing is required, save scan.cursor and destination 
  * values before calling and restore them on failure.
  */
+/*
+ * MACRO SUPPORT for proven_scan_fmt_cursor and proven_scan_fmt (RFC-0009 X-004).
+ * Not a stable interface: the signature may change in any MINOR release. Call the macro.
+ */
 [[nodiscard]]
 proven_err_t proven_scan_fmt_internal(proven_scan_t *scan, const char *fmt, const proven_scan_arg_t *args, proven_size_t args_count);
 
+/*
+ * MACRO SUPPORT for proven_scan_fmt (RFC-0009 X-004).
+ * Not a stable interface: the signature may change in any MINOR release. Call the macro.
+ */
 static inline proven_err_t proven_scan_fmt_internal_view(proven_u8str_view_t view, const char *fmt, const proven_scan_arg_t *args, proven_size_t count) {
     proven_scan_t scan = proven_scan_init(view);
     return proven_scan_fmt_internal(&scan, fmt, args, count);
@@ -247,7 +272,12 @@ static inline proven_err_t proven_scan_fmt_internal_view(proven_u8str_view_t vie
 
 /**
  * @brief Variadic macro to scan strings into strictly-typed out-pointers from a view.
- * Usage: proven_scan_fmt(view, "Hello {}", PROVEN_SCAN_ARG(&num));
+ * Usage: proven_scan_fmt(view, "Hello {}", PROVEN_SCAN_ARG(&num)); *
+ * MACRO ARGUMENTS AND COMPOUND LITERALS (RFC-0009 X-008). These are function-like macros, and
+ * the preprocessor splits arguments at every top-level comma - including the one inside a
+ * compound literal's braces. `(proven_u8str_view_t){ p, n }` passed as an argument becomes two
+ * arguments, and the error names a macro you did not write. Pass a variable or a PROVEN_LIT,
+ * or put the compound literal in parentheses: `((proven_u8str_view_t){ p, n })`.
  */
 #define proven_scan_fmt(view, fmt, ...) \
     proven_scan_fmt_internal_view(view, fmt, \

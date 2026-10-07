@@ -142,6 +142,90 @@ proven_result_i64_t proven_scan_i64(proven_scan_t *scan) {
     }
 }
 
+static int hex_value(proven_u8 c) {
+    if (c >= (proven_u8)'0' && c <= (proven_u8)'9') return c - (proven_u8)'0';
+    if (c >= (proven_u8)'a' && c <= (proven_u8)'f') return c - (proven_u8)'a' + 10;
+    if (c >= (proven_u8)'A' && c <= (proven_u8)'F') return c - (proven_u8)'A' + 10;
+    return -1;
+}
+
+/*
+ * Hexadecimal digits at the cursor, with an optional "0x" / "0X" before them - the prefix is
+ * taken only when a hex digit follows it, as strtoul takes it, so "0xg" is the number 0 followed
+ * by "xg". On failure the cursor goes back to `start`.
+ */
+static proven_result_u64_t scan_hex_magnitude(proven_scan_t *scan, proven_size_t start) {
+    const proven_u8 *p = scan->view.ptr;
+    proven_size_t n = scan->view.size;
+    if (scan->cursor >= n) {
+        scan_mark_needs_more(scan);
+        scan->cursor = start;
+        return (proven_result_u64_t){ .err = PROVEN_ERR_INVALID_ARG };
+    }
+    if (p[scan->cursor] == (proven_u8)'0' && scan->cursor + 1 < n &&
+        (p[scan->cursor + 1] == (proven_u8)'x' || p[scan->cursor + 1] == (proven_u8)'X')) {
+        if (scan->cursor + 2 < n && hex_value(p[scan->cursor + 2]) >= 0) {
+            scan->cursor += 2;
+        } else if (scan->cursor + 2 == n) {
+            /* "0x" at the end of what has arrived: over a stream the digits may be next.
+             * Parse the 0 as a complete view would, and ask for more. */
+            scan_mark_needs_more(scan);
+        }
+    }
+    if (hex_value(p[scan->cursor]) < 0) {
+        scan->cursor = start;
+        return (proven_result_u64_t){ .err = PROVEN_ERR_INVALID_ARG };
+    }
+    proven_u64 val = 0;
+    while (scan->cursor < n) {
+        int d = hex_value(p[scan->cursor]);
+        if (d < 0) break;
+        if (val > (0xFFFFFFFFFFFFFFFFull >> 4)) {
+            scan->cursor = start;
+            return (proven_result_u64_t){ .err = PROVEN_ERR_OVERFLOW };
+        }
+        val = (val << 4) | (proven_u64)d;
+        scan->cursor++;
+    }
+    return (proven_result_u64_t){ .val = val, .err = PROVEN_OK };
+}
+
+proven_result_u64_t proven_scan_u64_hex(proven_scan_t *scan) {
+    if (!scan_valid(scan)) return (proven_result_u64_t){ .err = PROVEN_ERR_INVALID_ARG };
+    scan->needs_more = false;
+    proven_scan_skip_whitespace(scan);
+    return scan_hex_magnitude(scan, scan->cursor);
+}
+
+proven_result_i64_t proven_scan_i64_hex(proven_scan_t *scan) {
+    if (!scan_valid(scan)) return (proven_result_i64_t){ .err = PROVEN_ERR_INVALID_ARG };
+    scan->needs_more = false;
+    proven_scan_skip_whitespace(scan);
+
+    proven_size_t start = scan->cursor;
+    bool negative = false;
+    if (scan->cursor < scan->view.size &&
+        (scan->view.ptr[scan->cursor] == (proven_u8)'-' || scan->view.ptr[scan->cursor] == (proven_u8)'+')) {
+        negative = scan->view.ptr[scan->cursor] == (proven_u8)'-';
+        scan->cursor++;
+    }
+    proven_result_u64_t m = scan_hex_magnitude(scan, start);
+    if (!proven_is_ok(m.err)) return (proven_result_i64_t){ .err = m.err };
+    if (negative) {
+        if (m.val > 0x8000000000000000ull) {
+            scan->cursor = start;
+            return (proven_result_i64_t){ .err = PROVEN_ERR_OVERFLOW };
+        }
+        proven_i64 v = (m.val == 0x8000000000000000ull) ? (proven_i64)(-9223372036854775807ll - 1ll) : -(proven_i64)m.val;
+        return (proven_result_i64_t){ .val = v, .err = PROVEN_OK };
+    }
+    if (m.val > 0x7FFFFFFFFFFFFFFFull) {
+        scan->cursor = start;
+        return (proven_result_i64_t){ .err = PROVEN_ERR_OVERFLOW };
+    }
+    return (proven_result_i64_t){ .val = (proven_i64)m.val, .err = PROVEN_OK };
+}
+
 proven_result_f64_t proven_scan_f64(proven_scan_t *scan) {
     if (!scan_valid(scan)) return (proven_result_f64_t){ .err = PROVEN_ERR_INVALID_ARG };
     scan->needs_more = false;
@@ -299,20 +383,41 @@ void proven_scan_skip_until_number(proven_scan_t *scan) {
     }
 }
 
+/* The placeholder at p (which is '{'): "{}" or, for an integer, "{:x}" / "{:X}" - read it as
+ * hexadecimal. Returns its length, or 0 when it is neither. */
+static int placeholder_len(const char *p, bool *hex) {
+    *hex = false;
+    if (p[1] == '}') return 2;
+    if (p[1] == ':' && (p[2] == 'x' || p[2] == 'X') && p[3] == '}') {
+        *hex = true;
+        return 4;
+    }
+    return 0;
+}
+
+static proven_result_i64_t scan_i64_as(proven_scan_t *scan, bool hex) {
+    return hex ? proven_scan_i64_hex(scan) : proven_scan_i64(scan);
+}
+
+static proven_result_u64_t scan_u64_as(proven_scan_t *scan, bool hex) {
+    return hex ? proven_scan_u64_hex(scan) : proven_scan_u64(scan);
+}
+
 static proven_err_t proven_scan_fmt_count_placeholders(const char *fmt, proven_size_t *out_count) {
     proven_size_t count = 0;
 
     for (const char *p = fmt; *p; ++p) {
         if (*p == '{') {
-            if (*(p + 1) == '}') {
-                if (count == PROVEN_SIZE_MAX) {
-                    return PROVEN_ERR_OVERFLOW;
-                }
-                count++;
-                ++p;
-            } else {
+            bool hex;
+            int len = placeholder_len(p, &hex);
+            if (len == 0) {
                 return PROVEN_ERR_INVALID_ARG;
             }
+            if (count == PROVEN_SIZE_MAX) {
+                return PROVEN_ERR_OVERFLOW;
+            }
+            count++;
+            p += len - 1;
         }
     }
 
@@ -342,8 +447,10 @@ proven_err_t proven_scan_fmt_internal(proven_scan_t *scan, const char *fmt, cons
 
     while (*p != '\0') {
         if (*p == '{') {
-            if (*(p + 1) == '}') {
-                p += 2;
+            bool hex = false;
+            int ph_len = placeholder_len(p, &hex);
+            if (ph_len > 0) {
+                p += ph_len;
                 
                 if (arg_idx >= args_count) return PROVEN_ERR_INVALID_ARG;
                 
@@ -356,7 +463,7 @@ proven_err_t proven_scan_fmt_internal(proven_scan_t *scan, const char *fmt, cons
                             scan->cursor = arg_start;
                             return PROVEN_ERR_INVALID_ARG;
                         }
-                        proven_result_i64_t res = proven_scan_i64(scan);
+                        proven_result_i64_t res = scan_i64_as(scan, hex);
                         if (res.err != PROVEN_OK) {
                             scan->cursor = arg_start;
                             return res.err;
@@ -374,7 +481,7 @@ proven_err_t proven_scan_fmt_internal(proven_scan_t *scan, const char *fmt, cons
                             scan->cursor = arg_start;
                             return PROVEN_ERR_INVALID_ARG;
                         }
-                        proven_result_u64_t res = proven_scan_u64(scan);
+                        proven_result_u64_t res = scan_u64_as(scan, hex);
                         if (res.err != PROVEN_OK) {
                             scan->cursor = arg_start;
                             return res.err;
@@ -392,7 +499,7 @@ proven_err_t proven_scan_fmt_internal(proven_scan_t *scan, const char *fmt, cons
                             scan->cursor = arg_start;
                             return PROVEN_ERR_INVALID_ARG;
                         }
-                        proven_result_i64_t res = proven_scan_i64(scan);
+                        proven_result_i64_t res = scan_i64_as(scan, hex);
                         if (res.err != PROVEN_OK) {
                             scan->cursor = arg_start;
                             return res.err;
@@ -406,7 +513,7 @@ proven_err_t proven_scan_fmt_internal(proven_scan_t *scan, const char *fmt, cons
                             scan->cursor = arg_start;
                             return PROVEN_ERR_INVALID_ARG;
                         }
-                        proven_result_u64_t res = proven_scan_u64(scan);
+                        proven_result_u64_t res = scan_u64_as(scan, hex);
                         if (res.err != PROVEN_OK) {
                             scan->cursor = arg_start;
                             return res.err;
@@ -420,7 +527,7 @@ proven_err_t proven_scan_fmt_internal(proven_scan_t *scan, const char *fmt, cons
                             scan->cursor = arg_start;
                             return PROVEN_ERR_INVALID_ARG;
                         }
-                        proven_result_i64_t res = proven_scan_i64(scan);
+                        proven_result_i64_t res = scan_i64_as(scan, hex);
                         if (res.err != PROVEN_OK) {
                             scan->cursor = arg_start;
                             return res.err;
@@ -438,7 +545,7 @@ proven_err_t proven_scan_fmt_internal(proven_scan_t *scan, const char *fmt, cons
                             scan->cursor = arg_start;
                             return PROVEN_ERR_INVALID_ARG;
                         }
-                        proven_result_u64_t res = proven_scan_u64(scan);
+                        proven_result_u64_t res = scan_u64_as(scan, hex);
                         if (res.err != PROVEN_OK) {
                             scan->cursor = arg_start;
                             return res.err;
@@ -456,7 +563,7 @@ proven_err_t proven_scan_fmt_internal(proven_scan_t *scan, const char *fmt, cons
                             scan->cursor = arg_start;
                             return PROVEN_ERR_INVALID_ARG;
                         }
-                        proven_result_i64_t res = proven_scan_i64(scan);
+                        proven_result_i64_t res = scan_i64_as(scan, hex);
                         if (res.err != PROVEN_OK) {
                             scan->cursor = arg_start;
                             return res.err;
@@ -474,7 +581,7 @@ proven_err_t proven_scan_fmt_internal(proven_scan_t *scan, const char *fmt, cons
                             scan->cursor = arg_start;
                             return PROVEN_ERR_INVALID_ARG;
                         }
-                        proven_result_u64_t res = proven_scan_u64(scan);
+                        proven_result_u64_t res = scan_u64_as(scan, hex);
                         if (res.err != PROVEN_OK) {
                             scan->cursor = arg_start;
                             return res.err;
@@ -492,7 +599,7 @@ proven_err_t proven_scan_fmt_internal(proven_scan_t *scan, const char *fmt, cons
                             scan->cursor = arg_start;
                             return PROVEN_ERR_INVALID_ARG;
                         }
-                        proven_result_i64_t res = proven_scan_i64(scan);
+                        proven_result_i64_t res = scan_i64_as(scan, hex);
                         if (res.err != PROVEN_OK) {
                             scan->cursor = arg_start;
                             return res.err;
@@ -510,7 +617,7 @@ proven_err_t proven_scan_fmt_internal(proven_scan_t *scan, const char *fmt, cons
                             scan->cursor = arg_start;
                             return PROVEN_ERR_INVALID_ARG;
                         }
-                        proven_result_u64_t res = proven_scan_u64(scan);
+                        proven_result_u64_t res = scan_u64_as(scan, hex);
                         if (res.err != PROVEN_OK) {
                             scan->cursor = arg_start;
                             return res.err;
@@ -528,7 +635,7 @@ proven_err_t proven_scan_fmt_internal(proven_scan_t *scan, const char *fmt, cons
                             scan->cursor = arg_start;
                             return PROVEN_ERR_INVALID_ARG;
                         }
-                        proven_result_i64_t res = proven_scan_i64(scan);
+                        proven_result_i64_t res = scan_i64_as(scan, hex);
                         if (res.err != PROVEN_OK) {
                             scan->cursor = arg_start;
                             return res.err;
@@ -546,7 +653,7 @@ proven_err_t proven_scan_fmt_internal(proven_scan_t *scan, const char *fmt, cons
                             scan->cursor = arg_start;
                             return PROVEN_ERR_INVALID_ARG;
                         }
-                        proven_result_u64_t res = proven_scan_u64(scan);
+                        proven_result_u64_t res = scan_u64_as(scan, hex);
                         if (res.err != PROVEN_OK) {
                             scan->cursor = arg_start;
                             return res.err;
@@ -564,6 +671,7 @@ proven_err_t proven_scan_fmt_internal(proven_scan_t *scan, const char *fmt, cons
                             scan->cursor = arg_start;
                             return PROVEN_ERR_INVALID_ARG;
                         }
+                        if (hex) return PROVEN_ERR_INVALID_FORMAT;   /* {:x} names an integer */
                         proven_result_f64_t res = proven_scan_f64(scan);
                         if (res.err != PROVEN_OK) {
                             scan->cursor = arg_start;
@@ -578,6 +686,7 @@ proven_err_t proven_scan_fmt_internal(proven_scan_t *scan, const char *fmt, cons
                             scan->cursor = arg_start;
                             return PROVEN_ERR_INVALID_ARG;
                         }
+                        if (hex) return PROVEN_ERR_INVALID_FORMAT;
                         proven_result_u8str_view_t res = proven_scan_str(scan);
                         if (res.err != PROVEN_OK) {
                             scan->cursor = arg_start;
@@ -590,7 +699,7 @@ proven_err_t proven_scan_fmt_internal(proven_scan_t *scan, const char *fmt, cons
                         return PROVEN_ERR_INVALID_ARG;
                 }
             } else {
-                // Formatting modifiers not fully implemented, support just {}
+                /* "{}" and "{:x}" only; anything else was refused by the count above. */
                 return PROVEN_ERR_INVALID_ARG;
             }
         } else {

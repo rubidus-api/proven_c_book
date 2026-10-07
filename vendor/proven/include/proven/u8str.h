@@ -39,6 +39,15 @@ typedef struct {
  * owned by default. It is set true only by proven_u8str_borrow, which wraps
  * caller-owned memory: for a borrowed string the growing operations refuse to
  * reallocate and proven_u8str_destroy is a no-op.
+ *
+ * @warning **The string does not remember its allocator, and nothing checks that you pass the
+ *          same one.** create, reserve, every *_grow call and destroy must all be given the
+ *          allocator the string was created with. Passing another - destroying an arena string
+ *          through the heap, growing a heap string through an arena - is not an error this
+ *          library can report: it corrupts the allocator's state, and the damage surfaces
+ *          later, somewhere else. Keep a string and its allocator together in your own code.
+ *          (Storing the allocator in every string was rejected - it doubles the struct and has
+ *          no meaning for a borrowed string; see B-023.)
  */
 typedef struct {
     proven_buf_t internal;
@@ -173,6 +182,126 @@ typedef struct {
 [[nodiscard]] int proven_u8str_view_ends_with(proven_u8str_view_t str, proven_u8str_view_t suffix);
 [[nodiscard]] proven_u8str_view_t proven_u8str_view_slice(proven_u8str_view_t str, proven_size_t index, proven_size_t len);
 
+// -------------------------------------------------------------
+// The view vocabulary (RFC-0005): order, trim, reverse search, split, well-formedness.
+//
+// Every function below is a pure function of its arguments: no allocation, no hidden state,
+// freestanding-available. One rule governs all of them: an ILL-FORMED view - ptr == NULL with
+// size > 0 - is treated as empty, by an explicit guard in each function. And there is one
+// spelling of empty: every empty result is {NULL, 0}, as proven_u8str_view_slice returns, so
+// an empty result carries no position. Test results by size, never by ptr.
+// -------------------------------------------------------------
+
+/**
+ * @brief Order two views: bytewise, unsigned, and a proper prefix sorts first.
+ *
+ * Compares the first min(a.size, b.size) bytes as unsigned char; if those are equal, the shorter
+ * view is less. Embedded NUL bytes are data. "\xFF" sorts AFTER "a".
+ *
+ * @return a negative value, zero, or a positive value - NOT necessarily -1, 0 or 1. Test the
+ *         sign; `== -1` is a bug.
+ * @note Ill-formed views compare as empty, so this is a total order over every view value.
+ */
+[[nodiscard]] int proven_u8str_view_cmp(proven_u8str_view_t a, proven_u8str_view_t b);
+
+/**
+ * @brief proven_u8str_view_cmp shaped for proven_array_sort and binary search.
+ *
+ * Receives POINTERS TO ELEMENTS, each a `const proven_u8str_view_t *`, as every qsort-shaped
+ * comparator does. Undefined for anything else.
+ */
+[[nodiscard]] int proven_u8str_view_cmp_ptr(const void *a, const void *b);
+
+/**
+ * @brief Drop leading and trailing whitespace.
+ *
+ * Whitespace is exactly six ASCII bytes: ' ', '\t', '\n', '\v', '\f', '\r'. Not locale-dependent
+ * and not Unicode - a no-break space or an ideographic space is NOT trimmed. Interior whitespace
+ * is untouched. The result points into `s`, or is {NULL, 0} when nothing is left.
+ */
+[[nodiscard]] proven_u8str_view_t proven_u8str_view_trim(proven_u8str_view_t s);
+/** @brief proven_u8str_view_trim, leading whitespace only. */
+[[nodiscard]] proven_u8str_view_t proven_u8str_view_trim_start(proven_u8str_view_t s);
+/** @brief proven_u8str_view_trim, trailing whitespace only. */
+[[nodiscard]] proven_u8str_view_t proven_u8str_view_trim_end(proven_u8str_view_t s);
+
+/**
+ * @brief `s` without `prefix`, if it starts with it; otherwise `s` unchanged.
+ *
+ * Absence is not an error and there is no way to ask whether it fired: call
+ * proven_u8str_view_starts_with first if you need to know. Removing the whole of `s` gives
+ * {NULL, 0}.
+ */
+[[nodiscard]] proven_u8str_view_t proven_u8str_view_remove_prefix(proven_u8str_view_t s, proven_u8str_view_t prefix);
+/** @brief `s` without `suffix`, if it ends with it; otherwise `s` unchanged. */
+[[nodiscard]] proven_u8str_view_t proven_u8str_view_remove_suffix(proven_u8str_view_t s, proven_u8str_view_t suffix);
+
+/**
+ * @brief The start POSITION of the last occurrence of `needle` in `haystack`, or
+ *        PROVEN_INDEX_NOT_FOUND. Occurrences may overlap: find_last("aaa", "aa") is 1.
+ *
+ * A position, in [0, haystack.size]: for an EMPTY needle the answer is haystack.size - matching
+ * proven_u8str_view_find, which returns its start offset for an empty needle - and that is the
+ * one answer that is not a valid byte index. `s.ptr[find_last(s, needle)]` reads past the end
+ * when `needle` is empty.
+ *
+ * No end limit parameter: search a prefix by slicing first.
+ *
+ * @note Cost. The mirror of proven_u8str_view_find (B-024): a one-byte needle
+ *       is a backward word-at-a-time scan; otherwise, on ordinary input, the rarest needle byte
+ *       is found from the end and the needle verified around it, and on a low-entropy haystack
+ *       (the same sample find takes) a linear algorithm runs instead - backward Shift-Or up to
+ *       64 bytes, a reverse Two-Way beyond. Like find, the anchored path is O(n*m) in the worst
+ *       case and the fallbacks are O(n). The backward scan is portable rather than libc's
+ *       memchr, so on ordinary text find_last is a few times slower than find
+ *       (b024-find-last-benchmark.c).
+ */
+[[nodiscard]] proven_size_t proven_u8str_view_find_last(proven_u8str_view_t haystack, proven_u8str_view_t needle);
+
+/** @brief Whether `needle` occurs in `haystack`: proven_u8str_view_find from 0 != NOT_FOUND. */
+[[nodiscard]] bool proven_u8str_view_contains(proven_u8str_view_t haystack, proven_u8str_view_t needle);
+
+/**
+ * @brief An iterator over the fields of a view split on a separator. Copyable: it points into
+ *        the SOURCE, never into itself, so a copy continues independently of the original.
+ *
+ * The fields are readable but are not state to rewrite.
+ */
+typedef struct {
+    proven_u8str_view_t rest;  /**< not yet yielded; points into the caller's source bytes */
+    proven_u8str_view_t sep;
+    bool                done;  /**< set once the final field has been yielded */
+} proven_u8str_view_split_t;
+
+/**
+ * @brief Begin splitting `src` on `sep`. No allocation; the fields are views into `src`.
+ *
+ * The contract, which is permanent: **n separators yield n + 1 fields**, n counting
+ * non-overlapping occurrences found left to right. So "a,b,c" is three fields, "a," is "a" and
+ * an empty field, "a,,b" keeps its empty field (unlike strtok), and "" is ONE empty field, not
+ * zero. An empty separator yields exactly one field, the whole input - never an endless run of
+ * empty ones. Ill-formed `src` or `sep` are stored as empty.
+ */
+[[nodiscard]] proven_u8str_view_split_t proven_u8str_view_split(proven_u8str_view_t src, proven_u8str_view_t sep);
+
+/**
+ * @brief Write the next field to `*out` and return true, or return false when there are none.
+ *
+ * Returns false without writing if `it` or `out` is NULL. Every empty field is {NULL, 0}: test a
+ * field by its size, and end the loop on the return value - never on the field.
+ */
+[[nodiscard]] bool proven_u8str_view_split_next(proven_u8str_view_split_t *it, proven_u8str_view_t *out);
+
+/**
+ * @brief Whether `s` could be read safely: true unless `ptr` is NULL with a non-zero `size`.
+ *
+ * That is ALL it answers. It is **not** an end-of-iteration or "found" test, and a loop that
+ * stops on it is wrong: proven_u8str_view_slice returns {NULL, 0} both for a legitimately empty
+ * result and for an out-of-range request, and both are well formed. End a split loop on
+ * proven_u8str_view_split_next's return value and a search on PROVEN_INDEX_NOT_FOUND.
+ */
+[[nodiscard]] bool proven_u8str_view_is_well_formed(proven_u8str_view_t s);
+
 /**
  * @brief Zero-cost extraction of a standard C string pointer inherently guaranteed by internal structure.
  */
@@ -202,6 +331,7 @@ static inline proven_mem_view_t proven_mem_view_from_u8(proven_u8str_view_t view
 
 [[nodiscard]] int proven_u8str_view_eq(proven_u8str_view_t a, proven_u8str_view_t b);
 
+/** @brief Free an owned string. `alloc` MUST be the allocator it was created with - unchecked. */
 void proven_u8str_destroy(proven_allocator_t alloc, proven_u8str_t *str);
 
 /**
