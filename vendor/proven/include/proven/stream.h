@@ -8,6 +8,7 @@
 #include "proven/allocator.h"
 #include "proven/fs.h"
 #include "proven/fmt.h"
+#include "proven/utf.h"
 
 /**
  * @file stream.h
@@ -229,6 +230,11 @@ typedef struct {
      * from a genuinely over-long line without looking at one more byte. */
     proven_byte_t    peek;
     bool             has_peek;
+
+    /* How many bytes after `cursor` the line reader has already searched without finding a
+     * newline. A refill appends; the search resumes here instead of from `cursor`, so a long
+     * line arriving a byte at a time is scanned once, not once per arrival. */
+    proven_size_t    scanned;
 } proven_reader_buffered_t;
 
 /**
@@ -266,6 +272,103 @@ proven_reader_t proven_reader_buffered(proven_reader_buffered_t *state, proven_r
 proven_result_u8str_view_t proven_reader_read_line(proven_reader_buffered_t *state);
 
 // -------------------------------------------------------------
+// UTF-16 text: writing it out, reading it back
+// -------------------------------------------------------------
+
+#ifndef PROVEN_NO_U16STR
+
+/**
+ * @brief Write UTF-16 text to any writer, as the bytes of `enc`.
+ *
+ * PROVEN_TEXT_UTF8 is what a u16 string should become almost everywhere - a file another
+ * program reads, a pipe, a log. PROVEN_TEXT_UTF16LE / _UTF16BE write the code units in that
+ * byte order, for a consumer that wants UTF-16 bytes. No byte order mark is written; call
+ * proven_writer_write_bom first if the consumer needs one.
+ *
+ * @return PROVEN_ERR_INVALID_ENCODING for an unpaired surrogate - checked over the whole text
+ *         before anything is written, so malformed text writes nothing.
+ *         PROVEN_ERR_INVALID_ARG for PROVEN_TEXT_AUTO, which only a reader can resolve.
+ * @note As with proven_writer_write, a failure of the writer itself can leave part of the
+ *       text written.
+ * @note A surrogate pair split across two calls is two malformed texts. Keep a pair together.
+ */
+[[nodiscard]]
+proven_err_t proven_writer_write_u16(proven_writer_t w, proven_u16str_view_t text, proven_text_encoding_t enc);
+
+/**
+ * @brief Write the byte order mark for `enc`: EF BB BF, FF FE, or FE FF.
+ * @note Only on request. A UTF-8 BOM in particular is unwanted by most consumers of UTF-8.
+ */
+[[nodiscard]]
+proven_err_t proven_writer_write_bom(proven_writer_t w, proven_text_encoding_t enc);
+
+/**
+ * @brief Reads text in any of the three encodings as UTF-16, a line or a chunk at a time.
+ *
+ * The line buffer is yours, in code units. The raw bytes are staged in the struct itself, so
+ * nothing is allocated. A character split across two reads of the source is carried, not
+ * refused - that is what the incomplete/malformed distinction in utf.h is for.
+ *
+ * Strict: malformed input stops the reader with PROVEN_ERR_INVALID_ENCODING - after the valid
+ * text before it has been delivered - and every later call returns the same error. So does a
+ * source that ends part-way through a character.
+ *
+ * @warning Do not copy or move it once initialised if `inner` points into its neighbour
+ *          (the sysio wrapper below re-binds it for you).
+ */
+typedef struct {
+    proven_reader_t        inner;
+    proven_text_encoding_t enc;          /**< Resolved from the BOM when opened as AUTO. */
+    proven_u16            *buf;
+    proven_size_t          cap;          /**< in code units */
+    proven_size_t          len;          /**< units decoded and held */
+    proven_size_t          cursor;       /**< units already handed out */
+    proven_byte_t          raw[1024];    /**< bytes read from `inner`; raw[raw_pos..raw_len) not yet decoded */
+    proven_size_t          raw_pos;
+    proven_size_t          raw_len;
+    proven_u16             peek[2];      /**< one character of lookahead for a full buffer */
+    proven_size_t          peek_len;
+    bool                   bom_checked;
+    bool                   eof;
+    proven_err_t           err;          /**< the failure that stopped the reader, if any */
+} proven_u16_reader_t;
+
+/**
+ * @brief Read `inner` as `enc` through the caller's buffer of `cap` code units.
+ *
+ * With PROVEN_TEXT_AUTO a leading byte order mark picks the encoding and is consumed; without
+ * one the text is UTF-8. With an explicit encoding nothing is sniffed and a BOM, if present,
+ * is delivered as the character U+FEFF.
+ *
+ * @return PROVEN_ERR_INVALID_ARG for a null state, an invalid reader, or `cap` below 2 (a
+ *         surrogate pair must fit).
+ */
+[[nodiscard]]
+proven_err_t proven_u16_reader_init(proven_u16_reader_t *st, proven_reader_t inner, proven_text_encoding_t enc,
+                                    proven_u16 *buf, proven_size_t cap);
+
+/**
+ * @brief The next line as UTF-16, without its newline. PROVEN_ERR_EOF when the text is done.
+ *
+ * Same rules as proven_reader_read_line: the view points into the caller's buffer and lasts
+ * until the next call; "\r\n" loses its '\r'; a final line with no newline is still a line; a
+ * line longer than the buffer is PROVEN_ERR_OUT_OF_BOUNDS and the reader stays on it.
+ */
+[[nodiscard]]
+proven_result_u16str_view_t proven_u16_reader_read_line(proven_u16_reader_t *st);
+
+/**
+ * @brief Up to `cap` code units of text, whatever lines they belong to. PROVEN_ERR_EOF at the end.
+ *
+ * Never splits a surrogate pair across two calls, which is why `cap` must be at least 2.
+ * Units a previous read_line already buffered come first, so the two calls can be mixed.
+ */
+[[nodiscard]]
+proven_result_size_t proven_u16_reader_read(proven_u16_reader_t *st, proven_u16 *dest, proven_size_t cap);
+
+#endif /* PROVEN_NO_U16STR */
+
+// -------------------------------------------------------------
 // Formatting straight into a writer
 // -------------------------------------------------------------
 
@@ -282,6 +385,10 @@ proven_result_u8str_view_t proven_reader_read_line(proven_reader_buffered_t *sta
  * @return PROVEN_ERR_OUT_OF_BOUNDS if the formatted text does not fit `scratch`;
  *         `required` says how much it would have needed. Nothing is written in that
  *         case - the write is atomic, so a reader never sees half a line.
+ */
+/*
+ * MACRO SUPPORT for proven_fprint, proven_fprintln and proven_fwrite_fmt (RFC-0009 X-004).
+ * Not a stable interface: the signature may change in any MINOR release. Call the macro.
  */
 [[nodiscard]]
 proven_fmt_result_t proven_fmt_to_writer_impl(proven_writer_t w, proven_mem_mut_t scratch,

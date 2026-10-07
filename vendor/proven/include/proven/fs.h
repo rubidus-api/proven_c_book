@@ -73,9 +73,10 @@ proven_result_file_t proven_fs_open(proven_allocator_t scratch, proven_u8str_vie
 /*
  * @note A failure says WHICH failure: PROVEN_ERR_NOT_FOUND when the name is not there,
  *       PROVEN_ERR_PERMISSION when the caller may not, PROVEN_ERR_BUSY when something else
- *       holds it. Everything else, including an exclusive-create collision, is
- *       PROVEN_ERR_IO. These used to be one code, and one code is one a caller cannot act
- *       on: asking the user, retrying, and giving up are three different answers.
+ *       holds it, PROVEN_ERR_EXISTS when PROVEN_FS_CREATE_NEW found the name already
+ *       there. Everything else is PROVEN_ERR_IO. These used to be one code, and one code is
+ *       one a caller cannot act on: asking the user, retrying, choosing another name and
+ *       giving up are different answers.
  */
 
 /**
@@ -223,13 +224,28 @@ proven_err_t proven_fs_sync_dir(proven_allocator_t scratch, proven_u8str_view_t 
 proven_err_t proven_fs_rename(proven_allocator_t scratch, proven_u8str_view_t src, proven_u8str_view_t dest);
 
 /**
- * @brief Deletes a file at the specified path.
+ * @brief Deletes a file, or an empty directory, at the specified path.
+ *
+ * Like POSIX remove(): an empty directory goes too, on Windows as well. A non-empty one is
+ * PROVEN_ERR_IO. A symlink is removed, never what it points to.
  */
 [[nodiscard]]
 proven_err_t proven_fs_remove(proven_allocator_t scratch, proven_u8str_view_t path);
 
 /**
- * @brief Copies a file from src to dest using custom memory buffers for efficiency.
+ * @brief Copies the bytes of the file at `src` to `dest`, creating or truncating `dest`.
+ *
+ * @note Not staged: the copy writes `dest` in place, so a failure part way through (a full
+ *       disk, a read error) leaves `dest` holding part of the source. Copy into a name of
+ *       your own and proven_fs_rename it over `dest` when a reader must never see that.
+ * @note Symbolic links are followed at both ends: a symlinked `src` copies the file it points
+ *       to, and a symlinked `dest` is written through to its target.
+ * @note `dest` gets the source's permission bits. A `src` and `dest` that are the same file
+ *       (the same path, or two hard links to one file) are PROVEN_ERR_INVALID_ARG and nothing
+ *       is touched.
+ * @note A read-only `dest` is refused with PROVEN_ERR_PERMISSION - see "ONE RULE FOR ALL THREE
+ *       WHOLE-FILE REPLACEMENTS" below, which covers this function too.
+ * @param temp_alloc Allocator for the path conversions and the 64 KiB copy buffer.
  */
 [[nodiscard]]
 proven_err_t proven_fs_copy(proven_allocator_t temp_alloc, proven_u8str_view_t src, proven_u8str_view_t dest);
@@ -281,7 +297,7 @@ typedef struct {
      *
      * You need both facts, and they are different facts. `type` follows the link so that a
      * listing and proven_fs_stat agree about what a thing is. `is_symlink` says how you got
-     * there — and a tree walker has to know, because following a symlinked directory can
+     * there - and a tree walker has to know, because following a symlinked directory can
      * walk it straight out of the tree it was asked about.
      */
     bool is_symlink;
@@ -305,7 +321,7 @@ proven_result_dir_t proven_fs_dir_open(proven_allocator_t scratch, proven_u8str_
  *
  * @note The returned name is borrowed; see proven_fs_dir_entry_t.
  *
- * @note `type` FOLLOWS symlinks, exactly as proven_fs_stat does — a symlink to a regular
+ * @note `type` FOLLOWS symlinks, exactly as proven_fs_stat does - a symlink to a regular
  *       file is PROVEN_FS_TYPE_FILE, and a symlink to a directory is PROVEN_FS_TYPE_DIR.
  *       That consistency is deliberate: the walk used to report a perfectly ordinary file
  *       as PROVEN_FS_TYPE_OTHER because it was reached through a link, while `stat` on the
@@ -314,7 +330,7 @@ proven_result_dir_t proven_fs_dir_open(proven_allocator_t scratch, proven_u8str_
  *
  *       The consequence you must handle: **a recursive walker can loop.** A symlink
  *       pointing at an ancestor directory is a cycle, and the type says DIR. Guard it the
- *       way every tree walker does — carry a depth limit, or remember (dev, ino) pairs
+ *       way every tree walker does - carry a depth limit, or remember (dev, ino) pairs
  *       from proven_fs_stat and refuse to descend into one you have already seen.
  *
  *       A DANGLING symlink, and anything else that is neither a regular file nor a
@@ -324,6 +340,12 @@ proven_result_dir_t proven_fs_dir_open(proven_allocator_t scratch, proven_u8str_
  */
 [[nodiscard]]
 proven_err_t proven_fs_dir_next(proven_fs_dir_t *dir, proven_fs_dir_entry_t *out_entry);
+/*
+ * @note Names are text, strictly: an entry whose name is not valid UTF-8 (POSIX) or holds a
+ *       lone surrogate (Windows) is PROVEN_ERR_INVALID_ENCODING, with an empty `name` and the
+ *       other fields filled in. Nothing is substituted - a U+FFFD in its place would name a
+ *       different file, or none - and the next call goes on with the next entry.
+ */
 
 void proven_fs_dir_close(proven_fs_dir_t *dir);
 
@@ -385,22 +407,22 @@ typedef struct {
  * The walk that proven_fs_dir_* deliberately does not give you, with the three things a
  * recursive walker gets wrong:
  *
- * - **It cannot loop, and it cannot escape — even under a race.** The walk never descends
+ * - **It cannot loop, and it cannot escape - even under a race.** The walk never descends
  *   THROUGH a symlink. A symlinked directory is still REPORTED (it exists, `type` is DIR,
- *   `is_symlink` is true, and hiding it would be its own lie) — it is simply not entered.
+ *   `is_symlink` is true, and hiding it would be its own lie) - it is simply not entered.
  *   That one rule buys both guarantees: a link pointing at an ancestor cannot loop the walk,
  *   and a link pointing anywhere else cannot walk you out of the tree you asked about.
  *
  *   The descent is fd-relative and refuses to follow a symlink (`openat(parent, name,
  *   O_NOFOLLOW)` where the platform has it), so this holds even against a TOCTOU attacker:
  *   an entry that is a real directory when it is listed and a symlink when it is entered
- *   makes the descent FAIL — reported as that directory's error — rather than following the
+ *   makes the descent FAIL - reported as that directory's error - rather than following the
  *   swapped link out of the tree. (Both this and the "follow, but stop at a cycle" first
  *   draft that quietly walked all of /tmp were found by the contract's own audit.)
  *
  *   Belt and braces: the walk also carries the (dev, ino) of every directory on the current
  *   path and refuses to descend into one it is already inside, which covers the loops a
- *   symlink is not needed for — bind mounts, and the hardlinked directories some
+ *   symlink is not needed for - bind mounts, and the hardlinked directories some
  *   filesystems still allow.
  *
  * - **It does not hide what it could not read.** A directory the walk cannot open is
@@ -431,6 +453,10 @@ proven_result_walk_t proven_fs_walk_open(proven_allocator_t alloc, proven_u8str_
  * A directory is reported BEFORE its contents. On an error that belongs to one directory
  * (it could not be opened, or its read failed), the error is returned and `out_entry`
  * describes that directory; call again to continue with the rest of the tree.
+ *
+ * An entry whose name is not valid text is PROVEN_ERR_INVALID_ENCODING with `path` naming
+ * the directory it is in and an empty `name`; it is not descended into, and the next call
+ * continues in the same directory.
  */
 [[nodiscard]]
 proven_err_t proven_fs_walk_next(proven_fs_walk_t *walk, proven_fs_walk_entry_t *out_entry);
@@ -441,6 +467,11 @@ void proven_fs_walk_close(proven_fs_walk_t *walk);
  * @brief Lists the contents of a directory into an array of proven_fs_entry_t.
  * @note This uses the provided allocator to store strings for entry names.
  *       Entries should be sorted by name by default.
+ * @note All or nothing: a failed read is PROVEN_ERR_IO, and an entry whose name is not valid
+ *       text (bytes that are not UTF-8 on POSIX, a lone surrogate on Windows) makes the whole
+ *       call PROVEN_ERR_INVALID_ENCODING - leaving it out would be a listing that hides a
+ *       file. To list such a directory anyway, use proven_fs_dir_next, which reports that
+ *       one entry and goes on.
  */
 [[nodiscard]]
 proven_result_array_t proven_fs_list(proven_allocator_t alloc, proven_u8str_view_t path);
@@ -520,7 +551,17 @@ typedef struct {
 proven_err_t proven_fs_stat(proven_allocator_t scratch, proven_u8str_view_t path, proven_fs_stat_t *out_stat);
 
 /**
- * @brief Create a symbolic link.
+ * @brief Create a symbolic link at `linkpath` that points to `target`.
+ *
+ * A relative `target` is relative to the directory that holds the link, not to the current
+ * directory - on every platform, because that is how the link is followed.
+ *
+ * @note Windows: a link to a directory is created as a directory link (a file link to a
+ *       directory cannot be entered). The kind is fixed at creation from the target as the link
+ *       sees it; a target that does not exist yet gets a file link. '/' in the target is stored
+ *       as '\\'. Creating symlinks needs Developer Mode or the symlink privilege.
+ * @return PROVEN_ERR_PERMISSION when the platform refuses the privilege, PROVEN_ERR_NOT_FOUND
+ *         when the link's directory does not exist, PROVEN_ERR_IO otherwise.
  */
 [[nodiscard]]
 proven_err_t proven_fs_symlink(proven_allocator_t scratch, proven_u8str_view_t target, proven_u8str_view_t linkpath);
@@ -556,9 +597,30 @@ bool proven_fs_is_absolute(proven_u8str_view_t path);
  *       The buffer only grows if the source really does outrun its reported
  *       size. If the final shrink realloc fails, the larger allocation is
  *       returned with `value.size` correctly set to the bytes read.
+ * @warning No bound: it reads until the source ends. Use it on a path you trust. A path that
+ *       names /dev/zero, a FIFO whose writer never stops, or simply a file far larger than
+ *       expected grows the allocation until the allocator refuses - with the heap allocator,
+ *       possibly the whole machine's memory first. For a path from outside the program use
+ *       proven_fs_read_all_bounded. (An arena allocator bounds the read by its own size.)
  */
 [[nodiscard]]
 proven_result_mem_mut_t proven_fs_read_all(proven_allocator_t alloc, proven_u8str_view_t path);
+
+/**
+ * @brief proven_fs_read_all, refusing a source larger than `max_bytes`.
+ *
+ * For a path you do not control. A file whose reported size is larger is refused before
+ * anything is allocated; a source whose size cannot be known or is wrong (a FIFO, /proc,
+ * /dev/zero, a file growing under the read) is refused as soon as byte `max_bytes + 1`
+ * arrives, so the buffer never grows past `max_bytes`.
+ *
+ * @return PROVEN_ERR_OUT_OF_BOUNDS, and no buffer, when the source holds more than
+ *         `max_bytes` bytes. A source of exactly `max_bytes` bytes is read. Otherwise the
+ *         same results as proven_fs_read_all.
+ */
+[[nodiscard]]
+proven_result_mem_mut_t proven_fs_read_all_bounded(proven_allocator_t alloc, proven_u8str_view_t path,
+                                                   proven_size_t max_bytes);
 
 /**
  * @brief Reads the entire contents of a file into a newly allocated owned string.
@@ -569,20 +631,12 @@ proven_result_mem_mut_t proven_fs_read_all(proven_allocator_t alloc, proven_u8st
  * reserved up front, so this costs no extra allocation over proven_fs_read_all.
  *
  * @note Contents are not validated as UTF-8; the bytes are returned as they are.
- * @note Same EOF and allocator semantics as proven_fs_read_all.
+ * @note Same EOF and allocator semantics as proven_fs_read_all - and the same warning: no
+ *       bound, so only for a path you trust.
  * @note Destroy the result with proven_u8str_destroy.
  */
 [[nodiscard]]
 proven_result_u8str_t proven_fs_read_all_u8str(proven_allocator_t alloc, proven_u8str_view_t path);
-
-/**
- * @brief Writes a buffer to a path in one call, creating or truncating the file.
- *
- * @note Not atomic: a reader can observe a partially written file, and a failure
- *       mid-write leaves the file truncated. Use proven_fs_write_file_atomic
- *       when a concurrent reader must never see a half-written file.
- */
-[[nodiscard]]
 
 /*
  * ONE RULE FOR ALL THREE WHOLE-FILE REPLACEMENTS
@@ -631,6 +685,15 @@ proven_result_u8str_t proven_fs_read_all_u8str(proven_allocator_t alloc, proven_
  * file can lift the mark. It is a guard against destroying protected data by accident,
  * and it is only that.
  */
+
+/**
+ * @brief Writes a buffer to a path in one call, creating or truncating the file.
+ *
+ * @note Not atomic: a reader can observe a partially written file, and a failure
+ *       mid-write leaves the file truncated. Use proven_fs_write_file_atomic
+ *       when a concurrent reader must never see a half-written file.
+ */
+[[nodiscard]]
 proven_err_t proven_fs_write_file(proven_allocator_t scratch, proven_u8str_view_t path, proven_mem_view_t data);
 
 /**
@@ -652,6 +715,18 @@ proven_err_t proven_fs_write_file(proven_allocator_t scratch, proven_u8str_view_
  * @note Needs write permission on the containing directory, and a filesystem
  *       where the temp sibling and the target share a mount (they always do,
  *       since the temp file is created next to the target).
+ * @note The temp file is named `<path>.pvtmp` plus 13 random characters from
+ *       `0-9a-v` (the basename is shortened first if the result would not fit the
+ *       filesystem's name limit). The name is unpredictable, so neither leftovers
+ *       nor names planted by another user can block the write; a name that is
+ *       taken is skipped. PROVEN_ERR_EXISTS means sixteen random names in a row
+ *       were taken, which does not happen by chance.
+ * @note A writer killed between creating the temp file and renaming it leaves the
+ *       temp file behind, and the library never removes one it did not just create:
+ *       it cannot tell a stale file from another writer's file in progress. A
+ *       long-running program that cares can list the directory and remove old
+ *       entries for which proven_fs_is_staging_name is true, using its own idea of
+ *       "old".
  */
 [[nodiscard]]
 proven_err_t proven_fs_write_file_atomic(proven_allocator_t scratch, proven_u8str_view_t path, proven_mem_view_t data);
@@ -685,5 +760,18 @@ proven_err_t proven_fs_write_file_atomic(proven_allocator_t scratch, proven_u8st
  */
 [[nodiscard]]
 proven_err_t proven_fs_write_file_durable(proven_allocator_t scratch, proven_u8str_view_t path, proven_mem_view_t data);
+
+/**
+ * @brief True when `name` ends the way a staging file of proven_fs_write_file_atomic or
+ *        proven_fs_write_file_durable ends: `.pvtmp` and 13 characters from `0-9a-v`, or
+ *        `.pvtmp` and two decimal digits (the names versions before 0.6.0 used).
+ *
+ * For a cleanup job that removes temp files left by writers that were killed mid-write. Pass
+ * a basename or a whole path; only the end is examined. A true result says the name has the
+ * shape, not that the file is abandoned: a writer may be filling it right now, so remove only
+ * entries older than the longest write you expect.
+ */
+[[nodiscard]]
+bool proven_fs_is_staging_name(proven_u8str_view_t name);
 
 #endif /* PROVEN_FS_H */

@@ -207,9 +207,28 @@ if [ "$fail" -ne 0 ]; then
     echo "verify-examples: FAILED"
     exit 1
 fi
+# ★ 종료 코드만 보면 「0 MB 를 재고 0 으로 끝난」 예제가 통과한다(2026-09-15).
+#   재는 예제의 핵심 값을 어느 컴파일러에서든 같은 표에 댄다. 교차 검증에서
+#   건너뛴 예제는 값도 없으므로 건너뛴다고 알린다.
+skipnames=""
+if [ "$cross" -eq 1 ] && [ -f "$skiplist" ]; then
+    skipnames=$(awk -F'\t' '!/^#/ && NF >= 3 { print $1 }' "$skiplist" | tr '\n' ' ')
+fi
+if ! python3 "$root/scripts/check-measured-values.py" "$outdir" $skipnames; then
+    echo "verify-examples: FAILED (재는 예제의 값이 어긋났다)"
+    exit 1
+fi
 # ★ 마지막 줄은 *무엇으로 쟀는지*와 *몇을 건너뛰었는지*를 말해야 한다.
 #   「all green」 만 적으면 건너뛴 것이 통과한 것처럼 읽힌다.
 if [ "$cross" -eq 1 ]; then
+    # 무엇을 돌렸는지 남긴다 --- 릴리스 게이트가 「이 기록이 지금의 원본 것인가」를 묻는다.
+    # 추적 파일의 내용으로 적는다(시각은 예제가 실행 중에 자기 파일을 고쳐 써서 못 믿는다).
+    case "$tree" in examples) stamp="$root/build/cross-ko.sha" ;; *) stamp="$root/build/cross-en.sha" ;; esac
+    (cd "$root" && git ls-files -z -- "$tree/*.c" "$tree/*.h" "$tree/*.sh" "$tree/*Makefile*" \
+               "vendor/*.c" "vendor/*.h" scripts/verify-examples.sh \
+         docs/example-cross-skip.tsv docs/measured-values.tsv | xargs -0 sha256sum | sha256sum | cut -d' ' -f1) \
+        > "$stamp" 2>/dev/null || rm -f "$stamp"
+    "$cc" --version 2>/dev/null | head -1 > "$root/build/cross-cc.txt"
     if [ "$skipped" -gt 0 ]; then
         echo "verify-examples: $tree — $(basename "$cc") 교차 검증 통과 · 건너뜀 ${skipped}건 (까닭은 docs/example-cross-skip.tsv)"
     else

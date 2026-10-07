@@ -42,6 +42,32 @@ proven_sys_result_size_t proven_sys_io_read_once(proven_sys_io_handle_t handle, 
 proven_sys_result_size_t proven_sys_io_read_all(proven_sys_io_handle_t handle, void *buf, size_t size);
 
 /**
+ * @brief Whether `handle` is an interactive console that takes text as UTF-16.
+ *
+ * Windows: true when GetConsoleMode accepts the handle - a console window, not a file, a pipe
+ * or a redirected stream. A console decodes the bytes WriteFile gives it in its own code page
+ * (949 on Korean Windows), so UTF-8 must reach it as UTF-16 through WriteConsoleW instead.
+ * POSIX: always false. A terminal there takes the bytes as they are.
+ */
+[[nodiscard]]
+bool proven_sys_io_is_console(proven_sys_io_handle_t handle);
+
+/**
+ * @brief Write UTF-16 code units to a console (WriteConsoleW). Returns the units written.
+ * @return PROVEN_ERR_UNSUPPORTED on POSIX, or for a handle that is not a console.
+ */
+[[nodiscard]]
+proven_sys_result_size_t proven_sys_io_console_write_u16(proven_sys_io_handle_t handle, const proven_u16 *units, size_t count);
+
+/**
+ * @brief Read UTF-16 code units from a console (ReadConsoleW). PROVEN_ERR_EOF for a read of
+ *        nothing. The caller decides what Ctrl+Z means.
+ * @return PROVEN_ERR_UNSUPPORTED on POSIX, or for a handle that is not a console.
+ */
+[[nodiscard]]
+proven_sys_result_size_t proven_sys_io_console_read_u16(proven_sys_io_handle_t handle, proven_u16 *units, size_t cap);
+
+/**
  * @brief Does nothing. There is no buffer anywhere in this library.
  * @note Kept only because callers exist. Use proven_sys_io_sync() for durability.
  */

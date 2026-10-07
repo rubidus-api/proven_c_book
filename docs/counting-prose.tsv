@@ -8,7 +8,6 @@ book-en/appendix/a4-reading.typ	two chapters
 book-en/chapters/ch001.typ	four remaining chapters
 book-en/chapters/ch001.typ	several chapters
 book-en/chapters/ch006.typ	three chapters
-book-en/chapters/ch100.typ	ten chapters
 book-en/chapters/ch012.typ	nine chapters
 book-en/chapters/ch015.typ	ten chapters
 book-en/chapters/ch016.typ	fifteen chapters
@@ -52,6 +51,7 @@ book-en/chapters/ch091.typ	nine chapters
 book-en/chapters/ch093.typ	seven chapters
 book-en/chapters/ch099.typ	one chapter
 book-en/chapters/ch099.typ	six chapters
+book-en/chapters/ch100.typ	ten chapters
 book-en/front/reading-paths.typ	fifteen chapters
 book-en/front/reading-paths.typ	one chapter
 book-en/parts/part11s.typ	The last three chapters
@@ -67,8 +67,6 @@ book/appendix/a4-reading.typ	두 장
 book/chapters/ch001.typ	몇 장
 book/chapters/ch001.typ	여러 장
 book/chapters/ch003.typ	서른세 장
-book/chapters/ch100.typ	열 장
-book/chapters/ch104.typ	두 장
 book/chapters/ch012.typ	아홉 장
 book/chapters/ch015.typ	열 장
 book/chapters/ch016.typ	열다섯 장
@@ -120,9 +118,10 @@ book/chapters/ch087.typ	스물한 장
 book/chapters/ch089.typ	마흔두 장
 book/chapters/ch090.typ	다섯 장
 book/chapters/ch091.typ	아홉 장
-book/chapters/ch092.typ	부 열
 book/chapters/ch093.typ	일곱 장
 book/chapters/ch099.typ	여섯 장
+book/chapters/ch100.typ	열 장
+book/chapters/ch104.typ	두 장
 book/front/preface.typ	두 부
 book/front/reading-paths.typ	두 부
 book/front/reading-paths.typ	열다섯 장

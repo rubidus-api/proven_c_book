@@ -3,6 +3,7 @@
 #ifndef PROVEN_FREESTANDING
 #include "../../platform/proven_sys_random.h"
 #endif
+#include <stdatomic.h>
 
 /*
  * Two generators, because there are two jobs (include/proven/random.h says which is which),
@@ -56,7 +57,7 @@ static inline void mul64x64(proven_u64 a, proven_u64 b, proven_u64 *hi, proven_u
 }
 
 // -------------------------------------------------------------
-// SplitMix64 — used only to expand a seed
+// SplitMix64 - used only to expand a seed
 // -------------------------------------------------------------
 
 /*
@@ -74,7 +75,7 @@ static inline proven_u64 splitmix64(proven_u64 *x) {
 }
 
 // -------------------------------------------------------------
-// xoshiro256** — fast, reproducible, NOT secret-grade
+// xoshiro256** - fast, reproducible, NOT secret-grade
 // -------------------------------------------------------------
 
 void proven_xoshiro256ss_seed(proven_xoshiro256ss_t *g, proven_u64 seed) {
@@ -131,7 +132,7 @@ proven_rng_t proven_xoshiro256ss_rng(proven_xoshiro256ss_t *g) {
 }
 
 // -------------------------------------------------------------
-// ChaCha20 — cryptographic, and OS-free once seeded
+// ChaCha20 - cryptographic, and OS-free once seeded
 // -------------------------------------------------------------
 
 /* Set in `seeded` by seeding, and by nothing else. A zero-initialised generator - the shape of
@@ -370,23 +371,55 @@ void proven_rng_shuffle(proven_rng_t rng, void *base, proven_size_t count, prove
  * process has getrandom() and no idea what a ring oscillator is. Both feed the same generators,
  * so the source is a hook rather than a hard-coded call.
  *
- * The hook is a plain global, deliberately unsynchronised: it is installed once at startup,
- * before any thread asks for a key. A mutex here would not make "swap the entropy source while
- * another thread is deriving a key" safe - it would only make it quiet.
+ * The hook is meant to be installed once at startup, before any thread asks for a key, and no
+ * lock here would make "swap the source while another thread is deriving a key" meaningful.
+ * But it used to be two plain globals, so a program that did install it late had a data race
+ * - undefined behaviour - and a reader could pair one call's function with the other call's
+ * context (RFC-0009 S-004). Now the pair is published under a sequence count: a reader always
+ * gets a function and the context installed with it, and there is no race to speak of. The
+ * cost on the read side is three atomic loads.
  */
-static proven_entropy_fn g_entropy_fn = NULL;
-static void *g_entropy_ctx = NULL;
+static _Atomic(proven_entropy_fn) g_entropy_fn = NULL;
+static _Atomic(void *) g_entropy_ctx = NULL;
+static atomic_uint g_entropy_seq = 0;   /* odd while an install is in progress */
 
 void proven_random_set_source(proven_entropy_fn fn, void *ctx) {
-    g_entropy_fn = fn;
-    g_entropy_ctx = ctx;
+    unsigned s = atomic_load_explicit(&g_entropy_seq, memory_order_relaxed);
+    for (;;) {
+        if ((s & 1u) == 0u &&
+            atomic_compare_exchange_weak_explicit(&g_entropy_seq, &s, s + 1u,
+                                                  memory_order_acquire, memory_order_relaxed)) {
+            break;
+        }
+        s = atomic_load_explicit(&g_entropy_seq, memory_order_relaxed);
+    }
+    atomic_thread_fence(memory_order_release);
+    atomic_store_explicit(&g_entropy_fn, fn, memory_order_relaxed);
+    atomic_store_explicit(&g_entropy_ctx, ctx, memory_order_relaxed);
+    atomic_store_explicit(&g_entropy_seq, s + 2u, memory_order_release);
+}
+
+static proven_entropy_fn entropy_source(void **ctx) {
+    for (;;) {
+        unsigned s1 = atomic_load_explicit(&g_entropy_seq, memory_order_acquire);
+        if (s1 & 1u) continue;
+        proven_entropy_fn fn = atomic_load_explicit(&g_entropy_fn, memory_order_relaxed);
+        void *c = atomic_load_explicit(&g_entropy_ctx, memory_order_relaxed);
+        atomic_thread_fence(memory_order_acquire);
+        if (atomic_load_explicit(&g_entropy_seq, memory_order_relaxed) == s1) {
+            *ctx = c;
+            return fn;
+        }
+    }
 }
 
 bool proven_random_bytes(void *buf, proven_size_t len) {
     if (len == 0) return true;
     if (!buf) return false;
 
-    if (g_entropy_fn) return g_entropy_fn(g_entropy_ctx, buf, len);
+    void *ctx = NULL;
+    proven_entropy_fn fn = entropy_source(&ctx);
+    if (fn) return fn(ctx, buf, len);
 
 #ifndef PROVEN_FREESTANDING
     /* The platform default: the OS CSPRNG. A hosted caller never has to install anything. */
@@ -403,6 +436,17 @@ proven_u64 proven_random_u64(void) {
     proven_u64 v = 0;
     if (!proven_random_bytes(&v, sizeof v)) return 0;
     return v;
+}
+
+bool proven_random_u64_checked(proven_u64 *out) {
+    if (!out) return false;
+    proven_u64 v = 0;
+    if (!proven_random_bytes(&v, sizeof v)) {
+        *out = 0;
+        return false;
+    }
+    *out = v;
+    return true;
 }
 
 bool proven_chacha_rng_seed_from_entropy(proven_chacha_rng_t *g) {

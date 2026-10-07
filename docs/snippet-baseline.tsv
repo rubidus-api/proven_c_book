@@ -13,7 +13,6 @@ book-en/appendix/a6-grammar.typ#4
 book-en/appendix/a6-grammar.typ#6
 book-en/chapters/ch008.typ#1
 book-en/chapters/ch008.typ#2
-book-en/chapters/ch103.typ#1
 book-en/chapters/ch011.typ#1
 book-en/chapters/ch014.typ#1
 book-en/chapters/ch021.typ#1
@@ -121,8 +120,11 @@ book-en/chapters/ch097.typ#1
 book-en/chapters/ch097.typ#3
 book-en/chapters/ch097.typ#4
 book-en/chapters/ch097.typ#5
+book-en/chapters/ch097.typ#6
 book-en/chapters/ch099.typ#1
 book-en/chapters/ch099.typ#2
+book-en/chapters/ch099.typ#3
+book-en/chapters/ch103.typ#1
 book/appendix/a14-baremetal.typ#1
 book/appendix/a14-baremetal.typ#4
 book/appendix/a14-baremetal.typ#5
@@ -133,7 +135,6 @@ book/appendix/a6-grammar.typ#4
 book/appendix/a6-grammar.typ#6
 book/chapters/ch008.typ#1
 book/chapters/ch008.typ#2
-book/chapters/ch103.typ#1
 book/chapters/ch011.typ#1
 book/chapters/ch014.typ#1
 book/chapters/ch021.typ#1
@@ -242,5 +243,8 @@ book/chapters/ch097.typ#1
 book/chapters/ch097.typ#3
 book/chapters/ch097.typ#4
 book/chapters/ch097.typ#5
+book/chapters/ch097.typ#6
 book/chapters/ch099.typ#1
 book/chapters/ch099.typ#2
+book/chapters/ch099.typ#3
+book/chapters/ch103.typ#1

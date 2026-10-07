@@ -3,11 +3,11 @@
 
 /**
  * @file encode.h
- * @brief Bytes to text and back — hex and Base64 — by use case.
+ * @brief Bytes to text and back - hex and Base64 - by use case.
  *
  * Once you can hash a thing and draw a random token, you need to write those bytes somewhere
  * that only holds text: a URL, an HTTP header, a log line, a JSON string, a config file. That
- * is what this is. There is no cryptography here and no compression — just the two encodings
+ * is what this is. There is no cryptography here and no compression - just the two encodings
  * everything else already agrees on, done without hidden allocation and without the two ways
  * they are usually got wrong.
  *
@@ -23,7 +23,7 @@
  *     caller who sizes the output by eye gets it wrong. The size is a function you call, not a
  *     number you remember: `proven_hex_encoded_size`, `proven_base64_encoded_size`, and their
  *     decode counterparts. Pass a buffer smaller than that and the call refuses with
- *     `PROVEN_ERR_OUT_OF_BOUNDS` — it does not write a truncated prefix.
+ *     `PROVEN_ERR_OUT_OF_BOUNDS` - it does not write a truncated prefix.
  *
  * Everything here is pure computation: no allocation, no OS, no libc, and it is available
  * freestanding.
@@ -86,7 +86,7 @@ proven_err_t proven_hex_encode(proven_mem_view_t data, proven_byte_t *out, prove
  * @brief Decode hex `text` into `out`.
  *
  * @param out       at least `proven_hex_decoded_size(text.size)` bytes.
- * @return PROVEN_ERR_INVALID_ENCODING if `text` has an odd length or any non-hex character —
+ * @return PROVEN_ERR_INVALID_ENCODING if `text` has an odd length or any non-hex character --
  *         nothing partial is committed; PROVEN_ERR_OUT_OF_BOUNDS if `out` is too small.
  * @note Upper and lower case both decode. Whitespace is NOT skipped: a space is invalid, so a
  *       caller who pasted a spaced hex dump learns it here rather than one byte into the result.
@@ -103,7 +103,7 @@ proven_err_t proven_hex_decode(proven_mem_view_t text, proven_byte_t *out, prove
  * @brief The number of characters `proven_base64_encode` / `_base64url_encode` writes for `n`
  *        input bytes.
  * @note `4 * ceil(n / 3)`. The standard form pads to a multiple of 4 with `=`; the URL form
- *       (see the note on `proven_base64url_encode`) does not, so its size can be smaller — this
+ *       (see the note on `proven_base64url_encode`) does not, so its size can be smaller - this
  *       returns the padded size, which is safe for both.
  * @note Returns `PROVEN_SIZE_MAX` when that size cannot be represented in a `proven_size_t`.
  *       A real padded Base64 output can never be that value - it is always a multiple of
@@ -151,7 +151,7 @@ proven_err_t proven_base64url_encode(proven_mem_view_t data, proven_byte_t *out,
 /**
  * @brief Decode Base64 `text` into `out`.
  *
- * Accepts BOTH alphabets — standard (`+` `/`) and URL-safe (`-` `_`) — and both padded and
+ * Accepts BOTH alphabets - standard (`+` `/`) and URL-safe (`-` `_`) - and both padded and
  * unpadded input, because a decoder that only accepts what it would itself emit rejects half
  * the Base64 in the world. What it does NOT accept is a stray character or a wrong-length
  * unpadded string: those are PROVEN_ERR_INVALID_ENCODING, not a best-effort guess.

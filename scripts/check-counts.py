@@ -80,10 +80,12 @@ def main():
     #   스물셋이었다(RFC-0051 R-T2). 검사기를 더할 때마다 낡는 문장이라 여기서 센다.
     n_gates = len(list((ROOT / "scripts").glob("check-*.py")))
     ko_num = {19: "열아홉", 20: "스무", 21: "스물한", 22: "스물두", 23: "스물세",
-              24: "스물네", 25: "스물다섯", 26: "스물여섯", 27: "스물일곱"}
+              24: "스물네", 25: "스물다섯", 26: "스물여섯", 27: "스물일곱",
+              28: "스물여덟", 29: "스물아홉", 30: "서른", 31: "서른한", 32: "서른두"}
     en_num = {19: "nineteen", 20: "twenty", 21: "twenty-one", 22: "twenty-two",
               23: "twenty-three", 24: "twenty-four", 25: "twenty-five",
-              26: "twenty-six", 27: "twenty-seven"}
+              26: "twenty-six", 27: "twenty-seven", 28: "twenty-eight",
+              29: "twenty-nine", 30: "thirty", 31: "thirty-one", 32: "thirty-two"}
     for ed, pat, table in (
         ("book", r"게이트가 (\S+) 개 있다\(`scripts/check-\*\.py`\)", ko_num),
         ("book-en", r"has (\S+) such gates \(`scripts/check-\*\.py`\)", en_num),

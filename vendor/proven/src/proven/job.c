@@ -8,6 +8,7 @@
 typedef struct {
     _Atomic(proven_size_t) sequence;
     proven_job_t data;
+    proven_job_group_t *group;   /* told when the job has run; NULL for a plain submit */
 } proven_job_cell_t;
 
 typedef struct {
@@ -94,11 +95,14 @@ bool proven_job_execute_one(proven_job_sys_t *sys) {
     }
     
     proven_job_t task = cell->data;
+    proven_job_group_t *group = cell->group;
     atomic_store_explicit(&cell->sequence, pos + sys->queue.buffer_mask + 1, memory_order_release);
     
     if (task.routine) {
         task.routine(task.arg);
     }
+    /* Release: whoever sees the count drop also sees what the job wrote. */
+    if (group) atomic_fetch_sub_explicit(&group->pending, 1u, memory_order_release);
     return true;
 }
 
@@ -258,11 +262,10 @@ proven_err_t proven_job_system_init(proven_allocator_t alloc, proven_size_t num_
     return PROVEN_OK;
 }
 
-bool proven_job_submit(proven_job_sys_t *sys, void (*routine)(void*), void* arg) {
-    if (!sys) return false;
-    if (!proven_job_begin_submit(sys)) return false;
+static proven_err_t job_submit(proven_job_sys_t *sys, void (*routine)(void*), void* arg, proven_job_group_t *group) {
+    if (!sys) return PROVEN_ERR_INVALID_ARG;
+    if (!proven_job_begin_submit(sys)) return PROVEN_ERR_INVALID_STATE;   /* closed */
     
-    bool committed = false;
     proven_job_cell_t* cell;
     proven_size_t pos = atomic_load_explicit(&sys->queue.enqueue_pos, memory_order_relaxed);
     
@@ -277,7 +280,7 @@ bool proven_job_submit(proven_job_sys_t *sys, void (*routine)(void*), void* arg)
             }
         } else if (state == PROVEN_JOB_CELL_BEHIND) {
             proven_job_end_submit(sys);
-            return false; // Queue is entirely full
+            return PROVEN_ERR_AGAIN; // Queue is entirely full
         } else {
             pos = atomic_load_explicit(&sys->queue.enqueue_pos, memory_order_relaxed);
         }
@@ -285,11 +288,46 @@ bool proven_job_submit(proven_job_sys_t *sys, void (*routine)(void*), void* arg)
     
     cell->data.routine = routine;
     cell->data.arg = arg;
+    cell->group = group;
     atomic_store_explicit(&cell->sequence, pos + 1, memory_order_release); // Commit to workers
-    committed = true;
     proven_job_post_work(sys);
     proven_job_end_submit(sys);
-    return committed;
+    return PROVEN_OK;
+}
+
+bool proven_job_submit(proven_job_sys_t *sys, void (*routine)(void*), void* arg) {
+    return job_submit(sys, routine, arg, NULL) == PROVEN_OK;
+}
+
+proven_err_t proven_job_submit_ex(proven_job_sys_t *sys, void (*routine)(void*), void* arg) {
+    return job_submit(sys, routine, arg, NULL);
+}
+
+void proven_job_group_init(proven_job_group_t *group) {
+    if (group) atomic_init(&group->pending, 0);
+}
+
+proven_err_t proven_job_group_submit(proven_job_sys_t *sys, proven_job_group_t *group,
+                                     void (*routine)(void*), void* arg) {
+    if (!group) return PROVEN_ERR_INVALID_ARG;
+    /* Count it before it can run: a worker may finish it before job_submit returns. */
+    atomic_fetch_add_explicit(&group->pending, 1u, memory_order_relaxed);
+    proven_err_t e = job_submit(sys, routine, arg, group);
+    if (e != PROVEN_OK) atomic_fetch_sub_explicit(&group->pending, 1u, memory_order_relaxed);
+    return e;
+}
+
+proven_size_t proven_job_group_pending(proven_job_group_t *group) {
+    return group ? atomic_load_explicit(&group->pending, memory_order_acquire) : 0;
+}
+
+void proven_job_group_wait(proven_job_sys_t *sys, proven_job_group_t *group) {
+    if (!group) return;
+    while (atomic_load_explicit(&group->pending, memory_order_acquire) != 0) {
+        /* Help rather than sleep: run a queued job - this group's or another - and when the
+         * queue is empty the group's last jobs are running on workers, so yield to them. */
+        if (!sys || !proven_job_execute_one(sys)) proven_sys_thread_yield();
+    }
 }
 
 void proven_job_system_close(proven_job_sys_t *sys) {

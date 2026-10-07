@@ -60,6 +60,44 @@ typedef struct {
 
 void proven_array_destroy(proven_array_t *arr);
 
+/* ---- Editing in place (RFC-0009 X-002) ----------------------------------------------------
+ * Every function below refuses an invalid array with PROVEN_ERR_INVALID_ARG and an index past
+ * the end with PROVEN_ERR_OUT_OF_BOUNDS, and changes nothing when it fails. The ones that may
+ * grow the array (insert, extend) invalidate pointers into it, like push. */
+
+/** @brief Remove every element; the capacity stays. A no-op on an invalid array. */
+void proven_array_clear(proven_array_t *arr);
+
+/** @brief Shorten to `new_len` elements. Longer than the current length is OUT_OF_BOUNDS. */
+[[nodiscard]] proven_err_t proven_array_truncate(proven_array_t *arr, proven_size_t new_len);
+
+/**
+ * @brief Insert one element at `index` (0..len), moving the rest up. O(len - index).
+ * `element` may point into the array itself.
+ */
+[[nodiscard]] proven_err_t proven_array_insert(proven_array_t *arr, proven_size_t index, const void *element);
+
+/**
+ * @brief Remove the element at `index`, moving the rest down; order is kept. O(len - index).
+ * @param out_element receives the removed element; may be NULL.
+ */
+[[nodiscard]] proven_err_t proven_array_remove_at(proven_array_t *arr, proven_size_t index, void *out_element);
+
+/**
+ * @brief Remove the element at `index` by moving the last one into its place. O(1); order is
+ *        not kept.
+ * @param out_element receives the removed element; may be NULL.
+ */
+[[nodiscard]] proven_err_t proven_array_swap_remove(proven_array_t *arr, proven_size_t index, void *out_element);
+
+/**
+ * @brief Append `count` elements from `elements` in one step - one reallocation at most.
+ *
+ * `elements` may be the array's own elements (doubling an array by extending it with itself
+ * works). A range that only partly overlaps the array's storage is INVALID_ARG.
+ */
+[[nodiscard]] proven_err_t proven_array_extend(proven_array_t *arr, const void *elements, proven_size_t count);
+
 // -------------------------------------------------------------
 // Type-Safe Strict Macro Wrappers
 // -------------------------------------------------------------

@@ -22,7 +22,7 @@ typedef enum {
     PROVEN_FLOAT_FORMAT_MODE_FIXED = 0,
     PROVEN_FLOAT_FORMAT_MODE_SHORTEST = 1,
     /**
-     * @brief Always scientific: "d.ddde±XX", `precision` digits after the point, whatever
+     * @brief Always scientific: "d.ddde+/-XX", `precision` digits after the point, whatever
      *        the magnitude. This is printf's %e - the one float form FIXED and SHORTEST do
      *        not cover, because FIXED only reaches scientific for extreme magnitudes and
      *        SHORTEST picks the shorter spelling. The correctly-rounded scientific core is

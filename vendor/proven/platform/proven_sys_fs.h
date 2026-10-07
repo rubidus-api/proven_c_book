@@ -48,7 +48,8 @@ typedef enum {
     PROVEN_SYS_FS_OPEN_NOT_FOUND,  /**< the name is not there */
     PROVEN_SYS_FS_OPEN_DENIED,     /**< permission refused it */
     PROVEN_SYS_FS_OPEN_BUSY,       /**< something else holds it right now */
-    PROVEN_SYS_FS_OPEN_ERROR       /**< anything else, including an exclusive-create collision */
+    PROVEN_SYS_FS_OPEN_EXISTS,     /**< an exclusive create found the name already there */
+    PROVEN_SYS_FS_OPEN_ERROR       /**< anything else */
 } proven_sys_fs_open_result_t;
 
 /**
@@ -201,7 +202,10 @@ void proven_sys_fs_dir_close(proven_sys_dir_handle_t handle);
 /**
  * @brief One step of a directory walk, with end-of-directory told apart from failure.
  *
- * @return 1 an entry was produced, 0 the directory ended, -1 the OS failed.
+ * @return 1 an entry was produced, 0 the directory ended, -1 the OS failed, 2 an entry is there
+ *         but its name is not valid text (Windows: a lone surrogate; `name` is then NULL and
+ *         the other fields describe the entry). The next step continues after it. POSIX never
+ *         returns 2: it hands back the kernel's bytes, and fs.c checks them.
  *
  * readdir() returns NULL for both "no more entries" and "the read failed", and the
  * only thing that tells them apart is errno. Collapsing the two makes a truncated
@@ -273,6 +277,20 @@ bool proven_sys_fs_link(const char *oldpath, const char *newpath);
 
 [[nodiscard]]
 bool proven_sys_fs_symlink(const char *target, const char *linkpath);
+
+/**
+ * @brief Create a symbolic link, and say why not.
+ *
+ * Windows makes two kinds of symlink and must be told which: a link to a directory created as a
+ * file link cannot be entered. The kind is decided from the target as the LINK will see it - a
+ * relative target is resolved against the link's own directory, never the current directory,
+ * which is what a symlink means on every platform. A target that does not exist yet gets a file
+ * link. '/' in the target is written as '\', which is the only separator a Windows reparse
+ * point resolves. Creating a symlink needs Developer Mode or the symlink privilege there; without
+ * either the answer is DENIED, not a bare error.
+ */
+[[nodiscard]]
+proven_sys_fs_open_result_t proven_sys_fs_symlink_checked(const char *target, const char *linkpath);
 
 // --- Memory Mapping PAL ---
 typedef struct {

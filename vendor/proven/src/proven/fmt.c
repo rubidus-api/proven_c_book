@@ -1,3 +1,4 @@
+#include "proven/utf.h"
 #include "proven/fmt.h"
 #include "float_decimal.h"
 #include "proven/float_format.h"
@@ -161,26 +162,25 @@ static void append_padding(proven_fmt_ctx_t *ctx, char fill, int count) {
     ctx->written += to_write;
 }
 
-static void render_with_spec(proven_fmt_ctx_t *ctx, const char *val, proven_size_t val_len, proven_fmt_spec_t spec) {
-    if (spec.width == 0 || (proven_size_t)spec.width <= val_len) {
-        fmt_append_view(ctx, (proven_u8str_view_t){(const proven_u8*)val, val_len});
-        return;
-    }
+/* Fill before and after a field of `len` bytes, from the spec's width and alignment ('>' right,
+ * '<' left, anything else centred). The one place these rules live: plain strings, custom
+ * renderers and UTF-16 arguments all pad through it. */
+static void spec_padding(proven_fmt_spec_t spec, proven_size_t len, int *left, int *right) {
+    *left = 0;
+    *right = 0;
+    if (spec.width <= 0 || (proven_size_t)spec.width <= len) return;
+    int total = spec.width - (int)len;
+    if (spec.align == '>')      *left = total;
+    else if (spec.align == '<') *right = total;
+    else                        { *left = total / 2; *right = total - *left; }
+}
 
-    int total_padding = spec.width - (int)val_len;
-    if (spec.align == '>') {
-        append_padding(ctx, spec.fill, total_padding);
-        fmt_append_view(ctx, (proven_u8str_view_t){(const proven_u8*)val, (proven_size_t)val_len});
-    } else if (spec.align == '<') {
-        fmt_append_view(ctx, (proven_u8str_view_t){(const proven_u8*)val, (proven_size_t)val_len});
-        append_padding(ctx, spec.fill, total_padding);
-    } else { // '^'
-        int left = total_padding / 2;
-        int right = total_padding - left;
-        append_padding(ctx, spec.fill, left);
-        fmt_append_view(ctx, (proven_u8str_view_t){(const proven_u8*)val, (proven_size_t)val_len});
-        append_padding(ctx, spec.fill, right);
-    }
+static void render_with_spec(proven_fmt_ctx_t *ctx, const char *val, proven_size_t val_len, proven_fmt_spec_t spec) {
+    int left, right;
+    spec_padding(spec, val_len, &left, &right);
+    append_padding(ctx, spec.fill, left);
+    fmt_append_view(ctx, (proven_u8str_view_t){(const proven_u8*)val, val_len});
+    append_padding(ctx, spec.fill, right);
 }
 
 
@@ -307,16 +307,8 @@ static void render_custom(proven_fmt_ctx_t *ctx, proven_arg_custom_t c, proven_f
         return;
     }
 
-    int total_padding = 0;
-    if (spec.width > 0 && (proven_size_t)spec.width > count.len) {
-        total_padding = spec.width - (int)count.len;
-    }
-    int left = 0, right = 0;
-    if (total_padding > 0) {
-        if (spec.align == '>')      { left = total_padding; }
-        else if (spec.align == '<') { right = total_padding; }
-        else                        { left = total_padding / 2; right = total_padding - left; }
-    }
+    int left, right;
+    spec_padding(spec, count.len, &left, &right);
 
     append_padding(ctx, spec.fill, left);
 
@@ -335,6 +327,37 @@ static void render_custom(proven_fmt_ctx_t *ctx, proven_arg_custom_t c, proven_f
         return;
     }
 
+    append_padding(ctx, spec.fill, right);
+}
+
+/*
+ * UTF-16 text is transcoded as it is emitted, through a small stack buffer, so a long wide
+ * string costs no allocation. It is measured first - which also validates it - so that width
+ * and alignment can be applied, and so that a malformed string fails before any of it is
+ * written rather than half-way through the field.
+ */
+static void render_u16(proven_fmt_ctx_t *ctx, const proven_u16 *p, proven_size_t n, proven_fmt_spec_t spec) {
+    proven_result_size_t need = proven_utf16_to_utf8_size(p, n);
+    if (!proven_is_ok(need.err)) {
+        ctx->err = need.err;
+        return;
+    }
+
+    int left, right;
+    spec_padding(spec, need.value, &left, &right);
+
+    append_padding(ctx, spec.fill, left);
+    proven_byte_t chunk[128];
+    proven_size_t done = 0;
+    while (done < n && proven_is_ok(ctx->err)) {
+        proven_utf_step_t st = proven_utf16_to_utf8_partial(p + done, n - done, chunk, sizeof chunk);
+        if (st.err != PROVEN_OK && st.err != PROVEN_ERR_OUT_OF_BOUNDS) {
+            ctx->err = st.err;
+            return;
+        }
+        fmt_append_view(ctx, (proven_u8str_view_t){ chunk, st.written });
+        done += st.consumed;
+    }
     append_padding(ctx, spec.fill, right);
 }
 
@@ -531,6 +554,9 @@ static void render_arg(proven_fmt_ctx_t *ctx, const proven_arg_t *arg, proven_fm
             break;
         case PROVEN_ARG_STR_VIEW:
             render_with_spec(ctx, (const char*)arg->value.str_view.ptr, arg->value.str_view.size, spec);
+            break;
+        case PROVEN_ARG_U16_VIEW:
+            render_u16(ctx, arg->value.u16_view.ptr, arg->value.u16_view.size, spec);
             break;
         case PROVEN_ARG_DATETIME: {
             proven_datetime_t dt = arg->value.datetime;
@@ -915,6 +941,21 @@ proven_fmt_result_t proven_u8str_fmt_internal(proven_allocator_t alloc, proven_u
         if (args[i].type == PROVEN_ARG_CSTR) {
             proven_bufref_t alias_ref = proven_bufref_capture(str->internal.ptr, str->internal.cap, args[i].value.cstr, 0);
             if (alias_ref.valid) {
+                res.err = PROVEN_ERR_INVALID_ARG;
+                return res;
+            }
+        }
+        /* A UTF-16 view into the output would have to be rebased as a u16 range after a
+         * realloc; nothing legitimate formats a string's own bytes back as UTF-16, so it is
+         * refused, like a C string, instead of being given that machinery. */
+        if (args[i].type == PROVEN_ARG_U16_VIEW) {
+            proven_size_t u16_bytes = 0;
+            if (PROVEN_CKD_MUL(&u16_bytes, args[i].value.u16_view.size, sizeof(proven_u16))) {
+                res.err = PROVEN_ERR_OVERFLOW;
+                return res;
+            }
+            /* Any overlap, not only a view that starts inside: the same rule utf.h applies. */
+            if (proven_range_overlaps(str->internal.ptr, str->internal.cap, args[i].value.u16_view.ptr, u16_bytes)) {
                 res.err = PROVEN_ERR_INVALID_ARG;
                 return res;
             }

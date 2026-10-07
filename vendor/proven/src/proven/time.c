@@ -1,4 +1,5 @@
 #include "proven/time.h"
+#include "proven/utf.h"
 #include "proven/u8str.h"
 #include "proven/fmt.h"
 #include "proven/memory.h"
@@ -149,32 +150,24 @@ proven_err_t proven_time_u8_fmt(proven_allocator_t alloc, proven_u8str_t *str, p
 
 #ifndef PROVEN_NO_U16STR
 
-static proven_err_t append_u8_view_to_u16str(proven_allocator_t alloc, proven_u16str_t *str, proven_u8str_view_t view) {
-    for (proven_size_t i = 0; i < view.size; i++) {
-        proven_u16 ch = (proven_u16)view.ptr[i];
-        proven_u16str_view_t v = { &ch, 1 };
-        proven_err_t err = proven_u16str_append_grow(alloc, str, v);
-        if (!PROVEN_IS_OK(err)) return err;
-    }
-    return PROVEN_OK;
-}
-
 proven_err_t proven_time_u16_fmt(proven_allocator_t alloc, proven_u16str_t *str, proven_datetime_t dt, const proven_time_locale_t *locale, const char *fmt) {
     if (!str || !fmt) return PROVEN_ERR_INVALID_ARG;
 
     /* One formatter, two encodings. Render through the u8 path - which delegates every field
      * to the fmt.h spec engine, so the whole {} grammar (fill, align, width) is honoured for
-     * numeric and named fields alike - then widen the result to u16 code units. All time
-     * output is single-byte (decimal digits, the ASCII locale names, and single-byte fill
-     * characters), so the widening is exact and the two encodings can never again disagree on
-     * a spec. The former hand-rolled u16 parser recognised only ":0>N" and silently dropped
-     * every other fill/align/width spec - the quiet wrong answer this delegation removes. */
+     * numeric and named fields alike - then transcode the result to UTF-16. The former
+     * hand-rolled u16 parser recognised only ":0>N" and silently dropped every other spec.
+     *
+     * Transcode, not widen: this used to copy each UTF-8 BYTE into a code unit, on the grounds
+     * that all time output is single-byte. The digits and the built-in English names are, but
+     * the locale is the caller's, and a Korean weekday name came out as three units per
+     * syllable instead of one. */
     proven_result_u8str_t tmp = proven_u8str_create(alloc, 64);
     if (!PROVEN_IS_OK(tmp.err)) return tmp.err;
 
     proven_err_t err = proven_time_u8_fmt(alloc, &tmp.value, dt, locale, fmt);
     if (PROVEN_IS_OK(err)) {
-        err = append_u8_view_to_u16str(alloc, str, proven_u8str_as_view(&tmp.value));
+        err = proven_utf8_append_to_u16str(alloc, str, proven_u8str_as_view(&tmp.value));
     }
 
     proven_u8str_destroy(alloc, &tmp.value);

@@ -14,7 +14,7 @@
  * <stdalign.h> makes `alignof`/`alignas` available as macros under the older
  * `-std=c2x` fallback (and C11/C17), where they are not yet keywords. In C23
  * the header is empty and these are real keywords, so including it is harmless.
- * It lives in this foundation header — which every translation unit pulls in —
+ * It lives in this foundation header - which every translation unit pulls in --
  * so any `.c` using `alignof` is covered regardless of its own include list.
  */
 #include <stdalign.h>
@@ -95,8 +95,8 @@ typedef uintptr_t      proven_uintptr_t;
 #else
     // Fallback: If neither built-ins nor C23 are available, the core library 
     // explicitly fails to guard against unsafe overflow behavior on legacy or 
-    // restricted compilers. MSVC support is experimental and requires modern versions 
-    // with appropriate intrinsics if this path is to be bypassed.
+    // restricted compilers. MSVC is not supported (incomplete C23); it may be later,
+    // which would need its overflow intrinsics wired in here.
     #error "proven requires C23 <stdckdint.h> or compiler overflow builtins (__builtin_*_overflow)."
 #endif
 
@@ -119,8 +119,30 @@ typedef enum {
     PROVEN_ERR_EOF,
     PROVEN_ERR_BUSY,
     PROVEN_ERR_PERMISSION,
-    PROVEN_ERR_INVALID_FORMAT
+    PROVEN_ERR_INVALID_FORMAT,
+    PROVEN_ERR_EXISTS
 } proven_err_t;
+
+/**
+ * @brief The last proven_err_t code in this version. It moves when a code is added.
+ *
+ * Compare against this, not against a code you happened to know was last: a range check
+ * written against `PROVEN_ERR_INVALID_FORMAT` silently stops covering the next code added.
+ */
+#define PROVEN_ERR_LAST PROVEN_ERR_EXISTS
+
+/**
+ * @brief Every proven_err_t value is below this, in this version and every later one.
+ *
+ * A promise, not a measurement: codes 0x0000-0x0FFF belong to proven, and proven will never
+ * define a code at or above 0x1000. A program that wants its own error codes can therefore
+ * extend the space without remapping - a wider integer type that carries proven's values
+ * unchanged and puts its own from PROVEN_ERR_RESERVED_END up - and a proven_err_t it receives
+ * still means what proven says it means.
+ */
+#define PROVEN_ERR_RESERVED_END 0x1000
+
+_Static_assert(PROVEN_ERR_LAST < PROVEN_ERR_RESERVED_END, "proven_err_t must stay below PROVEN_ERR_RESERVED_END");
 
 /**
  * @brief Result wrapper for a proven_size_t.

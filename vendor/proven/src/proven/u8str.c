@@ -389,6 +389,36 @@ static proven_size_t proven_u8_find_twoway(const proven_byte_t *h0, proven_size_
     }
 }
 
+/* Pick the anchor for a search: the rarest-looking needle byte, from a spread-out sample of
+   the haystack span. Returns whether even that rarest byte is common (a low-entropy haystack,
+   where an anchored scan thrashes and the linear fallbacks should run). Shared by find and
+   find_last, so the two directions make the same choice on the same input. `*anchor` is left
+   as the caller set it for spans too short to sample. */
+static int find_pick_anchor(const proven_byte_t *h, proven_size_t span,
+                            const proven_byte_t *ndl, proven_size_t m, proven_size_t *anchor) {
+    if (span < 16u) return 0;
+    unsigned short cnt[256];
+    proven_sys_mem_zero(cnt, sizeof cnt);
+    proven_size_t cap = span < 256u ? span : 256u;
+    proven_size_t step = span / cap;
+    if (step == 0u) step = 1u;
+    step |= 1u; /* odd stride: avoid aliasing a periodic haystack (e.g. strict
+                   "abab...") to a single phase, which would hide a common byte */
+    proven_size_t taken = 0;
+    for (proven_size_t pos = 0; pos < span && taken < 256u; pos += step) {
+        cnt[h[pos]]++;
+        ++taken;
+    }
+    unsigned best = 0xffffffffu;
+    for (proven_size_t i = 0; i < m; ++i) {
+        unsigned ch = (unsigned)ndl[i];
+        if ((unsigned)cnt[ch] <= best) { best = (unsigned)cnt[ch]; *anchor = i; }
+    }
+    /* rarest needle byte still in > ~1/8 of the sample => memchr+verify will
+       thrash; use the alphabet-independent linear fallback instead. */
+    return best * 8u > (unsigned)taken;
+}
+
 proven_size_t proven_u8str_view_find(proven_u8str_view_t haystack, proven_size_t start_offset, proven_u8str_view_t needle) {
     if (start_offset > haystack.size) return PROVEN_INDEX_NOT_FOUND;
     if (needle.size == 0) return start_offset; // Empty needle always matches at offset
@@ -415,32 +445,8 @@ proven_size_t proven_u8str_view_find(proven_u8str_view_t haystack, proven_size_t
         return (r == PROVEN_INDEX_NOT_FOUND) ? r : start_offset + r;
     }
 #else
-    /* Pick the anchor: the rarest-looking needle byte, from a spread-out sample.
-       Also learn whether even that rarest byte is common (low-entropy haystack). */
     proven_size_t anchor = needle.size - 1u;
-    int low_entropy = 0;
-    if (span >= 16u) {
-        unsigned short cnt[256];
-        proven_sys_mem_zero(cnt, sizeof cnt);
-        proven_size_t cap = span < 256u ? span : 256u;
-        proven_size_t step = span / cap;
-        if (step == 0u) step = 1u;
-        step |= 1u; /* odd stride: avoid aliasing a periodic haystack (e.g. strict
-                       "abab…") to a single phase, which would hide a common byte */
-        proven_size_t taken = 0;
-        for (proven_size_t pos = start_offset; pos < haystack.size && taken < 256u; pos += step) {
-            cnt[base[pos]]++;
-            ++taken;
-        }
-        unsigned best = 0xffffffffu;
-        for (proven_size_t i = 0; i < needle.size; ++i) {
-            unsigned ch = (unsigned)needle.ptr[i];
-            if ((unsigned)cnt[ch] <= best) { best = (unsigned)cnt[ch]; anchor = i; }
-        }
-        /* rarest needle byte still in > ~1/8 of the sample => memchr+verify will
-           thrash; use the alphabet-independent linear fallback instead. */
-        low_entropy = (best * 8u > (unsigned)taken);
-    }
+    int low_entropy = find_pick_anchor(base + start_offset, span, needle.ptr, needle.size, &anchor);
 
 #if PROVEN_U8STR_FIND_FORCE != 3
     if (low_entropy) {
@@ -645,4 +651,258 @@ void proven_u8str_destroy(proven_allocator_t alloc, proven_u8str_t *str) {
         return;
     }
     proven_buf_destroy(alloc, &str->internal);
+}
+
+// -------------------------------------------------------------
+// The view vocabulary (RFC-0005)
+// -------------------------------------------------------------
+
+/* The one guard every function here starts with: an ill-formed view is empty, and every empty
+ * view is spelled {NULL, 0} - including {p, 0} with p set, which otherwise flowed straight
+ * through remove_prefix, remove_suffix and split into results that broke the header's promise of
+ * a single spelling of empty (code review). */
+static proven_u8str_view_t view_or_empty(proven_u8str_view_t v) {
+    if (v.size == 0 || !v.ptr) return (proven_u8str_view_t){ (const proven_byte_t *)0, 0 };
+    return v;
+}
+
+int proven_u8str_view_cmp(proven_u8str_view_t a, proven_u8str_view_t b) {
+    /* Guard here, not three layers down: {NULL, 3} is representable, and memcmp on it is
+     * undefined whatever the platform layer happens to do today (RFC-0005 section 1.3). */
+    a = view_or_empty(a);
+    b = view_or_empty(b);
+    proven_size_t n = a.size < b.size ? a.size : b.size;
+    if (n > 0) {
+        int c = proven_sys_mem_cmp(a.ptr, b.ptr, n);   /* memcmp: unsigned char, by definition */
+        if (c != 0) return c;
+    }
+    return (a.size > b.size) - (a.size < b.size);
+}
+
+int proven_u8str_view_cmp_ptr(const void *a, const void *b) {
+    return proven_u8str_view_cmp(*(const proven_u8str_view_t *)a, *(const proven_u8str_view_t *)b);
+}
+
+/* Exactly these six bytes, and the header says so: a trim that is vague about its character set
+ * is how a locale or Unicode dependency arrives by implication. */
+static bool view_is_space(proven_byte_t c) {
+    return c == ' ' || c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == '\r';
+}
+
+/* The one spelling of empty: {NULL, 0}. */
+static proven_u8str_view_t view_sub(proven_u8str_view_t s, proven_size_t from, proven_size_t to) {
+    if (to <= from) return (proven_u8str_view_t){ (const proven_byte_t *)0, 0 };
+    return (proven_u8str_view_t){ s.ptr + from, to - from };
+}
+
+proven_u8str_view_t proven_u8str_view_trim_start(proven_u8str_view_t s) {
+    s = view_or_empty(s);
+    proven_size_t i = 0;
+    while (i < s.size && view_is_space(s.ptr[i])) ++i;
+    return view_sub(s, i, s.size);
+}
+
+proven_u8str_view_t proven_u8str_view_trim_end(proven_u8str_view_t s) {
+    s = view_or_empty(s);
+    proven_size_t end = s.size;
+    while (end > 0 && view_is_space(s.ptr[end - 1])) --end;
+    return view_sub(s, 0, end);
+}
+
+proven_u8str_view_t proven_u8str_view_trim(proven_u8str_view_t s) {
+    return proven_u8str_view_trim_end(proven_u8str_view_trim_start(s));
+}
+
+/* One definition of "is a prefix": starts_with. */
+proven_u8str_view_t proven_u8str_view_remove_prefix(proven_u8str_view_t s, proven_u8str_view_t prefix) {
+    s = view_or_empty(s);
+    prefix = view_or_empty(prefix);
+    if (!proven_u8str_view_starts_with(s, prefix)) return s;
+    return view_sub(s, prefix.size, s.size);
+}
+
+proven_u8str_view_t proven_u8str_view_remove_suffix(proven_u8str_view_t s, proven_u8str_view_t suffix) {
+    s = view_or_empty(s);
+    suffix = view_or_empty(suffix);
+    if (!proven_u8str_view_ends_with(s, suffix)) return s;
+    return view_sub(s, 0, s.size - suffix.size);
+}
+
+/*
+ * Backward Shift-Or: the forward recurrence of proven_u8_find_shiftor, run over the haystack from
+ * its end with masks built from the REVERSED needle. The first match it meets is the one that
+ * starts furthest right - the last occurrence - and when it completes at haystack byte i, that
+ * occurrence starts at i. O(n) whatever the input; needle length 2..64.
+ */
+static proven_size_t proven_u8_find_last_shiftor(const proven_byte_t *h, proven_size_t n,
+                                                 const proven_byte_t *ndl, proven_size_t m) {
+    proven_u64 mask[256];
+    proven_u64 all_ones = ~(proven_u64)0;
+    proven_u64 state = all_ones;
+    proven_u64 match_bit = (proven_u64)1 << (m - 1u);
+    for (proven_size_t j = 0; j < 256u; ++j) mask[j] = all_ones;
+    for (proven_size_t j = 0; j < m; ++j) mask[ndl[m - 1u - j]] &= ~((proven_u64)1 << j);
+    for (proven_size_t i = n; i-- > 0;) {
+        state = (state << 1) | mask[h[i]];
+        if ((state & match_bit) == 0u) return i;
+    }
+    return PROVEN_INDEX_NOT_FOUND;
+}
+
+/*
+ * Two-Way run backwards: proven_u8_find_twoway over the reversed haystack and the reversed
+ * needle, read through index macros so nothing is copied. The first match it meets in the
+ * reversed text is the last occurrence in the real one. O(n) for any needle length and any
+ * input - the linear fallback for long needles on low-entropy haystacks (B-024), where the
+ * previous "repeat the forward search past each match" was quadratic.
+ */
+#define RN(x) ndl[l - 1u - (x)]
+#define RH(x) hay[hn - 1u - (x)]
+static proven_size_t proven_u8_find_last_twoway(const proven_byte_t *hay, proven_size_t hn,
+                                                const proven_byte_t *ndl, proven_size_t l) {
+    proven_size_t o = 0;   /* offset into the reversed haystack */
+    proven_size_t i, ip, jp, k, p, ms, p0, mem, mem0;
+    proven_size_t byteset[32 / sizeof(proven_size_t)] = { 0 };
+    proven_size_t shift[256];
+
+    for (i = 0; i < l; ++i) {
+        PROVEN_FIND_BITOP(byteset, RN(i), |=);
+        shift[RN(i)] = i + 1u;
+    }
+    ip = (proven_size_t)-1; jp = 0; k = p = 1;
+    while (jp + k < l) {
+        if (RN(ip + k) == RN(jp + k)) { if (k == p) { jp += p; k = 1; } else ++k; }
+        else if (RN(ip + k) > RN(jp + k)) { jp += k; k = 1; p = jp - ip; }
+        else { ip = jp++; k = 1; p = 1; }
+    }
+    ms = ip; p0 = p;
+    ip = (proven_size_t)-1; jp = 0; k = p = 1;
+    while (jp + k < l) {
+        if (RN(ip + k) == RN(jp + k)) { if (k == p) { jp += p; k = 1; } else ++k; }
+        else if (RN(ip + k) < RN(jp + k)) { jp += k; k = 1; p = jp - ip; }
+        else { ip = jp++; k = 1; p = 1; }
+    }
+    if (ip + 1u > ms + 1u) ms = ip; else p = p0;
+
+    bool periodic = true;
+    for (i = 0; i < ms + 1u; ++i) {
+        if (RN(i) != RN(i + p)) { periodic = false; break; }
+    }
+    if (!periodic) {
+        mem0 = 0;
+        p = ((ms > l - ms - 1u) ? ms : (l - ms - 1u)) + 1u;
+    } else {
+        mem0 = l - p;
+    }
+    mem = 0;
+
+    for (;;) {
+        if (hn - o < l) return PROVEN_INDEX_NOT_FOUND;
+        if (PROVEN_FIND_BITOP(byteset, RH(o + l - 1u), &)) {
+            k = l - shift[RH(o + l - 1u)];
+            if (k) {
+                if (k < mem) k = mem;
+                o += k; mem = 0; continue;
+            }
+        } else {
+            o += l; mem = 0; continue;
+        }
+        for (k = (ms + 1u > mem ? ms + 1u : mem); k < l && RN(k) == RH(o + k); ++k) { }
+        if (k < l) { o += k - ms; mem = 0; continue; }
+        for (k = ms + 1u; k > mem && RN(k - 1u) == RH(o + k - 1u); --k) { }
+        if (k <= mem) return hn - o - l;   /* reversed [o, o + l) is original [hn - o - l, hn - o) */
+        o += p; mem = mem0;
+    }
+}
+#undef RN
+#undef RH
+
+/* The anchored backward scan: find the anchor byte from the end with proven_sys_mem_rchr, then
+ * verify the whole needle around it. Fast on ordinary text; O(n*m) worst case, like the
+ * forward default path, which is why low-entropy input goes to the linear fallbacks. */
+static proven_size_t proven_u8_find_last_anchored(const proven_byte_t *h, proven_size_t n,
+                                                  const proven_byte_t *ndl, proven_size_t m,
+                                                  proven_size_t anchor) {
+    proven_byte_t c = ndl[anchor];
+    /* The anchor of a match starting at s is h[s + anchor], s in [0, n - m]. */
+    const proven_byte_t *lo = h + anchor;
+    proven_size_t span = n - m + 1u;
+    while (span > 0u) {
+        const proven_byte_t *hit = (const proven_byte_t *)proven_sys_mem_rchr(lo, c, span);
+        if (!hit) break;
+        const proven_byte_t *start = hit - anchor;
+        if (proven_sys_mem_cmp(start, ndl, m) == 0) return (proven_size_t)(start - h);
+        span = (proven_size_t)(hit - lo);   /* keep looking strictly before this hit */
+    }
+    return PROVEN_INDEX_NOT_FOUND;
+}
+
+proven_size_t proven_u8str_view_find_last(proven_u8str_view_t haystack, proven_u8str_view_t needle) {
+    haystack = view_or_empty(haystack);
+    needle = view_or_empty(needle);
+    if (needle.size == 0) return haystack.size;   /* a position, as _find answers for empty */
+    if (needle.size > haystack.size) return PROVEN_INDEX_NOT_FOUND;
+
+    const proven_byte_t *h = haystack.ptr;
+    proven_size_t n = haystack.size, m = needle.size;
+    if (m == 1u) {
+        const void *hit = proven_sys_mem_rchr(h, needle.ptr[0], n);
+        return hit ? (proven_size_t)((const proven_byte_t *)hit - h) : PROVEN_INDEX_NOT_FOUND;
+    }
+
+    /* The same choice the forward search makes, from the same sample (B-024): anchor on the
+     * rarest needle byte when the haystack is ordinary, and fall back to a linear algorithm
+     * that does not care about the alphabet when it is not. */
+    proven_size_t anchor = m - 1u;
+    int low_entropy = find_pick_anchor(h, n, needle.ptr, m, &anchor);
+    if (low_entropy) {
+        if (m <= 64u) return proven_u8_find_last_shiftor(h, n, needle.ptr, m);
+        return proven_u8_find_last_twoway(h, n, needle.ptr, m);
+    }
+    return proven_u8_find_last_anchored(h, n, needle.ptr, m, anchor);
+}
+
+bool proven_u8str_view_contains(proven_u8str_view_t haystack, proven_u8str_view_t needle) {
+    return proven_u8str_view_find(haystack, 0, needle) != PROVEN_INDEX_NOT_FOUND;
+}
+
+proven_u8str_view_split_t proven_u8str_view_split(proven_u8str_view_t src, proven_u8str_view_t sep) {
+    /* Normalise at construction. Without it an ill-formed `rest` makes find answer NOT_FOUND
+     * and step 3 hands the caller {NULL, 5} AS A FIELD - executing the RFC's table against its
+     * own first draft caught exactly that. */
+    return (proven_u8str_view_split_t){ .rest = view_or_empty(src), .sep = view_or_empty(sep), .done = false };
+}
+
+/* The four steps of RFC-0005 section 3.1, in that order. The termination argument depends on the
+ * order: after step 2, sep.size >= 1, so step 4 shrinks `rest` by at least a byte and every
+ * other path sets `done`. */
+bool proven_u8str_view_split_next(proven_u8str_view_split_t *it, proven_u8str_view_t *out) {
+    /* 1 */
+    if (!it || !out || it->done) return false;
+
+    /* 2 - an empty separator: one field, the whole input. It looks redundant; it is not. find
+     * matches an empty needle where it starts, so without this the iterator never advances and
+     * yields empty fields for ever (RFC-0005 section 1.1, tests/test_regression_split_empty_sep). */
+    if (it->sep.size == 0) {
+        *out = it->rest;
+        it->done = true;
+        return true;
+    }
+
+    /* 3 - no separator left: the rest is the last field, even when it is empty. */
+    proven_size_t at = proven_u8str_view_find(it->rest, 0, it->sep);
+    if (at == PROVEN_INDEX_NOT_FOUND) {
+        *out = it->rest;
+        it->done = true;
+        return true;
+    }
+
+    /* 4 */
+    *out = view_sub(it->rest, 0, at);
+    it->rest = view_sub(it->rest, at + it->sep.size, it->rest.size);
+    return true;
+}
+
+bool proven_u8str_view_is_well_formed(proven_u8str_view_t s) {
+    return s.size == 0 || s.ptr != (const proven_byte_t *)0;
 }

@@ -63,6 +63,7 @@ typedef struct {
     bool mantissa_fits_u64;
     bool significand_sticky;
     proven_u64 mantissa_u64;
+    proven_u64 leading19;           /* the first 19 significant digits, when there are more */
     proven_size_t significant_digits;
     proven_i64 exp10;
     proven_size_t digits_total;
@@ -202,7 +203,9 @@ proven_float_parse_result_t proven_float_parse_ascii_token(const proven_u8 *inpu
         return out;
     }
 
-    {
+    /* Every keyword starts with 'i' or 'n'; a number never does, so a number skips the three
+     * keyword comparisons. */
+    if (proven_float_ascii_lower(input[cursor]) == (proven_u8)'i' || proven_float_ascii_lower(input[cursor]) == (proven_u8)'n') {
         proven_size_t matched = 0;
         if (proven_float_match_keyword(input + cursor, len - cursor, "infinity", &matched) ||
             proven_float_match_keyword(input + cursor, len - cursor, "inf", &matched)) {
@@ -1967,76 +1970,64 @@ int proven_float_shortest_digits_f32(float value, char *out, proven_size_t out_c
     return proven_float_normalize_shortest_digits(out, n, decimal_exp);
 }
 
-static bool proven_float_decimal_build_number(const proven_u8 *input, proven_size_t len, proven_float_decimal_number_t *out) {
+/*
+ * The decimal's shape in one pass: the first 19 significant digits in a u64, the 20th apart, and
+ * only positions after that - up to 20 digits the mantissa is exact when it fits a u64, from 21
+ * it cannot fit at all. Trailing zeros are folded into exp10. The input is a token
+ * proven_float_parse_ascii_token accepted. (It replaced a digit-by-digit builder with pending-
+ * zero bookkeeping, 2026-09-30, after a differential run of 5 million generated tokens - signs,
+ * leading and trailing zeros, points, exponents, 1-40 digits - gave identical fields.)
+ */
+static bool proven_float_decimal_build_number(const proven_u8 *input, proven_size_t len,
+                                              proven_float_decimal_number_t *out) {
+    static const proven_u64 pow10[19] = {
+        1ull, 10ull, 100ull, 1000ull, 10000ull, 100000ull, 1000000ull, 10000000ull, 100000000ull,
+        1000000000ull, 10000000000ull, 100000000000ull, 1000000000000ull, 10000000000000ull,
+        100000000000000ull, 1000000000000000ull, 10000000000000000ull, 100000000000000000ull,
+        1000000000000000000ull,
+    };
     proven_size_t cursor = 0;
     bool negative = false;
     bool seen_point = false;
-    proven_i64 explicit_exp = 0;
+    proven_u64 m = 0;
     proven_size_t digits_total = 0;
     proven_size_t frac_digits = 0;
     proven_size_t first_nonzero = PROVEN_SIZE_MAX;
     proven_size_t last_nonzero = PROVEN_SIZE_MAX;
-    proven_u64 mantissa_u64 = 0;
-    bool mantissa_fits_u64 = true;
-    proven_size_t significant_digits = 0;
-    proven_size_t pending_zero_digits = 0;
-    bool have_mantissa = false;
+    proven_i64 explicit_exp = 0;
+    proven_u32 digit20 = 0;
 
     if (cursor < len && (input[cursor] == (proven_u8)'+' || input[cursor] == (proven_u8)'-')) {
         negative = input[cursor] == (proven_u8)'-';
         ++cursor;
     }
-
-    while (cursor < len && input[cursor] != (proven_u8)'e' && input[cursor] != (proven_u8)'E') {
+    for (; cursor < len; ++cursor) {
         proven_u8 ch = input[cursor];
-        if (ch == (proven_u8)'.') {
-            seen_point = true;
-        } else {
-            proven_u32 digit = (proven_u32)(ch - (proven_u8)'0');
-
+        proven_u32 digit = (proven_u32)(ch - (proven_u8)'0');
+        if (digit < 10u) {
             if (digit != 0u) {
                 if (first_nonzero == PROVEN_SIZE_MAX) {
                     first_nonzero = digits_total;
                 }
                 last_nonzero = digits_total;
-                if (mantissa_fits_u64) {
-                    if (!have_mantissa) {
-                        mantissa_u64 = (proven_u64)digit;
-                        have_mantissa = true;
-                    } else {
-                        while (pending_zero_digits > 0u) {
-                            if (mantissa_u64 > 1844674407370955161ull) {
-                                mantissa_fits_u64 = false;
-                                break;
-                            }
-                            mantissa_u64 *= 10ull;
-                            --pending_zero_digits;
-                        }
-                        if (mantissa_fits_u64) {
-                            if (mantissa_u64 > 1844674407370955161ull ||
-                                (mantissa_u64 == 1844674407370955161ull && (proven_u64)digit > 5ull)) {
-                                mantissa_fits_u64 = false;
-                            } else {
-                                mantissa_u64 = mantissa_u64 * 10ull + (proven_u64)digit;
-                            }
-                        }
-                    }
+            }
+            if (first_nonzero != PROVEN_SIZE_MAX) {
+                proven_size_t index = digits_total - first_nonzero;
+                if (index < 19u) {
+                    m = m * 10u + digit;            /* the first 19 digits; the rest only move last_nonzero */
+                } else if (index == 19u) {
+                    digit20 = digit;
                 }
-                pending_zero_digits = 0u;
-                ++significant_digits;
-            } else if (first_nonzero != PROVEN_SIZE_MAX) {
-                ++pending_zero_digits;
-                ++significant_digits;
             }
             ++digits_total;
-            if (seen_point) {
-                ++frac_digits;
-            }
+            frac_digits += seen_point ? 1u : 0u;
+        } else if (ch == (proven_u8)'.') {
+            seen_point = true;
+        } else {
+            break;                                  /* 'e' or 'E' */
         }
-        ++cursor;
     }
-
-    if (cursor < len && (input[cursor] == (proven_u8)'e' || input[cursor] == (proven_u8)'E')) {
+    if (cursor < len) {
         bool exp_negative = false;
         ++cursor;
         if (cursor < len && (input[cursor] == (proven_u8)'+' || input[cursor] == (proven_u8)'-')) {
@@ -2044,10 +2035,7 @@ static bool proven_float_decimal_build_number(const proven_u8 *input, proven_siz
             ++cursor;
         }
         while (cursor < len && input[cursor] >= (proven_u8)'0' && input[cursor] <= (proven_u8)'9') {
-            explicit_exp = proven_float_exp10_accumulate_clamped(
-                explicit_exp,
-                (proven_u8)(input[cursor] - (proven_u8)'0')
-            );
+            explicit_exp = proven_float_exp10_accumulate_clamped(explicit_exp, (proven_u8)(input[cursor] - (proven_u8)'0'));
             ++cursor;
         }
         if (exp_negative) {
@@ -2060,34 +2048,46 @@ static bool proven_float_decimal_build_number(const proven_u8 *input, proven_siz
     out->mantissa_fits_u64 = true;
     out->significand_sticky = false;
     out->mantissa_u64 = 0;
+    out->leading19 = 0;
     out->significant_digits = 0;
     out->exp10 = 0;
-
     if (out->is_zero) {
         return true;
     }
-
-    out->negative = negative;
-    out->is_zero = false;
-    out->mantissa_fits_u64 = mantissa_fits_u64;
-    out->mantissa_u64 = mantissa_fits_u64 ? mantissa_u64 : 0ull;
-    /*
-     * Trailing zeros after the last nonzero digit are folded into exp10 and are
-     * not stored in the significand or mantissa_u64. Exclude them here so
-     * significant_digits matches the significand's true digit count; otherwise
-     * the magnitude estimate (exp10 + significant_digits - 1) and the binary
-     * exponent bounds derived from it are biased high, which can push the true
-     * result outside the exact-search range.
-     */
-    out->significant_digits = significant_digits - pending_zero_digits;
-    out->exp10 = explicit_exp - (proven_i64)frac_digits + (proven_i64)(digits_total - 1u - last_nonzero);
+    {
+        proven_size_t trailing_zeros = digits_total - 1u - last_nonzero;
+        proven_size_t significant = last_nonzero - first_nonzero + 1u;
+        if (significant == 20u) {
+            /* Fits exactly when the 20-digit value is at most 2^64 - 1 = 18446744073709551615:
+             * the general builder's test, digit by digit. */
+            const proven_u64 cap = 1844674407370955161ull;
+            if (m < cap || (m == cap && digit20 <= 5u)) {
+                out->mantissa_u64 = m * 10u + digit20;
+            } else {
+                out->mantissa_fits_u64 = false;
+            }
+        } else if (significant <= 19u) {
+            /* m holds the first min(19, digits from the first nonzero on) digits; drop the
+             * zeros after the last nonzero one. */
+            proven_size_t accumulated = digits_total - first_nonzero;
+            if (accumulated > 19u) {
+                accumulated = 19u;
+            }
+            out->mantissa_u64 = m / pow10[accumulated - significant];
+        } else {
+            out->mantissa_fits_u64 = false;     /* 21+ digits exceed 2^64 */
+        }
+        out->leading19 = m;                     /* all 19 digits accumulated when significant >= 20 */
+        out->significant_digits = significant;
+        out->exp10 = explicit_exp - (proven_i64)frac_digits + (proven_i64)trailing_zeros;
+    }
     out->digits_total = digits_total;
     out->frac_digits = frac_digits;
     out->first_nonzero = first_nonzero;
     out->last_nonzero = last_nonzero;
-
     return true;
 }
+
 
 /*
  * Builds the exact significand from the input digits, keeping at most
@@ -2703,7 +2703,6 @@ static proven_err_t proven_float_try_clinger(const proven_float_decimal_number_t
     return PROVEN_OK;
 }
 
-#if defined(__SIZEOF_INT128__)
 typedef struct proven_u256_parts_t {
     proven_u64 limb0;
     proven_u64 limb1;
@@ -2960,37 +2959,6 @@ static proven_float_fast_path_result_t proven_float_try_eisel_lemire_negative_q(
     return PROVEN_FLOAT_FAST_PATH_UNSUPPORTED;
 }
 
-#else  /* !defined(__SIZEOF_INT128__) */
-
-/*
- * Without 128-bit integers the Eisel-Lemire fast path is unavailable. These
- * stubs let `proven_float_try_eisel_lemire_with_state` (compiled unconditionally)
- * resolve its calls and report "unsupported", so parsing falls through to the
- * scalar exact path. The big-integer multiply has its own scalar fallback.
- */
-static proven_float_fast_path_result_t proven_float_try_eisel_lemire_pow5_product_q(
-    const proven_float_decimal_number_t *decimal,
-    const proven_float_eisel_validate_state_t *state,
-    proven_size_t q,
-    proven_u64 *bits_out,
-    proven_float_decimal_stats_t *stats
-) {
-    (void)decimal; (void)state; (void)q; (void)bits_out; (void)stats;
-    return PROVEN_FLOAT_FAST_PATH_UNSUPPORTED;
-}
-
-static proven_float_fast_path_result_t proven_float_try_eisel_lemire_negative_q(
-    const proven_float_decimal_number_t *decimal,
-    const proven_float_eisel_validate_state_t *state,
-    proven_size_t q,
-    proven_u64 *bits_out,
-    proven_float_decimal_stats_t *stats
-) {
-    (void)decimal; (void)state; (void)q; (void)bits_out; (void)stats;
-    return PROVEN_FLOAT_FAST_PATH_UNSUPPORTED;
-}
-
-#endif
 
 static proven_float_fast_path_result_t proven_float_try_eisel_lemire_with_state(
     const proven_float_decimal_number_t *decimal,
@@ -3144,6 +3112,115 @@ static bool proven_float_estimate_value_bits(const proven_float_decimal_number_t
     return true;
 }
 
+/*
+ * Direct Eisel-Lemire: the decimal w * 10^q (w exact, at most 19 digits) as one 64x128-bit
+ * product with a truncated 128-bit 5^q, and a certainty test on the product's low bits instead
+ * of an exact big-integer comparison. After Lemire, "Number Parsing at a Gigabyte per Second"
+ * (Software: Practice and Experience, 2021), in its conservative form: whenever the truncated
+ * product could round differently from the exact one - its low bits all ones, a possible tie,
+ * a subnormal or an overflowing result - it answers UNCERTAIN and the staged, exactly-validated
+ * layer below decides. So it only ever returns a result it has proved.
+ *
+ * Why it exists: the staged layer validates every candidate with big-integer arithmetic, which
+ * made a 17-digit parse cost ~200 ns; this answers most of them from two multiplications.
+ */
+static proven_float_fast_path_result_t proven_float_eisel_lemire_core(proven_u64 w, proven_i64 q, proven_u64 *bits_out) {
+    if (w == 0u || q < PROVEN_FLOAT_EL_POW5_MIN_Q || q > PROVEN_FLOAT_EL_POW5_MAX_Q) {
+        return PROVEN_FLOAT_FAST_PATH_UNCERTAIN;
+    }
+
+    int lz = proven_float_clz_u64(w);
+    w <<= (unsigned)lz;
+
+    /* floor(q * log2(10)), exact over the table's range (checked by the table generator);
+     * written as a floor division so it does not rely on >> of a negative number. */
+    const proven_i64 t = 217706 * q;
+    const proven_i64 floor_log2_pow10 = t >= 0 ? (t >> 16) : -((-t + 65535) >> 16);
+    const proven_i64 exponent = floor_log2_pow10 + 1024 + 63;
+
+    const proven_float_cached_pow5_u128_entry_t *f = &proven_float_el_pow5_128[q - PROVEN_FLOAT_EL_POW5_MIN_Q];
+    proven_u128_parts_t product = proven_float_mul_u64_u64_to_u128(w, f->hi);
+    proven_u64 lower = product.lo;
+    proven_u64 upper = product.hi;
+
+    /* The top 55 bits of `upper` are exact unless its low 9 bits are all ones AND the error of
+     * the truncated factor (less than w in this limb) could carry into them. Then take the
+     * factor's low limb into account: a 64x128-bit product. */
+    if ((upper & 0x1FFu) == 0x1FFu && lower + w < lower) {
+        proven_u128_parts_t low = proven_float_mul_u64_u64_to_u128(w, f->lo);
+        proven_u64 middle = lower + low.hi;
+        if (middle < lower) {
+            ++upper;
+        }
+        /* Still undecided at 192 bits: leave it to the exact layer. */
+        if (middle + 1u == 0u && (upper & 0x1FFu) == 0x1FFu && low.lo + w < low.lo) {
+            return PROVEN_FLOAT_FAST_PATH_UNCERTAIN;
+        }
+        lower = middle;
+    }
+
+    const proven_u64 upperbit = upper >> 63;
+    proven_u64 mantissa = upper >> (unsigned)(upperbit + 9u);
+    lz += (int)(1u ^ upperbit);
+
+    const proven_i64 real_exponent = exponent - lz;
+    if (real_exponent < 1 || real_exponent > 2046) {
+        return PROVEN_FLOAT_FAST_PATH_UNCERTAIN;        /* subnormal, zero or infinite */
+    }
+    /* Exactly between two doubles is possible only with an all-zero tail; round-to-even
+     * there needs the exact value. */
+    if (lower == 0u && (upper & 0x1FFu) == 0u && (mantissa & 3u) == 1u) {
+        return PROVEN_FLOAT_FAST_PATH_UNCERTAIN;
+    }
+
+    mantissa += 1u;
+    mantissa >>= 1;
+    proven_i64 biased = real_exponent;
+    if (mantissa >= (1ull << 53)) {
+        mantissa = 1ull << 52;
+        ++biased;
+    }
+    mantissa &= ~(1ull << 52);
+    if (biased > 2046) {
+        return PROVEN_FLOAT_FAST_PATH_UNCERTAIN;
+    }
+    *bits_out = mantissa | ((proven_u64)biased << 52);
+    return PROVEN_FLOAT_FAST_PATH_SUCCESS;
+}
+
+static proven_float_fast_path_result_t proven_float_try_eisel_lemire_direct(const proven_float_decimal_number_t *decimal,
+                                                                            proven_u64 *bits_out) {
+    if (!decimal->mantissa_fits_u64 || decimal->significant_digits > 19u) {
+        return PROVEN_FLOAT_FAST_PATH_UNCERTAIN;
+    }
+    return proven_float_eisel_lemire_core(decimal->mantissa_u64, decimal->exp10, bits_out);
+}
+
+/*
+ * More than 19 significant digits: w, the first 19 of them, and q, the exponent that keeps the
+ * magnitude, put the true value strictly between w * 10^q and (w + 1) * 10^q - strictly, since
+ * the digits dropped are not all zero (trailing zeros are already folded into exp10). Rounding
+ * is monotonic, so when both bounds round to the same double, so does the value. They disagree
+ * only when a rounding boundary falls between them; then the exact layer decides.
+ */
+static proven_float_fast_path_result_t proven_float_try_eisel_lemire_truncated(const proven_float_decimal_number_t *decimal,
+                                                                               proven_u64 *bits_out) {
+    if (decimal->significant_digits <= 19u) {
+        return PROVEN_FLOAT_FAST_PATH_UNCERTAIN;
+    }
+    const proven_u64 w = decimal->leading19;
+    const proven_i64 q = decimal->exp10 + (proven_i64)(decimal->significant_digits - 19u);
+    proven_u64 lo_bits = 0;
+    proven_u64 hi_bits = 0;
+    if (proven_float_eisel_lemire_core(w, q, &lo_bits) != PROVEN_FLOAT_FAST_PATH_SUCCESS ||
+        proven_float_eisel_lemire_core(w + 1u, q, &hi_bits) != PROVEN_FLOAT_FAST_PATH_SUCCESS ||
+        lo_bits != hi_bits) {
+        return PROVEN_FLOAT_FAST_PATH_UNCERTAIN;
+    }
+    *bits_out = lo_bits;
+    return PROVEN_FLOAT_FAST_PATH_SUCCESS;
+}
+
 static proven_err_t proven_float_convert_decimal_impl(const proven_u8 *input, proven_size_t len, double *out,
                                                        proven_float_decimal_stats_t *stats) {
     const proven_u64 max_finite_bits = 0x7fefffffffffffffull;
@@ -3179,6 +3256,15 @@ static proven_err_t proven_float_convert_decimal_impl(const proven_u8 *input, pr
             ++stats->clinger_fast_path_hits;
         }
         *out = fast;
+        return PROVEN_OK;
+    }
+    if (proven_float_try_eisel_lemire_direct(&decimal, &eisel_lemire_bits) == PROVEN_FLOAT_FAST_PATH_SUCCESS ||
+        proven_float_try_eisel_lemire_truncated(&decimal, &eisel_lemire_bits) == PROVEN_FLOAT_FAST_PATH_SUCCESS) {
+        if (stats != 0) {
+            ++stats->eisel_lemire_fast_path_hits;
+            ++stats->eisel_lemire_product_plan_hits;   /* cached-power products only */
+        }
+        *out = proven_float_from_bits(decimal.negative ? (eisel_lemire_bits | 0x8000000000000000ull) : eisel_lemire_bits);
         return PROVEN_OK;
     }
     {
