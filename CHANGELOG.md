@@ -32,13 +32,22 @@ This project follows Keep a Changelog.
   「버스 폴트」가 되었다. 「통째로 넣기」(101장)·「끝 다음 자리」(38장)는 그 말이 실제로 나오는 자리로 옮겼다.
 - 표 제목 넷 --- 에러 코드 표의 「무시된 오류가 낳은 사고」(92장), 파일을 통째로 읽고 쓰는 함수 표의 「스트림 함수」와
   장 요약표의 「시간과 난수 API」(98장), proven 검증 범위 표의 「코루틴」(99장).
+- PDF 에 정하지 않은 글꼴이 박혀 있었다 --- 한국어판에 `NotoSansCJKjp`(수식 안의 한글)·`Unifont`(코드 글꼴에 없는
+  조합형 자모)·`LibertinusSerif`(「‣」와 그리스 확장 자모)·`FreeMono`, 영어판에 `FreeSans`(「✗」 한 글자). 글꼴 목록 뒤에
+  정한 글꼴을 덧붙여, 두 판 모두 Noto 계열·D2Coding·수식 글꼴만 남았다. 측정의 세 함정 그림(한국어판)의 「✗」는
+  정한 글꼴에 없는 글자라 「×」로 바꿨다.
+- 102장이 적은 게이트 수(스물세 → 스물일곱, `scripts/check-*.py`).
 
 ### Added
 - `check-chapter-tense.py` --- 장 참조에 바로 붙은 「본·볼」「다음 장」이 실제 순서와 맞는지 본다.
 - `check-measured-values.py` --- 재는 예제(`cow`·`promise`)가 낸 *값*을 본다. `verify-examples.sh` 가 끝에서 부르므로
   기준 컴파일러와 교차 컴파일러의 출력이 같은 표에 대어진다. 종료 코드만 보던 교차 검증의 구멍을 메운다.
 - `check-vendor-version.py` --- 원고가 적은 proven 판이 `vendor/` 의 스냅샷과 같은지 본다.
+- `check-pdf-fonts.py` --- 두 판 PDF 에 박힌 글꼴이 정한 글꼴뿐인지 본다.
 - `check-part-position.py` 가 장의 끝을 등록부에서 읽는다(숫자로 적혀 있어 마지막 두 장을 보지 않았다).
+
+### Removed
+- `examples/ch102/golden/wordcount`(두 판) --- 예제가 실행 중에 짓는 실행 파일이 저장소에 올라가 있었다.
 
 ## [v0.94.2] - 2026-10-04
 
