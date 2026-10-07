@@ -5,7 +5,7 @@
 장 참조가 이름이 된 뒤로 *원고는 전혀 건드리지 않는다.* 바뀌는 것은 둘뿐이다.
 
   ① `book/registry.typ` 의 순서
-  ② 장 파일 이름 --- 이 책은 「N 번째 장 = `chapters/chNN.typ`」를 유지한다
+  ② 장 파일 이름 --- 이 책은 「N 번째 장 = `chapters/chNNN.typ`」를 유지한다
 
 쓰는 법
     reorder-chapters.py --move loops --after arrays-2d      한 장을 옮긴다
@@ -79,7 +79,7 @@ def shift_files(old, new, dry):
                 continue
             moved += 1
             if not dry:
-                shutil.move(base / f"ch{a:02d}.typ", base / f"ch{b:02d}.typ")
+                shutil.move(base / f"ch{a:03d}.typ", base / f"ch{b:03d}.typ")
     return moved
 
 
@@ -87,7 +87,7 @@ def make_stub(newid, no, dry):
     """두 판에 빈 장 파일을 만든다 --- 서두 정형은 사람이 채운다."""
     for ed, note in (("book", "// 새 장 --- 내용은 사람이 쓴다"),
                      ("book-en", "// new chapter --- the text is written by hand")):
-        path = ROOT / ed / "chapters" / f"ch{no:02d}.typ"
+        path = ROOT / ed / "chapters" / f"ch{no:03d}.typ"
         if dry:
             continue                       # 아직 밀지 않았으니 자리는 차 있다
         if path.exists():
@@ -107,9 +107,9 @@ def rename_files(old, new, dry):
             a, b = pos_old[cid], pos_new[cid]
             if a == b:
                 continue
-            src = base / f"ch{a:02d}.typ"
+            src = base / f"ch{a:03d}.typ"
             tmp = base / f"__{cid}.tmp"
-            staged.append((tmp, base / f"ch{b:02d}.typ"))
+            staged.append((tmp, base / f"ch{b:03d}.typ"))
             moved += 1
             if not dry:
                 shutil.move(src, tmp)

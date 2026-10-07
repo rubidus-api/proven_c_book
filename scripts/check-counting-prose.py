@@ -24,6 +24,7 @@
 import pathlib
 import re
 import sys
+from chapters import is_draft   # chapters/ 안의 작업 폴더는 원고가 아니다
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 TREES = ("book", "book-en")
@@ -113,7 +114,7 @@ def collect():
         base = ROOT / tree
         if not base.exists():
             continue
-        for path in sorted(base.rglob("*.typ")):
+        for path in [p for p in sorted(base.rglob("*.typ")) if not is_draft(p)]:
             rel = str(path.relative_to(ROOT))
             in_part_intro = "/parts/" in rel
             if tree == "book":

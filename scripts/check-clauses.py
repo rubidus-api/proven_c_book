@@ -22,6 +22,7 @@ import os
 import pathlib
 import re
 import sys
+from chapters import is_draft   # chapters/ 안의 작업 폴더는 원고가 아니다
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SKIP = {"lib.typ", "registry.typ", "style.typ", "main.typ"}
@@ -103,7 +104,7 @@ def main():
     bad = 0
     seen = 0
     for ed in ("book", "book-en"):
-        for path in sorted((ROOT / ed).rglob("*.typ")):
+        for path in [p for p in sorted((ROOT / ed).rglob("*.typ")) if not is_draft(p)]:
             if path.name in SKIP:
                 continue
             text = path.read_text(encoding="utf-8")

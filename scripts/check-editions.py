@@ -19,6 +19,7 @@ import glob
 import pathlib
 import re
 import sys
+from chapters import is_draft   # chapters/ 안의 작업 폴더는 원고가 아니다
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
@@ -55,6 +56,7 @@ def float_counts(edition, web):
         src[name] = sum(
             len(re.findall(pat, pathlib.Path(f).read_text(encoding="utf-8")))
             for f in glob.glob(str(ROOT / edition / "**" / "*.typ"), recursive=True)
+            if not is_draft(f)
             # 조판 견본은 책이 아니다 --- 세지 않는다(RFC-0027)
             if not f.endswith(("style-specimen.typ", "style.typ")))
     out = {}
@@ -70,16 +72,16 @@ def main() -> int:
 
     ko, en = chapter_numbers("book"), chapter_numbers("book-en")
     for n in sorted(ko - en):
-        problems.append(f"영어판에 ch{n:02d}.typ 이 없다(번역 누락)")
+        problems.append(f"영어판에 ch{n:03d}.typ 이 없다(번역 누락)")
     for n in sorted(en - ko):
-        problems.append(f"한국어판에 ch{n:02d}.typ 이 없다(원본 누락)")
+        problems.append(f"한국어판에 ch{n:03d}.typ 이 없다(원본 누락)")
 
     tr = translated_list()
     if tr is None:
         problems.append("book-en/main.typ 에서 translated 목록을 찾지 못했다")
     else:
         for n in sorted(en - tr):
-            problems.append(f"영어판 ch{n:02d} 원고가 있으나 translated 목록에 "
+            problems.append(f"영어판 ch{n:03d} 원고가 있으나 translated 목록에 "
                             f"없다 — 빌드에서 통째로 빠진다")
         for n in sorted(tr - en):
             problems.append(f"translated 목록의 {n} 장 원고가 없다")

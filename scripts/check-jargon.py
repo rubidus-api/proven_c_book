@@ -26,7 +26,7 @@ def chapter_files():
     for g in re.findall(r"chapters: \(([^)]*)\)", reg):
         ids += [x.strip().strip('"') for x in g.split(",") if x.strip()]
     for i in range(1, len(ids) + 1):
-        f = ROOT / "book" / "chapters" / (f"ch{i:02d}.typ" if i < 10 else f"ch{i}.typ")
+        f = ROOT / "book" / "chapters" / f"ch{i:03d}.typ"
         if f.exists():
             yield f"{i}장", f
     # ★ 부록도 원고다 --- 장만 훑는 검사는 새 글이 들어오는 자리에서 눈을 감는다.

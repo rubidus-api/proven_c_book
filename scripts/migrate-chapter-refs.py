@@ -26,6 +26,7 @@
 import pathlib
 import re
 import sys
+from chapters import is_draft   # chapters/ 안의 작업 폴더는 원고가 아니다
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 REGISTRY = ROOT / "book" / "registry.typ"
@@ -175,7 +176,7 @@ def targets(args):
         return [pathlib.Path(a) for a in args]
     out = []
     for tree in ("book", "book-en"):
-        out += sorted((ROOT / tree).rglob("*.typ"))
+        out += [p for p in sorted((ROOT / tree).rglob("*.typ")) if not is_draft(p)]
     return out
 
 
