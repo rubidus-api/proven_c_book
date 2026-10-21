@@ -4,7 +4,7 @@
 `scripts/sync-status.py --write` 가 자동으로 갱신한다.
 The Korean edition is the source; this table is generated.
 
-- **synced** 130 · **stale** 1 · **pending** 0
+- **synced** 131 · **stale** 0 · **pending** 0
 
 | 원본 / source | 상태 / state |
 |---|---|
@@ -75,7 +75,7 @@ The Korean edition is the source; this table is generated.
 | `book/chapters/ch065.typ` | ✅ synced |
 | `book/chapters/ch066.typ` | ✅ synced |
 | `book/chapters/ch067.typ` | ✅ synced |
-| `book/chapters/ch068.typ` | ⚠️ stale (원본이 바뀜) |
+| `book/chapters/ch068.typ` | ✅ synced |
 | `book/chapters/ch069.typ` | ✅ synced |
 | `book/chapters/ch070.typ` | ✅ synced |
 | `book/chapters/ch071.typ` | ✅ synced |
