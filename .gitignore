@@ -110,3 +110,8 @@ examples-en/ch102/stale/demo
 # 예제가 실행 중에 자기 폴더에 짓는 것 --- 원본이 아니다
 /examples/ch102/golden/wordcount
 /examples-en/ch102/golden/wordcount
+/scripts/sot-check.sh
+/scripts/claim.sh
+/scripts/install-hook.sh
+/scripts/readme-topline.sh
+/scripts/commit-both.sh
