@@ -4,7 +4,9 @@ All notable changes to this project will be documented in this file.
 
 This project follows Keep a Changelog.
 
-## [Unreleased]
+## [v0.95.1] - 2026-10-22
+
+9장의 역사 서술을 바로잡고, 입력 스트림의 `fflush` 를 POSIX 와 Microsoft 가 어떻게 정했는지 68장에 상자로 실었다. 독자가 알려 준 표 2.2 의 제목도 고쳤다.
 
 ### Fixed
 - **9장의 역사 서술(두 판).** McIlroy 의 말을 인용 부호 안에 원문과 다르게 싣고 있었다 --- 피터 살루스가 정리한 원문으로
