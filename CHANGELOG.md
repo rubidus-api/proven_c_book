@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 This project follows Keep a Changelog.
 
+## [v0.97.1] - 2026-10-23
+
+### Changed
+- 39장·40장(한국어판)의 「당의정」을 「동의어」로 바꾸었다. `a[i]` 가 `*(a + i)` 와 같다는 것은 비유가 아니라
+  표준의 정의(C23 §6.5.3.2 「`E1[E2]` 는 `(*((E1)+(E2)))` 와 동일하다」)이므로, 39장에 그 근거를 함께 적었다.
+
 ## [v0.97.0] - 2026-10-22
 
 36장이 제목(객체, 주소, 포인터)의 세 낱말을 정의하지 않은 채 문법부터 시작하고 있었다. 초보자를 위해 그 정의부터
