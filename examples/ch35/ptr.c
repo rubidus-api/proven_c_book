@@ -16,7 +16,7 @@ int main(void)
     *p = 55;                    /* 역참조: p가 가리키는 곳(= n)에 쓴다 */
     printf("n after *p = 55: %d\n", n);
 
-    set_to(&n, 99);             /* 29장의 숙제 — 함수가 원본을 바꾼다 */
+    set_to(&n, 99);             /* 34장의 숙제 — 함수가 원본을 바꾼다 */
     printf("n after set_to: %d\n", n);
     return 0;
 }

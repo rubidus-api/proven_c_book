@@ -16,7 +16,7 @@ int main(void)
     *p = 55;                    /* dereference: write where p points (= n) */
     printf("n after *p = 55: %d\n", n);
 
-    set_to(&n, 99);             /* chapter 29's homework — a function changes the original */
+    set_to(&n, 99);             /* chapter 34's homework — a function changes the original */
     printf("n after set_to: %d\n", n);
     return 0;
 }

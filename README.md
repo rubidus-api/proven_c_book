@@ -1,4 +1,4 @@
-**한국어** | [English](README-en.md) — **Proven C Book v0.96.0** — [PDF(ko)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.96.0/proven_c_book-v0.96.0-ko.pdf) · [PDF(en)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.96.0/proven_c_book-v0.96.0-en.pdf) · [ZIP(ko)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.96.0/proven_c_book-v0.96.0-ko.zip) · [ZIP(en)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.96.0/proven_c_book-v0.96.0-en.zip) · [ZIP(all)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.96.0/proven_c_book-v0.96.0-all.zip)
+**한국어** | [English](README-en.md) — **Proven C Book v0.97.0** — [PDF(ko)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.97.0/proven_c_book-v0.97.0-ko.pdf) · [PDF(en)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.97.0/proven_c_book-v0.97.0-en.pdf) · [ZIP(ko)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.97.0/proven_c_book-v0.97.0-ko.zip) · [ZIP(en)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.97.0/proven_c_book-v0.97.0-en.zip) · [ZIP(all)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.97.0/proven_c_book-v0.97.0-all.zip)
 
 # Proven C Book — 프로븐 C 라이브러리와 함께하는 현대적 C 입문
 
@@ -13,17 +13,17 @@
 > 기계의 표현과 C의 규칙을 연결하고, [proven](https://github.com/rubidus-api/proven_c_lib)
 > C 라이브러리와 비교 예제로 **그 규칙을 프로그램 설계에 옮기는 과정**을 보여 준다.
 
-- **현재 판**: v0.96.0 — **초안(draft)**
-- **PDF 바로 받기** — [한국어 PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.96.0/proven_c_book-v0.96.0-ko.pdf) · [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.96.0/proven_c_book-v0.96.0-en.pdf)
+- **현재 판**: v0.97.0 — **초안(draft)**
+- **PDF 바로 받기** — [한국어 PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.97.0/proven_c_book-v0.97.0-ko.pdf) · [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.97.0/proven_c_book-v0.97.0-en.pdf)
 - **웹으로 읽기** — [한국어](https://rubidus-api.github.io/proven_c_book/ko/) · [English](https://rubidus-api.github.io/proven_c_book/en/)
-- **묶음(zip)** — [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.96.0/proven_c_book-v0.96.0-ko.zip) · [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.96.0/proven_c_book-v0.96.0-en.zip) · [전체](https://github.com/rubidus-api/proven_c_book/releases/download/v0.96.0/proven_c_book-v0.96.0-all.zip)
-- 저장소 안 사본: [ko PDF](dist/proven_c_book-v0.96.0-ko.pdf) · [en PDF](dist/proven_c_book-v0.96.0-en.pdf)
+- **묶음(zip)** — [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.97.0/proven_c_book-v0.97.0-ko.zip) · [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.97.0/proven_c_book-v0.97.0-en.zip) · [전체](https://github.com/rubidus-api/proven_c_book/releases/download/v0.97.0/proven_c_book-v0.97.0-all.zip)
+- 저장소 안 사본: [ko PDF](dist/proven_c_book-v0.97.0-ko.pdf) · [en PDF](dist/proven_c_book-v0.97.0-en.pdf)
 - **서식 예시(style specimen)** — 책에 쓰이는 모든 장치를 한자리에 모아 둔 견본이다.
   각 요소 옆에 그 이름(웹은 CSS 선택자, 텍스트 판은 함수 이름)이 붙어 있다.
   판을 내지 않고도 늘 최신이다:
   [웹](https://rubidus-api.github.io/proven_c_book/style-specimen.html) ·
   [PDF](https://rubidus-api.github.io/proven_c_book/style-specimen.pdf)
-- 13부 105장 + 부록 A~Q + 찾아보기 — 한국어판 1,215쪽, 영어판 1,288쪽
+- 13부 105장 + 부록 A~Q + 찾아보기 — 한국어판 1,223쪽, 영어판 1,296쪽
 - 갱신 내역은 [CHANGELOG.md](CHANGELOG.md)에 있다.
 
 ## 입문 다음의 질문까지
@@ -108,7 +108,7 @@ proven은 호출자의 수명 위반이나 잘못된 할당기 사용을 모두 
 
 ## 이 책이 다른 점
 
-- **실행 결과를 예제에서 가져온다.** 지면에 실리는 예제 224개의 실행 결과는
+- **실행 결과를 예제에서 가져온다.** 지면에 실리는 예제 225개의 실행 결과는
   검증 스크립트가 캡처한다. GCC 14 기준 전수 검증과 Clang 22.1 교차 검증을 기록하며,
   교차에서 건너뛴 5건의 이유는 [건너뜀 목록](docs/example-cross-skip.tsv)에 남긴다.
 - **표준의 규칙과 실측을 구분한다.** 최적화 수준에 따라 달라지는 실행이나
