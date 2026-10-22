@@ -1,4 +1,4 @@
-/* 인터럽트는 세지 않는다 --- 대기 비트가 하나뿐이다. */
+/* Interrupts are not counted --- there is only one pending bit. */
 #define _POSIX_C_SOURCE 200809L
 #include <signal.h>
 #include <stdio.h>
@@ -12,12 +12,12 @@ int main(void)
 
     sigset_t all, saved;
     sigfillset(&all);
-    sigprocmask(SIG_BLOCK, &all, &saved);   /* 막아 둔다 --- 하드웨어의 '금지'에 해당 */
+    sigprocmask(SIG_BLOCK, &all, &saved);   /* block it --- the hardware's 'disable' */
 
-    for (int i = 0; i < 10; i++) raise(SIGUSR1);   /* 열 번 요청한다 */
+    for (int i = 0; i < 10; i++) raise(SIGUSR1);   /* ask ten times */
     printf("raised 10 times while blocked\n");
 
-    sigprocmask(SIG_SETMASK, &saved, NULL);  /* 푼다 --- 밀린 것이 쏟아질까? */
+    sigprocmask(SIG_SETMASK, &saved, NULL);  /* unblock --- will the backlog pour out? */
     printf("handler ran %d time(s) after unblocking\n", (int)runs);
     puts("");
     puts("a pending interrupt is a bit, not a counter: ten requests, one delivery.");

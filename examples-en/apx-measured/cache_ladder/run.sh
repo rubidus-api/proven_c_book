@@ -1,10 +1,10 @@
 #!/bin/sh
-# 측정 예제는 *-O2 로* 돌린다.
+# The measuring examples are run *at -O2*.
 #
-# ★ 왜 스크립트인가 --- 이 부록이 말하는 것들(최적화가 계산을 지운다, 벡터
-#   명령이 폭의 이점을 만든다, 조건 이동이 분기를 없앤다)은 *최적화를 켰을 때만*
-#   벌어진다. 검증기의 기본 빌드는 -O0 이라, 그대로 두면 「최적화가 지운다」를
-#   보이려는 시연이 아무것도 지우지 못한 채 지면에 실린다. 실제로 그렇게 실렸다.
+# ★ Why a script --- what this appendix talks about (optimization deletes work, vector
+#   instructions give a width advantage, conditional moves remove branches) happens *only*
+#   *with optimization on*. The verifier's default build is -O0, so left alone a demo meant
+#   to show "optimization deletes" would print having deleted nothing. That really happened.
 set -eu
 cd "$(dirname "$0")"
 cc=${CC:-gcc}

@@ -1,14 +1,14 @@
-/* PCI 설정 공간(256바이트)을 필드대로 짓고 되읽는다. 그리고 BAR 의 *크기를 알아내는*
-   고전적인 수법 --- 전부 1을 써 보고 되읽기 --- 을 장치 흉내로 재현한다. */
+/* Build the PCI configuration space (256 bytes) field by field and read it back. Then
+   reproduce, on an imitation device, the classic way to *find a BAR's size* --- write all ones and read back. */
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
 
 static unsigned char cfg[256];
-/* 각 BAR 가 실제로 요구하는 크기. 장치가 하드웨어로 정해 두는 값이다. */
+/* The size each BAR really asks for. The device fixes it in hardware. */
 static uint32_t bar_size[6] = { 16u << 20, 0, 256u << 20, 0, 0, 256 };
 static int bar_is_io[6]     = { 0, 0, 0, 0, 0, 1 };
-static int bar_is_64[6]     = { 0, 0, 1, 0, 0, 0 };   /* BAR2+3 이 짝을 이룬다 */
+static int bar_is_64[6]     = { 0, 0, 1, 0, 0, 0 };   /* BAR2+3 form a pair */
 
 static uint32_t rd32(unsigned off)
 { uint32_t v = 0; for (int i = 3; i >= 0; i--) v = v << 8 | cfg[off + i]; return v; }
@@ -16,7 +16,7 @@ static void wr32(unsigned off, uint32_t v)
 { for (int i = 0; i < 4; i++) cfg[off + i] = (unsigned char)(v >> (8 * i)); }
 static uint16_t rd16(unsigned off) { return (uint16_t)(cfg[off] | cfg[off + 1] << 8); }
 
-/* 장치 흉내: BAR 에 값을 쓰면, 크기보다 낮은 비트는 장치가 *0 으로 굳혀* 돌려준다. */
+/* Device imitation: written to a BAR, the bits below the size come back *stuck at 0*. */
 static void bar_write(int i, uint32_t v)
 {
     unsigned off = 0x10 + 4u * (unsigned)i;
@@ -27,20 +27,20 @@ static void bar_write(int i, uint32_t v)
 
 int main(void)
 {
-    /* ── 머리말 필드 ── */
-    wr32(0x00, 0x10FA8086u);           /* 0x00 제조사 0x8086, 0x02 장치 0x10FA */
-    wr32(0x04, 0x00100007u);           /* 0x04 명령: 메모리·IO·버스마스터 켬 / 0x06 상태 */
-    wr32(0x08, 0x02000003u);           /* 0x08 개정 03, 0x09~0x0B 분류: 02 00 00 = 이더넷 */
-    wr32(0x0C, 0x00000010u);           /* 0x0C 캐시줄 16, 0x0E 머리말 종류 0 */
+    /* ── header fields ── */
+    wr32(0x00, 0x10FA8086u);           /* 0x00 vendor 0x8086, 0x02 device 0x10FA */
+    wr32(0x04, 0x00100007u);           /* 0x04 command: memory, IO, bus master on / 0x06 status */
+    wr32(0x08, 0x02000003u);           /* 0x08 revision 03, 0x09~0x0B class: 02 00 00 = Ethernet */
+    wr32(0x0C, 0x00000010u);           /* 0x0C cache line 16, 0x0E header type 0 */
     for (int i = 0; i < 6; i++)
         if (bar_size[i])
-            /* 입출력 공간은 64 KiB 짜리 좁은 세계라 주소도 작다(옛 x86 의 흔적) */
+            /* I/O space is a narrow 64 KiB world, so the address is small (a trace of old x86) */
             bar_write(i, bar_is_io[i] ? 0xC000u : 0xF0000000u + (uint32_t)i * 0x1000000u);
-    wr32(0x2C, 0x00108086u);           /* 하위 시스템 */
-    cfg[0x34] = 0x50;                  /* 능력 목록의 첫 자리 */
-    cfg[0x3C] = 11;                    /* 인터럽트 선 (옛 방식) */
-    cfg[0x3D] = 1;                     /* 인터럽트 핀 A */
-    /* 능력 목록: MSI(0x05) → PCIe(0x10) → 끝 */
+    wr32(0x2C, 0x00108086u);           /* subsystem */
+    cfg[0x34] = 0x50;                  /* start of the capability list */
+    cfg[0x3C] = 11;                    /* interrupt line (the old way) */
+    cfg[0x3D] = 1;                     /* interrupt pin A */
+    /* capability list: MSI(0x05) -> PCIe(0x10) -> end */
     cfg[0x50] = 0x05; cfg[0x51] = 0x60;
     cfg[0x60] = 0x10; cfg[0x61] = 0x00;
 
@@ -85,11 +85,11 @@ int main(void)
         if (!bar_size[i]) continue;
         unsigned off = 0x10 + 4u * (unsigned)i;
         uint32_t saved = rd32(off);
-        bar_write(i, 0xFFFFFFFFu);                 /* ① 전부 1을 쓴다 */
-        uint32_t probe = rd32(off);                /* ② 되읽는다 */
+        bar_write(i, 0xFFFFFFFFu);                 /* ① write all ones */
+        uint32_t probe = rd32(off);                /* ② read back */
         uint32_t mask = probe & (bar_is_io[i] ? ~0x3u : ~0xFu);
-        uint32_t size = ~mask + 1;                 /* ③ 뒤집고 1을 더하면 크기 */
-        bar_write(i, saved);                       /* ④ 원래 값을 되돌려 놓는다 */
+        uint32_t size = ~mask + 1;                 /* ③ invert and add 1: the size */
+        bar_write(i, saved);                       /* ④ put the original value back */
         printf("  BAR%d: read back 0x%08X -> size %u bytes (%s)  %s\n", i, probe, size,
                size >= (1u << 20) ? "in MiB" : size >= 1024 ? "in KiB" : "bytes",
                size == bar_size[i] ? "matches what the device asked for" : "does not match");

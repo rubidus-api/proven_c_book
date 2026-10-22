@@ -1,11 +1,11 @@
 #!/bin/sh
-# RISC-V 베어메탈 --- *진짜 기계 모형에서* 돌린다.
+# RISC-V bare metal --- run *on a real machine model*.
 #
-# ★ 이 예제는 x86 의 gcc 로는 빌드되지 않는다(`interrupt` 속성의 인자부터 다르다).
-#   그것이 이 부록의 요점이기도 하다 --- 베어메탈 C 는 대상 기계를 고른 다음에야
-#   말이 된다. 그래서 교차 컴파일러로 짓고 QEMU 의 virt 기계에서 돌린다.
-# ★ 도구가 없으면 건너뛰되 *건너뛴다고 말한다.* 조용히 빠지면 독자는 이것이
-#   돌아 본 적 없는 코드라는 사실을 모른다.
+# ★ This example does not build with x86 gcc (even the `interrupt` attribute's argument differs).
+#   That is the appendix's point too --- bare-metal C makes sense only after the target
+#   machine is chosen. So it is built with a cross compiler and run on QEMU's virt machine.
+# ★ Without the tools it is skipped, *and says so.* Silently, the reader would not know
+#   this is code that has never run.
 set -eu
 cd "$(dirname "$0")"
 ws=$(cd ../../.. && pwd)

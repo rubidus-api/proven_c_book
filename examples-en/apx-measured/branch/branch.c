@@ -1,5 +1,5 @@
-/* 갈림길에는 값이 있다 --- 그런데 그 값은 「분기가 있느냐」가 아니라
-   「그 분기를 기계가 맞힐 수 있느냐」가 정한다. */
+/* A fork in the road has a cost --- but what sets it is not "is there a branch"
+   but "can the machine guess that branch". */
 #define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,19 +23,19 @@ static uint64_t rnd(void) { st ^= st << 13; st ^= st >> 7; st ^= st << 17; retur
 
 static volatile long sink;
 
-#define N (1u << 22)      /* 원소 400만 개 = 16 MiB */
-#define R 5               /* 회차 */
+#define N (1u << 22)      /* 4 million elements = 16 MiB */
+#define R 5               /* rounds */
 
-/* 조건에 걸리면 더한다 --- 분기가 있는 코드 */
+/* Add when the condition holds --- code with a branch */
 static long sum_branch(const int *a, size_t n, int t)
 {
     long s = 0;
     for (size_t i = 0; i < n; i++) if (a[i] >= t) s += a[i];
     return s;
 }
-/* ★ 위 함수를 -O2 로 컴파일하면 컴파일러가 `if` 를 *조건 이동*(cmov)으로 바꿔 버린다.
-   그러면 예측할 분기가 아예 없어 「정렬하면 빨라진다」는 고전적 현상이 사라진다.
-   그래서 *진짜 분기를 남긴 판*을 따로 둔다 --- 조건 이동과 벡터화를 이 함수에서만 끈다. */
+/* ★ Compiled at -O2, the compiler turns the `if` above into a *conditional move* (cmov).
+   Then there is no branch to predict, and the classic "sorting makes it faster" vanishes.
+   So a *version that keeps a real branch* is kept apart --- cmov and vectorizing are off only here. */
 __attribute__((optimize("no-if-conversion", "no-if-conversion2", "no-tree-vectorize")))
 static long sum_realbranch(const int *a, size_t n, int t)
 {
@@ -44,12 +44,12 @@ static long sum_realbranch(const int *a, size_t n, int t)
     return s;
 }
 
-/* 같은 계산, 분기 없이 --- 조건을 *산술*로 바꾼다 */
+/* The same calculation without a branch --- the condition becomes *arithmetic* */
 static long sum_branchless(const int *a, size_t n, int t)
 {
     long s = 0;
     for (size_t i = 0; i < n; i++) {
-        long mask = -(long)(a[i] >= t);      /* 참이면 -1(전부 1), 거짓이면 0 */
+        long mask = -(long)(a[i] >= t);      /* -1 (all ones) if true, 0 if false */
         s += a[i] & mask;
     }
     return s;
@@ -100,7 +100,7 @@ int main(void)
     printf("    there is no branch to predict and sorting brings no gain. That is why the\n");
     printf("    famous \"sorted arrays are faster\" story often fails to reproduce today.\n\n");
 
-    /* 틀린 예측 한 번의 값 --- 무작위면 절반쯤 틀린다고 보고 나눈다 */
+    /* the cost of one misprediction --- random data misses about half, so divide by that */
     double extra_per_elem = rand_br - sort_br;
     printf("  extra time per element in the real-branch version: %.3f ns\n", extra_per_elem);
     printf("  / a miss probability of 0.5 = about %.1f ns per misprediction\n", extra_per_elem / 0.5);

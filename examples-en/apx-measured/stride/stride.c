@@ -1,5 +1,5 @@
-/* 캐시 「줄」이 시간으로 드러나는가 --- 걸음 폭을 바꿔 가며 잰다.
-   그리고 같은 자료를 배치만 바꿔(구조체 배열 vs 배열들) 재 본다. */
+/* Does the cache "line" show up in time? --- measure while changing the stride.
+   Then measure the same data in a different layout (array of structs vs struct of arrays). */
 #define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,10 +19,10 @@ static int cmp_d(const void *a, const void *b)
 
 static volatile long sink;
 
-/* ★ aarch64 리눅스는 CTR_EL0 레지스터를 사용자 프로그램에도 읽게 열어 둔다(glibc 도 이것으로
-     줄 크기를 답한다). 안드로이드의 Bionic 은 sysconf 에 0 을 돌려주고, 폰 커널은 sysfs 의 크기
-     칸을 비워 두기도 해서(안드로이드 폰 실측) 마지막으로 이 레지스터를 직접 읽는다.
-     다만 계층 전체에서 *가장 작은* 줄 크기다. */
+/* ★ aarch64 Linux lets user programs read the CTR_EL0 register too (glibc answers the line
+     size from it). Android's Bionic returns 0 from sysconf, and phone kernels may leave the sysfs
+     size empty (measured on an Android phone), so as a last resort we read this register directly.
+     It gives the *smallest* line size in the whole hierarchy, though. */
 #if defined(__aarch64__) && defined(__linux__)
 __asm__(".text\n.globl read_ctr_el0\n.type read_ctr_el0, %function\n"
         "read_ctr_el0:\n    mrs x0, ctr_el0\n    ret\n");
@@ -45,21 +45,21 @@ static long cache_line(void)
 #if defined(__aarch64__) && defined(__linux__)
     return 4L << ((read_ctr_el0() >> 16) & 0xf);
 #else
-    return 0;                                  /* 모른다 --- 부르는 쪽이 밝힌다 */
+    return 0;                                  /* unknown --- the caller says so */
 #endif
 }
 
 int main(void)
 {
     long line = cache_line();
-    if (line <= 0) {                         /* 모르면 흔한 값을 쓰되, 가정이라고 밝힌다 */
+    if (line <= 0) {                         /* if unknown, use the common value but say it is an assumption */
         line = 64;
         printf("(this system does not report its cache line --- 64 bytes is assumed below)\n");
     }
-    const size_t BUF = 64u << 20;            /* 64 MiB --- L3(16 MiB)보다 크게 */
-    const long TOUCH = 2000000;              /* 걸음 폭이 달라도 *접근 횟수는 같게* */
+    const size_t BUF = 64u << 20;            /* 64 MiB --- larger than L3 (16 MiB) */
+    const long TOUCH = 2000000;              /* *the same number of accesses* whatever the stride */
     unsigned char *buf = malloc(BUF);
-    memset(buf, 1, BUF);                     /* 쪽을 미리 붙여 둔다(데우기) */
+    memset(buf, 1, BUF);                     /* fault the pages in first (warm-up) */
 
     printf("== the cache line of this machine: %ld bytes ==\n\n", line);
     printf("== varying the stride --- the number of accesses fixed at %ld ==\n", TOUCH);
@@ -69,7 +69,7 @@ int main(void)
 
     double base = 0;
     for (long stride = 1; stride <= 4096; stride *= 2) {
-        size_t mask = BUF - 1;               /* BUF 가 2의 거듭제곱이라 & 로 감쌀 수 있다 */
+        size_t mask = BUF - 1;               /* BUF is a power of two, so & can wrap it */
         double s[5];
         for (int r = 0; r < 5; r++) {
             size_t p = 0;
@@ -95,11 +95,11 @@ int main(void)
     printf("    while a wider one takes a new line each step and has little room to worsen.\n");
     printf("    (the rise again at very wide strides is pages and the TLB --- the next section.)\n");
 
-    /* ── 배치를 바꾸면 --- 구조체 배열 vs 배열들 ────────────────── */
+    /* ── change the layout --- array of structs vs struct of arrays ──── */
     printf("\n== the same data, laid out differently ==\n");
-    const size_t N = 4u << 20;               /* 원소 400만 개 */
+    const size_t N = 4u << 20;               /* 4 million elements */
 
-    struct particle { double x, y, z, vx, vy, vz; int id, flags; };  /* 실제 크기는 아래에서 찍는다 */
+    struct particle { double x, y, z, vx, vy, vz; int id, flags; };  /* the real size is printed below */
     struct particle *aos = malloc(N * sizeof *aos);
     double *xs = malloc(N * sizeof *xs);
     for (size_t i = 0; i < N; i++) {
@@ -113,11 +113,11 @@ int main(void)
     double s1[5], s2[5];
     for (int r = 0; r < 5; r++) {
         double acc = 0, t0 = ns();
-        for (size_t i = 0; i < N; i++) acc += aos[i].x;      /* 구조체 배열에서 x 만 */
+        for (size_t i = 0; i < N; i++) acc += aos[i].x;      /* only x, from the array of structs */
         double t1 = ns(); sink = (long)acc; s1[r] = (t1 - t0) / (double)N;
 
         acc = 0; t0 = ns();
-        for (size_t i = 0; i < N; i++) acc += xs[i];         /* x 만 모아 둔 배열에서 */
+        for (size_t i = 0; i < N; i++) acc += xs[i];         /* from an array holding only x */
         t1 = ns(); sink = (long)acc; s2[r] = (t1 - t0) / (double)N;
     }
     qsort(s1, 5, sizeof *s1, cmp_d); qsort(s2, 5, sizeof *s2, cmp_d);

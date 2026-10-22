@@ -887,9 +887,9 @@ loose: members sum 6, actual 12 -> padding 6 bytes
 
 [the array: the stride is exactly sizeof]
   sizeof v = 24 (= 3 x 8)
-    &amp;v[0] = 0x7ffd696cd040   offset +0
-    &amp;v[1] = 0x7ffd696cd048   offset +8
-    &amp;v[2] = 0x7ffd696cd050   offset +16
+    &amp;v[0] = 0x7ffd6f3e0b70   offset +0
+    &amp;v[1] = 0x7ffd6f3e0b78   offset +8
+    &amp;v[2] = 0x7ffd6f3e0b80   offset +16
   no gap: (char *)&amp;v[1] - (char *)&amp;v[0] == sizeof v[0] -> true
 
 [two ways to walk it]

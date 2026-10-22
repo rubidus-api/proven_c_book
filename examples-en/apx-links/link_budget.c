@@ -1,19 +1,19 @@
-/* 같은 일을 폴링·인터럽트·DMA 로 할 때 무엇이 얼마나 드는가 --- 예산 계산.
-   하드웨어가 없으므로 이것은 *계산*이다. 값(비용)은 흔히 인용되는 자릿수를 가정으로
-   두고, 그 가정을 화면에 함께 적는다 --- 가정을 감추면 계산이 아니라 주장이 된다. */
+/* What does the same job cost by polling, interrupts or DMA --- a budget calculation.
+   There is no hardware, so this is *arithmetic*. The costs assume commonly quoted orders of
+   magnitude, and the assumptions are printed too --- hide them and it is a claim, not a calculation. */
 #include <stdio.h>
 
-/* 가정 --- 요즘 흔한 마이크로컨트롤러/PC 급의 어림값 */
-#define IRQ_COST_US   1.0     /* 인터럽트 한 번 처리에 드는 시간 */
-#define POLL_COST_US  0.2     /* 폴링 한 번(레지스터 읽고 판정)에 드는 시간 */
+/* Assumptions --- rough values for a typical microcontroller/PC today */
+#define IRQ_COST_US   1.0     /* time to handle one interrupt */
+#define POLL_COST_US  0.2     /* time for one poll (read a register and decide) */
 
 struct link { const char *name; double bytes_per_sec; };
 
 static void budget(struct link L, double dma_block)
 {
-    double irq_rate  = L.bytes_per_sec;                  /* 바이트마다 끼어들기 */
+    double irq_rate  = L.bytes_per_sec;                  /* an interrupt per byte */
     double irq_busy  = irq_rate * IRQ_COST_US / 1e6 * 100.0;
-    double dma_rate  = L.bytes_per_sec / dma_block;      /* 덩어리마다 한 번 */
+    double dma_rate  = L.bytes_per_sec / dma_block;      /* once per block */
     double dma_busy  = dma_rate * IRQ_COST_US / 1e6 * 100.0;
 
     char a[24], b[24];
@@ -49,12 +49,12 @@ int main(void)
     printf("\n== where the crossover is (assuming an interrupt per byte) ==\n");
     printf("  %-14s %-16s %s\n", "CPU used", "events/s", "the data rate that means");
     for (double busy = 5; busy <= 100; busy *= 2) {
-        double rate = busy / 100.0 * 1e6 / IRQ_COST_US;   /* 사건/초 */
+        double rate = busy / 100.0 * 1e6 / IRQ_COST_US;   /* events per second */
         char pct[16]; snprintf(pct, sizeof pct, "%.0f%%", busy);
         printf("  %-14s %-16.0f %.1f KiB/s\n", pct, rate, rate / 1024.0);
     }
 
-    /* 한글은 한 글자가 두 칸이라 %-Ns 로는 안 맞는다 --- 줄마다 손으로 적는다 */
+    /* the lines are written out by hand, one by one */
     printf("\n== the three schemes compared ==\n");
     printf("  polling   : the CPU keeps asking.      latency = about half the period.\n");
     printf("              suits very frequent events, or very simple places.\n");

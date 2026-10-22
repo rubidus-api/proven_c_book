@@ -1,5 +1,5 @@
-/* 재기 전에 *재는 도구*를 잰다.
-   시계의 해상도, 시계를 읽는 값, 최적화가 코드를 지우는 것, 데우기, 그리고 평균의 함정. */
+/* Before measuring, measure *the measuring tool*.
+   Clock resolution, the cost of reading the clock, optimization deleting code, warm-up, and the trap of the mean. */
 #define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,14 +17,14 @@ static double ns(void)
 static int cmp_d(const void *a, const void *b)
 { double x = *(const double *)a, y = *(const double *)b; return x < y ? -1 : x > y; }
 
-/* 최적화가 지워도 되는 계산: 결과를 아무도 안 쓴다 */
+/* Work optimization may delete: nobody uses the result */
 static void sum_discarded(const int *a, size_t n)
 {
     long s = 0;
     for (size_t i = 0; i < n; i++) s += a[i];
     (void)s;
 }
-/* 최적화가 지울 수 없는 계산: 결과를 돌려주고, 부르는 쪽이 쓴다 */
+/* Work optimization cannot delete: the result is returned and the caller uses it */
 static long sum_kept(const int *a, size_t n)
 {
     long s = 0;
@@ -33,21 +33,21 @@ static long sum_kept(const int *a, size_t n)
 }
 static volatile long sink;
 
-/* ★ aarch64 리눅스는 CTR_EL0 레지스터를 사용자 프로그램에도 읽게 열어 둔다(glibc 도 이것으로
-     줄 크기를 답한다). 안드로이드의 Bionic 은 sysconf 에 0 을 돌려주고, 폰 커널은 sysfs 의 크기
-     칸을 비워 두기도 해서(안드로이드 폰 실측) 마지막으로 이 레지스터를 직접 읽는다.
-     다만 계층 전체에서 *가장 작은* 줄 크기다. */
+/* ★ aarch64 Linux lets user programs read the CTR_EL0 register too (glibc answers the line
+     size from it). Android's Bionic returns 0 from sysconf, and phone kernels may leave the sysfs
+     size empty (measured on an Android phone), so as a last resort we read this register directly.
+     It gives the *smallest* line size in the whole hierarchy, though. */
 #if defined(__aarch64__) && defined(__linux__)
 __asm__(".text\n.globl read_ctr_el0\n.type read_ctr_el0, %function\n"
         "read_ctr_el0:\n    mrs x0, ctr_el0\n    ret\n");
 unsigned long read_ctr_el0(void);
 #endif
 
-/* ★ 캐시의 크기는 C 라이브러리가 CPU 에 물어서 채운다. x86-64 의 glibc 는 CPUID 로 답하지만,
-     aarch64 의 glibc(2.44 소스로 확인)는 줄 크기만 CTR_EL0 로 답하고 크기·연관도에는 *0* 을
-     돌려준다 --- 그 값을 담은 레지스터를 커널이 사용자 프로그램에 막아 두었기 때문이다.
-     그래서 0 이면, 커널이 부팅 때 읽어 sysfs 에 적어 둔 값을 본다. 그것도 없으면 0 이고,
-     찍는 쪽이 「모른다」고 말한다 --- 0 바이트짜리 캐시로 읽히게 두지 않는다. */
+/* ★ The C library fills in cache sizes by asking the CPU. glibc on x86-64 answers with CPUID,
+     but glibc on aarch64 (checked in the 2.44 source) answers only the line size, from CTR_EL0, and *0*
+     for size and associativity --- the kernel keeps the register holding them from user programs.
+     So on 0 we look at what the kernel read at boot and wrote to sysfs. Failing that it stays 0
+     and the printing side says "unknown" --- it is never read as a 0-byte cache. */
 static long sysfs_cache(int level, const char *field)
 {
     const char *dir = "/sys/devices/system/cpu/cpu0/cache";
@@ -62,7 +62,7 @@ static long sysfs_cache(int level, const char *field)
         f = fopen(path, "r");
         bool code_only = f && fgets(buf, sizeof buf, f) && strncmp(buf, "Instruction", 11) == 0;
         if (f) fclose(f);
-        if (lv != level || code_only) continue;        /* 명령 전용 캐시는 건너뛴다 */
+        if (lv != level || code_only) continue;        /* skip instruction-only caches */
         snprintf(path, sizeof path, "%s/index%d/%s", dir, i, field);
         f = fopen(path, "r");
         if (!f) return 0;
@@ -70,7 +70,7 @@ static long sysfs_cache(int level, const char *field)
         if (fgets(buf, sizeof buf, f)) {
             char *end;
             v = strtol(buf, &end, 10);
-            if (*end == 'K') v *= 1024;                /* "32K" 꼴로 적혀 있다 */
+            if (*end == 'K') v *= 1024;                /* written in the form "32K" */
             else if (*end == 'M') v *= 1024 * 1024;
         }
         fclose(f);
@@ -135,7 +135,7 @@ int main(void)
     double call_ns = (t1 - t0) / (double)N;
     printf("  one clock_gettime : %.1f ns\n", call_ns);
 
-    /* 실제로 볼 수 있는 가장 짧은 간격 --- 두 번 읽어 차이가 0 이 아닌 최솟값 */
+    /* the shortest interval we can actually see --- the smallest nonzero difference of two reads */
     double min_gap = 1e18;
     for (long i = 0; i < 100000; i++) {
         double a = ns(), b = ns();
@@ -146,11 +146,11 @@ int main(void)
     printf("    Every measurement in this appendix is built that way.\n\n");
 
     printf("== 4. trap one: the optimiser removes what you meant to measure ==\n");
-    const size_t NA = 1u << 20;                 /* 4 MiB 짜리 배열 */
+    const size_t NA = 1u << 20;                 /* a 4 MiB array */
     int *a = malloc(NA * sizeof *a);
     for (size_t i = 0; i < NA; i++) a[i] = (int)i;
 
-    sum_discarded(a, NA); sink += sum_kept(a, NA);      /* 데우기 */
+    sum_discarded(a, NA); sink += sum_kept(a, NA);      /* warm-up */
 
     t0 = ns(); for (int r = 0; r < 20; r++) sum_discarded(a, NA); t1 = ns();
     double disc = (t1 - t0) / 20.0;
@@ -166,12 +166,12 @@ int main(void)
 
     printf("== 5. trap two: the first round is slow (warming up) ==\n");
     int *b = malloc(NA * sizeof *b);
-    memset(b, 0, NA * sizeof *b);       /* 쪽을 실제로 잡아 둔다 */
+    memset(b, 0, NA * sizeof *b);       /* really claim the pages */
     free(b);
-    b = malloc(NA * sizeof *b);         /* 새로 잡으면 쪽이 아직 없다 */
-    /* ★ 여기서도 ④ 의 함정이 먼저 걸렸다: 채운 결과를 아무도 안 읽으면 memset 이
-       통째로 사라져 「4 MiB 를 38 나노초에 채웠다」는 헛것이 나온다. 그래서 잰 *뒤에*
-       한 바이트를 읽어 결과가 쓰였음을 알린다. */
+    b = malloc(NA * sizeof *b);         /* freshly allocated, the pages are not there yet */
+    /* ★ Here too ④'s trap struck first: if nobody reads what was filled, the memset
+       vanishes whole and you get the phantom "filled 4 MiB in 38 ns". So *after* measuring
+       we read one byte to show the result was used. */
     t0 = ns(); memset(b, 1, NA * sizeof *b); t1 = ns();
     double first = t1 - t0;  sink += ((unsigned char *)b)[NA / 2];
     t0 = ns(); memset(b, 2, NA * sizeof *b); t1 = ns();

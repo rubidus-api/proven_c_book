@@ -1,12 +1,12 @@
-/* 디스크의 첫 섹터에 무엇이 있는가 --- 직접 만들어 보고, 다시 읽어 본다.
+/* What is in a disk's first sector --- build one, then read it back.
 
-   주의: 이 프로그램은 디스크를 건드리지 않는다. 파일도 장치도 열지 않고, 아무것도 쓰지
-   않는다. 기억 속의 배열 하나를 옛 규약 그대로 채운 뒤, 그 배열을 다시 읽어 해독해
-   화면에 찍을 뿐이다. 돌리면 글자만 나오고 끝난다.
+   Note: this program does not touch any disk. It opens no file or device and writes
+   nothing. It fills one array in memory by the old conventions, reads it back, decodes
+   it and prints. Run it and you get text, nothing more.
 
-   여기서 만드는 바이트는 진짜 규칙을 따른다: 512바이트, 0x1BE 의 파티션 표 네 칸,
-   그리고 끝의 0x55 0xAA. GPT 를 쓰는 디스크의 첫 섹터(보호 MBR)와 EFI PART 헤더도
-   같이 만든다. 이 바이트를 실제 디스크의 0번 섹터에 쓰는 일은 하지 않는다. */
+   The bytes built here follow the real rules: 512 bytes, four partition slots at 0x1BE,
+   and 0x55 0xAA at the end. It also builds a GPT disk's first sector (the protective MBR)
+   and the EFI PART header. It never writes these bytes to a real sector 0. */
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
@@ -29,11 +29,11 @@ static void put32(unsigned char *p, uint32_t v)
 static void put_part(unsigned char *e, uint8_t boot, uint8_t type,
                      uint32_t lba, uint32_t count)
 {
-    e[0] = boot;              /* 0x80 이면 「이것으로 부팅」 */
-    e[1] = 0xfe; e[2] = 0xff; e[3] = 0xff;   /* 옛 CHS 자리 --- 이제는 채우는 시늉만 한다 */
+    e[0] = boot;              /* 0x80 means "boot from this one" */
+    e[1] = 0xfe; e[2] = 0xff; e[3] = 0xff;   /* the old CHS fields --- only filled in for form now */
     e[4] = type;
     e[5] = 0xfe; e[6] = 0xff; e[7] = 0xff;
-    put32(e + 8, lba);        /* 시작 --- 이쪽이 진짜로 쓰인다 */
+    put32(e + 8, lba);        /* start --- this is what is really used */
     put32(e + 12, count);
 }
 
@@ -50,16 +50,16 @@ int main(void)
 {
     unsigned char mbr[512] = { 0 };
 
-    /* (1) 부트스트랩 자리 --- 446바이트. 진짜 부트로더의 첫 조각이 여기 들어간다. */
-    memcpy(mbr, "\xfa\x31\xc0\x8e\xd8\x8e\xd0\xbc\x00\x7c", 10);  /* cli; 세그먼트·스택 차리기 */
+    /* (1) The bootstrap area --- 446 bytes. A real boot loader's first piece goes here. */
+    memcpy(mbr, "\xfa\x31\xc0\x8e\xd8\x8e\xd0\xbc\x00\x7c", 10);  /* cli; set up segments and stack */
     printf("how the first sector divides up\n");
     printf("  0x000 - 0x1bd : bootstrap code, %d bytes\n", 0x1be);
     printf("  0x1be - 0x1fd : partition table --- 16 bytes x 4 entries\n");
     printf("  0x1fe - 0x1ff : signature 0x55 0xaa\n\n");
 
-    /* (2) 파티션 표 --- 흔한 배치 하나를 적어 둔다 */
-    put_part(mbr + 0x1be, 0x80, 0x83, 2048, 1024000);   /* 부팅 가능, 리눅스 */
-    put_part(mbr + 0x1ce, 0x00, 0x82, 1026048, 262144); /* 리눅스 스왑 */
+    /* (2) The partition table --- one common layout */
+    put_part(mbr + 0x1be, 0x80, 0x83, 2048, 1024000);   /* bootable, Linux */
+    put_part(mbr + 0x1ce, 0x00, 0x82, 1026048, 262144); /* Linux swap */
     mbr[510] = 0x55; mbr[511] = 0xaa;
 
     printf("the partition table (from 0x1be)\n");
@@ -74,21 +74,21 @@ int main(void)
            (mbr[510] == 0x55 && mbr[511] == 0xaa)
            ? "the BIOS accepts this as a boot sector only with these" : "not a boot sector");
 
-    /* (3) GPT 를 쓰는 디스크의 첫 섹터 --- 보호 MBR */
+    /* (3) The first sector of a GPT disk --- the protective MBR */
     unsigned char pmbr[512] = { 0 };
-    put_part(pmbr + 0x1be, 0x00, 0xee, 1, 0xffffffffu);  /* 0xEE = 「여기부터 끝까지 남의 것」 */
+    put_part(pmbr + 0x1be, 0x00, 0xee, 1, 0xffffffffu);  /* 0xEE = "from here to the end belongs to someone else" */
     pmbr[510] = 0x55; pmbr[511] = 0xaa;
     printf("the protective MBR (first sector of a GPT disk)\n");
     printf("  partition type 0x%02x --- it tells old tools the disk is fully used\n",
            pmbr[0x1be + 4]);
     printf("  the reason: to stop a tool that does not know GPT taking it for empty\n\n");
 
-    /* (4) 진짜 지도는 두 번째 섹터(LBA 1)에 있다 --- GPT 헤더 */
+    /* (4) The real map is in the second sector (LBA 1) --- the GPT header */
     unsigned char gpt[92] = { 0 };
     memcpy(gpt, "EFI PART", 8);
-    put32(gpt + 8, 0x00010000u);      /* 개정 1.0 */
-    put32(gpt + 12, 92);              /* 헤더 크기 */
-    put32(gpt + 16, 0);               /* CRC 자리는 0 으로 두고 계산한다 */
+    put32(gpt + 8, 0x00010000u);      /* revision 1.0 */
+    put32(gpt + 12, 92);              /* header size */
+    put32(gpt + 16, 0);               /* the CRC field is left 0 while computing */
     put32(gpt + 16, crc32(gpt, 92));
 
     printf("the GPT header (LBA 1)\n");
