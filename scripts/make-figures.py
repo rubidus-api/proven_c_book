@@ -142,6 +142,95 @@ def fig_ieee(L):
     return "".join(out)
 
 
+# ── F5b. 0 근처의 구멍과 비정규수 (52장) ───────────────────────
+# 장난감 형식(유효 3비트: 1.xx)으로 그린다. 실제 double 의 눈금은 너무 촘촘해
+# 그릴 수 없다 --- 모양은 같고 배율만 다르다(구멍이 눈금의 2^52 배).
+def fig_subnormal_gap(L):
+    w, h = 760, 310
+    out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
+    x0, unit = 60, 80                       # 0 에서 8m 까지 → 60 ~ 700
+
+    def X(v):
+        return x0 + v * unit
+
+    normals = [m / 4 * 2 ** e for e in range(3) for m in range(4, 8)] + [8]
+    subnormals = [0.25, 0.5, 0.75]
+
+    def axis(y, title, with_sub):
+        out.append(text(x0 - 40, y - 42, title, 13, "bold", anchor="start"))
+        out.append(arrow(x0, y, X(8) + 30, y, sw=1.3))
+        out.append(f'<line x1="{x0}" y1="{y - 14}" x2="{x0}" y2="{y + 14}" '
+                   f'stroke="#111" stroke-width="2.2"/>')
+        for v in normals:
+            tall = v in (1, 2, 4, 8)
+            out.append(f'<line x1="{X(v)}" y1="{y - (12 if tall else 8)}" x2="{X(v)}" '
+                       f'y2="{y + (12 if tall else 8)}" stroke="#111" stroke-width="1.6"/>')
+        if with_sub:
+            for v in subnormals:
+                out.append(f'<line x1="{X(v)}" y1="{y - 8}" x2="{X(v)}" y2="{y + 8}" '
+                           f'stroke="#111" stroke-width="1.6" stroke-dasharray="3 2"/>')
+        for v, lab in ((0, "0"), (1, "m"), (2, "2m"), (4, "4m"), (8, "8m")):
+            out.append(text(X(v), y + 30, lab, 12.5, "bold"))
+
+    # 위: 비정규수가 없다면
+    y1 = 92
+    axis(y1, L["top"], False)
+    out.append(box(X(0) + 3, y1 - 7, unit - 6, 14, sw=1, fill="url(#hatch)"))
+    out.append(text(X(0.5), y1 - 14, L["hole"], 12, "bold"))
+
+    # 아래: IEEE 754
+    y2 = 212
+    axis(y2, L["bottom"], True)
+    for a, b, lab in ((0, 1, L["sub"]), (1, 2, L["norm1"]), (2, 4, L["norm2"])):
+        yb = y2 + 46
+        out.append(f'<path d="M{X(a) + 2},{yb - 6} L{X(a) + 2},{yb} L{X(b) - 2},{yb} '
+                   f'L{X(b) - 2},{yb - 6}" fill="none" stroke="#111" stroke-width="1.1"/>')
+        out.append(text((X(a) + X(b)) / 2, yb + 16, lab, 11.5))
+    out.append(text(X(0), y2 - 22, L["same"], 11.5, anchor="start", fill="#444"))
+    out.append(text(x0 - 40, h - 8, L["note"], 11.5, anchor="start", fill="#444"))
+    out.append(TAIL)
+    return "".join(out)
+
+
+# ── F5c. 경계 양쪽의 비트 (52장) ──────────────────────────────
+def fig_subnormal_bits(L):
+    w, h = 800, 300
+    out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
+    xs, xe, xh, xf, xv = 172, 198, 340, 378, 586   # 부호·지수·숨은 비트·가수·값
+    we, wf = 130, 196
+    hy = 34
+    for x, lab in ((xs + 13, L["sign"]), (xe + we / 2, L["exp"]), (xh + 15, L["hidden"]),
+                   (xf + wf / 2, L["frac"]), (xv, L["value"])):
+        out.append(text(x, hy, lab, 11.5, "bold", anchor="start" if x == xv else "middle"))
+    rows = [
+        (L["r1"], "DBL_MIN", "0", "00000000001", "1", "0000 0000 … 0000",
+         "1.000…0 × 2^-1022"),
+        (L["r2"], "", "0", "00000000000", "0", "1111 1111 … 1111",
+         "0.111…1 × 2^-1022"),
+        (L["r3"], "DBL_TRUE_MIN", "0", "00000000000", "0", "0000 0000 … 0001",
+         "0.000…1 × 2^-1022 = 2^-1074"),
+    ]
+    y = 56
+    for name, const, s, e, hb, f, v in rows:
+        out.append(text(20, y + 20, name, 12, "bold", anchor="start"))
+        if const:
+            out.append(text(20, y + 36, const, 11, anchor="start", fill="#444"))
+        out.append(box(xs, y, 26, 40))
+        out.append(text(xs + 13, y + 25, s, 13))
+        out.append(box(xe, y, we, 40, fill="url(#hatch)"))
+        out.append(text(xe + we / 2, y + 25, e, 13, "bold"))
+        out.append(box(xh, y, 30, 40, sw=1.2, dash="4 3"))
+        out.append(text(xh + 15, y + 25, hb + ".", 14, "bold"))
+        out.append(box(xf, y, wf, 40))
+        out.append(text(xf + wf / 2, y + 25, f, 13))
+        out.append(text(xv, y + 25, v, 12.5, anchor="start"))
+        y += 62
+    out.append(text(20, h - 30, L["note1"], 11.5, anchor="start", fill="#444"))
+    out.append(text(20, h - 10, L["note2"], 11.5, anchor="start", fill="#444"))
+    out.append(TAIL)
+    return "".join(out)
+
+
 # ── F6. 포인터 산술 (36장) ────────────────────────────────────
 def fig_ptrmath(L):
     w, h = 760, 220
@@ -845,7 +934,7 @@ def fig_paging(L):
     return "".join(out)
 
 
-# ── F. 실행 파일 형식의 뼈대 (부록 J) ────────────────────────────
+# ── F. 실행 파일 형식의 뼈대 (부록 K) ────────────────────────────
 def fig_format_skeleton(L):
     """형식은 셋이지만 로더가 묻는 질문은 하나라는 것을 나란히 세워 보인다."""
     w, h = 760, 400
@@ -871,7 +960,7 @@ def fig_format_skeleton(L):
     return "".join(out)
 
 
-# ── F. 장치를 어디에 두는가 (부록 K) ─────────────────────────────
+# ── F. 장치를 어디에 두는가 (부록 H) ─────────────────────────────
 def fig_addr_space(L):
     w, h = 760, 330
     out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
@@ -911,7 +1000,7 @@ def fig_addr_space(L):
     return "".join(out)
 
 
-# ── F. 0 으로 나누면 무슨 일이 일어나는가 (부록 K) ───────────────
+# ── F. 0 으로 나누면 무슨 일이 일어나는가 (부록 H) ───────────────
 def fig_trap_path(L):
     w, h = 760, 250
     out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
@@ -930,7 +1019,7 @@ def fig_trap_path(L):
     return "".join(out)
 
 
-# ── F. 인터럽트에서 하드웨어가 저장해 주는 양 (부록 K) ───────────
+# ── F. 인터럽트에서 하드웨어가 저장해 주는 양 (부록 H) ───────────
 def fig_irq_save(L):
     w, h = 760, 300
     out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
@@ -975,7 +1064,7 @@ def fig_boot_chain(L):
     return "".join(out)
 
 
-# ── F. 같은 바이트를 보내는 두 길 (부록 M) ───────────────────────
+# ── F. 같은 바이트를 보내는 두 길 (부록 I) ───────────────────────
 def fig_serial_parallel(L):
     w, h = 760, 380
     out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
@@ -1004,7 +1093,7 @@ def fig_serial_parallel(L):
     return "".join(out)
 
 
-# ── F. 같은 자료를 옮기는 두 길 (부록 M) ─────────────────────────
+# ── F. 같은 자료를 옮기는 두 길 (부록 I) ─────────────────────────
 def fig_dma_path(L):
     w, h = 760, 340
     out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
@@ -1034,7 +1123,7 @@ def fig_dma_path(L):
     return "".join(out)
 
 
-# ── F. 디스크 한 장의 지도 (부록 N) ──────────────────────────────
+# ── F. 디스크 한 장의 지도 (부록 J) ──────────────────────────────
 def fig_disk_layers(L):
     w, h = 780, 420
     out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
@@ -1075,7 +1164,7 @@ def fig_disk_layers(L):
     return "".join(out)
 
 
-# ── F. 확장 파티션의 EBR 사슬 (부록 N) ───────────────────────────
+# ── F. 확장 파티션의 EBR 사슬 (부록 J) ───────────────────────────
 def fig_ebr_chain(L):
     w, h = 780, 330
     out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
@@ -1104,7 +1193,7 @@ def fig_ebr_chain(L):
     return "".join(out)
 
 
-# ── F. SSD 는 쓰는 단위와 지우는 단위가 다르다 (부록 N) ──────────
+# ── F. SSD 는 쓰는 단위와 지우는 단위가 다르다 (부록 J) ──────────
 def fig_ssd_erase(L):
     w, h = 780, 400
     out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
@@ -1135,7 +1224,7 @@ def fig_ssd_erase(L):
     return "".join(out)
 
 
-# ── 부록 O 의 도해는 *잰 값*을 그린다 ────────────────────────────
+# ── 부록 M 의 도해는 *잰 값*을 그린다 ────────────────────────────
 # ★ 측정 예제가 `#DATA ...` 줄로 값을 함께 내고, verify-examples.sh 가 그것을
 #   `<이름>.c.data` 로 갈라 둔다. 여기서 그 파일을 읽는다 --- 그림이 지난번
 #   숫자를 기억하지 않게 하려는 것이다. 값이 없으면 *없다고 그린다*(빈 그림을
@@ -1463,6 +1552,28 @@ FIGS = {
                    note="지수는 바이어스를 더해 저장하고, 가수의 맨 앞 1은 저장하지 않는다(숨은 비트)."),
         "en": dict(sign="sign", exp="exponent", frac="fraction", bit="bits",
                    note="The exponent is stored with a bias; the leading 1 of the fraction is not stored (the hidden bit)."),
+    }),
+    "subnormal-gap": (fig_subnormal_gap, {
+        "ko": dict(top="비정규수가 없다면 (0으로 밀어 버리는 방식)",
+                   bottom="IEEE 754 — 비정규수가 구멍을 메운다",
+                   hole="구멍", sub="비정규수 (점선)", norm1="정규수", norm2="정규수 — 간격 2배",
+                   same="0~m 의 간격 = m~2m 의 간격",
+                   note="장난감 형식(유효 3비트)의 눈금. m = 가장 작은 정규수. double 에서는 구멍이 눈금 간격의 2^52 배다."),
+        "en": dict(top="without subnormals (flush to zero)",
+                   bottom="IEEE 754 — subnormals fill the hole",
+                   hole="hole", sub="subnormals", norm1="normals", norm2="normals — step doubled",
+                   same="step in 0~m = step in m~2m",
+                   note="Ticks of a toy format (3 significant bits); dashed ticks are subnormals. m = the smallest normal. In double the hole is 2^52 steps wide."),
+    }),
+    "subnormal-bits": (fig_subnormal_bits, {
+        "ko": dict(sign="부호", exp="지수 칸 (11)", hidden="숨은 비트", frac="가수 칸 (52)", value="값",
+                   r1="가장 작은 정규수", r2="가장 큰 비정규수", r3="가장 작은 비정규수",
+                   note1="지수 칸이 1에서 0으로 내려가도 실제 지수는 -1022 그대로다. 바뀌는 것은 숨은 비트(1 → 0)뿐이다.",
+                   note2="그래서 가장 큰 비정규수와 가장 작은 정규수는 꼭 한 눈금(2^-1074) 떨어진 이웃이 된다."),
+        "en": dict(sign="sign", exp="exponent (11)", hidden="hidden", frac="fraction (52)", value="value",
+                   r1="smallest normal", r2="largest subnormal", r3="smallest subnormal",
+                   note1="The exponent field drops from 1 to 0, yet the actual exponent stays -1022. Only the hidden bit changes (1 → 0).",
+                   note2="So the largest subnormal and the smallest normal are neighbours exactly one step (2^-1074) apart."),
     }),
     "ptrmath": (fig_ptrmath, {
         "ko": dict(title="포인터의 +1 은 한 칸이 아니라 한 원소다", past="a+8 (끝 다음)",

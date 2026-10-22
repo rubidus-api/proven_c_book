@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""부록 B「표준 라이브러리 요람」의 *완전성*을 지킨다 (RFC-0025 L0).
+"""부록 D「표준 라이브러리 요람」의 *완전성*을 지킨다 (RFC-0025 L0).
 
 저자의 요구는 「모든 함수에 대해서」였다. 571행짜리 목록에서 빠진 하나를 눈으로
 찾을 수는 없다. 그래서 인벤토리(`docs/library-inventory.json`)와 부록을 대조한다.
@@ -119,7 +119,7 @@ def caption_matches_section() -> int:
 
 
 def progress_claim(skip) -> int:
-    """부록 F 서두가 밝힌 진행 상태가 실제와 같은가.
+    """부록 D 서두가 밝힌 진행 상태가 실제와 같은가.
 
     ★ 왜 --- 서두는 「빠짐없이 싣는 것을 *목표*로 한다」고만 말해서, 독자가 첫
       화면에서 진행률을 알 수 없었다(검토 2026-08-29 §4). 그래서 지금 어디까지
@@ -141,10 +141,10 @@ def progress_claim(skip) -> int:
     if "어디까지 왔는지 먼저 밝힌다" not in txt:
         if not skip:
             return 0        # 다 썼으면 그 문단은 사라져 있어야 한다
-        print("  ⚠️  부록 F 서두에 진행 상태가 없다 --- 독자가 진행률을 알 수 없다")
+        print("  ⚠️  부록 D 서두에 진행 상태가 없다 --- 독자가 진행률을 알 수 없다")
         return 1
     if not skip:
-        print("  ⚠️  전 헤더를 다 썼는데 부록 F 서두의 진행 문단이 남아 있다 --- 지울 것")
+        print("  ⚠️  전 헤더를 다 썼는데 부록 D 서두의 진행 문단이 남아 있다 --- 지울 것")
         return 1
     # ★ 문단 전체를 본다. 처음에는 앞 400자만 봤는데, 헤더를 더 쓸수록 문단이
     #   길어져 뒤에 붙은 이름이 검사 밖으로 밀려났다 --- 검사가 *조용히* 통과했다.
@@ -153,13 +153,13 @@ def progress_claim(skip) -> int:
     bad = 0
     for h in done:
         if f"`<{h}>`" not in para:
-            print(f"  ⚠️  부록 F 서두가 완결된 <{h}> 을 말하지 않는다")
+            print(f"  ⚠️  부록 D 서두가 완결된 <{h}> 을 말하지 않는다")
             bad += 1
     if _KO.get(len(done)) and _KO[len(done)] not in para:
-        print(f"  ⚠️  부록 F 서두의 완결 헤더 수가 실제({len(done)})와 다르다")
+        print(f"  ⚠️  부록 D 서두의 완결 헤더 수가 실제({len(done)})와 다르다")
         bad += 1
     if _KO_N.get(rest) and _KO_N[rest] not in txt:
-        print(f"  ⚠️  부록 F 서두의 미착수 헤더 수가 실제({rest})와 다르다")
+        print(f"  ⚠️  부록 D 서두의 미착수 헤더 수가 실제({rest})와 다르다")
         bad += 1
     return bad
 
@@ -169,7 +169,7 @@ _EN_ALL = {29: "twenty-nine", 30: "thirty", 31: "thirty-one", 32: "thirty-two"}
 
 
 def every_header_has_section(inv, skip) -> int:
-    """인벤토리의 헤더마다 부록 F 에 절(`==` 제목)이 있는가, 서두의 헤더 수가 맞는가.
+    """인벤토리의 헤더마다 부록 D 에 절(`==` 제목)이 있는가, 서두의 헤더 수가 맞는가.
 
     ★ 왜 --- 함수 대조만으로는 *함수가 없는 헤더*(`<iso646.h>` · `<stdnoreturn.h>`)가
       빠져도 아무도 모른다. 게다가 인벤토리 생성기가 그 둘을 놓쳐 29개로 적혀 있었고,
@@ -185,7 +185,7 @@ def every_header_has_section(inv, skip) -> int:
         heads = " ".join(l for l in text.split("\n") if l.startswith("== "))
         for h in sorted(inv):
             if h not in skip and f"<{h}>" not in heads:
-                print(f"  ⚠️  [{lang}] 부록 F 에 <{h}> 절이 없다")
+                print(f"  ⚠️  [{lang}] 부록 D 에 <{h}> 절이 없다")
                 bad += 1
         word = (_KO_ALL if lang == "ko" else _EN_ALL).get(n)
         intro = text.split("\n\n", 4)[:4]
@@ -194,7 +194,7 @@ def every_header_has_section(inv, skip) -> int:
         # 「서른」이 「서른하나」 안에서 맞지 않도록 짧은 수사에는 뒤 경계를 둔다.
         tail = "" if lang == "ko" and len(word) > 2 else r"(?![가-힣a-z-])"
         if word and claim and not re.search(rf"(?<![가-힣a-z-]){word}{tail}", claim):
-            print(f"  ⚠️  [{lang}] 부록 F 서두의 헤더 수가 실제({n}, 「{word}」)와 다르다")
+            print(f"  ⚠️  [{lang}] 부록 D 서두의 헤더 수가 실제({n}, 「{word}」)와 다르다")
             bad += 1
     return bad
 
