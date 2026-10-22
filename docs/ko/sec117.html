@@ -1368,23 +1368,23 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
   but of the filesystem, the cache and the device together --- the whole stack.
 
 == 1. sequential writing ==
-  writing 64 MiB (into cache) :   7675.4 MiB/s
-  one fsync after it          :     39.7 ms  &lt;- this much had not reached the disk
-  4 KiB write + fsync         :    0.294 ms each -> about 3400 per second
+  writing 64 MiB (into cache) :   7186.0 MiB/s
+  one fsync after it          :     42.0 ms  &lt;- this much had not reached the disk
+  4 KiB write + fsync         :    0.372 ms each -> about 2690 per second
   * that is the cost of one database commit. Which is why designs gather several
     commits and flush them together (group commit).
 
 == 2. reading --- with the cache, and after asking to drop it ==
-  sequential read (cached)  :  10654.6 MiB/s
-  sequential read (dropped) :  10075.9 MiB/s  -> a factor of 1.1
-  random 4 KiB (cached)     :      2.7 us each -> 371109 per second
-  random 4 KiB (dropped)    :      2.8 us each -> 351719 per second
+  sequential read (cached)  :  10135.8 MiB/s
+  sequential read (dropped) :  10521.7 MiB/s  -> a factor of 1.0
+  random 4 KiB (cached)     :      2.8 us each -> 355145 per second
+  random 4 KiB (dropped)    :      2.7 us each -> 363768 per second
 
   * the two are nearly equal --- the request to drop the cache was not honoured.
     This filesystem keeps its own cache, which `posix_fadvise` does not
     empty. So read the numbers above not as the speed of the device but as
     the speed of reading a file that is already in memory.
-    (10076 MiB/s is the speed of memory, not of storage.)
+    (10522 MiB/s is the speed of memory, not of storage.)
     Really measuring the device needs bypassing the cache (O_DIRECT) or the
     privilege to drop the system cache, and this environment has neither ---
     so what could not be measured is left unmeasured.
@@ -1393,8 +1393,8 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
   what                                   each against L1 (1.4 ns)
   L1 cache read                        1.4 ns            1 x
   main memory read                    75.0 ns           54 x
-  random 4 KiB (from cache)            2.7 us         1925 x
-  4 KiB write + fsync                294.2 us       210112 x
+  random 4 KiB (from cache)            2.8 us         2011 x
+  4 KiB write + fsync                371.8 us       265564 x
 
   * the ladder does not end at the cache. Several more orders of magnitude lie below.
     And on those lower rungs, reading in order matters far more.
