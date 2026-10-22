@@ -1,8 +1,8 @@
-/* 수 자체의 값 --- 같은 연산인데 값이 다른 경우들.
-   ★ 함정: 배열이 크면 결과가 *기억 대역폭*에 묶여 연산 차이가 안 보인다.
-     (첫 판에서 곱셈·나눗셈·제곱근이 전부 1.24 나노초로 같게 나왔다 --- 16 MiB 를
-      흘려보내느라 계산이 기다리고 있었던 것이다.)
-     그래서 여기서는 작업 집합을 L1 안에 넣고 여러 번 되풀이한다. */
+/* The cost of the numbers themselves --- the same operation with different costs.
+   ★ Trap: with a large array the result is bound by *memory bandwidth* and hides the difference.
+     (The first version gave 1.24 ns for multiply, divide and square root alike --- the work
+      was waiting while 16 MiB streamed past.)
+     So here the working set fits in L1 and is repeated many times. */
 #define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,12 +21,12 @@ static int cmp_d(const void *a, const void *b)
 { double x = *(const double *)a, y = *(const double *)b; return x < y ? -1 : x > y; }
 static double med(double *s, int n) { qsort(s, (size_t)n, sizeof *s, cmp_d); return s[n / 2]; }
 
-#define N     2048           /* 2048 × 8바이트 × 2배열 = 32 KiB --- L1 안 */
-#define REP   2000           /* 되풀이 */
+#define N     2048           /* 2048 × 8 bytes × 2 arrays = 32 KiB --- inside L1 */
+#define REP   2000           /* repetitions */
 #define R     7
 
-/* ★ 부동소수점 합계는 *순서를 바꾸면 결과가 달라진다*(덧셈이 결합적이지 않다).
-   그래서 컴파일러는 허락 없이 벡터로 묶지 못한다. 아래 두 함수에만 그 허락을 준다. */
+/* ★ A floating-point sum *changes when reordered* (addition is not associative).
+   So the compiler may not vectorize it without permission. Only the two functions below get it. */
 __attribute__((optimize("O3", "fast-math")))
 static double vec_double(const double *a, const double *b, int reps)
 {
@@ -61,8 +61,8 @@ int main(void)
     double normal_v = 0, denorm_v = 0;
     for (int mode = 0; mode < 2; mode++) {
         for (size_t i = 0; i < N; i++) {
-            a[i] = mode ? DBL_MIN / 8.0 : 1.0;      /* 비정규수 : 정상 수 */
-            b[i] = 1.0;                             /* 곱해도 크기가 그대로 --- 결과도 비정규 */
+            a[i] = mode ? DBL_MIN / 8.0 : 1.0;      /* subnormal : normal */
+            b[i] = 1.0;                             /* multiplying keeps the size --- the result is subnormal too */
         }
         for (int r = 0; r < R; r++) {
             double a0 = 0, a1 = 0, a2 = 0, a3 = 0;
@@ -116,7 +116,7 @@ int main(void)
     printf("  -> the float side is %.2f x faster %s\n", dv / fv,
            dv / fv < 1.1 ? "--- odd: no difference" : "");
 
-    /* 왜 차이가 없나 --- 벡터 명령을 쓰지 않아서다. 허락을 준 판으로 다시 잰다. */
+    /* Why no difference --- no vector instructions were used. Measure again with permission given. */
     for (int r = 0; r < R; r++) {
         double t0 = ns(); dsink = vec_double(a, b, REP); double t1 = ns();
         s[r] = (t1 - t0) / ((double)N * REP);

@@ -1,6 +1,6 @@
-/* 「끼어들기에는 값이 있다」를 이 기계에서 *실제로 재어* 본다.
-   ★ 주의: 이것은 하드웨어 인터럽트가 아니라 운영체제의 신호다. 자릿수의 감각을 얻는
-   용도이고, 하드웨어 IRQ 지연과 같은 수가 아니다(그쪽이 대개 더 짧다). */
+/* Measure "interrupting has a cost" *for real* on this machine.
+   ★ Note: this is an operating-system signal, not a hardware interrupt. It is for a sense
+   of magnitude, not the same number as hardware IRQ latency (that is usually shorter). */
 #define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <signal.h>
@@ -29,7 +29,7 @@ int main(void)
 
     const long N = 200000;
 
-    /* 몸풀기 --- 첫 몇 번은 캐시가 차가워 느리다 */
+    /* warm-up --- the first few rounds are slow with a cold cache */
     for (long i = 0; i < 1000; i++) raise(SIGUSR1);
 
     double t0 = now_ns();

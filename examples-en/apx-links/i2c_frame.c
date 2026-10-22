@@ -1,5 +1,5 @@
-/* I2C 거래 하나를 신호 차례로 짓고, 그 차례를 다시 읽어 해독한다.
-   선은 둘뿐이다: SCL(클록)과 SDA(자료). 둘 다 「끌어내리기만」 할 수 있다(오픈 드레인). */
+/* Build one I2C transaction as a sequence of signals, then read the sequence back and decode it.
+   There are only two lines: SCL (clock) and SDA (data). Both can only "pull down" (open drain). */
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
@@ -14,7 +14,7 @@ static int n_ev;
 static void put(int kind, int val, const char *note)
 { log_[n_ev++] = (struct ev){ kind, val, note }; }
 
-/* 바이트 하나 --- 높은 자리부터 여덟 비트, 그다음 아홉 번째 클록이 ACK 자리 */
+/* One byte --- eight bits, high bit first, then the ninth clock is the ACK slot */
 static void put_byte(uint8_t b, const char *what, int acked)
 {
     for (int i = 7; i >= 0; i--) put(EV_BIT, b >> i & 1, i == 7 ? what : NULL);
@@ -35,7 +35,7 @@ static const char *kind_name(int k)
 
 int main(void)
 {
-    const uint8_t dev = 0x3C;      /* 7비트 장치 주소 */
+    const uint8_t dev = 0x3C;      /* 7-bit device address */
     const uint8_t reg = 0x00, val = 0xAF;
 
     printf("== why the address is confusing ==\n");
@@ -45,20 +45,20 @@ int main(void)
     printf("  so datasheets call the same device 0x%02X in one place and 0x%02X in another.\n\n",
            dev, dev << 1);
 
-    /* ── 쓰기 거래: 장치에게 「레지스터 0 에 0xAF 를 써라」 ── */
+    /* ── a write: tell the device "write 0xAF to register 0" ── */
     put(EV_START, 0, "the controller takes the bus");
     put_byte((uint8_t)(dev << 1 | 0), "device address + write", 1);
     put_byte(reg, "register number", 1);
     put_byte(val, "value to write", 1);
     put(EV_STOP, 0, "release the bus");
 
-    /* ── 읽기 거래: 반복 START 로 방향만 바꾼다 ── */
+    /* ── a read: a repeated START only changes direction ── */
     put(EV_START, 0, "take it again");
     put_byte((uint8_t)(dev << 1 | 0), "device address + write", 1);
     put_byte(reg, "say which register to read first", 1);
     put(EV_RSTART, 0, "* START again without STOP --- nobody can cut in meanwhile");
     put_byte((uint8_t)(dev << 1 | 1), "device address + read", 1);
-    put_byte(val, "the value the device returned", 0);   /* 마지막 바이트는 주인이 NACK 로 끝을 알린다 */
+    put_byte(val, "the value the device returned", 0);   /* on the last byte the controller signals the end with a NACK */
     put(EV_STOP, 0, "end");
 
     printf("== the order on the wire ==\n");

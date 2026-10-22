@@ -1,5 +1,5 @@
-/* 덤프에 무엇이 들어 있는가 --- 프로세스가 제 기억을 스스로 들여다본다.
-   코어 덤프가 하는 일이 정확히 이것이다: 이 목록과 이 바이트들을 파일에 적는 것. */
+/* What is in a dump --- a process looks into its own memory.
+   This is exactly what a core dump does: write this list and these bytes to a file. */
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <string.h>
@@ -14,7 +14,7 @@ int main(void){
     puts("\n--- /proc/self/maps (first 8 lines) ---");
     while (fgets(line,sizeof line,f) && n++<8) fputs(line,stdout);
     fclose(f);
-    /* 제 기억을 스스로 읽어 본다 --- 덤프가 하는 일이 이것이다 */
+    /* read our own memory --- this is what a dump does */
     FILE *m=fopen("/proc/self/mem","rb");
     if (m){ fseek(m,(long)(size_t)&global_init,SEEK_SET); unsigned v=0;
         size_t got=fread(&v,1,4,m);

@@ -57,7 +57,7 @@ static void dump_all(void)
     show_char("n_sign_posn", L->n_sign_posn);
 }
 
-/* 여러 로케일을 한 줄씩 견주어 본다 */
+/* Compare several locales, one per line */
 static void compare_row(const char *name)
 {
     if (!setlocale(LC_ALL, name)) {

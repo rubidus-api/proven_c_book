@@ -1,13 +1,13 @@
-/* GPT 를 필드 단위로 짓고 되읽는다 --- 헤더 92바이트, 항목 128바이트, CRC 둘.
-   주의: 디스크를 건드리지 않는다. 기억 속 배열만 채운다. */
+/* Build a GPT field by field and read it back --- a 92-byte header, 128-byte entries, two CRCs.
+   Note: no disk is touched. Only an array in memory is filled. */
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
 
 #define SEC        512u
-#define ENTRIES    128u          /* 표준이 권하는 최소 개수 */
+#define ENTRIES    128u          /* the minimum count the standard recommends */
 #define ENTRY_SZ   128u
-#define DISK_SECS  4194304u      /* 2 GiB 짜리 디스크라고 하자 */
+#define DISK_SECS  4194304u      /* say it is a 2 GiB disk */
 
 static uint32_t crc32(const void *buf, size_t n)
 {
@@ -29,9 +29,9 @@ static uint32_t get32(const unsigned char *p)
 static uint64_t get64(const unsigned char *p)
 { uint64_t v = 0; for (int i = 7; i >= 0; i--) v = v << 8 | p[i]; return v; }
 
-/* ★ GUID 의 함정: 글로 쓸 때와 디스크에 놓일 때의 바이트 차례가 *다르다*.
-   앞의 세 마디(4·2·2바이트)는 작은 끝으로 뒤집혀 저장되고, 뒤의 두 마디(2·6바이트)는
-   글자 순서 그대로다. 그래서 16진수 덤프와 문서의 GUID 가 달라 보인다. */
+/* ★ The GUID trap: the byte order in writing and on disk *differ*.
+   The first three groups (4, 2, 2 bytes) are stored reversed, little-endian; the last two
+   (2, 6 bytes) keep text order. So a hex dump and a documented GUID look different. */
 static void guid_parse(unsigned char *out, const char *s)
 {
     unsigned b[16]; int n = 0;
@@ -41,11 +41,11 @@ static void guid_parse(unsigned char *out, const char *s)
         sscanf(p, "%1x%1x", &hi, &lo);
         b[n++] = hi << 4 | lo; p += 2;
     }
-    out[0] = (unsigned char)b[3]; out[1] = (unsigned char)b[2];   /* 첫 마디 뒤집기 */
+    out[0] = (unsigned char)b[3]; out[1] = (unsigned char)b[2];   /* reverse the first group */
     out[2] = (unsigned char)b[1]; out[3] = (unsigned char)b[0];
-    out[4] = (unsigned char)b[5]; out[5] = (unsigned char)b[4];   /* 둘째 마디 */
-    out[6] = (unsigned char)b[7]; out[7] = (unsigned char)b[6];   /* 셋째 마디 */
-    for (int i = 8; i < 16; i++) out[i] = (unsigned char)b[i];    /* 나머지는 그대로 */
+    out[4] = (unsigned char)b[5]; out[5] = (unsigned char)b[4];   /* the second group */
+    out[6] = (unsigned char)b[7]; out[7] = (unsigned char)b[6];   /* the third group */
+    for (int i = 8; i < 16; i++) out[i] = (unsigned char)b[i];    /* the rest as is */
 }
 static void guid_text(const unsigned char *g, char *out)
 {
@@ -56,7 +56,7 @@ static void guid_text(const unsigned char *g, char *out)
 static void guid_bytes(const unsigned char *g, char *out)
 { for (int i = 0; i < 16; i++) sprintf(out + i * 3, "%02x ", g[i]); }
 
-/* 이름은 UTF-16LE 36글자 자리(72바이트)에 들어간다 --- ASCII 만 쓴다면 이렇게 */
+/* The name goes in 36 UTF-16LE characters (72 bytes) --- if it is ASCII only, like this */
 static void put_name(unsigned char *p, const char *ascii)
 { for (int i = 0; ascii[i]; i++) { p[i * 2] = (unsigned char)ascii[i]; p[i * 2 + 1] = 0; } }
 
@@ -66,46 +66,46 @@ static void put_name(unsigned char *p, const char *ascii)
 
 int main(void)
 {
-    static unsigned char ents[ENTRIES * ENTRY_SZ];   /* = 16384바이트 = 32섹터 */
+    static unsigned char ents[ENTRIES * ENTRY_SZ];   /* = 16384 bytes = 32 sectors */
     unsigned char hdr[92] = { 0 };
     char t1[64], t2[64];
 
-    /* ── 항목 셋 ─────────────────────────────────────────────── */
+    /* ── three entries ───────────────────────────────────────── */
     struct { const char *type, *name; uint64_t first, last; uint64_t attr; } part[] = {
         { ESP,   "EFI System",  2048,   206847,  0 },
         { LINUX, "root",        206848, 3358719, 0 },
-        { SWAP,  "swap",        3358720, 4194270, 1ull << 63 },  /* 63: 자동 마운트 금지 */
+        { SWAP,  "swap",        3358720, 4194270, 1ull << 63 },  /* 63: do not auto-mount */
     };
     for (unsigned i = 0; i < sizeof part / sizeof *part; i++) {
         unsigned char *e = ents + i * ENTRY_SZ;
-        guid_parse(e, part[i].type);                       /* 0  : 종류 GUID */
+        guid_parse(e, part[i].type);                       /* 0  : type GUID */
         char uniq[40];
-        sprintf(uniq, "12345678-1234-5678-9ABC-DEF01234567%X", i);   /* 파티션마다 달라야 한다 */
-        guid_parse(e + 16, uniq);                          /* 16 : 이 파티션의 고유 GUID */
-        put64(e + 32, part[i].first);                      /* 32 : 첫 LBA */
-        put64(e + 40, part[i].last);                       /* 40 : 마지막 LBA(포함) */
-        put64(e + 48, part[i].attr);                       /* 48 : 속성 비트 */
-        put_name(e + 56, part[i].name);                    /* 56 : 이름 UTF-16LE 72바이트 */
+        sprintf(uniq, "12345678-1234-5678-9ABC-DEF01234567%X", i);   /* must differ per partition */
+        guid_parse(e + 16, uniq);                          /* 16 : this partition's unique GUID */
+        put64(e + 32, part[i].first);                      /* 32 : first LBA */
+        put64(e + 40, part[i].last);                       /* 40 : last LBA (inclusive) */
+        put64(e + 48, part[i].attr);                       /* 48 : attribute bits */
+        put_name(e + 56, part[i].name);                    /* 56 : name, UTF-16LE, 72 bytes */
     }
 
-    /* ── 헤더 ────────────────────────────────────────────────── */
+    /* ── header ──────────────────────────────────────────────── */
     uint64_t backup_lba = DISK_SECS - 1;
     uint64_t ents_sectors = (ENTRIES * ENTRY_SZ + SEC - 1) / SEC;   /* 32 */
-    memcpy(hdr, "EFI PART", 8);            /* 0  : 서명 */
-    put32(hdr + 8, 0x00010000u);           /* 8  : 개정 1.0 */
-    put32(hdr + 12, 92);                   /* 12 : 헤더 크기 */
-    put32(hdr + 16, 0);                    /* 16 : 헤더 CRC --- 계산 전에는 0 */
-    put32(hdr + 20, 0);                    /* 20 : 예약 */
-    put64(hdr + 24, 1);                    /* 24 : 이 헤더의 LBA */
-    put64(hdr + 32, backup_lba);           /* 32 : 짝 헤더의 LBA */
-    put64(hdr + 40, 2 + ents_sectors);     /* 40 : 쓸 수 있는 첫 LBA = 34 */
-    put64(hdr + 48, backup_lba - ents_sectors - 1); /* 48 : 쓸 수 있는 마지막 LBA */
-    guid_parse(hdr + 56, "01234567-89AB-CDEF-0123-456789ABCDEF");  /* 56 : 디스크 GUID */
-    put64(hdr + 72, 2);                    /* 72 : 항목 배열의 LBA */
-    put32(hdr + 80, ENTRIES);              /* 80 : 항목 개수 */
-    put32(hdr + 84, ENTRY_SZ);             /* 84 : 항목 하나의 크기 */
-    put32(hdr + 88, crc32(ents, ENTRIES * ENTRY_SZ));   /* 88 : 항목 배열 전체의 CRC */
-    put32(hdr + 16, crc32(hdr, 92));       /* 마지막에 헤더 자신의 CRC */
+    memcpy(hdr, "EFI PART", 8);            /* 0  : signature */
+    put32(hdr + 8, 0x00010000u);           /* 8  : revision 1.0 */
+    put32(hdr + 12, 92);                   /* 12 : header size */
+    put32(hdr + 16, 0);                    /* 16 : header CRC --- 0 before computing */
+    put32(hdr + 20, 0);                    /* 20 : reserved */
+    put64(hdr + 24, 1);                    /* 24 : LBA of this header */
+    put64(hdr + 32, backup_lba);           /* 32 : LBA of the partner header */
+    put64(hdr + 40, 2 + ents_sectors);     /* 40 : first usable LBA = 34 */
+    put64(hdr + 48, backup_lba - ents_sectors - 1); /* 48 : last usable LBA */
+    guid_parse(hdr + 56, "01234567-89AB-CDEF-0123-456789ABCDEF");  /* 56 : disk GUID */
+    put64(hdr + 72, 2);                    /* 72 : LBA of the entry array */
+    put32(hdr + 80, ENTRIES);              /* 80 : number of entries */
+    put32(hdr + 84, ENTRY_SZ);             /* 84 : size of one entry */
+    put32(hdr + 88, crc32(ents, ENTRIES * ENTRY_SZ));   /* 88 : CRC of the whole entry array */
+    put32(hdr + 16, crc32(hdr, 92));       /* last, the header's own CRC */
 
     printf("== the GPT header (LBA 1, 92 bytes) ==\n");
     printf("  signature        : %.8s\n", hdr);

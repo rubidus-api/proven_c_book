@@ -1,5 +1,5 @@
-/* 코어 사이의 값 --- 같은 캐시 줄을 두 코어가 번갈아 만지면 무슨 일이 벌어지나.
-   그리고 원자 연산과 자물쇠는 얼마나 드는가. */
+/* A cost between cores --- what happens when two cores take turns touching the same cache line?
+   And what do atomic operations and locks cost? */
 #define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,15 +19,15 @@ static double ns(void)
 static int cmp_d(const void *a, const void *b)
 { double x = *(const double *)a, y = *(const double *)b; return x < y ? -1 : x > y; }
 
-#define ITERS 20000000L        /* 스레드마다 2천만 번 */
+#define ITERS 20000000L        /* 20 million per thread */
 #define ROUNDS 3
 
 static long line_size;
 
-/* ★ aarch64 리눅스는 CTR_EL0 레지스터를 사용자 프로그램에도 읽게 열어 둔다(glibc 도 이것으로
-     줄 크기를 답한다). 안드로이드의 Bionic 은 sysconf 에 0 을 돌려주고, 폰 커널은 sysfs 의 크기
-     칸을 비워 두기도 해서(안드로이드 폰 실측) 마지막으로 이 레지스터를 직접 읽는다.
-     다만 계층 전체에서 *가장 작은* 줄 크기다. */
+/* ★ aarch64 Linux lets user programs read the CTR_EL0 register too (glibc answers the line
+     size from it). Android's Bionic returns 0 from sysconf, and phone kernels may leave the sysfs
+     size empty (measured on an Android phone), so as a last resort we read this register directly.
+     It gives the *smallest* line size in the whole hierarchy, though. */
 #if defined(__aarch64__) && defined(__linux__)
 __asm__(".text\n.globl read_ctr_el0\n.type read_ctr_el0, %function\n"
         "read_ctr_el0:\n    mrs x0, ctr_el0\n    ret\n");
@@ -50,19 +50,19 @@ static long cache_line(void)
 #if defined(__aarch64__) && defined(__linux__)
     return 4L << ((read_ctr_el0() >> 16) & 0xf);
 #else
-    return 0;                                  /* 모른다 --- 부르는 쪽이 밝힌다 */
+    return 0;                                  /* unknown --- the caller says so */
 #endif
 }
 
-/* ★ aligned_alloc(C11) 대신 posix_memalign 을 쓴다. _POSIX_C_SOURCE 를 정의하면 안드로이드의
-     Bionic 은 C11 선언을 감춘다 --- Termux 의 clang 에서 「선언되지 않은 함수」로 멈췄다. */
+/* ★ posix_memalign instead of aligned_alloc (C11). With _POSIX_C_SOURCE defined, Android's
+     Bionic hides the C11 declaration --- Termux's clang stopped with "undeclared function". */
 static void *page_aligned(size_t bytes)
 {
     void *p = NULL;
     return posix_memalign(&p, 4096, bytes) == 0 ? p : NULL;
 }
 
-/* ── ① 각자 제 칸을 올린다 (칸 사이의 거리를 바꿔 가며) ── */
+/* ── ① each bumps its own slot (varying the distance between slots) ── */
 struct slot { volatile long v; };
 static unsigned char *arena;
 static size_t slot_gap;
@@ -75,7 +75,7 @@ static void *bump(void *arg)
     return NULL;
 }
 
-/* ── ② 하나의 값을 여럿이 --- 원자 연산과 자물쇠 ── */
+/* ── ② one value, many hands --- atomics and locks ── */
 static atomic_long shared_atomic;
 static long shared_plain;
 static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
@@ -91,7 +91,7 @@ static double run(void *(*fn)(void *), int threads, long iters_each, void **args
     for (int i = 0; i < threads; i++) pthread_create(&th[i], NULL, fn, args ? args[i] : (void *)(intptr_t)i);
     for (int i = 0; i < threads; i++) pthread_join(th[i], NULL);
     double t1 = ns();
-    return (t1 - t0) / (double)(iters_each * threads);     /* 올림 한 번당 나노초 */
+    return (t1 - t0) / (double)(iters_each * threads);     /* nanoseconds per increment */
 }
 
 int main(void)
@@ -104,9 +104,9 @@ int main(void)
     long cores = sysconf(_SC_NPROCESSORS_ONLN);
     printf("== this machine ==\n  cache line %ld bytes · %ld logical cores\n\n", line_size, cores);
 
-    /* 기준선: *같은 코드*를 스레드 하나로. 지역 변수 루프는 컴파일러가 통째로 접어
-       버려(s = ITERS) 0.005 나노초 같은 헛값이 나온다 --- M1 의 첫 함정이다.
-       그래서 뒤의 실험과 똑같은 경로(volatile 칸 올리기)를 한 스레드로 돌려 기준을 잡는다. */
+    /* Baseline: the *same code* on one thread. A loop on a local variable is folded away whole
+       by the compiler (s = ITERS), giving phantoms like 0.005 ns --- the first trap on the M1.
+       So the baseline runs exactly the later path (bumping a volatile slot) on one thread. */
     slot_gap = 128;
     arena = page_aligned(slot_gap * 8 + 4096);
     memset(arena, 0, slot_gap * 8 + 4096);
@@ -119,7 +119,7 @@ int main(void)
     printf("  one thread incrementing its own slot : %.3f ns each\n", base);
     printf("  (measured on a local variable the compiler folds the loop away, so it is no baseline)\n\n");
 
-    /* 칸 사이의 거리를 바꿔 가며 두 스레드 */
+    /* two threads, varying the distance between slots */
     printf("== 2. two threads each incrementing their own slot --- only the distance changes ==\n");
     printf("  the two threads never touch each other's data. And yet…\n\n");
     printf("  with two threads, a perfect split would make each increment half the\n");
@@ -144,7 +144,7 @@ int main(void)
     printf("    line is passed back and forth between the cores --- that is false sharing.\n");
     printf("    Moving them apart changes it several fold, with not one line of code altered.\n");
 
-    /* 스레드 수를 늘리면 */
+    /* with more threads */
     printf("\n== 3. adding threads --- sharing a line, and apart ==\n");
     printf("  %-10s %-18s %-18s %s\n", "threads", "same line (8 bytes apart)", "different lines (128 bytes)", "factor");
     for (int th = 2; th <= (cores >= 8 ? 8 : 4); th *= 2) {
@@ -162,7 +162,7 @@ int main(void)
         printf("  %-10d %12.3f ns %12.3f ns %6.1fx\n", th, v[0], v[1], v[0] / v[1]);
     }
 
-    /* 진짜로 함께 쓰는 값 */
+    /* a value truly shared */
     printf("\n== 4. when several really do touch one value ==\n");
     double at1 = run(atomic_bump, 1, ITERS / 10, NULL);
     double at2 = run(atomic_bump, 2, ITERS / 10, NULL);

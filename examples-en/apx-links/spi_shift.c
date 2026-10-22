@@ -1,5 +1,5 @@
-/* SPI 는 「고리 모양으로 이어 붙인 시프트 레지스터 둘」이다.
-   클록마다 한 비트씩 서로 밀어 넣는다 --- 그래서 주고받기가 *동시에* 일어난다. */
+/* SPI is "two shift registers joined into a ring".
+   Each clock pushes one bit into the other --- so sending and receiving happen *at once*. */
 #include <stdio.h>
 #include <stdint.h>
 
@@ -8,8 +8,8 @@ static void bits8(uint8_t v, char *out)
 
 int main(void)
 {
-    uint8_t m = 0xA5;      /* 주인이 보낼 값 */
-    uint8_t s = 0x3C;      /* 장치가 보낼 값 (미리 제 레지스터에 넣어 둔다) */
+    uint8_t m = 0xA5;      /* the value the controller sends */
+    uint8_t s = 0x3C;      /* the value the device sends (loaded in its register beforehand) */
     char mb[9], sb[9];
 
     bits8(m, mb); bits8(s, sb);
@@ -20,9 +20,9 @@ int main(void)
     printf("== one bit per clock ==\n");
     printf("  %-6s %-6s %-6s %-12s %-12s\n", "clock", "MOSI", "MISO", "controller", "device");
     for (int c = 1; c <= 8; c++) {
-        unsigned mosi = m >> 7 & 1;          /* 주인이 내놓는 비트 (높은 자리부터) */
-        unsigned miso = s >> 7 & 1;          /* 장치가 내놓는 비트 */
-        m = (uint8_t)(m << 1 | miso);        /* 서로의 비트를 낮은 자리로 받아 넣는다 */
+        unsigned mosi = m >> 7 & 1;          /* the bit the controller puts out (high bit first) */
+        unsigned miso = s >> 7 & 1;          /* the bit the device puts out */
+        m = (uint8_t)(m << 1 | miso);        /* each takes the other's bit in at the low end */
         s = (uint8_t)(s << 1 | mosi);
         bits8(m, mb); bits8(s, sb);
         printf("  %-6d %-6u %-6u %-12s %-12s\n", c, mosi, miso, mb, sb);
@@ -49,7 +49,7 @@ int main(void)
     uint8_t src = 0xA5, wrong = 0, prev = 0;
     for (int c = 0; c < 8; c++) {
         unsigned bit = src >> (7 - c) & 1;
-        wrong = (uint8_t)(wrong << 1 | prev);   /* 한 모서리 늦게 읽으면 *직전* 비트를 본다 */
+        wrong = (uint8_t)(wrong << 1 | prev);   /* reading one edge late sees the *previous* bit */
         prev = bit;
     }
     bits8(0xA5, mb); bits8(wrong, sb);
@@ -63,7 +63,7 @@ int main(void)
     struct { const char *name; double hz; } sck[] = {
         { "1 MHz", 1e6 }, { "10 MHz", 10e6 }, { "50 MHz", 50e6 },
     };
-    const double i2c_std = 100e3 / 9.0;      /* I2C 표준 모드: 바이트마다 9비트 */
+    const double i2c_std = 100e3 / 9.0;      /* I2C standard mode: 9 bits per byte */
     for (unsigned i = 0; i < sizeof sck / sizeof *sck; i++)
         printf("  %-14s %-16.0f %.0f times I2C standard (100 kHz)\n", sck[i].name, sck[i].hz / 8,
                (sck[i].hz / 8) / i2c_std);

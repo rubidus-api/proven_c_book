@@ -1,6 +1,6 @@
-/* 파일 앞머리 몇 바이트로 「이것이 무슨 형식인가」를 가른다.
-   형식이 여럿이어도 묻는 질문은 같다: 매직, 폭, 종류, 진입점.
-   인자로 준 파일들을 차례로 본다. */
+/* Tell "what format is this" from the first few bytes of a file.
+   However many formats there are, the questions are the same: magic, width, kind, entry point.
+   The files given as arguments are examined in turn. */
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
@@ -31,7 +31,7 @@ static void show_pe(FILE *f)
 {
     unsigned char mz[64], pe[24], opt[2];
     if (!rd(f, 0, mz, sizeof mz)) return;
-    long e_lfanew = u32(mz + 60);            /* MZ 헤더가 가리키는 「진짜 헤더」의 자리 */
+    long e_lfanew = u32(mz + 60);            /* where the "real header" the MZ header points to is */
     printf("  format   : MZ (DOS executable header)\n");
     printf("  next hdr : file offset 0x%lx\n", e_lfanew);
     if (!rd(f, e_lfanew, pe, sizeof pe)) return;

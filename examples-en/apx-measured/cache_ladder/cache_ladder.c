@@ -1,6 +1,6 @@
-/* 기억의 사다리를 잰다 --- 작업 집합을 키워 가며 「한 번 읽는 데 드는 시간」을 본다.
-   비결은 *포인터 추적*이다: 다음에 읽을 자리가 지금 읽은 값에 들어 있으면, 기계가
-   미리 가져올 수 없고 한 번에 하나씩만 진행된다. 그래서 처리량이 아니라 *지연*이 보인다. */
+/* Measure the memory ladder --- grow the working set and watch "the time for one read".
+   The trick is *pointer chasing*: when the next place to read is in the value just read, the
+   machine cannot prefetch and goes one at a time. So *latency*, not throughput, shows. */
 #define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,7 +22,7 @@ static uint64_t rng_state = 0x123456789ABCDEFull;
 static uint64_t rnd(void)
 { rng_state ^= rng_state << 13; rng_state ^= rng_state >> 7; rng_state ^= rng_state << 17; return rng_state; }
 
-/* 사톨로 알고리즘: 배열 전체를 도는 *하나의 고리*를 만든다(작은 고리로 갈라지지 않는다) */
+/* Sattolo's algorithm: make *one ring* through the whole array (it never splits into small rings) */
 static void make_cycle(size_t *next, size_t n)
 {
     for (size_t i = 0; i < n; i++) next[i] = i;
@@ -30,7 +30,7 @@ static void make_cycle(size_t *next, size_t n)
         size_t j = (size_t)(rnd() % i);
         size_t t = next[i]; next[i] = next[j]; next[j] = t;
     }
-    /* 순열을 고리로 바꾼다: next[a]=b 를 「a 다음은 b」로 읽게 이어 붙인다 */
+    /* turn the permutation into a ring: link next[a]=b so it reads "after a comes b" */
     size_t *cyc = malloc(n * sizeof *cyc);
     for (size_t i = 0; i < n; i++) cyc[next[i]] = next[(i + 1) % n];
     memcpy(next, cyc, n * sizeof *cyc);
@@ -39,11 +39,11 @@ static void make_cycle(size_t *next, size_t n)
 
 static volatile size_t sink;
 
-/* 무작위 고리를 따라 steps 번 밟는다 --- 매 걸음이 앞 걸음의 결과에 의존한다 */
+/* Step along the random ring `steps` times --- every step depends on the one before */
 static double chase(size_t *next, size_t n, long steps)
 {
     size_t p = 0;
-    for (long i = 0; i < (long)n * 4 && i < 4000000L; i++) p = next[p];   /* 데우기 */
+    for (long i = 0; i < (long)n * 4 && i < 4000000L; i++) p = next[p];   /* warm-up */
     double t0 = ns();
     for (long i = 0; i < steps; i++) p = next[p];
     double t1 = ns();
@@ -51,11 +51,11 @@ static double chase(size_t *next, size_t n, long steps)
     return (t1 - t0) / (double)steps;
 }
 
-/* 견주기용: 차례로 훑는다 --- 기계가 다음 자리를 미리 가져올 수 있다 */
+/* For comparison: scan in order --- the machine can prefetch the next place */
 static double sweep(size_t *buf, size_t n, long rounds)
 {
     size_t acc = 0;
-    for (size_t i = 0; i < n; i++) acc += buf[i];                    /* 데우기 */
+    for (size_t i = 0; i < n; i++) acc += buf[i];                    /* warm-up */
     double t0 = ns();
     for (long r = 0; r < rounds; r++)
         for (size_t i = 0; i < n; i++) acc += buf[i];
@@ -64,11 +64,11 @@ static double sweep(size_t *buf, size_t n, long rounds)
     return (t1 - t0) / ((double)n * (double)rounds);
 }
 
-/* ★ 캐시의 크기는 C 라이브러리가 CPU 에 물어서 채운다. x86-64 의 glibc 는 CPUID 로 답하지만,
-     aarch64 의 glibc(2.44 소스로 확인)는 줄 크기만 CTR_EL0 로 답하고 크기·연관도에는 *0* 을
-     돌려준다 --- 그 값을 담은 레지스터를 커널이 사용자 프로그램에 막아 두었기 때문이다.
-     그래서 0 이면, 커널이 부팅 때 읽어 sysfs 에 적어 둔 값을 본다. 그것도 없으면 0 이고,
-     찍는 쪽이 「모른다」고 말한다 --- 0 바이트짜리 캐시로 읽히게 두지 않는다. */
+/* ★ The C library fills in cache sizes by asking the CPU. glibc on x86-64 answers with CPUID,
+     but glibc on aarch64 (checked in the 2.44 source) answers only the line size, from CTR_EL0, and *0*
+     for size and associativity --- the kernel keeps the register holding them from user programs.
+     So on 0 we look at what the kernel read at boot and wrote to sysfs. Failing that it stays 0
+     and the printing side says "unknown" --- it is never read as a 0-byte cache. */
 static long sysfs_cache(int level, const char *field)
 {
     const char *dir = "/sys/devices/system/cpu/cpu0/cache";
@@ -83,7 +83,7 @@ static long sysfs_cache(int level, const char *field)
         f = fopen(path, "r");
         bool code_only = f && fgets(buf, sizeof buf, f) && strncmp(buf, "Instruction", 11) == 0;
         if (f) fclose(f);
-        if (lv != level || code_only) continue;        /* 명령 전용 캐시는 건너뛴다 */
+        if (lv != level || code_only) continue;        /* skip instruction-only caches */
         snprintf(path, sizeof path, "%s/index%d/%s", dir, i, field);
         f = fopen(path, "r");
         if (!f) return 0;
@@ -91,7 +91,7 @@ static long sysfs_cache(int level, const char *field)
         if (fgets(buf, sizeof buf, f)) {
             char *end;
             v = strtol(buf, &end, 10);
-            if (*end == 'K') v *= 1024;                /* "32K" 꼴로 적혀 있다 */
+            if (*end == 'K') v *= 1024;                /* written in the form "32K" */
             else if (*end == 'M') v *= 1024 * 1024;
         }
         fclose(f);
@@ -139,14 +139,14 @@ int main(void)
         double s[5];
         for (int r = 0; r < 5; r++) s[r] = chase(buf, n, steps);
         qsort(s, 5, sizeof *s, cmp_d);
-        double lat = s[2];                       /* 중앙값 */
+        double lat = s[2];                       /* the median */
 
-        /* 차례로 훑기: 같은 크기를 순서대로 --- 지연이 아니라 처리량이 보인다 */
+        /* scanning in order: same size, in sequence --- throughput shows, not latency */
         for (size_t i = 0; i < n; i++) buf[i] = i;
         long rounds = bytes < (1u << 22) ? 200 : 5;
         double seq = sweep(buf, n, rounds);
 
-        /* 모르는 단은 건너뛴다 --- 크기 0 과 견주면 전부 「주기억」으로 읽힌다 */
+        /* skip unknown levels --- compared with size 0 everything would read as "main memory" */
         const char *where = !known                          ? "?"
                           : L1 > 0 && (long)bytes <= L1     ? "L1"
                           : L2 > 0 && (long)bytes <= L2     ? "L2"

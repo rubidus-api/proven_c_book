@@ -1,52 +1,52 @@
-/* UART 프레임을 비트로 짓고, *보율이 어긋난 수신기*로 다시 읽어 본다.
-   하드웨어는 없다 --- 선 위의 전압을 잘게 썬 배열로 흉내 낸다.
-   한 비트를 16칸으로 나누어(흔한 UART 가 정말 이렇게 샘플링한다) 시간을 표현한다. */
+/* Build a UART frame out of bits, then read it back with a *receiver at the wrong baud rate*.
+   There is no hardware --- an array of finely sliced line voltages imitates it.
+   Time is shown by cutting one bit into 16 slots (common UARTs really sample this way). */
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
 
-#define OS      16u        /* oversampling --- 한 비트를 몇 칸으로 나눌까 */
+#define OS      16u        /* oversampling --- how many slots per bit */
 #define MAXW    4096u
 
-/* 8N1: 시작 1 + 자료 8 + 정지 1 = 10비트. 자료는 *낮은 자리부터* 나간다. */
+/* 8N1: start 1 + data 8 + stop 1 = 10 bits. Data goes out *low bit first*. */
 static size_t make_frame(unsigned char *w, uint8_t byte, unsigned parity_bits)
 {
     size_t n = 0;
-    for (unsigned i = 0; i < OS * 2; i++) w[n++] = 1;      /* 놀고 있을 때는 높다 */
-    for (unsigned i = 0; i < OS; i++)     w[n++] = 0;      /* 시작 비트: 떨어뜨린다 */
+    for (unsigned i = 0; i < OS * 2; i++) w[n++] = 1;      /* high while idle */
+    for (unsigned i = 0; i < OS; i++)     w[n++] = 0;      /* start bit: pull it down */
     unsigned ones = 0;
     for (int b = 0; b < 8; b++) {
         unsigned bit = byte >> b & 1;                       /* LSB first */
         ones += bit;
         for (unsigned i = 0; i < OS; i++) w[n++] = (unsigned char)bit;
     }
-    if (parity_bits) {                                      /* 짝수 패리티라면 */
-        unsigned p = ones & 1;                              /* 1의 개수를 짝수로 맞춘다 */
+    if (parity_bits) {                                      /* for even parity */
+        unsigned p = ones & 1;                              /* make the count of ones even */
         for (unsigned i = 0; i < OS; i++) w[n++] = (unsigned char)p;
     }
-    for (unsigned i = 0; i < OS; i++)     w[n++] = 1;      /* 정지 비트: 다시 높다 */
+    for (unsigned i = 0; i < OS; i++)     w[n++] = 1;      /* stop bit: high again */
     for (unsigned i = 0; i < OS * 2; i++) w[n++] = 1;
     return n;
 }
 
-/* 수신기: 시작 비트의 내려감을 찾고, 제 비트 길이로 한가운데를 찍어 읽는다.
-   rx_bit 이 16 이 아니면 그만큼 보율이 어긋난 것이다. */
+/* Receiver: find the start bit's falling edge, then sample mid-bit using its own bit length.
+   If rx_bit is not 16, the baud rate is off by that much. */
 static int receive(const unsigned char *w, size_t n, double rx_bit,
                    uint8_t *out, int *stop_ok)
 {
     size_t edge = 0;
-    while (edge < n && w[edge] != 0) edge++;                /* 내려가는 자리 */
+    while (edge < n && w[edge] != 0) edge++;                /* the falling edge */
     if (edge >= n) return -1;
 
     double t0 = (double)edge;
     uint8_t v = 0;
     for (int b = 0; b < 8; b++) {
-        double at = t0 + rx_bit * (b + 1) + rx_bit / 2.0;   /* (b+1)번째 비트의 한가운데 */
+        double at = t0 + rx_bit * (b + 1) + rx_bit / 2.0;   /* the middle of bit (b+1) */
         size_t idx = (size_t)(at + 0.5);
         if (idx >= n) return -1;
         v |= (uint8_t)(w[idx] << b);
     }
-    double sat = t0 + rx_bit * 9 + rx_bit / 2.0;            /* 정지 비트 자리 */
+    double sat = t0 + rx_bit * 9 + rx_bit / 2.0;            /* where the stop bit is */
     *stop_ok = (sat < n) && w[(size_t)(sat + 0.5)] == 1;
     *out = v;
     return 0;
@@ -57,7 +57,7 @@ static void show_wave(const unsigned char *w, size_t n)
     printf("  ");
     for (size_t i = 0; i < n; i += OS / 2) putchar(w[i] ? '-' : '_');
     printf("\n  ");
-    /* 비트 경계에 이름을 붙인다 */
+    /* name the bit boundaries */
     const char *lab[] = { "  ", "  ", "St", "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7", "Sp", "  ", "  " };
     for (size_t i = 0, k = 0; i < n; i += OS, k++)
         printf("%-*s", (int)(OS / (OS / 2)), k < sizeof lab / sizeof *lab ? lab[k] : "  ");
@@ -108,7 +108,7 @@ int main(void)
                : "character corrupted");
     }
 
-    /* 임계점을 *찾아본다* --- 통설을 옮겨 적는 대신 프로그램이 재게 한다 */
+    /* *Search for* the threshold --- let the program measure instead of copying the folklore */
     double lo = 0, hi = 0;
     for (double e = -20.0; e <= 20.0; e += 0.05) {
         double rx_bit = OS / (1.0 + e / 100.0);

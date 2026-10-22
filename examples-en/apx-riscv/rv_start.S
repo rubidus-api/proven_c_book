@@ -1,5 +1,5 @@
-/* QEMU virt 기계의 시작점 --- 스택을 세우고 main 으로 간다.
-   -bios none 으로 올리면 0x8000_0000 에서 실행이 시작된다. */
+/* Entry point of the QEMU virt machine --- set up the stack and go to main.
+   Booted with -bios none, execution starts at 0x8000_0000. */
     .section .text.start, "ax"
     .globl _start
 _start:

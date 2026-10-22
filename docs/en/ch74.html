@@ -723,7 +723,7 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
     <strong>show_char</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">n_sign_posn</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> L</strong><strong><span class="tok-x">-></span></strong><strong>n_sign_posn</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 <span class="tok-x">}</span>
 
-<em><span class="tok-c">/*</span></em><em><span class="tok-c"> 여러 로케일을 한 줄씩 견주어 본다 </span></em><em><span class="tok-c">*/</span></em>
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> Compare several locales, one per line </span></em><em><span class="tok-c">*/</span></em>
 <strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong>compare_row</strong><span class="tok-x">(</span><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>name<span class="tok-x">)</span>
 <span class="tok-x">{</span>
     <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong><strong>setlocale</strong><strong><span class="tok-x">(</span></strong><strong>LC_ALL</strong><strong><span class="tok-x">,</span></strong><strong> name</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>

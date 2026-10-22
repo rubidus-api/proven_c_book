@@ -33,7 +33,7 @@ static void ring_of_one_page(size_t pg)
     int fd = memfd_create("ring", 0);
     if (fd < 0 || ftruncate(fd, (long)pg) != 0) { puts("  (memfd unavailable)"); return; }
 
-    /* 먼저 두 쪽 넓이의 자리를 잡아 두고, 그 위에 같은 기억을 두 번 덮어 사상한다. */
+    /* First reserve a two-page-wide range, then map the same memory over it twice. */
     char *base = mmap(NULL, pg * 2, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     char *a = mmap(base,      pg, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_FIXED, fd, 0);
     char *b = mmap(base + pg, pg, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_FIXED, fd, 0);
@@ -43,7 +43,7 @@ static void ring_of_one_page(size_t pg)
     printf("  two windows %zu bytes apart; wrote at the first, read \"%s\" at the second\n",
            (size_t)(b - a), b);
 
-    /* 끝에서 8 바이트 앞에 12 바이트를 쓴다 --- 감기 검사 없이 그냥 이어 쓴다. */
+    /* Write 12 bytes starting 8 bytes before the end --- straight on, with no wrap check. */
     memcpy(a + pg - 8, "ABCDEFGHIJKL", 12);
     printf("  wrote 12 bytes 8 before the end; the last 4 came out at the start: \"%.4s\"\n", a);
     printf("#DATA ring %.4s\n", a);
@@ -55,7 +55,7 @@ static void guard_page(size_t pg)
     struct sigaction sa;
     char *p = mmap(NULL, pg * 3, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     if (p == MAP_FAILED) { puts("  (mapping refused)"); return; }
-    mprotect(p + pg * 2, pg, PROT_NONE);            /* 마지막 쪽의 권한을 거둔다 */
+    mprotect(p + pg * 2, pg, PROT_NONE);            /* take away the last page's permissions */
 
     memset(&sa, 0, sizeof sa);
     sa.sa_handler = on_segv;

@@ -1,5 +1,5 @@
-/* 링커가 만드는 「구역」과 로더가 읽는 「조각」은 다른 목록이다.
-   여기서는 로더가 보는 쪽 --- 프로그램 헤더 --- 을 제 실행 파일에서 읽는다. */
+/* The "sections" the linker makes and the "segments" the loader reads are different lists.
+   Here we read the loader's side --- the program headers --- from our own executable. */
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
@@ -41,7 +41,7 @@ int main(void)
         printf("%-12s %-8s %10llu %10llu  %s\n", name, perm,
                (unsigned long long)filesz, (unsigned long long)memsz, memo);
 
-        if (type == 3) {   /* PT_INTERP 는 문자열 하나를 담는다 */
+        if (type == 3) {   /* PT_INTERP holds one string */
             uint64_t off; memcpy(&off, ph + 8, 8);
             char buf[128] = { 0 };
             long save = ftell(f);

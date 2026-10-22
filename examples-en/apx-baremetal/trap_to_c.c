@@ -1,4 +1,4 @@
-/* 하드웨어 예외가 C 함수까지 올라오는 길 --- OS 위에서 그 길을 눈으로 본다. */
+/* The road from a hardware exception up to a C function --- seen on top of an OS. */
 #define _POSIX_C_SOURCE 200809L
 #include <setjmp.h>
 #include <signal.h>
@@ -8,14 +8,14 @@ static sigjmp_buf escape;
 static volatile sig_atomic_t why = 0;
 static void *where = NULL;
 
-/* 처리기는 하드웨어가 준 것을 받는다 --- 원인 번호와 터진 명령의 주소 */
+/* The handler receives what the hardware gives --- a cause number and the faulting address */
 static void on_trap(int sig, siginfo_t *si, void *ctx)
 {
     (void)sig; (void)ctx;
     why = si->si_code;
     where = si->si_addr;
-    /* 트랩 처리기에서 그냥 돌아오는 것은 미정의 동작이다(C23 7.14.1.1 p3).
-       터진 명령을 다시 실행하려 들기 때문이다 --- 그래서 뛰어서 빠져나온다. */
+    /* Simply returning from a trap handler is undefined behaviour (C23 7.14.1.1 p3).
+       It would re-run the faulting instruction --- so we jump out instead. */
     siglongjmp(escape, 1);
 }
 
@@ -29,7 +29,7 @@ int main(void)
 
     volatile int zero = 0, x = 1;
     if (sigsetjmp(escape, 1) == 0) {
-        x = x / zero;                       /* CPU 가 예외를 일으킨다 */
+        x = x / zero;                       /* the CPU raises an exception */
         puts("this line is never reached");
     }
     printf("integer divide: si_code=%d (FPE_INTDIV=%d), faulting instruction=%s\n",
@@ -37,7 +37,7 @@ int main(void)
 
     int *nowhere = NULL;
     if (sigsetjmp(escape, 1) == 0) {
-        *nowhere = 1;                       /* 같은 길, 다른 예외 */
+        *nowhere = 1;                       /* same road, a different exception */
         puts("nor is this one");
     }
     printf("null store   : si_code=%d (SEGV_MAPERR=%d), address=%s\n",

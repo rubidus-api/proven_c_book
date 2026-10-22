@@ -1,4 +1,4 @@
-/* QEMU virt: RAM 은 0x8000_0000 에서 시작한다. */
+/* QEMU virt: RAM starts at 0x8000_0000. */
 ENTRY(_start)
 SECTIONS {
     . = 0x80000000;
@@ -7,6 +7,6 @@ SECTIONS {
     .data : { *(.data*) }
     .bss : { *(.bss*) *(COMMON) }
     . = ALIGN(16);
-    . = . + 4096;          /* 스택 4 KiB */
+    . = . + 4096;          /* stack 4 KiB */
     _stack_top = .;
 }

@@ -1,4 +1,4 @@
-/* 처리기 안에서 왜 '자물쇠 없는' 원자적 연산만 허용되는가. */
+/* Why only 'lock-free' atomic operations are allowed inside a handler. */
 #include <stdatomic.h>
 #include <stdint.h>
 #include <stdio.h>

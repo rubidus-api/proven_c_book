@@ -1,5 +1,5 @@
-/* 저장 장치는 얼마나 느린가 --- 그리고 「느리다」의 얼굴이 몇 가지인가.
-   임시 파일 하나를 만들어 재고, 끝나면 지운다. 장치를 직접 만지지 않는다. */
+/* How slow is storage --- and how many faces does "slow" have?
+   It measures with one temporary file and deletes it at the end. No device is touched directly. */
 #define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <stdlib.h>
@@ -35,7 +35,7 @@ int main(void)
     printf("  measured with one %u MiB temporary file. This is not the figure of one device\n", FILE_MiB);
     printf("  but of the filesystem, the cache and the device together --- the whole stack.\n\n");
 
-    /* ── ① 차례로 쓰기 ── */
+    /* ── ① writing in order ── */
     int fd = open(path, O_CREAT | O_TRUNC | O_WRONLY, 0600);
     if (fd < 0) { perror("open"); return 1; }
     double t0 = ns();
@@ -46,14 +46,14 @@ int main(void)
     printf("== 1. sequential writing ==\n");
     printf("  writing %u MiB (into cache) : %8.1f MiB/s\n", FILE_MiB, write_mbs);
 
-    /* ── ② 정말 디스크에 닿게 하기 --- fsync ── */
+    /* ── ② making it really reach the disk --- fsync ── */
     t0 = ns(); fsync(fd); t1 = ns();
     double fsync_all_ms = (t1 - t0) / 1e6;
     printf("  one fsync after it          : %8.1f ms  <- this much had not reached the disk\n",
            fsync_all_ms);
     close(fd);
 
-    /* 작은 쓰기 + fsync 를 되풀이 --- 데이터베이스가 하는 일 */
+    /* small write + fsync, repeated --- what a database does */
     fd = open(path, O_WRONLY);
     double s[9];
     for (int r = 0; r < 9; r++) {
@@ -63,7 +63,7 @@ int main(void)
             fsync(fd);
         }
         t1 = ns();
-        s[r] = (t1 - t0) / 20.0 / 1e6;         /* fsync 한 번당 밀리초 */
+        s[r] = (t1 - t0) / 20.0 / 1e6;         /* milliseconds per fsync */
     }
     qsort(s, 9, sizeof *s, cmp_d);
     double fsync_ms = s[4];
@@ -73,13 +73,13 @@ int main(void)
     printf("  * that is the cost of one database commit. Which is why designs gather several\n");
     printf("    commits and flush them together (group commit).\n");
 
-    /* ── ③ 캐시가 있을 때와 없을 때 ── */
+    /* ── ③ with and without the cache ── */
     printf("\n== 2. reading --- with the cache, and after asking to drop it ==\n");
     fd = open(path, O_RDONLY);
     double seq_cached = 0, seq_cold = 0, rnd_cached = 0, rnd_cold = 0;
 
     for (int cold = 0; cold < 2; cold++) {
-        if (cold) posix_fadvise(fd, 0, 0, POSIX_FADV_DONTNEED);   /* 이 파일의 캐시만 버린다 */
+        if (cold) posix_fadvise(fd, 0, 0, POSIX_FADV_DONTNEED);   /* drop only this file's cache */
         lseek(fd, 0, SEEK_SET);
         t0 = ns();
         for (unsigned i = 0; i < FILE_MiB; i++)
@@ -92,7 +92,7 @@ int main(void)
     printf("  sequential read (dropped) : %8.1f MiB/s  -> a factor of %.1f\n",
            seq_cold, seq_cached / seq_cold);
 
-    /* 무작위 4 KiB 읽기 */
+    /* random 4 KiB reads */
     for (int cold = 0; cold < 2; cold++) {
         if (cold) posix_fadvise(fd, 0, 0, POSIX_FADV_DONTNEED);
         const int NREAD = 2000;
@@ -110,7 +110,7 @@ int main(void)
     printf("  random 4 KiB (dropped)    : %8.1f us each -> %.0f per second\n",
            rnd_cold, 1e6 / rnd_cold);
 
-    /* ★ 부탁이 먹혔는지 확인한다. 두 값이 비슷하면 캐시가 그대로 남아 있었던 것이다. */
+    /* ★ Check that the request took effect. If the two values are close, the cache stayed. */
     double ratio = seq_cached / seq_cold;
     if (ratio < 1.2 && ratio > 0.8) {
         printf("\n  * the two are nearly equal --- the request to drop the cache was not honoured.\n");
@@ -125,7 +125,7 @@ int main(void)
     close(fd);
     unlink(path);
 
-    /* ── ④ 사다리에 얹어 보기 ── */
+    /* ── ④ putting it on the ladder ── */
     printf("\n== 3. placed on the ladder from earlier ==\n");
     printf("  %-28s %14s %s\n", "what", "each", "against L1 (1.4 ns)");
     struct { const char *name; double v_ns; } rows[] = {
