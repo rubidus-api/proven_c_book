@@ -1,4 +1,4 @@
-[한국어](README.md) | **English** — **Proven C Book v0.97.1** — [PDF(ko)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.97.1/proven_c_book-v0.97.1-ko.pdf) · [PDF(en)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.97.1/proven_c_book-v0.97.1-en.pdf) · [ZIP(ko)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.97.1/proven_c_book-v0.97.1-ko.zip) · [ZIP(en)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.97.1/proven_c_book-v0.97.1-en.zip) · [ZIP(all)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.97.1/proven_c_book-v0.97.1-all.zip)
+[한국어](README.md) | **English** — **Proven C Book v0.98.0** — [PDF(ko)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.98.0/proven_c_book-v0.98.0-ko.pdf) · [PDF(en)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.98.0/proven_c_book-v0.98.0-en.pdf) · [ZIP(ko)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.98.0/proven_c_book-v0.98.0-ko.zip) · [ZIP(en)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.98.0/proven_c_book-v0.98.0-en.zip) · [ZIP(all)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.98.0/proven_c_book-v0.98.0-all.zip)
 
 # Proven C Book — An Introduction to Modern C with the Proven C Library
 
@@ -15,17 +15,17 @@ foundation to memory management, error handling, libraries and project structure
 > [proven C library](https://github.com/rubidus-api/proven_c_lib) and comparative
 > examples to show **how those rules inform program design**.
 
-- **Current edition**: v0.97.1 — **draft**
-- **Download the PDF** — [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.97.1/proven_c_book-v0.97.1-en.pdf) · [Korean PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.97.1/proven_c_book-v0.97.1-ko.pdf)
+- **Current edition**: v0.98.0 — **draft**
+- **Download the PDF** — [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.98.0/proven_c_book-v0.98.0-en.pdf) · [Korean PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.98.0/proven_c_book-v0.98.0-ko.pdf)
 - **Read on the web** — [English](https://rubidus-api.github.io/proven_c_book/en/) · [한국어](https://rubidus-api.github.io/proven_c_book/ko/)
-- **Bundles (zip)** — [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.97.1/proven_c_book-v0.97.1-en.zip) · [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.97.1/proven_c_book-v0.97.1-ko.zip) · [all](https://github.com/rubidus-api/proven_c_book/releases/download/v0.97.1/proven_c_book-v0.97.1-all.zip)
-- Copies inside the repository: [en PDF](dist/proven_c_book-v0.97.1-en.pdf) · [ko PDF](dist/proven_c_book-v0.97.1-ko.pdf)
+- **Bundles (zip)** — [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.98.0/proven_c_book-v0.98.0-en.zip) · [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.98.0/proven_c_book-v0.98.0-ko.zip) · [all](https://github.com/rubidus-api/proven_c_book/releases/download/v0.98.0/proven_c_book-v0.98.0-all.zip)
+- Copies inside the repository: [en PDF](dist/proven_c_book-v0.98.0-en.pdf) · [ko PDF](dist/proven_c_book-v0.98.0-ko.pdf)
 - **Style specimen** — every device the book uses, gathered in one place, with each
   element labelled by its own name (CSS selector on the web, function name in the
   typeset edition). Always current, independently of releases:
   [web](https://rubidus-api.github.io/proven_c_book/style-specimen.html) ·
   [PDF](https://rubidus-api.github.io/proven_c_book/style-specimen.pdf)
-- 13 parts, 105 chapters, appendices A–Q and an index — 1,296 pages in English, 1,223 in Korean
+- 13 parts, 105 chapters, appendices A–Q and an index — 1,339 pages in English, 1,258 in Korean
 - The change log lives in [CHANGELOG.md](CHANGELOG.md).
 
 ## Beyond the first C textbook
@@ -123,7 +123,7 @@ layout, measurements and memory-management hardware.
 
 ## What makes it different
 
-- **Output comes from the examples.** All 225 listings have their execution output
+- **Output comes from the examples.** All 231 listings have their execution output
   captured by verification scripts. The book records full verification under GCC 14
   and cross-checks under Clang 22.1, with reasons for the 5 cross-check skips in
   [the skip list](docs/example-cross-skip.tsv).
