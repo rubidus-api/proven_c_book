@@ -1,10 +1,10 @@
-/* How a number is actually stored in bits --- seen with the eyes.
+/* How a number is actually stored in bits --- made visible.
    Two's complement, unsigned arithmetic going round like a clock, sign extension. */
 #include <stdio.h>
 #include <stdint.h>
 #include <inttypes.h>
 
-/* Print the bits from the top, with a space every eight */
+/* Print the bits from the most significant down, a space every eight */
 static void bits(const char *label, uint32_t v, int width)
 {
     printf("%-24s ", label);
