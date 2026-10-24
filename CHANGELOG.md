@@ -4,7 +4,25 @@ All notable changes to this project will be documented in this file.
 
 This project follows Keep a Changelog.
 
-## [v0.99.0] - 2026-10-25
+## [v0.99.1] - 2026-10-25
+
+16–26장(두 판)을 외부 검토 정오표(review-0053 2회차, 한국어 3건 · 영어 178건)에 비추어 다듬었다. 178건을 반영했고(그중
+78건은 제안을 고쳐서) 3건은 기각했다. 한국어판 본문은 표 제목 세 곳만 바뀌었다.
+
+### Fixed
+- **23장(영어판)** `printf` 가 앞의 세 장을 쓴다는 문장에 옛 장 번호 「(19) (20) (21)」이 숫자로 박혀 있었다 --- 장 참조로
+  바꿨다(20 · 21 · 22장).
+- **16 · 17장(영어판)** 한국어판의 「주문」을 영어판만 외상 · 빚(「on credit」 · 「debt」)으로 옮겨, 바로 앞 「spell」과 비유가
+  엇갈렸다 --- 「spell」로 맞췄다. 23장 이후의 「외상 장부」는 한국어판에도 있는 비유라 그대로 둔다.
+- **16장(영어판)** 정리 상자가 한국어판의 순서(소스 → 터미널 · 셸 · 컴파일러 → 실행 → 한 줄씩 읽기)를 빠뜨렸다.
+- **19장(영어판)** 정리 상자에 Pelles C 가 두 번 나왔다.
+- **16장(한국어판)** 표 제목 「상황별로 치는 키」 → 「상황별 입력 예」, 「경로를 적는 갈래」 → 「명령줄 인자의 갈래」(표는 명령줄
+  인자의 모양을 나눈다).
+- 16–26장(영어판) 비문과 직역투. 「MSVC differs from the option syntax up」 · 「C23 features … catch」 ·
+  「does not only tell the truth」(→ does not always) 같은 비문, 「the shapes reduce to three」 · 「what the measurement bought」 ·
+  「a terminal with a person」 같은 직역, 「Measured, …」 문두, 「hello world's heart」 같은 소유격을 고쳤다. 저자의 비유(편집자의
+  권리, 재료, 울타리, 외상 장부)는 살렸다. `_Noreturn` 은 C23 에서 「obsolescent」라고 적었다.
+
 
 제9부 끝(54장 「UB」 뒤)에 메모리 두 장을 더했다(두 판). 이제 13부 107장이다.
 
