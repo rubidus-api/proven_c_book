@@ -24,6 +24,8 @@ This project follows Keep a Changelog.
   권리, 재료, 울타리, 외상 장부)는 살렸다. `_Noreturn` 은 C23 에서 「obsolescent」라고 적었다.
 
 
+## [v0.99.0] - 2026-10-25
+
 제9부 끝(54장 「UB」 뒤)에 메모리 두 장을 더했다(두 판). 이제 13부 107장이다.
 
 ### Added
