@@ -90,14 +90,14 @@ def main():
         ("book", r"게이트가 (\S+) 개 있다\(`scripts/check-\*\.py`\)", ko_num),
         ("book-en", r"has (\S+) such gates \(`scripts/check-\*\.py`\)", en_num),
     ):
-        ch = (ROOT / ed / "chapters" / "ch102.typ")
+        ch = (ROOT / ed / "chapters" / "ch104.typ")
         if not ch.exists():
             continue
         g = re.search(pat, ch.read_text(encoding="utf-8"))
         if not g:
-            bad.append(f"{ed}/chapters/ch102.typ: 게이트 수 문장을 찾지 못했다")
+            bad.append(f"{ed}/chapters/ch104.typ: 게이트 수 문장을 찾지 못했다")
         elif g.group(1) != table.get(n_gates):
-            bad.append(f"{ed}/chapters/ch102.typ: 게이트 「{g.group(1)}」 ≠ 실제 {n_gates}개")
+            bad.append(f"{ed}/chapters/ch104.typ: 게이트 「{g.group(1)}」 ≠ 실제 {n_gates}개")
 
     for line in bad:
         print("·  " + line, file=sys.stderr)

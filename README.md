@@ -1,4 +1,4 @@
-**한국어** | [English](README-en.md) — **Proven C Book v0.98.3** — [PDF(ko)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.98.3/proven_c_book-v0.98.3-ko.pdf) · [PDF(en)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.98.3/proven_c_book-v0.98.3-en.pdf) · [ZIP(ko)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.98.3/proven_c_book-v0.98.3-ko.zip) · [ZIP(en)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.98.3/proven_c_book-v0.98.3-en.zip) · [ZIP(all)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.98.3/proven_c_book-v0.98.3-all.zip)
+**한국어** | [English](README-en.md) — **Proven C Book v0.99.0** — [PDF(ko)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.99.0/proven_c_book-v0.99.0-ko.pdf) · [PDF(en)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.99.0/proven_c_book-v0.99.0-en.pdf) · [ZIP(ko)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.99.0/proven_c_book-v0.99.0-ko.zip) · [ZIP(en)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.99.0/proven_c_book-v0.99.0-en.zip) · [ZIP(all)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.99.0/proven_c_book-v0.99.0-all.zip)
 
 # Proven C Book — 프로븐 C 라이브러리와 함께하는 현대적 C 입문
 
@@ -13,17 +13,17 @@
 > 기계의 표현과 C의 규칙을 연결하고, [proven](https://github.com/rubidus-api/proven_c_lib)
 > C 라이브러리와 비교 예제로 **그 규칙을 프로그램 설계에 옮기는 과정**을 보여 준다.
 
-- **현재 판**: v0.98.3 — **초안(draft)**
-- **PDF 바로 받기** — [한국어 PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.98.3/proven_c_book-v0.98.3-ko.pdf) · [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.98.3/proven_c_book-v0.98.3-en.pdf)
+- **현재 판**: v0.99.0 — **초안(draft)**
+- **PDF 바로 받기** — [한국어 PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.99.0/proven_c_book-v0.99.0-ko.pdf) · [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.99.0/proven_c_book-v0.99.0-en.pdf)
 - **웹으로 읽기** — [한국어](https://rubidus-api.github.io/proven_c_book/ko/) · [English](https://rubidus-api.github.io/proven_c_book/en/)
-- **묶음(zip)** — [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.98.3/proven_c_book-v0.98.3-ko.zip) · [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.98.3/proven_c_book-v0.98.3-en.zip) · [전체](https://github.com/rubidus-api/proven_c_book/releases/download/v0.98.3/proven_c_book-v0.98.3-all.zip)
-- 저장소 안 사본: [ko PDF](dist/proven_c_book-v0.98.3-ko.pdf) · [en PDF](dist/proven_c_book-v0.98.3-en.pdf)
+- **묶음(zip)** — [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.99.0/proven_c_book-v0.99.0-ko.zip) · [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.99.0/proven_c_book-v0.99.0-en.zip) · [전체](https://github.com/rubidus-api/proven_c_book/releases/download/v0.99.0/proven_c_book-v0.99.0-all.zip)
+- 저장소 안 사본: [ko PDF](dist/proven_c_book-v0.99.0-ko.pdf) · [en PDF](dist/proven_c_book-v0.99.0-en.pdf)
 - **서식 예시(style specimen)** — 책에 쓰이는 모든 장치를 한자리에 모아 둔 견본이다.
   각 요소 옆에 그 이름(웹은 CSS 선택자, 텍스트 판은 함수 이름)이 붙어 있다.
   판을 내지 않고도 늘 최신이다:
   [웹](https://rubidus-api.github.io/proven_c_book/style-specimen.html) ·
   [PDF](https://rubidus-api.github.io/proven_c_book/style-specimen.pdf)
-- 13부 105장 + 부록 A~Q + 찾아보기 — 한국어판 1,258쪽, 영어판 1,339쪽
+- 13부 107장 + 부록 A~Q + 찾아보기 — 한국어판 1,287쪽, 영어판 1,371쪽
 - 갱신 내역은 [CHANGELOG.md](CHANGELOG.md)에 있다.
 
 ## 입문 다음의 질문까지
@@ -40,8 +40,8 @@ C 문법을 익힌 뒤에도 실제 프로그램을 만들 때는 새로운 질�
 | 메모리는 누가 얻고 누가 해제하는가? | 수명·소유권·할당기, 수명이 같은 메모리를 묶어 관리하는 아레나 |
 | 문자열과 배열의 크기는 어떻게 관리하는가? | 길이와 용량, 데이터를 복사하지 않고 가리키는 뷰, 컨테이너 |
 | 함수가 실패하면 무엇이 남는가? | 오류를 값으로 반환하기, 실패 시 원래 상태를 보존하는 설계 |
-| 같은 문제를 다르게 설계하면 무엇이 달라지는가? | [간이 JSON의 세 구현](docs/ko/ch100.html): 순수 C, proven, 중첩을 다루는 명시적 스택 |
-| 여러 파일을 하나의 프로젝트로 어떻게 관리하는가? | [빌드와 시험](docs/ko/ch102.html): 헤더·의존성·공개와 내부의 경계·회귀 시험 |
+| 같은 문제를 다르게 설계하면 무엇이 달라지는가? | [간이 JSON의 세 구현](docs/ko/ch102.html): 순수 C, proven, 중첩을 다루는 명시적 스택 |
+| 여러 파일을 하나의 프로젝트로 어떻게 관리하는가? | [빌드와 시험](docs/ko/ch104.html): 헤더·의존성·공개와 내부의 경계·회귀 시험 |
 
 C로 개발을 계속하고 싶은 독자에게는 이 연결이 다음 단계의 바탕이 된다.
 C++는 목적과 도구에 따라 선택하는 다른 언어이며, C 학습의 필수 다음 과정은 아니다.
@@ -52,7 +52,7 @@ C++는 목적과 도구에 따라 선택하는 다른 언어이며, C 학습의 
 - **프로그래밍이 처음이라면:** 앞에서부터 읽는다. 첫 두 부에서는 기계와 표현에
   익숙해지고, 제3부의 [헬로 월드](docs/ko/ch16.html)에서 첫 프로그램을 만난다.
 - **C 입문서를 마쳤다면:** 포인터·수명·변환을 다시 확인하고, 제12부의 라이브러리
-  설계와 [프로젝트 구성](docs/ko/ch102.html)으로 이어 읽을 수 있다. 장마다 선수 지식이 적혀 있다.
+  설계와 [프로젝트 구성](docs/ko/ch104.html)으로 이어 읽을 수 있다. 장마다 선수 지식이 적혀 있다.
 - **이미 C를 쓰고 있다면:** 헷갈렸던 규칙과 설계 선택을 필요한 장에서 찾아 읽는다.
   장 사이의 의존 관계와 용어 대조표가 돌아볼 곳을 안내한다.
 
@@ -85,7 +85,7 @@ C의 반복되는 문제를 공통 API로 다루는 방법을 보여 준다. C23
 
 proven은 호출자의 수명 위반이나 잘못된 할당기 사용을 모두 막아 주지는 않는다.
 함께 실린 판의 검증 범위와 도입 시 고려할 점은
-[proven 소개](docs/ko/ch91.html)와 [라이브러리의 경계](docs/ko/ch99.html)에 설명한다.
+[proven 소개](docs/ko/ch93.html)와 [라이브러리의 경계](docs/ko/ch101.html)에 설명한다.
 
 ## 무엇이 들어 있나
 
@@ -108,7 +108,7 @@ proven은 호출자의 수명 위반이나 잘못된 할당기 사용을 모두 
 
 ## 이 책이 다른 점
 
-- **실행 결과를 예제에서 가져온다.** 지면에 실리는 예제 231개의 실행 결과는
+- **실행 결과를 예제에서 가져온다.** 지면에 실리는 예제 240개의 실행 결과는
   검증 스크립트가 캡처한다. GCC 14 기준 전수 검증과 Clang 22.1 교차 검증을 기록하며,
   교차에서 건너뛴 5건의 이유는 [건너뜀 목록](docs/example-cross-skip.tsv)에 남긴다.
 - **표준의 규칙과 실측을 구분한다.** 최적화 수준에 따라 달라지는 실행이나
