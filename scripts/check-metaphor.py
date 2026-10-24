@@ -98,6 +98,9 @@ def scan(edition, pattern, skip=None):
                       f.read_text(encoding="utf-8"))
         # 표·그림의 id 도 산문이 아니다 --- 이름에 든 낱말이 비유로 잡히면 안 된다
         body = re.sub(r'^\s*id: "[^"]*",\s*$', " ", body, flags=re.M)
+        # 예제 경로도 산문이 아니다 --- 폴더가 장 id 를 따르므로(`examples/type-map/`)
+        # id 에 든 낱말이 경로에서 다시 나온다(2026-10-24)
+        body = re.sub(r'examples(?:-en)?/[^\s"`)]+', " ", body)
         for ln, line in enumerate(body.splitlines(), 1):
             for m in pattern.finditer(line):
                 a = max(0, m.start() - 44)

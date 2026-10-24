@@ -84,8 +84,8 @@ examples/**/*.o
 examples/**/*.d
 examples-en/**/*.o
 examples-en/**/*.d
-examples/ch102/stale/demo
-examples-en/ch102/stale/demo
+examples/build-test/stale/demo
+examples-en/build-test/stale/demo
 
 # ── Private layout (links into the private sibling; kit 0.10.0) ──
 /scripts/README.md
@@ -108,8 +108,8 @@ examples-en/ch102/stale/demo
 /docs/resources
 
 # 예제가 실행 중에 자기 폴더에 짓는 것 --- 원본이 아니다
-/examples/ch102/golden/wordcount
-/examples-en/ch102/golden/wordcount
+/examples/build-test/golden/wordcount
+/examples-en/build-test/golden/wordcount
 /scripts/sot-check.sh
 /scripts/claim.sh
 /scripts/install-hook.sh

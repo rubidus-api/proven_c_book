@@ -169,6 +169,10 @@ int main(void)
     double at4 = run(atomic_bump, 4, ITERS / 10, NULL);
     double mx1 = run(mutex_bump, 1, ITERS / 100, NULL);
     double mx2 = run(mutex_bump, 2, ITERS / 100, NULL);
+    if (shared_plain != 3 * (ITERS / 100)) {          /* the lock lost no increment (1 + 2 threads) */
+        fputs("lost increments under the lock\n", stderr);
+        return 1;
+    }
     printf("  %-34s %10.3f ns each\n", "uncontended increment (baseline)", base);
     printf("  %-34s %10.3f ns each\n", "atomic increment --- 1 thread", at1);
     printf("  %-34s %10.3f ns each\n", "atomic increment --- 2 threads", at2);
