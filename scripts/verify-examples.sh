@@ -39,14 +39,23 @@ refcc=${REF_CC:-gcc}
 cross=0
 [ "$(basename "$cc")" != "$(basename "$refcc")" ] && cross=1
 skiplist="$root/docs/example-cross-skip.tsv"
+ccname=$(basename "$cc")
+ccmajor=$($cc --version 2>/dev/null | sed -n 's/.*version \([0-9][0-9]*\).*/\1/p' | head -1)
 
 # 이 예제가 교차 검증에서 건너뛸 자리인가. 까닭을 표준출력으로 돌려준다.
 cross_reason() {
     [ "$cross" -eq 1 ] || return 1
     [ -f "$skiplist" ] || return 1
-    awk -F'\t' -v want="$1" '
+    # 넷째 칸(있으면) `이름<판` --- 그 컴파일러의 그 판 *미만*에서만 건너뛴다.
+    # 그 판부터는 통과해야 하고, 다른 컴파일러에는 이 줄이 없는 것과 같다.
+    awk -F'\t' -v want="$1" -v ccn="$ccname" -v ccm="${ccmajor:-0}" '
         /^#/ || NF < 3 { next }
-        $1 == want { print $2 " --- " $3; found = 1; exit }
+        $1 == want {
+            if (NF >= 4 && $4 != "") {
+                split($4, lim, "<")
+                if (ccn != lim[1] || ccm + 0 >= lim[2] + 0) next
+            }
+            print $2 " --- " $3; found = 1; exit }
         END { exit !found }' "$skiplist"
 }
 

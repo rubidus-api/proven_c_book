@@ -27,33 +27,35 @@ book-en/chapters/ch046.typ	two chapters
 book-en/chapters/ch048.typ	three chapters
 book-en/chapters/ch052.typ	two sections
 book-en/chapters/ch053.typ	two chapters
-book-en/chapters/ch054.typ	five chapters
-book-en/chapters/ch055.typ	three chapters
-book-en/chapters/ch060.typ	two chapters
-book-en/chapters/ch066.typ	three chapters
-book-en/chapters/ch067.typ	The next two chapters
-book-en/chapters/ch067.typ	two chapters
+book-en/chapters/ch054.typ	The next two chapters
+book-en/chapters/ch054.typ	two chapters
+book-en/chapters/ch056.typ	seven chapters
+book-en/chapters/ch057.typ	three chapters
+book-en/chapters/ch062.typ	two chapters
+book-en/chapters/ch068.typ	three chapters
+book-en/chapters/ch069.typ	The next two chapters
 book-en/chapters/ch069.typ	two chapters
-book-en/chapters/ch072.typ	five chapters
-book-en/chapters/ch072.typ	the next five chapters
-book-en/chapters/ch072.typ	the next two chapters
-book-en/chapters/ch072.typ	two chapters
-book-en/chapters/ch073.typ	two chapters
-book-en/chapters/ch077.typ	six chapters
-book-en/chapters/ch077.typ	three chapters
-book-en/chapters/ch080.typ	one chapter
-book-en/chapters/ch080.typ	two chapters
-book-en/chapters/ch082.typ	six chapters
-book-en/chapters/ch087.typ	one chapters
-book-en/chapters/ch087.typ	two chapters
-book-en/chapters/ch087.typ	two remaining chapters
-book-en/chapters/ch090.typ	eight chapters
-book-en/chapters/ch090.typ	five chapters
-book-en/chapters/ch091.typ	nine chapters
-book-en/chapters/ch093.typ	seven chapters
-book-en/chapters/ch099.typ	one chapter
-book-en/chapters/ch099.typ	six chapters
-book-en/chapters/ch100.typ	ten chapters
+book-en/chapters/ch071.typ	two chapters
+book-en/chapters/ch074.typ	five chapters
+book-en/chapters/ch074.typ	the next five chapters
+book-en/chapters/ch074.typ	the next two chapters
+book-en/chapters/ch074.typ	two chapters
+book-en/chapters/ch075.typ	two chapters
+book-en/chapters/ch079.typ	six chapters
+book-en/chapters/ch079.typ	three chapters
+book-en/chapters/ch082.typ	one chapter
+book-en/chapters/ch082.typ	two chapters
+book-en/chapters/ch084.typ	six chapters
+book-en/chapters/ch089.typ	one chapters
+book-en/chapters/ch089.typ	two chapters
+book-en/chapters/ch089.typ	two remaining chapters
+book-en/chapters/ch092.typ	eight chapters
+book-en/chapters/ch092.typ	five chapters
+book-en/chapters/ch093.typ	nine chapters
+book-en/chapters/ch095.typ	seven chapters
+book-en/chapters/ch101.typ	one chapter
+book-en/chapters/ch101.typ	six chapters
+book-en/chapters/ch102.typ	ten chapters
 book-en/front/reading-paths.typ	fifteen chapters
 book-en/front/reading-paths.typ	one chapter
 book-en/parts/part11s.typ	The last three chapters
@@ -95,39 +97,40 @@ book/chapters/ch050.typ	세부
 book/chapters/ch052.typ	두 절
 book/chapters/ch052.typ	마흔네 장
 book/chapters/ch053.typ	두 장
-book/chapters/ch054.typ	다섯 장
+book/chapters/ch054.typ	두 장
 book/chapters/ch054.typ	쉰 장
-book/chapters/ch055.typ	쉰세 장
-book/chapters/ch058.typ	여러 장
-book/chapters/ch060.typ	두 장
-book/chapters/ch063.typ	세부
+book/chapters/ch056.typ	일곱 장
+book/chapters/ch057.typ	쉰세 장
+book/chapters/ch060.typ	여러 장
+book/chapters/ch062.typ	두 장
 book/chapters/ch065.typ	세부
-book/chapters/ch066.typ	스물세 장
-book/chapters/ch067.typ	두 장
-book/chapters/ch067.typ	스물두 장
-book/chapters/ch068.typ	두 장
+book/chapters/ch067.typ	세부
+book/chapters/ch068.typ	스물세 장
 book/chapters/ch069.typ	두 장
+book/chapters/ch069.typ	스물두 장
 book/chapters/ch070.typ	두 장
-book/chapters/ch070.typ	스물여섯 장
-book/chapters/ch072.typ	다섯 장
+book/chapters/ch071.typ	두 장
 book/chapters/ch072.typ	두 장
-book/chapters/ch073.typ	두 장
-book/chapters/ch077.typ	두 장
-book/chapters/ch077.typ	여섯 장
-book/chapters/ch080.typ	두 장
-book/chapters/ch081.typ	두 장
-book/chapters/ch082.typ	서른여섯 장
-book/chapters/ch083.typ	열일곱 장
-book/chapters/ch086.typ	쉰 장
-book/chapters/ch087.typ	두 장
-book/chapters/ch087.typ	스물한 장
-book/chapters/ch089.typ	마흔두 장
-book/chapters/ch090.typ	다섯 장
-book/chapters/ch091.typ	아홉 장
-book/chapters/ch093.typ	일곱 장
-book/chapters/ch099.typ	여섯 장
-book/chapters/ch100.typ	열 장
-book/chapters/ch104.typ	두 장
+book/chapters/ch072.typ	스물여섯 장
+book/chapters/ch074.typ	다섯 장
+book/chapters/ch074.typ	두 장
+book/chapters/ch075.typ	두 장
+book/chapters/ch079.typ	두 장
+book/chapters/ch079.typ	여섯 장
+book/chapters/ch082.typ	두 장
+book/chapters/ch083.typ	두 장
+book/chapters/ch084.typ	서른여섯 장
+book/chapters/ch085.typ	열일곱 장
+book/chapters/ch088.typ	쉰 장
+book/chapters/ch089.typ	두 장
+book/chapters/ch089.typ	스물한 장
+book/chapters/ch091.typ	마흔두 장
+book/chapters/ch092.typ	다섯 장
+book/chapters/ch093.typ	아홉 장
+book/chapters/ch095.typ	일곱 장
+book/chapters/ch101.typ	여섯 장
+book/chapters/ch102.typ	열 장
+book/chapters/ch106.typ	두 장
 book/front/preface.typ	두 부
 book/front/reading-paths.typ	두 부
 book/front/reading-paths.typ	열다섯 장
