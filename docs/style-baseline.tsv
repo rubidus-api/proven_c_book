@@ -3,8 +3,8 @@
 warn	book-en/chapters/ch002.typ	robust	1
 warn	book-en/chapters/ch004.typ	Note that	1
 warn	book-en/chapters/ch038.typ	the fact that	1
-warn	book-en/chapters/ch066.typ	In other words	1
-warn	book-en/chapters/ch066.typ	Note that	1
+warn	book-en/chapters/ch068.typ	In other words	1
+warn	book-en/chapters/ch068.typ	Note that	1
 warn	book/appendix/a4-reading.typ	을 통해	1
 warn	book/chapters/ch008.typ	에 대해서	3
 warn	book/chapters/ch016.typ	를 통해	1
@@ -16,17 +16,17 @@ warn	book/chapters/ch038.typ	해당 	1
 warn	book/chapters/ch043.typ	~다는 것이 [평가어]	1
 warn	book/chapters/ch047.typ	~다는 것이 [평가어]	1
 warn	book/chapters/ch049.typ	를 통해	1
-warn	book/chapters/ch050.typ	가능하다	1
-warn	book/chapters/ch050.typ	에 대해서	1
-warn	book/chapters/ch053.typ	를 통해	1
-warn	book/chapters/ch066.typ	를 통해	1
-warn	book/chapters/ch071.typ	~다는 것이 [평가어]	1
-warn	book/chapters/ch071.typ	에 대해서	1
-warn	book/chapters/ch074.typ	해당 	1
-warn	book/chapters/ch075.typ	해당 	1
-warn	book/chapters/ch092.typ	~다는 것이 [평가어]	1
-warn	book/chapters/ch095.typ	에 대해서	2
-warn	book/chapters/ch097.typ	~다는 것이 [평가어]	1
+warn	book/chapters/ch052.typ	가능하다	1
+warn	book/chapters/ch052.typ	에 대해서	1
+warn	book/chapters/ch055.typ	를 통해	1
+warn	book/chapters/ch068.typ	를 통해	1
+warn	book/chapters/ch074.typ	~다는 것이 [평가어]	1
+warn	book/chapters/ch074.typ	에 대해서	1
+warn	book/chapters/ch077.typ	해당 	1
+warn	book/chapters/ch078.typ	해당 	1
+warn	book/chapters/ch095.typ	~다는 것이 [평가어]	1
+warn	book/chapters/ch098.typ	에 대해서	2
+warn	book/chapters/ch100.typ	~다는 것이 [평가어]	1
 note	book-en/appendix/a4-reading.typ	First,	1
 note	book-en/appendix/a4-reading.typ	Second,	1
 note	book-en/appendix/a6-grammar.typ	First,	2
@@ -58,12 +58,12 @@ note	book-en/chapters/ch009.typ	Second,	1
 note	book-en/chapters/ch010.typ	First,	2
 note	book-en/chapters/ch010.typ	Second,	2
 note	book-en/chapters/ch010.typ	Third,	1
-note	book-en/chapters/ch103.typ	First,	2
-note	book-en/chapters/ch103.typ	Second,	2
-note	book-en/chapters/ch103.typ	Third,	1
-note	book-en/chapters/ch104.typ	First,	1
-note	book-en/chapters/ch104.typ	Second,	1
-note	book-en/chapters/ch104.typ	Third,	1
+note	book-en/chapters/ch106.typ	First,	2
+note	book-en/chapters/ch106.typ	Second,	2
+note	book-en/chapters/ch106.typ	Third,	1
+note	book-en/chapters/ch107.typ	First,	1
+note	book-en/chapters/ch107.typ	Second,	1
+note	book-en/chapters/ch107.typ	Third,	1
 note	book-en/chapters/ch011.typ	First,	1
 note	book-en/chapters/ch011.typ	Second,	1
 note	book-en/chapters/ch011.typ	Third,	1
@@ -116,92 +116,92 @@ note	book-en/chapters/ch048.typ	Third,	2
 note	book-en/chapters/ch049.typ	First,	2
 note	book-en/chapters/ch049.typ	Second,	2
 note	book-en/chapters/ch049.typ	Third,	1
-note	book-en/chapters/ch050.typ	First,	1
-note	book-en/chapters/ch050.typ	Second,	1
-note	book-en/chapters/ch051.typ	First,	4
-note	book-en/chapters/ch051.typ	Second,	3
-note	book-en/chapters/ch051.typ	Third,	2
 note	book-en/chapters/ch052.typ	First,	1
 note	book-en/chapters/ch052.typ	Second,	1
-note	book-en/chapters/ch052.typ	Third,	1
-note	book-en/chapters/ch053.typ	First,	1
-note	book-en/chapters/ch053.typ	Second,	1
-note	book-en/chapters/ch053.typ	Third,	1
-note	book-en/chapters/ch054.typ	First,	2
-note	book-en/chapters/ch054.typ	Second,	2
-note	book-en/chapters/ch057.typ	First,	2
-note	book-en/chapters/ch057.typ	Second,	2
-note	book-en/chapters/ch059.typ	First,	1
-note	book-en/chapters/ch059.typ	Second,	1
-note	book-en/chapters/ch059.typ	Third,	1
-note	book-en/chapters/ch065.typ	First,	1
-note	book-en/chapters/ch065.typ	Second,	1
-note	book-en/chapters/ch065.typ	Third,	1
-note	book-en/chapters/ch066.typ	First,	2
-note	book-en/chapters/ch066.typ	Second,	1
-note	book-en/chapters/ch066.typ	Third,	1
-note	book-en/chapters/ch067.typ	First,	2
-note	book-en/chapters/ch067.typ	Second,	2
+note	book-en/chapters/ch053.typ	First,	4
+note	book-en/chapters/ch053.typ	Second,	3
+note	book-en/chapters/ch053.typ	Third,	2
+note	book-en/chapters/ch054.typ	First,	1
+note	book-en/chapters/ch054.typ	Second,	1
+note	book-en/chapters/ch054.typ	Third,	1
+note	book-en/chapters/ch055.typ	First,	1
+note	book-en/chapters/ch055.typ	Second,	1
+note	book-en/chapters/ch055.typ	Third,	1
+note	book-en/chapters/ch056.typ	First,	2
+note	book-en/chapters/ch056.typ	Second,	2
+note	book-en/chapters/ch059.typ	First,	2
+note	book-en/chapters/ch059.typ	Second,	2
+note	book-en/chapters/ch061.typ	First,	1
+note	book-en/chapters/ch061.typ	Second,	1
+note	book-en/chapters/ch061.typ	Third,	1
+note	book-en/chapters/ch067.typ	First,	1
+note	book-en/chapters/ch067.typ	Second,	1
 note	book-en/chapters/ch067.typ	Third,	1
 note	book-en/chapters/ch068.typ	First,	2
-note	book-en/chapters/ch068.typ	Second,	2
+note	book-en/chapters/ch068.typ	Second,	1
 note	book-en/chapters/ch068.typ	Third,	1
-note	book-en/chapters/ch070.typ	First,	1
-note	book-en/chapters/ch070.typ	Second,	1
-note	book-en/chapters/ch070.typ	Third,	1
-note	book-en/chapters/ch071.typ	First,	1
-note	book-en/chapters/ch071.typ	Second,	1
+note	book-en/chapters/ch069.typ	First,	2
+note	book-en/chapters/ch069.typ	Second,	2
+note	book-en/chapters/ch069.typ	Third,	1
+note	book-en/chapters/ch071.typ	First,	2
+note	book-en/chapters/ch071.typ	Second,	2
 note	book-en/chapters/ch071.typ	Third,	1
-note	book-en/chapters/ch072.typ	First,	2
-note	book-en/chapters/ch072.typ	Second,	2
-note	book-en/chapters/ch075.typ	First,	1
-note	book-en/chapters/ch075.typ	Second,	1
-note	book-en/chapters/ch076.typ	First,	1
-note	book-en/chapters/ch076.typ	Second,	1
-note	book-en/chapters/ch077.typ	First,	2
-note	book-en/chapters/ch077.typ	Second,	2
-note	book-en/chapters/ch077.typ	Third,	1
-note	book-en/chapters/ch082.typ	First,	2
-note	book-en/chapters/ch082.typ	Second,	2
-note	book-en/chapters/ch083.typ	First,	1
-note	book-en/chapters/ch083.typ	Second,	1
-note	book-en/chapters/ch084.typ	First,	3
-note	book-en/chapters/ch084.typ	Second,	3
-note	book-en/chapters/ch084.typ	Third,	1
-note	book-en/chapters/ch085.typ	First,	1
-note	book-en/chapters/ch085.typ	Second,	1
-note	book-en/chapters/ch085.typ	Third,	1
-note	book-en/chapters/ch086.typ	First,	2
+note	book-en/chapters/ch073.typ	First,	1
+note	book-en/chapters/ch073.typ	Second,	1
+note	book-en/chapters/ch073.typ	Third,	1
+note	book-en/chapters/ch074.typ	First,	1
+note	book-en/chapters/ch074.typ	Second,	1
+note	book-en/chapters/ch074.typ	Third,	1
+note	book-en/chapters/ch075.typ	First,	2
+note	book-en/chapters/ch075.typ	Second,	2
+note	book-en/chapters/ch078.typ	First,	1
+note	book-en/chapters/ch078.typ	Second,	1
+note	book-en/chapters/ch079.typ	First,	1
+note	book-en/chapters/ch079.typ	Second,	1
+note	book-en/chapters/ch080.typ	First,	2
+note	book-en/chapters/ch080.typ	Second,	2
+note	book-en/chapters/ch080.typ	Third,	1
+note	book-en/chapters/ch085.typ	First,	2
+note	book-en/chapters/ch085.typ	Second,	2
+note	book-en/chapters/ch086.typ	First,	1
 note	book-en/chapters/ch086.typ	Second,	1
-note	book-en/chapters/ch086.typ	Third,	1
-note	book-en/chapters/ch087.typ	First,	2
-note	book-en/chapters/ch087.typ	Second,	2
+note	book-en/chapters/ch087.typ	First,	3
+note	book-en/chapters/ch087.typ	Second,	3
+note	book-en/chapters/ch087.typ	Third,	1
 note	book-en/chapters/ch088.typ	First,	1
 note	book-en/chapters/ch088.typ	Second,	1
 note	book-en/chapters/ch088.typ	Third,	1
 note	book-en/chapters/ch089.typ	First,	2
-note	book-en/chapters/ch089.typ	Second,	2
-note	book-en/chapters/ch090.typ	First,	1
-note	book-en/chapters/ch090.typ	Second,	1
-note	book-en/chapters/ch090.typ	Third,	1
-note	book-en/chapters/ch091.typ	First,	3
-note	book-en/chapters/ch091.typ	Second,	3
+note	book-en/chapters/ch089.typ	Second,	1
+note	book-en/chapters/ch089.typ	Third,	1
+note	book-en/chapters/ch090.typ	First,	2
+note	book-en/chapters/ch090.typ	Second,	2
+note	book-en/chapters/ch091.typ	First,	1
+note	book-en/chapters/ch091.typ	Second,	1
 note	book-en/chapters/ch091.typ	Third,	1
-note	book-en/chapters/ch094.typ	First,	1
-note	book-en/chapters/ch094.typ	Second,	1
-note	book-en/chapters/ch095.typ	First,	1
-note	book-en/chapters/ch095.typ	Second,	1
-note	book-en/chapters/ch096.typ	First,	1
-note	book-en/chapters/ch096.typ	Second,	1
-note	book-en/chapters/ch096.typ	Third,	1
-note	book-en/chapters/ch098.typ	First,	2
-note	book-en/chapters/ch098.typ	Second,	2
-note	book-en/chapters/ch098.typ	Third,	1
+note	book-en/chapters/ch092.typ	First,	2
+note	book-en/chapters/ch092.typ	Second,	2
+note	book-en/chapters/ch093.typ	First,	1
+note	book-en/chapters/ch093.typ	Second,	1
+note	book-en/chapters/ch093.typ	Third,	1
+note	book-en/chapters/ch094.typ	First,	3
+note	book-en/chapters/ch094.typ	Second,	3
+note	book-en/chapters/ch094.typ	Third,	1
+note	book-en/chapters/ch097.typ	First,	1
+note	book-en/chapters/ch097.typ	Second,	1
+note	book-en/chapters/ch098.typ	First,	1
+note	book-en/chapters/ch098.typ	Second,	1
 note	book-en/chapters/ch099.typ	First,	1
 note	book-en/chapters/ch099.typ	Second,	1
 note	book-en/chapters/ch099.typ	Third,	1
-note	book-en/chapters/ch100.typ	First,	1
-note	book-en/chapters/ch100.typ	Second,	1
+note	book-en/chapters/ch101.typ	First,	2
+note	book-en/chapters/ch101.typ	Second,	2
+note	book-en/chapters/ch101.typ	Third,	1
+note	book-en/chapters/ch102.typ	First,	1
+note	book-en/chapters/ch102.typ	Second,	1
+note	book-en/chapters/ch102.typ	Third,	1
+note	book-en/chapters/ch103.typ	First,	1
+note	book-en/chapters/ch103.typ	Second,	1
 note	book/appendix/a2-formats.typ	곧 	1
 note	book/appendix/a2-formats.typ	그것이다	1
 note	book/appendix/a2-formats.typ	둘째	1
@@ -282,21 +282,21 @@ note	book/chapters/ch010.typ	둘째	2
 note	book/chapters/ch010.typ	셈이다	1
 note	book/chapters/ch010.typ	셋째	2
 note	book/chapters/ch010.typ	첫째	2
-note	book/chapters/ch102.typ	곧 	3
-note	book/chapters/ch102.typ	는 것이다	2
-note	book/chapters/ch102.typ	정리하면	1
-note	book/chapters/ch103.typ	는 것이다	3
-note	book/chapters/ch103.typ	둘째	2
-note	book/chapters/ch103.typ	셋째	1
-note	book/chapters/ch103.typ	짚는다	1
-note	book/chapters/ch103.typ	첫째	2
-note	book/chapters/ch104.typ	는 것이다	2
-note	book/chapters/ch104.typ	둘째	1
-note	book/chapters/ch104.typ	셈이다	1
-note	book/chapters/ch104.typ	셋째	1
-note	book/chapters/ch104.typ	첫째	1
-note	book/chapters/ch105.typ	곧 	1
-note	book/chapters/ch105.typ	그것이다	1
+note	book/chapters/ch105.typ	곧 	3
+note	book/chapters/ch105.typ	는 것이다	2
+note	book/chapters/ch105.typ	정리하면	1
+note	book/chapters/ch106.typ	는 것이다	3
+note	book/chapters/ch106.typ	둘째	2
+note	book/chapters/ch106.typ	셋째	1
+note	book/chapters/ch106.typ	짚는다	1
+note	book/chapters/ch106.typ	첫째	2
+note	book/chapters/ch107.typ	는 것이다	2
+note	book/chapters/ch107.typ	둘째	1
+note	book/chapters/ch107.typ	셈이다	1
+note	book/chapters/ch107.typ	셋째	1
+note	book/chapters/ch107.typ	첫째	1
+note	book/chapters/ch108.typ	곧 	1
+note	book/chapters/ch108.typ	그것이다	1
 note	book/chapters/ch011.typ	곧 	5
 note	book/chapters/ch011.typ	그것이다	1
 note	book/chapters/ch011.typ	넷째	3
@@ -482,256 +482,256 @@ note	book/chapters/ch049.typ	셈이다	1
 note	book/chapters/ch049.typ	셋째	1
 note	book/chapters/ch049.typ	짚는다	1
 note	book/chapters/ch049.typ	첫째	2
-note	book/chapters/ch050.typ	넷째	1
-note	book/chapters/ch050.typ	둘째	1
-note	book/chapters/ch050.typ	즉 	2
-note	book/chapters/ch050.typ	첫째	1
-note	book/chapters/ch050.typ	핵심이다	1
-note	book/chapters/ch051.typ	곧 	2
-note	book/chapters/ch051.typ	그것이다	1
-note	book/chapters/ch051.typ	넷째	3
-note	book/chapters/ch051.typ	는 것이다	1
-note	book/chapters/ch051.typ	둘째	4
-note	book/chapters/ch051.typ	셋째	3
-note	book/chapters/ch051.typ	첫째	4
-note	book/chapters/ch051.typ	핵심이다	1
 note	book/chapters/ch052.typ	넷째	1
 note	book/chapters/ch052.typ	둘째	1
-note	book/chapters/ch052.typ	셋째	3
-note	book/chapters/ch052.typ	즉 	1
+note	book/chapters/ch052.typ	즉 	2
 note	book/chapters/ch052.typ	첫째	1
+note	book/chapters/ch052.typ	핵심이다	1
 note	book/chapters/ch053.typ	곧 	2
-note	book/chapters/ch053.typ	는 것이다	3
-note	book/chapters/ch053.typ	둘째	1
-note	book/chapters/ch053.typ	셋째	1
-note	book/chapters/ch053.typ	요약하면	1
-note	book/chapters/ch053.typ	첫째	1
+note	book/chapters/ch053.typ	그것이다	1
+note	book/chapters/ch053.typ	넷째	3
+note	book/chapters/ch053.typ	는 것이다	1
+note	book/chapters/ch053.typ	둘째	4
+note	book/chapters/ch053.typ	셋째	3
+note	book/chapters/ch053.typ	첫째	4
 note	book/chapters/ch053.typ	핵심이다	1
-note	book/chapters/ch054.typ	그것이다	1
-note	book/chapters/ch054.typ	는 것이다	1
-note	book/chapters/ch054.typ	둘째	2
-note	book/chapters/ch054.typ	셈이다	1
-note	book/chapters/ch054.typ	정리하면	1
-note	book/chapters/ch054.typ	즉 	2
-note	book/chapters/ch054.typ	첫째	2
-note	book/chapters/ch057.typ	는 것이다	2
-note	book/chapters/ch057.typ	둘째	2
-note	book/chapters/ch057.typ	셈이다	2
-note	book/chapters/ch057.typ	즉 	1
-note	book/chapters/ch057.typ	첫째	2
-note	book/chapters/ch058.typ	는 것이다	1
-note	book/chapters/ch058.typ	즉 	1
-note	book/chapters/ch059.typ	곧 	1
-note	book/chapters/ch059.typ	그것이다	2
-note	book/chapters/ch059.typ	넷째	1
-note	book/chapters/ch059.typ	는 것이다	3
-note	book/chapters/ch059.typ	둘째	1
-note	book/chapters/ch059.typ	셈이다	1
-note	book/chapters/ch059.typ	셋째	1
-note	book/chapters/ch059.typ	첫째	1
-note	book/chapters/ch060.typ	곧 	1
-note	book/chapters/ch060.typ	그것이다	2
+note	book/chapters/ch054.typ	넷째	1
+note	book/chapters/ch054.typ	둘째	1
+note	book/chapters/ch054.typ	셋째	3
+note	book/chapters/ch054.typ	즉 	1
+note	book/chapters/ch054.typ	첫째	1
+note	book/chapters/ch055.typ	곧 	2
+note	book/chapters/ch055.typ	는 것이다	3
+note	book/chapters/ch055.typ	둘째	1
+note	book/chapters/ch055.typ	셋째	1
+note	book/chapters/ch055.typ	요약하면	1
+note	book/chapters/ch055.typ	첫째	1
+note	book/chapters/ch055.typ	핵심이다	1
+note	book/chapters/ch056.typ	그것이다	1
+note	book/chapters/ch056.typ	는 것이다	1
+note	book/chapters/ch056.typ	둘째	2
+note	book/chapters/ch056.typ	셈이다	1
+note	book/chapters/ch056.typ	정리하면	1
+note	book/chapters/ch056.typ	즉 	2
+note	book/chapters/ch056.typ	첫째	2
+note	book/chapters/ch059.typ	는 것이다	2
+note	book/chapters/ch059.typ	둘째	2
+note	book/chapters/ch059.typ	셈이다	2
+note	book/chapters/ch059.typ	즉 	1
+note	book/chapters/ch059.typ	첫째	2
 note	book/chapters/ch060.typ	는 것이다	1
-note	book/chapters/ch060.typ	셋째	1
 note	book/chapters/ch060.typ	즉 	1
-note	book/chapters/ch061.typ	는 것이다	2
-note	book/chapters/ch061.typ	즉 	2
+note	book/chapters/ch061.typ	곧 	1
+note	book/chapters/ch061.typ	그것이다	2
+note	book/chapters/ch061.typ	넷째	1
+note	book/chapters/ch061.typ	는 것이다	3
+note	book/chapters/ch061.typ	둘째	1
+note	book/chapters/ch061.typ	셈이다	1
+note	book/chapters/ch061.typ	셋째	1
+note	book/chapters/ch061.typ	첫째	1
 note	book/chapters/ch062.typ	곧 	1
-note	book/chapters/ch062.typ	넷째	1
-note	book/chapters/ch062.typ	는 것이다	2
-note	book/chapters/ch062.typ	둘째	1
+note	book/chapters/ch062.typ	그것이다	2
+note	book/chapters/ch062.typ	는 것이다	1
 note	book/chapters/ch062.typ	셋째	1
 note	book/chapters/ch062.typ	즉 	1
-note	book/chapters/ch062.typ	첫째	1
-note	book/chapters/ch063.typ	곧 	1
-note	book/chapters/ch063.typ	그것이다	1
-note	book/chapters/ch063.typ	는 것이다	4
-note	book/chapters/ch063.typ	셈이다	2
-note	book/chapters/ch063.typ	짚는다	1
-note	book/chapters/ch063.typ	핵심이다	2
-note	book/chapters/ch064.typ	는 것이다	1
-note	book/chapters/ch064.typ	둘째	4
-note	book/chapters/ch064.typ	셋째	5
-note	book/chapters/ch064.typ	첫째	2
-note	book/chapters/ch065.typ	는 것이다	2
-note	book/chapters/ch065.typ	둘째	3
-note	book/chapters/ch065.typ	셋째	1
-note	book/chapters/ch065.typ	즉 	2
-note	book/chapters/ch065.typ	첫째	1
-note	book/chapters/ch065.typ	핵심이다	1
-note	book/chapters/ch066.typ	곧 	1
-note	book/chapters/ch066.typ	그것이다	3
+note	book/chapters/ch063.typ	는 것이다	2
+note	book/chapters/ch063.typ	즉 	2
+note	book/chapters/ch064.typ	곧 	1
+note	book/chapters/ch064.typ	넷째	1
+note	book/chapters/ch064.typ	는 것이다	2
+note	book/chapters/ch064.typ	둘째	1
+note	book/chapters/ch064.typ	셋째	1
+note	book/chapters/ch064.typ	즉 	1
+note	book/chapters/ch064.typ	첫째	1
+note	book/chapters/ch065.typ	곧 	1
+note	book/chapters/ch065.typ	그것이다	1
+note	book/chapters/ch065.typ	는 것이다	4
+note	book/chapters/ch065.typ	셈이다	2
+note	book/chapters/ch065.typ	짚는다	1
+note	book/chapters/ch065.typ	핵심이다	2
 note	book/chapters/ch066.typ	는 것이다	1
-note	book/chapters/ch066.typ	둘째	1
-note	book/chapters/ch066.typ	셋째	3
-note	book/chapters/ch066.typ	정리하면	1
-note	book/chapters/ch066.typ	즉 	5
-note	book/chapters/ch066.typ	첫째	1
-note	book/chapters/ch066.typ	핵심이다	1
-note	book/chapters/ch067.typ	곧 	1
-note	book/chapters/ch067.typ	그것이다	2
+note	book/chapters/ch066.typ	둘째	4
+note	book/chapters/ch066.typ	셋째	5
+note	book/chapters/ch066.typ	첫째	2
 note	book/chapters/ch067.typ	는 것이다	2
 note	book/chapters/ch067.typ	둘째	3
 note	book/chapters/ch067.typ	셋째	1
-note	book/chapters/ch067.typ	즉 	1
-note	book/chapters/ch067.typ	첫째	2
-note	book/chapters/ch068.typ	넷째	1
-note	book/chapters/ch068.typ	둘째	2
-note	book/chapters/ch068.typ	셋째	1
-note	book/chapters/ch068.typ	첫째	2
-note	book/chapters/ch069.typ	곧 	2
-note	book/chapters/ch070.typ	그것이다	1
-note	book/chapters/ch070.typ	는 것이다	1
-note	book/chapters/ch070.typ	둘째	2
-note	book/chapters/ch070.typ	셋째	1
-note	book/chapters/ch070.typ	첫째	1
-note	book/chapters/ch071.typ	그것이다	1
+note	book/chapters/ch067.typ	즉 	2
+note	book/chapters/ch067.typ	첫째	1
+note	book/chapters/ch067.typ	핵심이다	1
+note	book/chapters/ch068.typ	곧 	1
+note	book/chapters/ch068.typ	그것이다	3
+note	book/chapters/ch068.typ	는 것이다	1
+note	book/chapters/ch068.typ	둘째	1
+note	book/chapters/ch068.typ	셋째	3
+note	book/chapters/ch068.typ	정리하면	1
+note	book/chapters/ch068.typ	즉 	5
+note	book/chapters/ch068.typ	첫째	1
+note	book/chapters/ch068.typ	핵심이다	1
+note	book/chapters/ch069.typ	곧 	1
+note	book/chapters/ch069.typ	그것이다	2
+note	book/chapters/ch069.typ	는 것이다	2
+note	book/chapters/ch069.typ	둘째	3
+note	book/chapters/ch069.typ	셋째	1
+note	book/chapters/ch069.typ	즉 	1
+note	book/chapters/ch069.typ	첫째	2
 note	book/chapters/ch071.typ	넷째	1
-note	book/chapters/ch071.typ	둘째	1
+note	book/chapters/ch071.typ	둘째	2
 note	book/chapters/ch071.typ	셋째	1
-note	book/chapters/ch071.typ	즉 	1
-note	book/chapters/ch071.typ	첫째	1
-note	book/chapters/ch072.typ	그것이다	1
-note	book/chapters/ch072.typ	는 것이다	1
-note	book/chapters/ch072.typ	둘째	2
-note	book/chapters/ch072.typ	첫째	2
+note	book/chapters/ch071.typ	첫째	2
+note	book/chapters/ch072.typ	곧 	2
+note	book/chapters/ch073.typ	그것이다	1
 note	book/chapters/ch073.typ	는 것이다	1
-note	book/chapters/ch074.typ	는 것이다	1
-note	book/chapters/ch075.typ	곧 	1
-note	book/chapters/ch075.typ	그것이다	2
-note	book/chapters/ch075.typ	는 것이다	2
-note	book/chapters/ch075.typ	둘째	1
-note	book/chapters/ch075.typ	즉 	3
-note	book/chapters/ch075.typ	첫째	1
-note	book/chapters/ch076.typ	그것이다	2
-note	book/chapters/ch076.typ	둘째	1
-note	book/chapters/ch076.typ	즉 	1
-note	book/chapters/ch076.typ	첫째	1
-note	book/chapters/ch077.typ	둘째	3
-note	book/chapters/ch077.typ	셋째	1
-note	book/chapters/ch077.typ	즉 	1
-note	book/chapters/ch077.typ	첫째	2
-note	book/chapters/ch078.typ	넷째	1
-note	book/chapters/ch078.typ	셈이다	1
-note	book/chapters/ch078.typ	즉 	1
-note	book/chapters/ch079.typ	넷째	1
-note	book/chapters/ch079.typ	는 것이다	2
-note	book/chapters/ch079.typ	짚는다	1
-note	book/chapters/ch080.typ	는 것이다	1
-note	book/chapters/ch080.typ	셈이다	1
-note	book/chapters/ch080.typ	짚는다	1
-note	book/chapters/ch081.typ	는 것이다	1
+note	book/chapters/ch073.typ	둘째	2
+note	book/chapters/ch073.typ	셋째	1
+note	book/chapters/ch073.typ	첫째	1
+note	book/chapters/ch074.typ	그것이다	1
+note	book/chapters/ch074.typ	넷째	1
+note	book/chapters/ch074.typ	둘째	1
+note	book/chapters/ch074.typ	셋째	1
+note	book/chapters/ch074.typ	즉 	1
+note	book/chapters/ch074.typ	첫째	1
+note	book/chapters/ch075.typ	그것이다	1
+note	book/chapters/ch075.typ	는 것이다	1
+note	book/chapters/ch075.typ	둘째	2
+note	book/chapters/ch075.typ	첫째	2
+note	book/chapters/ch076.typ	는 것이다	1
+note	book/chapters/ch077.typ	는 것이다	1
+note	book/chapters/ch078.typ	곧 	1
+note	book/chapters/ch078.typ	그것이다	2
+note	book/chapters/ch078.typ	는 것이다	2
+note	book/chapters/ch078.typ	둘째	1
+note	book/chapters/ch078.typ	즉 	3
+note	book/chapters/ch078.typ	첫째	1
+note	book/chapters/ch079.typ	그것이다	2
+note	book/chapters/ch079.typ	둘째	1
+note	book/chapters/ch079.typ	즉 	1
+note	book/chapters/ch079.typ	첫째	1
+note	book/chapters/ch080.typ	둘째	3
+note	book/chapters/ch080.typ	셋째	1
+note	book/chapters/ch080.typ	즉 	1
+note	book/chapters/ch080.typ	첫째	2
+note	book/chapters/ch081.typ	넷째	1
+note	book/chapters/ch081.typ	셈이다	1
 note	book/chapters/ch081.typ	즉 	1
-note	book/chapters/ch082.typ	둘째	2
-note	book/chapters/ch082.typ	즉 	1
-note	book/chapters/ch082.typ	첫째	2
-note	book/chapters/ch083.typ	곧 	1
+note	book/chapters/ch082.typ	넷째	1
+note	book/chapters/ch082.typ	는 것이다	2
+note	book/chapters/ch082.typ	짚는다	1
 note	book/chapters/ch083.typ	는 것이다	1
-note	book/chapters/ch083.typ	둘째	2
-note	book/chapters/ch083.typ	셈이다	4
-note	book/chapters/ch083.typ	셋째	3
-note	book/chapters/ch083.typ	즉 	2
-note	book/chapters/ch083.typ	첫째	1
-note	book/chapters/ch084.typ	곧 	2
-note	book/chapters/ch084.typ	둘째	4
-note	book/chapters/ch084.typ	셈이다	2
-note	book/chapters/ch084.typ	셋째	2
-note	book/chapters/ch084.typ	정리하면	2
-note	book/chapters/ch084.typ	즉 	2
-note	book/chapters/ch084.typ	첫째	3
-note	book/chapters/ch085.typ	그것이다	1
-note	book/chapters/ch085.typ	는 것이다	2
-note	book/chapters/ch085.typ	둘째	1
-note	book/chapters/ch085.typ	셋째	1
-note	book/chapters/ch085.typ	첫째	1
-note	book/chapters/ch086.typ	그것이다	1
-note	book/chapters/ch086.typ	넷째	1
-note	book/chapters/ch086.typ	는 것이다	2
-note	book/chapters/ch086.typ	둘째	4
-note	book/chapters/ch086.typ	셈이다	1
-note	book/chapters/ch086.typ	셋째	2
-note	book/chapters/ch086.typ	짚는다	1
+note	book/chapters/ch083.typ	셈이다	1
+note	book/chapters/ch083.typ	짚는다	1
+note	book/chapters/ch084.typ	는 것이다	1
+note	book/chapters/ch084.typ	즉 	1
+note	book/chapters/ch085.typ	둘째	2
+note	book/chapters/ch085.typ	즉 	1
+note	book/chapters/ch085.typ	첫째	2
+note	book/chapters/ch086.typ	곧 	1
+note	book/chapters/ch086.typ	는 것이다	1
+note	book/chapters/ch086.typ	둘째	2
+note	book/chapters/ch086.typ	셈이다	4
+note	book/chapters/ch086.typ	셋째	3
+note	book/chapters/ch086.typ	즉 	2
 note	book/chapters/ch086.typ	첫째	1
-note	book/chapters/ch086.typ	핵심이다	1
-note	book/chapters/ch087.typ	그것이다	1
-note	book/chapters/ch087.typ	둘째	5
-note	book/chapters/ch087.typ	셋째	1
-note	book/chapters/ch087.typ	정리하면	1
-note	book/chapters/ch087.typ	첫째	2
-note	book/chapters/ch087.typ	핵심이다	1
+note	book/chapters/ch087.typ	곧 	2
+note	book/chapters/ch087.typ	둘째	4
+note	book/chapters/ch087.typ	셈이다	2
+note	book/chapters/ch087.typ	셋째	2
+note	book/chapters/ch087.typ	정리하면	2
+note	book/chapters/ch087.typ	즉 	2
+note	book/chapters/ch087.typ	첫째	3
 note	book/chapters/ch088.typ	그것이다	1
+note	book/chapters/ch088.typ	는 것이다	2
 note	book/chapters/ch088.typ	둘째	1
 note	book/chapters/ch088.typ	셋째	1
-note	book/chapters/ch088.typ	요약하면	1
 note	book/chapters/ch088.typ	첫째	1
-note	book/chapters/ch089.typ	그것이다	2
-note	book/chapters/ch089.typ	는 것이다	1
-note	book/chapters/ch089.typ	둘째	2
+note	book/chapters/ch089.typ	그것이다	1
+note	book/chapters/ch089.typ	넷째	1
+note	book/chapters/ch089.typ	는 것이다	2
+note	book/chapters/ch089.typ	둘째	4
 note	book/chapters/ch089.typ	셈이다	1
-note	book/chapters/ch089.typ	첫째	2
-note	book/chapters/ch090.typ	는 것이다	2
-note	book/chapters/ch090.typ	둘째	1
-note	book/chapters/ch090.typ	셈이다	1
+note	book/chapters/ch089.typ	셋째	2
+note	book/chapters/ch089.typ	짚는다	1
+note	book/chapters/ch089.typ	첫째	1
+note	book/chapters/ch089.typ	핵심이다	1
+note	book/chapters/ch090.typ	그것이다	1
+note	book/chapters/ch090.typ	둘째	5
 note	book/chapters/ch090.typ	셋째	1
-note	book/chapters/ch090.typ	첫째	1
+note	book/chapters/ch090.typ	정리하면	1
+note	book/chapters/ch090.typ	첫째	2
 note	book/chapters/ch090.typ	핵심이다	1
-note	book/chapters/ch091.typ	곧 	1
-note	book/chapters/ch091.typ	는 것이다	4
-note	book/chapters/ch091.typ	둘째	3
+note	book/chapters/ch091.typ	그것이다	1
+note	book/chapters/ch091.typ	둘째	1
 note	book/chapters/ch091.typ	셋째	1
-note	book/chapters/ch091.typ	첫째	3
-note	book/chapters/ch092.typ	곧 	2
-note	book/chapters/ch092.typ	는 것이다	2
-note	book/chapters/ch092.typ	셈이다	2
-note	book/chapters/ch092.typ	핵심이다	1
-note	book/chapters/ch093.typ	곧 	3
-note	book/chapters/ch093.typ	그것이다	1
-note	book/chapters/ch093.typ	는 것이다	3
+note	book/chapters/ch091.typ	요약하면	1
+note	book/chapters/ch091.typ	첫째	1
+note	book/chapters/ch092.typ	그것이다	2
+note	book/chapters/ch092.typ	는 것이다	1
+note	book/chapters/ch092.typ	둘째	2
+note	book/chapters/ch092.typ	셈이다	1
+note	book/chapters/ch092.typ	첫째	2
+note	book/chapters/ch093.typ	는 것이다	2
 note	book/chapters/ch093.typ	둘째	1
-note	book/chapters/ch093.typ	셋째	3
-note	book/chapters/ch093.typ	즉 	1
-note	book/chapters/ch093.typ	짚는다	1
+note	book/chapters/ch093.typ	셈이다	1
+note	book/chapters/ch093.typ	셋째	1
+note	book/chapters/ch093.typ	첫째	1
+note	book/chapters/ch093.typ	핵심이다	1
 note	book/chapters/ch094.typ	곧 	1
-note	book/chapters/ch094.typ	그것이다	1
-note	book/chapters/ch094.typ	는 것이다	1
-note	book/chapters/ch094.typ	둘째	6
-note	book/chapters/ch094.typ	셈이다	1
-note	book/chapters/ch094.typ	셋째	2
-note	book/chapters/ch094.typ	첫째	1
-note	book/chapters/ch094.typ	핵심이다	2
-note	book/chapters/ch095.typ	그것이다	1
-note	book/chapters/ch095.typ	는 것이다	1
-note	book/chapters/ch095.typ	둘째	1
-note	book/chapters/ch095.typ	즉 	1
-note	book/chapters/ch095.typ	짚는다	1
-note	book/chapters/ch095.typ	첫째	1
+note	book/chapters/ch094.typ	는 것이다	4
+note	book/chapters/ch094.typ	둘째	3
+note	book/chapters/ch094.typ	셋째	1
+note	book/chapters/ch094.typ	첫째	3
+note	book/chapters/ch095.typ	곧 	2
+note	book/chapters/ch095.typ	는 것이다	2
+note	book/chapters/ch095.typ	셈이다	2
 note	book/chapters/ch095.typ	핵심이다	1
-note	book/chapters/ch096.typ	넷째	2
-note	book/chapters/ch096.typ	는 것이다	2
-note	book/chapters/ch096.typ	둘째	2
-note	book/chapters/ch096.typ	셈이다	1
-note	book/chapters/ch096.typ	셋째	1
-note	book/chapters/ch096.typ	첫째	2
+note	book/chapters/ch096.typ	곧 	3
+note	book/chapters/ch096.typ	그것이다	1
+note	book/chapters/ch096.typ	는 것이다	3
+note	book/chapters/ch096.typ	둘째	1
+note	book/chapters/ch096.typ	셋째	3
+note	book/chapters/ch096.typ	즉 	1
+note	book/chapters/ch096.typ	짚는다	1
 note	book/chapters/ch097.typ	곧 	1
-note	book/chapters/ch097.typ	셋째	1
-note	book/chapters/ch097.typ	첫째	2
-note	book/chapters/ch097.typ	핵심이다	1
-note	book/chapters/ch098.typ	는 것이다	2
-note	book/chapters/ch098.typ	둘째	2
-note	book/chapters/ch098.typ	셋째	4
-note	book/chapters/ch098.typ	정리하면	1
+note	book/chapters/ch097.typ	그것이다	1
+note	book/chapters/ch097.typ	는 것이다	1
+note	book/chapters/ch097.typ	둘째	6
+note	book/chapters/ch097.typ	셈이다	1
+note	book/chapters/ch097.typ	셋째	2
+note	book/chapters/ch097.typ	첫째	1
+note	book/chapters/ch097.typ	핵심이다	2
+note	book/chapters/ch098.typ	그것이다	1
+note	book/chapters/ch098.typ	는 것이다	1
+note	book/chapters/ch098.typ	둘째	1
 note	book/chapters/ch098.typ	즉 	1
 note	book/chapters/ch098.typ	짚는다	1
-note	book/chapters/ch098.typ	첫째	2
+note	book/chapters/ch098.typ	첫째	1
 note	book/chapters/ch098.typ	핵심이다	1
-note	book/chapters/ch099.typ	는 것이다	1
-note	book/chapters/ch099.typ	둘째	1
+note	book/chapters/ch099.typ	넷째	2
+note	book/chapters/ch099.typ	는 것이다	2
+note	book/chapters/ch099.typ	둘째	2
+note	book/chapters/ch099.typ	셈이다	1
 note	book/chapters/ch099.typ	셋째	1
-note	book/chapters/ch099.typ	첫째	1
-note	book/chapters/ch100.typ	는 것이다	1
-note	book/chapters/ch100.typ	둘째	1
-note	book/chapters/ch100.typ	첫째	1
-note	book/chapters/ch101.typ	곧 	2
+note	book/chapters/ch099.typ	첫째	2
+note	book/chapters/ch100.typ	곧 	1
+note	book/chapters/ch100.typ	셋째	1
+note	book/chapters/ch100.typ	첫째	2
+note	book/chapters/ch100.typ	핵심이다	1
 note	book/chapters/ch101.typ	는 것이다	2
+note	book/chapters/ch101.typ	둘째	2
+note	book/chapters/ch101.typ	셋째	4
+note	book/chapters/ch101.typ	정리하면	1
 note	book/chapters/ch101.typ	즉 	1
+note	book/chapters/ch101.typ	짚는다	1
+note	book/chapters/ch101.typ	첫째	2
+note	book/chapters/ch101.typ	핵심이다	1
+note	book/chapters/ch102.typ	는 것이다	1
+note	book/chapters/ch102.typ	둘째	1
+note	book/chapters/ch102.typ	셋째	1
+note	book/chapters/ch102.typ	첫째	1
+note	book/chapters/ch103.typ	는 것이다	1
+note	book/chapters/ch103.typ	둘째	1
+note	book/chapters/ch103.typ	첫째	1
+note	book/chapters/ch104.typ	곧 	2
+note	book/chapters/ch104.typ	는 것이다	2
+note	book/chapters/ch104.typ	즉 	1
 note	book/parts/part12.typ	짚는다	1

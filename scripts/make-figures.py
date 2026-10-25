@@ -1421,6 +1421,73 @@ def fig_false_sharing(L):
     return "".join(out)
 
 
+# ── 51장. 캐시 라인 하나가 실어 오는 것 --- AoS 와 SoA ───────────
+def fig_aos_soa(L):
+    w, h = 780, 330
+    out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
+    out.append(text(w / 2, 24, L["title"], 14, "bold"))
+    x0, cw, ch = 130, 36, 40
+
+    def line(y, label, cells, used, note):
+        out.append(text(x0 - 12, y + 26, label, 12, "bold", anchor="end"))
+        for i, c in enumerate(cells):
+            x = x0 + i * cw
+            if i in used:
+                out.append(box(x, y, cw, ch, sw=1.6))
+                out.append(text(x + cw / 2, y + 25, c, 10, "bold"))
+            else:
+                out.append(box(x, y, cw, ch, sw=1.0, fill="url(#hatch)"))
+                out.append(text(x + cw / 2, y + 25, c, 9, fill="#555"))
+        out.append(f'<line x1="{x0}" y1="{y + ch + 8}" x2="{x0 + 16 * cw}" y2="{y + ch + 8}" '
+                   f'stroke="#111" stroke-width="1"/>')
+        out.append(text(x0 + 8 * cw, y + ch + 24, note, 11))
+
+    aos = ["x", "y", "z", "vx", "vy", "vz", "m", "q", "fl", "ow", "n", "n", "n", "n", "n", "n"]
+    line(60, L["aos"], aos, set(range(6)), L["aos_note"])
+    line(160, L["soa"], ["x"] * 16, set(range(16)), L["soa_note"])
+    out.append(box(x0, 262, 16 * cw, 52, dash="4 3"))
+    out.append(text(x0 + 8 * cw, 284, L["end1"], 11, "bold"))
+    out.append(text(x0 + 8 * cw, 302, L["end2"], 10))
+    out.append(TAIL)
+    return "".join(out)
+
+
+# ── 70장. 객체를 이루는 세 덩어리 --- 상태, 표, 행동 ─────────────
+def fig_oop_parts(L):
+    w, h = 780, 340
+    out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
+    out.append(text(w / 2, 24, L["title"], 14, "bold"))
+    # 객체 셋 --- 표 포인터 + 상태
+    out.append(text(120, 58, L["objects"], 12, "bold"))
+    for k in range(3):
+        y = 72 + k * 70
+        out.append(box(40, y, 100, 44, sw=1.0, fill="url(#hatch)"))
+        out.append(text(90, y + 27, L["state"], 10))
+        out.append(box(140, y, 60, 44, sw=1.6))
+        out.append(text(170, y + 27, L["vptr"], 10, "bold"))
+        out.append(arrow(200, y + 22, 318, 150 + (k - 1) * 12))
+    out.append(text(120, 300, L["objects_note"], 10))
+    # 표
+    out.append(text(400, 58, L["table"], 12, "bold"))
+    out.append(box(320, 110, 160, 80, sw=2.2))
+    out.append(text(400, 104, L["table_sub"], 10))
+    out.append(f'<line x1="320" y1="150" x2="480" y2="150" stroke="#111" stroke-width="1"/>')
+    out.append(text(400, 136, L["slot1"], 11, "bold"))
+    out.append(text(400, 176, L["slot2"], 11, "bold"))
+    out.append(text(400, 300, L["table_note"], 10))
+    # 함수
+    out.append(text(650, 58, L["code"], 12, "bold"))
+    out.append(box(580, 110, 150, 34, sw=1.6))
+    out.append(text(655, 132, L["fn1"], 11))
+    out.append(box(580, 160, 150, 34, sw=1.6))
+    out.append(text(655, 182, L["fn2"], 11))
+    out.append(arrow(480, 130, 578, 127))
+    out.append(arrow(480, 170, 578, 177))
+    out.append(text(655, 300, L["code_note"], 10))
+    out.append(TAIL)
+    return "".join(out)
+
+
 FIGS = {
     "memory-order": (fig_memory_order, {
         "ko": dict(title="깃발이 보이면 데이터도 보이는가",
@@ -2043,6 +2110,34 @@ FIGS = {
                    value_sub="can be copied and compared", p1="address", p1s="which place it points at",
                    p2="pointed-at type", p2s="how many bytes, through what eye",
                    p3="provenance", p3s="which object it came from — how far it may go"),
+    }),
+    "aos-soa": (fig_aos_soa, {
+        "ko": dict(title="일 A 에서 캐시 라인 하나(64바이트)가 실어 오는 것",
+                   aos="AoS", soa="SoA (x 배열)",
+                   aos_note="입자 하나 = 라인 하나. 쓰는 것은 위치·속도 24바이트 --- 쓰임새 37.5%",
+                   soa_note="x 열여섯 개 --- 가져온 64바이트를 모두 쓴다(100%)",
+                   end1="빗금은 가져왔지만 이 일에서 쓰지 않는 바이트다",
+                   end2="같은 일을 더 적은 라인으로 끝내는 쪽이 빠르다 --- 그래서 배치가 속도가 된다"),
+        "en": dict(title="what one cache line (64 bytes) brings in on job A",
+                   aos="AoS", soa="SoA (x array)",
+                   aos_note="one particle = one line. Used: 24 bytes of position and velocity --- 37.5%",
+                   soa_note="sixteen x values --- all 64 bytes fetched are used (100%)",
+                   end1="hatched bytes were fetched but are not used by this job",
+                   end2="the layout that finishes the job in fewer lines is faster --- which is how layout becomes speed"),
+    }),
+    "oop-parts": (fig_oop_parts, {
+        "ko": dict(title="객체를 이루는 세 덩어리", objects="객체 (인스턴스)", vptr="표", state="상태",
+                   objects_note="객체마다 한 벌 --- 표 포인터 하나만 더",
+                   table="표", table_sub="static const --- 종류마다 한 벌", slot1="area", slot2="draw",
+                   table_note="읽기 전용 구역에 놓일 수 있다",
+                   code="행동 (함수)", fn1="circle_area", fn2="circle_draw",
+                   code_note="코드 한 벌"),
+        "en": dict(title="the three parts that make up an object", objects="objects (instances)", vptr="table",
+                   state="state", objects_note="one per object --- plus a single table pointer",
+                   table="table", table_sub="static const --- one per kind", slot1="area", slot2="draw",
+                   table_note="can be placed in a read-only region",
+                   code="behaviour (functions)", fn1="circle_area", fn2="circle_draw",
+                   code_note="one copy of the code"),
     }),
 }
 
