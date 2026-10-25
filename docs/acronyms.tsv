@@ -49,7 +49,7 @@ CPU	book	중앙 처리 장치	central processing unit
 GPU	book	그래픽 처리 장치	graphics processing unit
 RAM	book	임의 접근 기억 장치	random-access memory
 DRAM	book	동적 임의 접근 기억 장치	dynamic random-access memory
-OS	book:101	운영체제	operating system
+OS	book:104	운영체제	operating system
 JSON	book	자바스크립트 객체 표기	JavaScript Object Notation
 HTTP	book	하이퍼텍스트 전송 규약	Hypertext Transfer Protocol
 UTC	book	협정 세계시	coordinated universal time
