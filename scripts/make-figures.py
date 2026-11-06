@@ -1488,6 +1488,163 @@ def fig_oop_parts(L):
     return "".join(out)
 
 
+# ── 72장. 표를 짓는 다섯 단계 ──────────────────────────────────
+def fig_table_lifecycle(L):
+    w, h = 800, 250
+    out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
+    out.append(text(w / 2, 24, L["title"], 14, "bold"))
+    bw, bh, gap, x0, y0 = 128, 62, 30, 20, 70
+    for i, key in enumerate(("reg", "fill", "verify", "seal", "use")):
+        x = x0 + i * (bw + gap)
+        heavy = key == "seal"
+        out.append(box(x, y0, bw, bh, sw=2.4 if heavy else 1.6))
+        out.append(text(x + bw / 2, y0 + 26, L[key], 12, "bold"))
+        out.append(text(x + bw / 2, y0 + 46, L[key + "_sub"], 10))
+        if i < 4:
+            out.append(arrow(x + bw + 2, y0 + bh / 2, x + bw + gap - 2, y0 + bh / 2))
+    # 검증에서 갈라지는 길: 내놓지 않음
+    vx = x0 + 2 * (bw + gap) + bw / 2
+    out.append(arrow(vx, y0 + bh + 2, vx, y0 + bh + 48))
+    out.append(box(vx - 78, y0 + bh + 50, 156, 34, dash="4 3"))
+    out.append(text(vx, y0 + bh + 72, L["reject"], 10))
+    # 쓰는 동안과 읽기만
+    sx = x0 + 3 * (bw + gap)
+    out.append(f'<line x1="{x0}" y1="{y0 - 14}" x2="{sx - 6}" y2="{y0 - 14}" stroke="#111" '
+               f'stroke-width="1" stroke-dasharray="3 3"/>')
+    out.append(text((x0 + sx) / 2, y0 - 20, L["writable"], 10))
+    out.append(f'<line x1="{sx}" y1="{y0 - 14}" x2="{w - x0}" y2="{y0 - 14}" stroke="#111" '
+               f'stroke-width="2.4"/>')
+    out.append(text((sx + w - x0) / 2, y0 - 20, L["readonly"], 10, "bold"))
+    out.append(text(w / 2, h - 14, L["note"], 10))
+    out.append(TAIL)
+    return "".join(out)
+
+
+# ── 72장. 표 포인터를 어디에 두는가 --- 객체 안과 뚱뚱한 포인터 ─────
+def fig_vptr_vs_fat(L):
+    w, h = 800, 360
+    out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
+    out.append(text(w / 2, 24, L["title"], 14, "bold"))
+
+    def table(x, y, label):
+        out.append(box(x, y, 130, 64, sw=2.2))
+        out.append(text(x + 65, y - 6, label, 10, "bold"))
+        out.append(f'<line x1="{x}" y1="{y + 32}" x2="{x + 130}" y2="{y + 32}" stroke="#111" stroke-width="1"/>')
+        out.append(text(x + 65, y + 22, L["slot1"], 10))
+        out.append(text(x + 65, y + 54, L["slot2"], 10))
+
+    # 위: 객체 안
+    out.append(text(20, 62, L["top"], 12, "bold", anchor="start"))
+    out.append(box(40, 84, 60, 36, sw=1.0))
+    out.append(text(70, 107, L["ptr"], 10))
+    out.append(arrow(100, 102, 198, 102))
+    out.append(box(200, 84, 70, 36, sw=1.6))
+    out.append(text(235, 107, L["vptr"], 10, "bold"))
+    out.append(box(270, 84, 150, 36, sw=1.0, fill="url(#hatch)"))
+    out.append(text(345, 107, L["state"], 10))
+    out.append(arrow(270 - 35, 120, 520, 120))
+    table(522, 88, L["table"])
+    out.append(text(310, 150, L["top_note"], 10))
+    # 아래: 뚱뚱한 포인터
+    out.append(text(20, 200, L["bottom"], 12, "bold", anchor="start"))
+    out.append(box(40, 222, 60, 36, sw=1.6))
+    out.append(text(70, 245, L["data"], 10, "bold"))
+    out.append(box(100, 222, 60, 36, sw=1.6))
+    out.append(text(130, 245, L["tptr"], 10, "bold"))
+    out.append(arrow(70, 258, 238, 292))
+    out.append(box(240, 276, 180, 36, sw=1.0, fill="url(#hatch)"))
+    out.append(text(330, 299, L["state_plain"], 10))
+    out.append(arrow(160, 240, 520, 240))
+    table(522, 226, L["table"])
+    out.append(text(400, 338, L["bottom_note"], 10))
+    out.append(TAIL)
+    return "".join(out)
+
+
+# ── 72장. 메시지 하나가 함수를 찾아가는 길 ──────────────────────
+def fig_msgsend_path(L):
+    w, h = 800, 300
+    out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
+    out.append(text(w / 2, 24, L["title"], 14, "bold"))
+    steps = [("send", 40), ("isa", 190), ("cache", 340), ("list", 490), ("parent", 640)]
+    y = 70
+    for key, x in steps:
+        heavy = key == "cache"
+        out.append(box(x, y, 120, 56, sw=2.4 if heavy else 1.6))
+        out.append(text(x + 60, y + 24, L[key], 11, "bold"))
+        out.append(text(x + 60, y + 43, L[key + "_sub"], 9))
+    for (_, a), (_, b) in zip(steps, steps[1:]):
+        out.append(arrow(a + 122, y + 28, b - 2, y + 28))
+    out.append(text(400 - 6, y - 8, L["miss"], 9, anchor="start"))
+    # 캐시에서 맞으면 바로 부른다
+    out.append(arrow(400, y + 58, 400, 186))
+    out.append(box(330, 188, 140, 40, sw=2.2))
+    out.append(text(400, 213, L["call"], 11, "bold"))
+    out.append(text(400 + 8, 160, L["hit"], 9, anchor="start"))
+    # 목록에서 찾으면 캐시에 넣고 부른다
+    out.append(arrow(550, y + 58, 472, 200))
+    out.append(text(560, 170, L["fill"], 9, anchor="start"))
+    # 끝내 없으면 포워딩
+    out.append(arrow(700, y + 58, 700, 186))
+    out.append(box(615, 188, 170, 40, dash="4 3"))
+    out.append(text(700, 213, L["forward"], 10))
+    out.append(text(w / 2, h - 16, L["note"], 10))
+    out.append(TAIL)
+    return "".join(out)
+# ── 72장. 예측기는 지난번 곳을 짐작한다 --- 정렬과 섞음 ─────────────
+def fig_predict_order(L):
+    w, h = 800, 290
+    out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
+    out.append(text(w / 2, 24, L["title"], 14, "bold"))
+    rows = (("sorted", "AAAABBBBCCCC", 62), ("mixed", "ACBABCCABACB", 160))
+    x0, cw, gap = 150, 46, 6
+    for key, seq, y in rows:
+        out.append(text(20, y + 22, L[key], 12, "bold", anchor="start"))
+        out.append(text(20, y + 62, L["guess"], 10, anchor="start"))
+        miss = 0
+        for i, k in enumerate(seq):
+            x = x0 + i * (cw + gap)
+            g = seq[i - 1] if i else "?"
+            bad = g != k
+            miss += bad
+            out.append(box(x, y, cw, 34, sw=1.6))
+            out.append(text(x + cw / 2, y + 23, k, 13, "bold"))
+            out.append(box(x, y + 42, cw, 30, sw=2.2 if bad else 1.0,
+                           fill="url(#hatch)" if bad else "none"))
+            out.append(text(x + cw / 2, y + 62, g, 11))
+        out.append(text(w - 20, y - 6, L["misses"].format(n=miss, t=len(seq)), 10, anchor="end"))
+    out.append(text(w / 2, h - 14, L["note"], 10))
+    out.append(TAIL)
+    return "".join(out)
+
+
+# ── 73장. 부분 레코드를 이어 붙인 클래스 레코드 --- Xt ─────────────
+def fig_class_records(L):
+    w, h = 800, 300
+    out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
+    out.append(text(w / 2, 24, L["title"], 14, "bold"))
+    cols = ((40, ("core",)), (300, ("core", "composite")), (560, ("core", "composite", "own")))
+    bw, bh, y0 = 200, 44, 90
+    tops = []
+    for i, (x, parts) in enumerate(cols):
+        out.append(text(x + bw / 2, y0 - 14, L["rec%d" % i], 11, "bold"))
+        for j, part in enumerate(parts):
+            y = y0 + j * bh
+            mine = j == len(parts) - 1
+            out.append(box(x, y, bw, bh, sw=2.2 if mine else 1.2,
+                           fill="none" if mine else "url(#hatch)"))
+            out.append(text(x + bw / 2, y + 27, L[part], 11, "bold" if mine else "normal"))
+        tops.append(x)
+    # superclass: 각 레코드의 첫 필드가 부모 레코드를 가리킨다
+    for a, b in ((tops[2], tops[1]), (tops[1], tops[0])):
+        out.append(arrow(a + 20, y0 + 6, b + bw - 4, y0 + 6))
+    out.append(text(430, y0 - 40, L["super"], 10))
+    out.append(text(w / 2, h - 40, L["note1"], 10))
+    out.append(text(w / 2, h - 18, L["note2"], 10))
+    out.append(TAIL)
+    return "".join(out)
+
+
 FIGS = {
     "memory-order": (fig_memory_order, {
         "ko": dict(title="깃발이 보이면 데이터도 보이는가",
@@ -2138,6 +2295,74 @@ FIGS = {
                    table_note="can be placed in a read-only region",
                    code="behaviour (functions)", fn1="circle_area", fn2="circle_draw",
                    code_note="one copy of the code"),
+    }),
+    "table-lifecycle": (fig_table_lifecycle, {
+        "ko": dict(title="표를 짓는 다섯 단계",
+                   reg="1. 등록", reg_sub="이름 · 부모 · 자기 칸", fill="2. 채우기", fill_sub="기본값 → 부모 → 자기",
+                   verify="3. 검증", verify_sub="빈칸 없음 · 판 크기", seal="4. 봉인", seal_sub="const · 읽기 전용 쪽",
+                   use="5. 사용", use_sub="봉인한 표만 부른다", reject="빈칸이 있으면 내놓지 않는다",
+                   writable="쓸 수 있는 동안", readonly="읽기만",
+                   note="여러 스레드라면 2~4 를 call_once 안에서, 또는 다 지은 뒤 주소만 원자적으로 내놓는다"),
+        "en": dict(title="the five steps of building a table",
+                   reg="1. register", reg_sub="name, parent, own slots", fill="2. fill", fill_sub="defaults → parent → own",
+                   verify="3. verify", verify_sub="no empty slot, size", seal="4. seal", seal_sub="const, read-only page",
+                   use="5. use", use_sub="call sealed tables only", reject="an empty slot: not published",
+                   writable="while writable", readonly="read only",
+                   note="with threads, do 2-4 inside call_once, or publish only the finished table's address, atomically"),
+    }),
+    "vptr-vs-fat": (fig_vptr_vs_fat, {
+        "ko": dict(title="표 포인터의 두 자리", top="객체 안 (vptr)", ptr="포인터", vptr="표 포인터",
+                   state="상태", table="표 --- 종류마다 한 벌", slot1="area", slot2="print",
+                   top_note="객체가 표 포인터만큼 크다 --- 포인터는 하나",
+                   bottom="포인터 옆 (뚱뚱한 포인터)", data="자료", tptr="표",
+                   state_plain="상태 (고칠 수 없어도 된다)",
+                   bottom_note="객체는 그대로 --- 그것을 가리키는 포인터가 둘이 된다"),
+        "en": dict(title="two places for the table pointer", top="inside the object (vptr)", ptr="pointer",
+                   vptr="table ptr", state="state", table="table --- one per kind", slot1="area", slot2="print",
+                   top_note="the object grows by one table pointer --- the pointer stays single",
+                   bottom="beside the pointer (fat pointer)", data="data", tptr="table",
+                   state_plain="state (need not be ours to change)",
+                   bottom_note="the object is unchanged --- every pointer to it becomes two"),
+    }),
+    "msgsend-path": (fig_msgsend_path, {
+        "ko": dict(title="메시지 하나가 함수를 찾아가는 길",
+                   send="[obj area]", send_sub="수신자 + 셀렉터", isa="isa", isa_sub="객체 → 클래스",
+                   cache="클래스의 캐시", cache_sub="셀렉터 → 함수", list="메서드 목록", list_sub="훑는다",
+                   parent="부모 클래스", parent_sub="없으면 위로", miss="놓치면 →",
+                   call="함수를 부른다", hit="맞으면", fill="찾으면 캐시에 넣고",
+                   forward="포워딩 · 모르는 메시지",
+                   note="대부분의 메시지는 캐시에서 끝난다 --- 메서드를 더하면 캐시를 버린다"),
+        "en": dict(title="how one message finds its function",
+                   send="[obj area]", send_sub="receiver + selector", isa="isa", isa_sub="object → class",
+                   cache="class cache", cache_sub="selector → function", list="method list", list_sub="scanned",
+                   parent="parent class", parent_sub="if absent, go up", miss="on a miss →",
+                   call="call the function", hit="hit", fill="found: cache it",
+                   forward="forwarding / unknown message",
+                   note="most messages end in the cache --- adding a method throws the caches away"),
+    }),
+    "predict-order": (fig_predict_order, {
+        "ko": dict(title="분기 대상 예측기는 「지난번에 뛴 곳」을 짐작한다",
+                   sorted="정렬", mixed="섞음", guess="예측",
+                   misses="틀린 예측 {n} / {t}",
+                   note="빗금 칸이 틀린 예측이다 --- 틀릴 때마다 CPU 는 미리 한 일을 버리고 다시 시작한다"),
+        "en": dict(title="the branch target predictor guesses 'where we jumped last time'",
+                   sorted="sorted", mixed="mixed", guess="guess",
+                   misses="wrong guesses {n} / {t}",
+                   note="hatched cells are wrong guesses --- each one makes the CPU throw away work done ahead and restart"),
+    }),
+    "class-records": (fig_class_records, {
+        "ko": dict(title="부분 레코드를 이어 붙인 클래스 레코드 (Xt)",
+                   rec0="Core 클래스", rec1="Composite 클래스", rec2="내 위젯 클래스",
+                   core="Core 부분", composite="Composite 부분", own="내 부분",
+                   super="첫 필드 superclass 가 부모 레코드를 가리킨다",
+                   note1="빗금은 부모의 모양을 따른 부분 --- 파생 레코드는 부모 레코드와 같은 모양을 맨 앞에 둔다",
+                   note2="그래서 내 위젯 클래스를 Core 클래스로 보아도 앞부분이 맞는다"),
+        "en": dict(title="a class record built from part records (Xt)",
+                   rec0="Core class", rec1="Composite class", rec2="my widget class",
+                   core="Core part", composite="Composite part", own="my part",
+                   super="the first field, superclass, points to the parent record",
+                   note1="hatched parts follow the parents' layout --- a derived record starts with its parent record's exact shape",
+                   note2="so my widget class read as a Core class still has the right front part"),
     }),
 }
 

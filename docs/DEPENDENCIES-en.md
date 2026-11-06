@@ -7,13 +7,16 @@ Re-run it whenever the manuscript changes.
 
 ![Dependencies between chapters](dependency-graph-en.svg)
 
-- Chapters: **110**
-- Dependencies: **240**
+- Chapters: **115**
+- Dependencies: **259**
 - Chapters leaning on nothing: 1
 
 ## Leaning on a later chapter
 
-None. Every chapter leans only on chapters before it.
+Unusual in a book read linearly — worth checking whether it is intended.
+
+- Ch. 72 → Ch. 94 — listed as a prerequisite before it is reached
+- Ch. 72 → Ch. 95 — listed as a prerequisite before it is reached
 
 ## The most leaned-on chapters — this book's pillars
 
@@ -38,7 +41,7 @@ None. Every chapter leans only on chapters before it.
 
 Mostly the closing part. One near the front may be weakly connected.
 
-11, 37, 41, 42, 50, 51, 53, 62, 66, 69, 70, 75, 76, 79, 82, 83, 84, 87, 92, 96, 101, 102, 103, 104, 105, 108, 109, 110
+11, 37, 41, 42, 50, 53, 62, 66, 69, 74, 75, 80, 81, 84, 87, 88, 89, 92, 97, 101, 106, 107, 108, 109, 110, 113, 114, 115
 
 ---
 

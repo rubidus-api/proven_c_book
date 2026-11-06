@@ -1,4 +1,4 @@
-[한국어](README.md) | **English** — **Proven C Book v0.100.2** — [PDF(ko)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.100.2/proven_c_book-v0.100.2-ko.pdf) · [PDF(en)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.100.2/proven_c_book-v0.100.2-en.pdf) · [ZIP(ko)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.100.2/proven_c_book-v0.100.2-ko.zip) · [ZIP(en)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.100.2/proven_c_book-v0.100.2-en.zip) · [ZIP(all)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.100.2/proven_c_book-v0.100.2-all.zip)
+[한국어](README.md) | **English** — **Proven C Book v0.101.0** — [PDF(ko)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.101.0/proven_c_book-v0.101.0-ko.pdf) · [PDF(en)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.101.0/proven_c_book-v0.101.0-en.pdf) · [ZIP(ko)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.101.0/proven_c_book-v0.101.0-ko.zip) · [ZIP(en)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.101.0/proven_c_book-v0.101.0-en.zip) · [ZIP(all)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.101.0/proven_c_book-v0.101.0-all.zip)
 
 # Proven C Book — An Introduction to Modern C with the Proven C Library
 
@@ -15,17 +15,17 @@ foundation to memory management, error handling, libraries and project structure
 > [proven C library](https://github.com/rubidus-api/proven_c_lib) and comparative
 > examples to show **how those rules inform program design**.
 
-- **Current edition**: v0.100.2 — **draft**
-- **Download the PDF** — [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.100.2/proven_c_book-v0.100.2-en.pdf) · [Korean PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.100.2/proven_c_book-v0.100.2-ko.pdf)
+- **Current edition**: v0.101.0 — **draft**
+- **Download the PDF** — [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.101.0/proven_c_book-v0.101.0-en.pdf) · [Korean PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.101.0/proven_c_book-v0.101.0-ko.pdf)
 - **Read on the web** — [English](https://rubidus-api.github.io/proven_c_book/en/) · [한국어](https://rubidus-api.github.io/proven_c_book/ko/)
-- **Bundles (zip)** — [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.100.2/proven_c_book-v0.100.2-en.zip) · [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.100.2/proven_c_book-v0.100.2-ko.zip) · [all](https://github.com/rubidus-api/proven_c_book/releases/download/v0.100.2/proven_c_book-v0.100.2-all.zip)
-- Copies inside the repository: [en PDF](dist/proven_c_book-v0.100.2-en.pdf) · [ko PDF](dist/proven_c_book-v0.100.2-ko.pdf)
+- **Bundles (zip)** — [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.101.0/proven_c_book-v0.101.0-en.zip) · [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.101.0/proven_c_book-v0.101.0-ko.zip) · [all](https://github.com/rubidus-api/proven_c_book/releases/download/v0.101.0/proven_c_book-v0.101.0-all.zip)
+- Copies inside the repository: [en PDF](dist/proven_c_book-v0.101.0-en.pdf) · [ko PDF](dist/proven_c_book-v0.101.0-ko.pdf)
 - **Style specimen** — every device the book uses, gathered in one place, with each
   element labelled by its own name (CSS selector on the web, function name in the
   typeset edition). Always current, independently of releases:
   [web](https://rubidus-api.github.io/proven_c_book/style-specimen.html) ·
   [PDF](https://rubidus-api.github.io/proven_c_book/style-specimen.pdf)
-- 13 parts, 110 chapters, appendices A–Q and an index — 1,441 pages in English, 1,352 in Korean
+- 14 parts, 115 chapters, appendices A–Q and an index — 1,493 pages in English, 1,401 in Korean
 - The change log lives in [CHANGELOG.md](CHANGELOG.md).
 
 ## Beyond the first C textbook
@@ -43,8 +43,8 @@ input conditions, its result and its promises when it fails.
 | Who allocates memory, and who frees it? | Lifetimes, ownership, allocators and arenas that group allocations with a shared lifetime |
 | How do strings and arrays keep track of their size? | Length and capacity, views that refer to data without copying it, and containers |
 | What remains when a function fails? | Returning errors as values and preserving the original state on failure |
-| What changes when the same problem is designed differently? | [Three small JSON implementations](docs/en/ch105.html): plain C, proven, and an explicit stack for nesting |
-| How do separate files become a maintainable project? | [Builds and tests](docs/en/ch107.html): headers, dependencies, public and internal boundaries, and regression tests |
+| What changes when the same problem is designed differently? | [Three small JSON implementations](docs/en/ch110.html): plain C, proven, and an explicit stack for nesting |
+| How do separate files become a maintainable project? | [Builds and tests](docs/en/ch112.html): headers, dependencies, public and internal boundaries, and regression tests |
 
 For readers who want to keep developing in C, these connections provide a next
 step. C++ is a separate language to choose according to a project's needs and
@@ -57,7 +57,7 @@ memory management, error handling and modules within C.
   the machine and its representations; [Hello world](docs/en/ch16.html) in Part III
   introduces the first program.
 - **Finished a first C book:** revisit pointers, lifetimes and conversions, then
-  move to library design in Part XII and [project structure](docs/en/ch107.html).
+  move to library design in Part XIII and [project structure](docs/en/ch112.html).
   Each chapter states its prerequisites.
 - **Already using C:** look up a rule or a design choice you want to understand
   better. The dependency map and glossary help you find the background you need.
@@ -78,7 +78,7 @@ builds and tests; domain-specific tools and experience building programs come ne
 
 ## Design habits illustrated with proven
 
-Part XII uses the [proven C library](https://github.com/rubidus-api/proven_c_lib) to
+Part XIII uses the [proven C library](https://github.com/rubidus-api/proven_c_lib) to
 show how recurring C problems can be handled through a common API. Alongside C23
 features, it explores **making memory origins, value lifetimes and the state left
 after failure explicit in code**.
@@ -98,8 +98,8 @@ one library's API.
 
 proven cannot prevent every lifetime violation or use of the wrong allocator.
 The verification scope of the bundled snapshot and considerations for adoption
-are covered in [the introduction to proven](docs/en/ch96.html) and
-[the library's boundaries](docs/en/ch104.html).
+are covered in [the introduction to proven](docs/en/ch101.html) and
+[the library's boundaries](docs/en/ch109.html).
 
 ## What is inside
 
@@ -111,9 +111,10 @@ are covered in [the introduction to proven](docs/en/ch96.html) and
 | VII | **Memory** | Pointers / Null — the three siblings handled properly / The rules of pointers: alignment and provenance / Multidimensional arrays / Lifetime and storage duration |
 | VIII–IX | The shape of data, and the deep corners | Unions and representation / Floating point as approximation / **Undefined behaviour** |
 | X | Composition | **The world of names — four name spaces and three axes** / **Handling name collisions — from prefixes to `namespace`** / The preprocessor and translation phases / Functions as values |
-| XI | **The standard library, closely read** | Streams in practice / Signals / Non-local jumps / Locales (two chapters) / Wide characters (two chapters) / Unicode in practice / Inside the allocator |
-| XII | **Library design with proven** | Five bugs still shipping after 50 years / Errors are values / Allocation is a parameter / Writing it three ways — a small JSON reader |
-| XIII | Continuing into practice | C in practice / Builds and tests — the structure of a shared project / How the work gets done / The embedded toolbox / Modern C, gathered up |
+| XI | **Object orientation imitated in C** | Building the table --- polymorphism and inheritance / Dynamic virtual tables --- building, sealing and looking up / The cost of an indirect call --- measuring, reducing, guarding / Objects built in C --- systems and papers |
+| XII | **The standard library, closely read** | Streams in practice / Signals / Non-local jumps / Locales (two chapters) / Wide characters (two chapters) / Unicode in practice / Inside the allocator |
+| XIII | **Library design with proven** | Five bugs still shipping after 50 years / Errors are values / Allocation is a parameter / Writing it three ways — a small JSON reader |
+| XIV | Continuing into practice | C in practice / Builds and tests — the structure of a shared project / How the work gets done / The embedded toolbox / Modern C, gathered up |
 
 The seventeen appendices include reference material on operators, `printf`/`scanf`
 formats, implicit conversions, further reading and the C grammar in EBNF, plus
@@ -123,7 +124,7 @@ layout, measurements and memory-management hardware.
 
 ## What makes it different
 
-- **Output comes from the examples.** All 258 listings have their execution output
+- **Output comes from the examples.** All 268 listings have their execution output
   captured by verification scripts. The book records full verification under GCC 14
   and cross-checks under Clang 22.1, with reasons for the 5 cross-check skips in
   [the skip list](docs/example-cross-skip.tsv).
