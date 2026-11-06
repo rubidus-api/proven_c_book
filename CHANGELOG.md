@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 This project follows Keep a Changelog.
 
+## [v0.101.2] - 2026-11-06
+
+73장 「인라인 캐시와 다형 인라인 캐시」 절에 예제를 넣었다.
+
+### Added
+- **73장(두 판)** 예제 `examples/dynamic-vtables/inline_cache.c` --- 인라인 캐시를 C 로 짓는 법. Smalltalk 와 JIT 는 호출하는
+  기계어를 고쳐 쓰지만 C 는 그럴 수 없으므로, 호출 자리 옆에 블록 범위 `static` 변수를 두고 그 호출만 그것을 캐시로 쓴다.
+  한 칸 캐시(IC)와 네 칸 다형 인라인 캐시(PIC)를 같은 객체 열에 돌려 놓친 횟수를 센다 --- 한 클래스, 두 클래스가 번갈아,
+  여섯 클래스가 번갈아(다 찬 PIC 가 비교를 접고 클래스별 캐시로 가는 메가모픽 자리), 실행 때 메서드를 바꾼 뒤(세대 번호).
+  출력은 횟수뿐이라 컴파일러와 기계에 따라 바뀌지 않는다.
+- 같은 절에 「C 로는 어떻게 짓는가」 문단과 풀이. 측정의 `selector, inline cache` · `selector, 4-way PIC` 줄이 같은 코드
+  (`ways.c` 의 `m_sel_ic`, `m_sel_pic`)이며 메가모픽으로 가지 않는다는 것도 적었다.
+
+
 ## [v0.101.1] - 2026-11-06
 
 제11부(두 판)의 설명을 쉬운 말로 다듬었다. 옛 70장에서 옮겨 온 70 · 71 · 75장을 한 문장씩 다시 읽었다.
