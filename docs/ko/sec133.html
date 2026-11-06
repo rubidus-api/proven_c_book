@@ -1,0 +1,697 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>부록 P — 더 읽을거리와 도구, 그리고 표준 문서 — Proven C Book</title><style>/* ── 웹 판의 조판 (RFC-0027, 저자 지시 2026-08-10) ────────────────
+ *
+ * 전에는 이 CSS 가 scripts/wrap-html.py 안의 문자열이었다. 디자인을 한 줄
+ * 고치려면 파이썬 파일을 열어야 했고, 무엇이 디자인이고 무엇이 생성 논리인지
+ * 섞여 있었다. 이제 갈라 둔다 --- 디자인은 여기, 생성은 거기.
+ *
+ * ★ 고치는 절차
+ *   1. 이 파일만 고친다.
+ *   2. scripts/style-preview.sh --- build/style-preview.html 을 본다(몇 초).
+ *   3. 괜찮으면 그때 scripts/build-html.sh 로 전체를 만든다.
+ *
+ * ★ 규율 하나: 장치는 *왼쪽 세로선*으로 영역을 말하고, 제목은 *가로 밑줄*로
+ *   경계를 말한다. 소스 코드와 실행 결과(.demo)만 네 변 상자를 쓴다.
+ */
+
+/* ── 글꼴을 직접 싣는다 (RFC-0026 D2, 저자 지시 2026-08-10) ────────
+   전에는 @font-face 가 하나도 없어, CSS 가 적어 둔 이름이 방문자 기계에 없으면
+   대체 글꼴로 떨어졌다 --- 세리프 본문이 고딕으로 보이는 일이 흔했다.
+   이 책이 쓰는 갈래는 셋뿐이다: serif(본문) · sans-serif(제목·UI) · monospace(코드).
+   파일은 scripts/make-webfonts.sh 가 *이 책에 쓰인 글자만* 남겨 만든다.
+   font-display:swap --- 글꼴을 기다리느라 글이 안 보이는 일이 없게 한다. */
+@font-face { font-family:"PCB Serif"; src:url("../fonts/serif.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"PCB Serif"; src:url("../fonts/serif-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"PCB Serif"; src:url("../fonts/serif-italic.woff2") format("woff2");
+  font-weight:400; font-style:italic; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"PCB Serif"; src:url("../fonts/serif-kr.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"PCB Serif"; src:url("../fonts/serif-kr-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+@font-face { font-family:"PCB Sans"; src:url("../fonts/sans.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"PCB Sans"; src:url("../fonts/sans-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"PCB Sans"; src:url("../fonts/sans-kr.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"PCB Sans"; src:url("../fonts/sans-kr-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+@font-face { font-family:"PCB Mono"; src:url("../fonts/mono.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"PCB Mono"; src:url("../fonts/mono-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+/* ── 색은 세 가지 상태를 모두 적어야 한다 (저자 지적 2026-08-11) ───────
+ * ★ 예전에는 어두운 팔레트가 `@media (prefers-color-scheme: dark)` *안에만*
+ *   있었다. 그래서 「어둡게」 단추가 `data-theme` 를 붙여도 응답할 규칙이 없어
+ *   아무 일도 일어나지 않았고, 「밝게」도 시스템이 어두우면 소용없었다.
+ *   이제 세 자리에 적는다:
+ *     ① 바탕(:root)                          --- 밝은 팔레트
+ *     ② 시스템이 어두울 때, 단 밝게를 고르지 않았으면  --- 어두운 팔레트
+ *     ③ 어둡게를 골랐을 때                      --- 어두운 팔레트
+ *   ②③ 은 같은 값이라 되풀이되지만, CSS 에서 변수 묶음을 이름으로 나눠 쓸
+ *   방법이 없다. 고칠 때는 *둘 다* 고쳐야 한다.
+ */
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#c9c9c9; --box-bg:#f6f6f6; --box-rule:#c4c4c4; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+    --rule:#3a3d40; --box-bg:#1c1e20; --box-rule:#4a4d50; --code-bg:#1b1d1f; --link:#8ab4e8;
+    --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+    --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+:root[data-theme="dark"] { color-scheme: dark; --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#3a3d40; --box-bg:#1c1e20; --box-rule:#4a4d50; --code-bg:#1b1d1f; --link:#8ab4e8;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; }
+:root[data-theme="light"] { color-scheme: light; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"PCB Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+/* ── 상세 차례와 「이 장의 차례」 패널 (저자 지시 2026-08-10) ── */
+.here-btn { margin-left:.7rem; font:inherit; font-size:.92rem; cursor:pointer;
+  background:none; border:1px solid var(--rule,#bbb); border-radius:.25rem;
+  padding:.1rem .5rem; color:inherit; }
+.here-btn:hover { background:rgba(127,127,127,.14); }
+.here-at { margin-left:.7rem; font-size:.92rem; color:var(--muted); }
+.here-panel { position:sticky; top:2.9rem; z-index:19; max-height:70vh; overflow:auto;
+  border:1px solid var(--rule,#bbb); border-top:none; background:var(--bg,#fff);
+  padding:.6rem .9rem 1rem; box-shadow:0 6px 18px rgba(0,0,0,.12); }
+.here-head { display:flex; align-items:center; gap:.8rem; padding:.2rem 0 .5rem;
+  border-bottom:1px solid var(--rule,#ddd); margin-bottom:.5rem; }
+.here-head .sp { flex:1; }
+.here-all { margin-left:auto; font-size:.9rem; }
+.here-x { font:inherit; font-size:.9rem; cursor:pointer; background:none;
+  border:1px solid var(--rule,#bbb); border-radius:.25rem; padding:.05rem .45rem;
+  color:inherit; }
+.here-body a, .tf-secs a { display:block; text-decoration:none; padding:.12rem 0;
+  line-height:1.45; }
+.here-body a:hover, .tf-secs a:hover { text-decoration:underline; }
+.here-body a.lv4, .tf-secs a.lv4 { padding-left:1.6rem; font-size:.94rem;
+  color:var(--muted,#555); }
+.tf-no { display:inline-block; min-width:3.2rem; color:var(--muted,#666);
+  font-variant-numeric:tabular-nums; }
+.toc-full .tf-ch { margin:.9rem 0 .15rem; font-weight:700; }
+.toc-full .tf-secs { margin:0 0 .5rem .2rem; border-left:2px solid var(--rule,#e2e2e2);
+  padding-left:.7rem; }
+.toc-full h4.toc-part { margin-top:1.8rem; }
+.toc a.toc-detail { font-weight:700; }
+@media print { .here-btn, .here-panel { display:none; } }
+/* 왼쪽부터 죽 이어 쓰고, 좁으면 개행한다 (저자 지시 2026-08-10).
+   전에는 가운데 여백(.sp)이 뒤쪽 항목을 오른쪽 끝으로 밀어 두 덩이로
+   갈라져 있었다. 좁은 화면에서는 그 사이가 벌어져 읽기 나빴다. */
+.bar { position:sticky; top:0; z-index:20; display:flex; flex-wrap:wrap; gap:.35rem .8rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { display:none; }        /* 더 쓰지 않는다 --- 왼쪽 정렬로 이어 쓴다 */
+main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
+/* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다.
+   (2026-08-10: 40rem 으로 가둬 봤으나 저자가 「모양이 깨졌다」며 되돌리라고
+   했다. 줄 길이 문제는 D4 의 *독자가 고르는 폭*으로 푼다.) */
+.wrap { width:100%; max-width:none; margin:0; }
+h1,h2,h3,h4 { font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35;
+  padding-bottom:.18rem; border-bottom:1px solid var(--rule); }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem;
+     padding-bottom:.22rem; border-bottom:1.5px solid var(--fg); }
+p { margin:.9rem 0; } a { color:var(--link); }
+/* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
+   (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+/* 출처 주석 — PDF 의 각주에 해당한다(lib.typ 의 note). Typst 의 HTML 내보내기가
+   각주 본문을 버리므로 lib.typ 이 본문에 펴 두고, wrap-html.py 의 collect_notes 가
+   번호를 매겨 장 끝의 「주」로 옮긴다. 아래 .src-note 는 혹시 옮겨지지 않은 것이
+   있을 때의 대비책이다. */
+.src-note { font-size: .86em; color: var(--muted, #666); }
+.src-note code { font-size: .95em; }
+sup.fnref { font-size: .72em; line-height: 0; vertical-align: super; }
+sup.fnref a { text-decoration: none; padding: 0 .1em; }
+sup.fnref a::before { content: "["; }
+sup.fnref a::after  { content: "]"; }
+.chapter-notes { margin: 3rem 0 1rem; padding-top: .9rem;
+                 border-top: 2px solid var(--rule, #333); }
+.chapter-notes h2 { font-size: 1.05rem; margin: 0 0 .6rem; }
+.chapter-notes ol { margin: 0; padding-left: 1.6em; }
+.chapter-notes li { font-size: .92em; margin: .35em 0; text-indent: 0; }
+.chapter-notes a.fnback { text-decoration: none; }
+/* 상자 안에서는 표제 줄에 붙는 첫 문단만 들여쓰지 않는다(PDF 의 all:false) */
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+/* 표지(문./답.)가 들어간 첫 문단은 절대 들여쓰지 않는다 */
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
+pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
+pre code { background:none; padding:0; }
+/* 표: 바깥은 굵게, 안은 가늘게, 머리행은 굵은 글씨에 옅은 음영
+   (저자 지시 2026-08-06). */
+/* 표는 내용에 필요한 만큼만 폭을 쓰고 가운데에 선다. 100% 폭으로 늘리면
+   셀 오른쪽에 빈 칸이 생겨 테두리와 내용이 어긋나 보인다
+   (저자 지적 2026-08-06). 넘칠 때는 감싼 .tblwrap 이 가로로 스크롤한다. */
+.tblwrap { overflow-x:auto; text-align:center; }
+/* inline-table 은 언제나 내용만큼만 넓어진다(shrink-to-fit). flex 로 가운데를
+   맞추면 브라우저에 따라 늘어나거나 왼쪽이 잘리는 일이 있어 이 방식을 쓴다. */
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+/* 머리행 — 옅은 음영으로 포인트를 준다(PDF 와 같은 처리). 색이 아니라
+   반투명 회색이라 밝은·어두운 테마 양쪽에서 자연스럽다. */
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+/* 표·그림 목록은 훑어보는 것이라 촘촘해야 한다 (저자 지시 2026-08-31) */
+.float-list { list-style:none; padding-left:0; }
+.float-list li { margin:.12rem 0; }
+/* 메모리 사물함 도해 — 칸과 그 아래 주소. 표 서식과 섞이지 않게 따로 둔다. */
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"PCB Mono","D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"PCB Mono","D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+/* 시연 — 소스와 실행 결과는 선명한 검은 테두리로 묶는다 */
+/* 시연 상자 — 문답과 같은 1×2 모양. 위 칸은 표제(파일 경로는 고정폭,
+   "실행 결과"는 산세리프 굵은 글씨), 가로선 아래 칸이 내용이다
+   (저자 지시 2026-08-06). */
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"PCB Mono","D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+
+/* ── 왼쪽 세로선 규율 (저자 지시 2026-08-10) ─────────────────
+   네 변 상자는 좌우 안쪽 여백이 양쪽에서 폭을 갉는다. 왼쪽 세로선 하나로
+   영역만 표시하고 오른쪽은 열어 둔다. 제목 쪽 선이 내용 쪽보다 굵고, 둘은
+   서로 붙지 않는다(사이에 여백). 제목(heading)은 반대로 *가로* 밑줄이다 ---
+   영역과 경계는 하는 일이 다르므로 표시도 갈라 둔다. */
+.dev { margin:1.15rem 0; padding:0; background:none; border:none; border-radius:0; }
+/* 표지 줄 --- 굵은 왼쪽 선 */
+.dev > .dev-label { border-left:4px solid var(--fg);
+  padding:.1rem .8rem .25rem .8rem; margin:0 0 .34rem; }
+/* 본문 --- 가는 왼쪽 선 *하나*로 끝까지 이어진다.
+   ★ 자식마다 선을 그으면 문단 사이에서 끊기고, 한 문단짜리 본문(맨 글)은
+   선을 아예 받지 못한다. 그래서 본문을 한 겹으로 감싸고 그 칸에만 긋는다. */
+.dev > .dev-body { border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem .35rem .8rem; margin:0; }
+.dev > .dev-body > *:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child { margin-bottom:0; }
+/* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
+.float-caption { text-align:center; font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06).
+   ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
+     칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
+     여백이 겹쳐 들쭉날쭉해진다. */
+.dev.open { border:none; border-radius:0; background:none;
+  padding:0; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
+  text-indent:0; border-left:4px solid var(--fg);
+  font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+/* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
+.dev.open > .open-body { margin:0; padding:.35rem .8rem;
+  border-left:2px solid var(--box-rule); }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.06rem 0 .06rem .7rem; margin:.32rem 0 0; }
+/* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
+   (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
+.prereq .dev-label, .deepqa .dev-label, .why .dev-label,
+.organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+
+/* 문답 — 질문 쪽 선이 굵고, 답 쪽이 가늘고, 둘 사이가 떨어져 있다 */
+.qa-box { border:none; margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:0; background:none; }
+.qa-box .qa-q { border-left:4px solid var(--fg);
+  padding:.1rem .8rem .25rem .8rem; margin:0; }
+.qa-box .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem; margin:.34rem 0 0; }
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:0; }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:none; background:none; padding:0; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
+  text-indent:0; border-left:4px solid var(--fg);
+  font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > .dev-body > p, .dev.recap > .dev-body > div:not(.demo),
+.dev.recap > .dev-body > figure { margin:.3rem 0; padding:0; }
+
+/* ★ 장치 안에 든 시연 상자 --- 소스와 실행 결과는 중첩되어도 상자 그대로다
+   (저자 지시 2026-08-10). 바깥의 세로선 안쪽에서 조금 좁혀 놓는다. */
+.dev > .dev-body > .demo { margin:.7rem 0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+/* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
+   (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+/* 상자형 장치 공통 — 문답 상자와 같은 모양: 표제 줄과 본문을 가로선으로
+   가르고, 좌우 여백은 상자가 준다 (저자 지시 2026-08-06).
+   ★ 예전의 2단 구조(.misconception + div) 규칙이 남아 뒤따르는 문답 상자를
+     오해 상자의 아랫칸처럼 그리던 문제를 여기서 없앤다. */
+/* 같은 꼴을 쓰는 상자들 --- 네 변을 걷고 왼쪽 세로선만 남긴다
+   (저자 지시 2026-08-10). 소스 코드와 실행 결과(.demo)는 그대로 상자다. */
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:none; border-radius:0; background:none; padding:0; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem; text-indent:0;
+  border-left:4px solid var(--fg);
+  font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+/* ★ 본문 칸(.dev-body)은 건드리지 않는다 --- 전에는 `> div` 가 그것까지 잡아
+   padding:0 으로 덮어, 실제 사례·반례·흔한 오해의 글이 왼쪽 선에 바짝 붙었다
+   (저자 지적 2026-08-10). 안쪽 문단의 간격만 손본다. */
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
+.dev > .dev-body > figure, .dev > .open-body > p {
+  margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바: 제목은 왼쪽 끝, 장 이동 화살표·언어·GitHub 는 오른쪽 끝
+   (저자 지시 2026-08-06) */
+.bar > strong { flex:0 0 auto; }
+.bar .bar-nav { display:flex; gap:.55rem; align-items:center; margin-right:.35rem; }
+.bar .bar-nav a, .bar .bar-nav .off {
+  display:inline-block; min-width:1.35rem; text-align:center;
+  font-size:1.15rem; line-height:1.1; text-decoration:none; }
+.bar .bar-nav a:hover { text-decoration:none; color:var(--fg); }
+.bar .bar-nav .off { color:var(--muted); opacity:.35; }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+/* ★ 반례의 세로선도 실선이다(저자 지시 2026-08-10). 예전에는 점선으로 갈래를
+   구별했는데, 왼쪽 세로선 체계로 바꾼 뒤로는 그것만 따로 놀았다 --- 갈래는
+   선 모양이 아니라 표지 글(「반례.」)이 말한다. */
+.dev.antipattern > .dev-label { border-left-style:solid; }
+
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+/* ★ 표지에는 가로줄을 두지 않는다(저자 지시 2026-08-10) --- 제목 밑의 옅은 줄은
+   *일반 제목의 밑줄 규칙*이 표지 제목까지 잡은 것이었고, 소개글 밑의 줄은 표지
+   블록 자신의 아래 테두리였다. 표지는 경계를 말할 자리가 아니다. */
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.2rem; }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em;
+            padding-bottom:0; border-bottom:none; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+/* 개념도 — 흑백 선화라 다크 모드에서는 반전해 준다 */
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
+.toc { columns:24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
+/* 차례도 선 없이 --- 왼쪽 세로줄과 장마다의 밑줄을 걷어 낸다(저자 지시 2026-08-10).
+   여기는 장치가 아니라 목록이라 선이 뜻하는 바가 없다. */
+.toc-group { break-inside:avoid; padding-left:.85rem; }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+
+/* ── 서식 예시의 이름표 ─────────────────────────────────────────
+   조판 견본(style-specimen)에서만 나온다. 「이 모양을 뭐라고 부르는가」를
+   그 자리에 붙여 둔다 --- 본문에는 쓰지 않는다. */
+code.style-name { font-family:"PCB Mono","D2Coding",ui-monospace,monospace;
+  font-size:.72em; color:var(--muted); background:var(--rule);
+  padding:.05em .35em; border-radius:3px; white-space:nowrap;
+  font-weight:400; letter-spacing:0; }
+
+/* ── 조판 값 --- 견본에서 시험해 채택한 것들 (저자 지시 2026-08-10) ─────
+ *
+ * 아래는 견본(style-specimen)에서 눈으로 확인한 뒤 책에 들인 값이다.
+ * 여백은 일반적인 책의 숨에 맞추고, 선은 색 하나(#d5d5d5)로 모았다
+ * --- 표만 예외다(격자는 옅으면 칸이 안 읽힌다).
+ */
+
+/* 서두 다섯 칸 --- 표지 줄이 선에 눌려 있었다 */
+.dev.open > .dev-label { padding-top:.42rem; padding-bottom:.42rem; }
+.dev.open > .open-body { padding-top:.4rem; padding-bottom:.4rem; }
+.dev.open > .open-body > p { margin:.6rem 0; }
+
+/* 장치 안의 글도 조금 넉넉하게 */
+.dev > .dev-body { padding-top:.5rem; padding-bottom:.5rem; }
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
+.dev > .dev-body > figure { margin:.55rem 0; }
+
+/* 본문 --- 줄 사이와 문단 사이 */
+main { line-height:1.85; }
+p { margin:1.15rem 0; }
+h2 { margin-top:2.4rem; }
+h3 { margin-top:2rem; }
+li { margin:.3rem 0; }
+
+/* 제목 밑줄 --- 시험 중: 검정 대신 흐린 회색(저자 지시 2026-08-10).
+   경계를 말하되 글자보다 앞서지 않게. */
+/* 제목 밑줄도 팔레트를 따른다 --- 고정색이면 어두운 테마에서 홀로 밝다 */
+h1, h2, h3, h4 { border-bottom-color:var(--box-rule) !important; }
+
+/* 차례 --- 본문의 넉넉한 행간을 그대로 받아 헐거웠다. 목록은 촘촘해야 훑힌다.
+   (저자 지시 2026-08-10, 웹판 견본) */
+.toc { line-height:1.45; }
+.toc a { padding:.16rem 0; }
+.toc-part { margin:.85rem 0 .2rem; }
+
+/* 저작권·연락처 --- 두 칸짜리 표는 줄 사이가 벌어질수록 짝이 흩어진다 */
+.metalist { line-height:1.45; gap:.2rem 1.2rem; }
+.metalist dt, .metalist dd { margin:0; }
+
+/* 시연 상자(소스 코드·실행 결과) --- 시험 중: 테두리를 연한 회색으로
+   (저자 지시 2026-08-10). 코드가 이미 검은 덩어리다. */
+.demo { border-color:var(--box-rule); }
+.demo > .demo-head { border-bottom-color:var(--box-rule); }
+
+/* ── 왼쪽 세로선 --- 시험 중: 검정에서 연한 회색으로 (저자 지시 2026-08-10)
+ * 색은 팔레트(--box-rule)를 따른다 --- 테마가 바뀌면 선도 함께 바뀐다.
+ * 굵기(4px 대 2px)가 층위를 말하므로 색까지 세게 말할 까닭이 없다. */
+.dev > .dev-label,
+.dev.open > .dev-label,
+.qa-box .qa-q,
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  border-left-color:var(--box-rule); }
+
+.dev > .dev-body,
+.dev > .open-body,
+.dev.open .qa-a,
+.qa-box .qa-a,
+.deepqa .qa-a { border-left-color:var(--box-rule); }
+
+/* ★ 선의 색은 하나다(저자 지시 2026-08-10) --- 표(.tbl)만 예외로 제 색을 쓴다.
+   여기 한 줄로 못 박아, 뒤에 무엇이 오든 같은 회색이 되게 한다. */
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div {
+  border-color:var(--box-rule); }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+
+/* ★ 특이도(specificity) 함정 --- `.dev.open > .open-body` 는 클래스가 셋이라
+   위의 `.dev *`(하나) 나 `.dev > .open-body`(둘) 보다 세다. 그래서 서두 칸의
+   *내용* 세로선만 var(--box-rule)=#9a9a9a 로 남아 혼자 진했다(저자 지적).
+   같은 자리를 같은 힘으로 눌러 준다. */
+.dev.open > .open-body,
+.dev.open > .qa-a,
+.dev.open .qa-a,
+.dev.deepqa .qa-a,
+.qa-box > .qa-a,
+.qa-box > .qa-q { border-left-color:var(--box-rule); }
+
+/* 상단 바의 차례 그림글자 --- 글자 크기를 조금 키워 다른 이름들과 눈높이를 맞춘다 */
+.bar .bar-toc { font-size:1.15em; line-height:1; text-decoration:none; }
+
+/* ── 통일 (저자 지시 2026-08-11) ─────────────────────────────────────
+ * ★ 「글 전체의 통일성이 중요하다」 --- 장치 안의 글도, 장 안의 차례도, 본문과
+ *   같은 크기·행간·문단 간격을 쓴다. 예전에는 자리마다 값이 조금씩 달라
+ *   상자를 지날 때마다 리듬이 흔들렸다.
+ */
+.dev, .dev-body, .open-body, .qa-box, .qa-q, .qa-a, .dev-label,
+.toc-full, .toc-full .tf-secs { line-height:inherit; font-size:1rem; }
+.dev > .dev-body > p, .dev > .open-body > p,
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:1.15rem 0; }
+.dev > .dev-body > *:first-child, .dev > .open-body > *:first-child,
+.qa-box .qa-q > p:first-child, .qa-box .qa-a > p:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child, .dev > .open-body > *:last-child,
+.qa-box .qa-q > p:last-child, .qa-box .qa-a > p:last-child { margin-bottom:0; }
+/* 표지 줄만은 제 크기를 지킨다 --- 이름이지 본문이 아니다 */
+.dev > .dev-label, .dev.open > .dev-label { font-size:.98rem; line-height:1.4; }
+
+/* 제목: 글자와 밑줄 사이를 넉넉히, 그만큼 밑줄 아래도 넉넉히 */
+h1,h2,h3,h4 { padding-bottom:.34rem; }
+h1 { margin:.2rem 0 1.3rem; }
+h2 { padding-bottom:.42rem; margin-bottom:1.15rem; }
+h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
+
+/* ── 장 서두 칸의 목록과 문단 (저자 지시 2026-08-11) ──────────────────
+ * ★ 항목 사이에 여백을 또 주면 *행간이 두 번 붙은 것처럼* 보인다. 서두 칸은
+ *   짧은 줄이 여럿 늘어서는 자리라 그 겹침이 특히 크게 보였다. 항목 사이
+ *   간격은 행간이 대신하게 두고, 여백은 문단 사이에만 최소로 준다.
+ *   행간 자체는 본문과 같다(main 에서 물려받는다) --- 값을 따로 두지 않는다.
+ */
+.dev.open > .open-body > * { margin:.3rem 0; }
+.dev.open > .open-body > p { margin:.5rem 0; }
+.dev.open > .open-body > div { margin:.15rem 0; }   /* 「먼저 알아야 할 것」의 한 줄들 */
+.dev.open ul, .dev.open ol { margin:.3rem 0; }
+.dev.open li, .dev.open ol.qlist li { margin:0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open .qa-a > p { margin:.35rem 0; }
+
+/* ── 웹판만의 조정 (저자 승인 2026-08-11) ─────────────────────────────
+ * ★ 선의 색을 종이와 화면이 나눠 쓴다. 종이는 잉크가 실제로 얹혀 #d5d5d5 도
+ *   보이지만, 화면에서는 흰 배경 대비 **1.47:1** 이라 밝기를 낮추거나 값싼
+ *   패널에서는 사실상 사라진다 --- 「영역을 한눈에」라는 목적이 화면에서만
+ *   무너진다. 그래서 웹만 한 단계 진하게 둔다(#c4c4c4, 대비 1.75:1).
+ */
+/* 선의 색은 팔레트의 --box-rule 을 따른다 --- 테마가 바뀌면 함께 바뀐다 */
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div { border-color:var(--box-rule); }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+
+/* 키보드로 다닐 때 지금 어디인지 보여야 한다 --- 없으면 링크를 세며 다녀야 한다 */
+a:focus-visible, button:focus-visible, summary:focus-visible {
+  outline:2px solid var(--link); outline-offset:2px; border-radius:2px; }
+
+/* 고정 바 아래로 제목이 숨지 않게 --- 차례에서 절을 누르면 바에 가렸다 */
+:target, h1, h2, h3, h4, [id] { scroll-margin-top:4.2rem; }
+
+/* 본문 건너뛰기 --- 상단 바의 링크를 매 쪽마다 지나지 않아도 되게 */
+.skip { position:absolute; left:-9999px; top:0; z-index:30;
+        background:var(--bg); color:var(--fg); border:1px solid var(--fg);
+        padding:.5rem .8rem; font-size:.9rem; text-decoration:none; }
+.skip:focus { left:.5rem; top:.5rem; }
+
+/* ── 상단 바의 펼침 패널과 읽기 설정 (저자 지시 2026-08-11) ────────────
+ * 바에는 넷만 둔다. 나머지는 여기로 접었다 --- 늘 보이던 것을 접어 두면
+ * 읽는 자리가 넓어지고, 필요할 때는 한 번의 누름으로 전부 나온다.
+ */
+.here-btn { font:inherit; color:inherit; background:none; border:1px solid transparent;
+  border-radius:4px; padding:.1rem .45rem; cursor:pointer; }
+.here-btn .caret { color:var(--muted); }
+.here-panel { position:sticky; top:2.9rem; z-index:19; max-height:78vh; overflow:auto;
+  background:var(--bg); border-bottom:1px solid var(--rule);
+  padding:.6rem clamp(.8rem,3vw,2.5rem) .9rem; }
+
+/* 도구 줄 --- 인라인으로 죽 늘어서다 좁으면 다음 줄로 넘어간다 */
+.here-panel .tools { display:flex; flex-wrap:wrap; gap:.3rem .5rem; align-items:center;
+  margin-bottom:.5rem; }
+.tool { font:inherit; font-size:.86rem; color:inherit; background:none;
+  border:1px solid var(--rule); border-radius:4px; padding:.2rem .55rem;
+  text-decoration:none; cursor:pointer; white-space:nowrap;
+  font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+
+/* ★ 누를 수 있다는 것을 바탕색으로 말한다(저자 지시) --- 글자만 바뀌면
+   손이 닿기 전에는 알 수 없다. */
+.tool:hover, .here-btn:hover, .bar a:hover, .nav a:hover,
+.here-panel .here-body a:hover { background:var(--box-bg); }
+.tool:hover { border-color:var(--box-rule); }
+.here-btn:hover { border-color:var(--rule); }
+.bar a, .nav a { border-radius:4px; padding:.1rem .35rem; }
+.tool:active, .here-btn:active, .bar a:active { transform:translateY(1px); }
+.segb[aria-pressed="true"] { background:var(--box-bg); border-color:var(--fg); font-weight:700; }
+
+/* 본문 링크 --- 밑줄로 있음을 말하고, 손이 닿으면 바탕으로 답한다 */
+main a { text-decoration:underline; text-decoration-color:var(--box-rule);
+  text-underline-offset:2px; border-radius:3px; }
+main a:hover { background:var(--box-bg); text-decoration-color:var(--link); }
+main .toc a, main .toc-full a, main .here-body a { text-decoration:none; }
+main .toc a:hover, main .toc-full a:hover { background:var(--box-bg); text-decoration:underline; }
+
+/* 읽기 설정 상자 */
+.setbox { border:1px solid var(--rule); border-radius:5px; padding:.6rem .7rem;
+  margin:0 0 .6rem; font-size:.88rem;
+  font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.setrow { display:flex; flex-wrap:wrap; gap:.4rem .7rem; align-items:center;
+  margin:.35rem 0; }
+.setlbl { color:var(--muted); min-width:3.2rem; }
+.seg { display:inline-flex; gap:.25rem; }
+.segb { font:inherit; color:inherit; background:none; border:1px solid var(--rule);
+  border-radius:4px; padding:.15rem .5rem; cursor:pointer; }
+.col { display:inline-flex; align-items:center; gap:.3rem; }
+.col input[type=color] { width:2rem; height:1.4rem; padding:0; border:1px solid var(--rule);
+  border-radius:3px; background:none; cursor:pointer; }
+.setnote { margin:.5rem 0 0; color:var(--muted); font-size:.82rem; }
+
+/* 가로폭 제한 --- 기본은 제한 없음(설계 의도). 독자가 켤 때만 걸린다. */
+:root[data-measure="on"] main .wrap { max-width:46rem; margin-inline:auto; }
+
+/* 펼침 패널 맨 왼쪽의 판 번호 --- 도구가 아니라 표시다(누를 것이 없다) */
+.here-panel .ver { font-size:.82rem; color:var(--muted); padding:.2rem .45rem .2rem 0;
+  font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; white-space:nowrap; }
+
+/* ── 코드와 실행 결과의 줄바꿈 (저자 지시 2026-08-11) ─────────────────
+ * ★ 가로로 흘러 넘치게 두면 긴 줄은 *가로 스크롤 안에 숨는다.* 종이에서는
+ *   글자 단위로 접어 넣고 있으니(lib.typ 의 _hardwrap), 화면에서도 같은
+ *   약속을 지킨다 --- 넘치는 대신 접는다. 들여쓰기는 그대로 살린다.
+ */
+.demo pre, .demo pre code {
+  white-space:pre-wrap; overflow-wrap:anywhere; word-break:break-word; }
+.demo > .demo-body { overflow-x:visible; }
+
+/* ── 절의 주소(permalink) ─────────────────────────────────────────
+   종이 책에는 쪽수가 있지만 웹 판에는 없어서, 남에게 「거기」를 알려 줄
+   방법이 없었다. 절마다 닻을 두되 *읽기를 방해하지 않게* --- 평소에는
+   보이지 않다가 제목에 닿거나 키보드 초점이 오면 드러난다. */
+.plink {
+  margin-left: .4em; font-weight: 400; text-decoration: none;
+  color: var(--muted, #888); opacity: 0; transition: opacity .12s;
+}
+h3:hover > .plink, h4:hover > .plink,
+h3 > .plink:focus, h4 > .plink:focus { opacity: 1; }
+@media (hover: none) { .plink { opacity: .45; } }
+
+/* ── 검색 ─────────────────────────────────────────────────────────
+   *제목과 색인 표제어*만 찾는다. 본문 전체 색인은 판마다 수 MB 라
+   내려받게 하는 값이 얻는 것보다 크다. 무엇을 찾는지 화면에 적어 둔다. */
+.searchbox { margin:.6em 0 0; }
+.searchbox input[type=search] {
+  width: 100%; padding: .45em .6em; font: inherit;
+  border: 1px solid var(--rule, #ccc); border-radius: 4px;
+  background: var(--bg, #fff); color: var(--fg, #111);
+}
+.search-hint { color: var(--muted, #777); font-size: .85em; margin:.3em 0 0; }
+.search-results { list-style: none; padding: 0; margin: .5em 0 0; }
+.search-results li { margin: .15em 0; }
+.search-results .where { color: var(--muted, #777); font-size: .85em; margin-left: .4em; }
+
+body { font-family:"PCB Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"PCB Sans","Noto Sans CJK KR","Noto Sans KR",system-ui,sans-serif; }
+pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+</style>
+<script>(function(){try{var s=JSON.parse(localStorage.getItem('pcb-read')||'{}');var r=document.documentElement;if(s.theme&&s.theme!=='auto')r.setAttribute('data-theme',s.theme);if(s.fg)r.style.setProperty('--fg',s.fg);if(s.bg)r.style.setProperty('--bg',s.bg);if(s.link)r.style.setProperty('--link',s.link);if(s.width)r.setAttribute('data-measure','on');}catch(e){}})();</script></head>
+<body>
+<a class="skip" href="#content">본문으로 건너뛰기</a>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel">부록 P <span class="caret">▾</span></button><span class="sp"></span><span class="bar-nav"><a href="sec132.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="sec134.html" title="다음" aria-label="다음">→</a></span></div><div id="here-panel" class="here-panel" hidden><div class="tools"><span class="ver">v0.101.0</span><button class="tool" type="button" id="set-open">⚙ 설정</button><a class="tool" href="toc.html">▤ 상세 차례</a><a class="tool" href="../en/">En</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book/releases/download/v0.101.0/proven_c_book-v0.101.0-ko.pdf">⤓ PDF</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book" title="이 책의 GitHub 저장소">Git</a><a class="tool" href="https://rubidus-api.github.io/" title="rubidus-api.github.io --- 공개된 모든 프로젝트">⌂ 전체 사이트</a><a class="tool" href="https://github.com/rubidus-api" title="github.com/rubidus-api --- 모든 저장소">≡ 저장소 목록</a></div><div class="setbox" id="setbox" hidden><label class="setrow"><input type="checkbox" id="s-width"><span>가로폭 제한</span></label><div class="setrow"><span class="setlbl">테마</span><span class="seg"><button type="button" class="segb" data-theme="auto">시스템</button><button type="button" class="segb" data-theme="light">밝게</button><button type="button" class="segb" data-theme="dark">어둡게</button></span></div><div class="setrow"><span class="setlbl">색</span><label class="col"><span>글자</span><input type="color" id="s-fg"></label><label class="col"><span>배경</span><input type="color" id="s-bg"></label><label class="col"><span>링크</span><input type="color" id="s-link"></label></div><p class="setnote">설정은 이 브라우저에만 저장된다.</p></div><div class="here-head"><strong>이 장의 차례</strong></div><div class="here-body"><a class="lv3" href="sec01.html#sx1"><span class="tf-no"></span>옌스 구스테트, 『모던 C』 — 표준을 기준으로 삼는 교재</a><a class="lv3" href="sec134.html#sx2"><span class="tf-no"></span>K. N. 킹, C Programming: A Modern Approach — 정통 교과서</a><a class="lv3" href="sec119.html#sx3"><span class="tf-no"></span>크리스토퍼 프레셰른, 『우아한 C언어 코딩 패턴』 — 설계와 패턴</a><a class="lv3" href="sec119.html#sx4"><span class="tf-no"></span>온라인 참고서</a><a class="lv3" href="sec119.html#sx5"><span class="tf-no"></span>브라우저에서 바로 돌려 보는 곳</a><a class="lv3" href="sec119.html#sx6"><span class="tf-no"></span>눈으로 보는 도구</a><a class="lv3" href="sec119.html#sx7"><span class="tf-no"></span>문제를 주는 곳</a><a class="lv3" href="sec119.html#sx8"><span class="tf-no"></span>무료로 읽을 수 있는 자료</a><a class="lv3" href="sec119.html#sx9"><span class="tf-no"></span>자료를 고르는 눈 — 오래된 것을 가려내기</a><a class="lv3" href="sec130.html#sx10"><span class="tf-no"></span>표준 문서를 구하는 법</a><a class="lv3" href="sec130.html#sx11"><span class="tf-no"></span>이 책 다음의 길</a></div></div>
+<main id="content"><div class="wrap">
+<h2>부록 P — 더 읽을거리와 도구, 그리고 표준 문서</h2><div></div><p>이 책 다음에 무엇을 읽을 것인가. 답하기 전에 이 언어의 사정을 하나 짚어 두어야 한다. <strong>C는 입문서 다음 칸이 얇고, 그나마도 오래된 언어다.</strong></p><p>C++ 쪽은 사정이 다르다. 큰 응용을 C++로 짜는 자리가 많다 보니 입문서 위로 중급서·설계서·관용구 모음이 층층이 쌓여 있다. 반면 C에서 그 칸을 오래 지켜 온 책들은 대개 1990년대의 고전이라 C99 이후의 변화가 반영되어 있지 않다. 게다가 그 칸을 실제로 메우는 책의 상당수는 “중급 C” 책이 아니라 <strong>시스템 프로그래밍 책</strong>이다 — 유닉스 시스템 호출, 운영체제, 컴퓨터 구조. C 입문을 뗀 독자가 다음에 집는 것이 대체로 그쪽이라, 이어지는 길이 있기는 하되 스스로 찾아 나서야 한다.</p><p>이 책이 굳이 컴퓨터 이야기부터 시작해 계약과 라이브러리 설계까지 온 것도 그 사정을 의식했기 때문이다.</p><p>책과 표준 문서만이 아니라, 브라우저에서 바로 돌려 보는 도구와 연습할 곳까지 이 부록에 함께 모았다.</p><p>다행히 최근 몇 해 사이 이 칸을 메우는 책들이 나오고 있다. C11 이후의 변화와 C23의 확정이 새 책을 쓸 이유를 만들어 준 덕이다. 아래는 그중 읽어 볼 만한 것들이다.</p><div class="dev platform"><p class="dev-label">플랫폼 노트.<span style="white-space: pre-wrap">&#x20;&#x20;</span>이 부록의 서지 표기</p><div class="dev-body"><p>아래의 서지 사항은 전산 분야에서 널리 쓰이는 <strong>ACM 참고문헌 서식</strong>(ACM Reference Format)을 따른다 — 저자. 연도. <span style="display: inline-block">제목</span> (판). 출판사, 지역. 식별자(ISBN·DOI·URL) 순이다. IEEE 서식을 쓰는 학회도 많지만, 표기 순서만 다를 뿐 담는 항목은 같다.</p><p>세 가지를 눈여겨보면 인용을 읽는 눈이 생긴다. <strong>판(edition)이 표시된다</strong> — 같은 제목이라도 판이 다르면 다른 책이다(C 교재에서는 특히 그렇다). <strong>연도는 그 판의 연도다.</strong> 그리고 <strong>식별자를 적는다</strong> — 제목은 겹치지만 ISBN·DOI 는 겹치지 않는다.</p></div></div><h3 id="sx1">옌스 구스테트, 『모던 C』 — 표준을 기준으로 삼는 교재<a class="plink" href="sec01.html#sx1" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>저자 옌스 구스테트(Jens Gustedt)는 프랑스 INRIA의 연구책임자이자 C 표준 위원회(ISO WG14)의 위원으로, C17(ISO/IEC 9899:2018)의 공동 편집자로 참여한 사람이다. 즉 <strong>표준 문서를 만드는 쪽에서 쓴 교재</strong>다.</p><p>내용은 난이도를 0에서 3까지 층으로 나누어, 기초부터 시작해 스레드와 원자적 연산, 메모리 일관성 모형까지 올라간다. 오래된 관행 대신 오늘의 표준을 기본값으로 삼는다는 점에서 이 책과 방향이 같고, 깊이는 훨씬 깊다. “C의 바이블”이라는 자리는 전통적으로 K&amp;R의 것이지만, <strong>오늘의 표준을 기준으로 한 단권 교재</strong>로는 현재 이만한 것이 없다.</p><p>두 가지를 함께 알아 두면 좋다. 첫째, 한국어판(길벗, 2022)은 원서 2판을 옮긴 것이라 C17까지를 다룬다. C23을 다루는 것은 2024년에 나온 원서 <strong>3판</strong>이다. 둘째, 저자가 이 책의 전자판을 무료로 공개해 두었다 — INRIA의 공개 저장소(HAL)에서 받을 수 있다. 번역서를 읽다가 표현이 걸리거나 C23의 최신 내용이 필요하면 원서를 함께 펴 보는 방법이 있다는 뜻이다.</p><p><strong>서지.</strong></p><ul><li>Jens Gustedt. 2019. <span style="display: inline-block">Modern C</span> (2nd. ed.). Manning Publications, Shelter Island, NY. ISBN 978-1-61729-581-2.</li><li>Jens Gustedt. 2024. <span style="display: inline-block">Modern C</span> (3rd. ed.). Manning Publications, Shelter Island, NY. ISBN 978-1-63343-777-7. — C23을 다루는 판.</li><li>한국어판: 옌스 구스테트. 2022. 『모던 C』(2판 번역). 길벗, 서울.</li><li>저자가 공개한 전자판: <a href="https://gustedt.gitlabpages.inria.fr/modern-c/"><code>gustedt.gitlabpages.inria.fr/modern-c/</code></a> (INRIA 의 공개 저장소 HAL 에도 올라와 있다).</li><li>출판사 소개면: <a href="https://manning.com/books/modern-c"><code>manning.com/books/modern-c</code></a></li></ul><h3 id="sx2">K. N. 킹, <span style="display: inline-block">C Programming: A Modern Approach</span> — 정통 교과서<a class="plink" href="sec134.html#sx2" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>이 목록에서 유일하게 정식 한국어판이 없는 책인데도 넣는 이유는, 영어권에서 C 교재의 표준으로 통할 만큼 널리 쓰여 왔기 때문이다. 대학 교재로 자리 잡은 책이고, 개념을 한 번에 쏟지 않고 여러 번에 걸쳐 조금씩 깊게 되돌아오는 <strong>나선형</strong> 구성이 특징이다(이 책이 택한 방식과 같다). 설명이 차분하고 예제가 정직해서, 입문서를 뗀 뒤 기초를 다시 탄탄히 다지고 싶을 때 좋은 선택이다.</p><p>2판(2008)이 C89와 C99를 기준으로 삼는다는 점은 알고 읽어야 한다. 다만 이 “오래됨”은 상황에 따라 장점이 되기도 한다 — 실무에서 C99까지만 허용하는 오래된 코드베이스나 임베디드 도구 체인을 다뤄야 한다면, 그 세계를 정확히 기준으로 삼은 책이 오히려 맞다.</p><p><strong>서지.</strong></p><ul><li>K. N. King. 2008. <span style="display: inline-block">C Programming: A Modern Approach</span> (2nd. ed.). W. W. Norton &amp; Company, New York, NY. ISBN 978-0-393-97950-3.</li><li>저자가 운영하는 책 소개면: <a href="http://knking.com/books/c2/"><code>knking.com/books/c2/</code></a> — 예제 소스와 정오표가 있다(이 책을 쓰는 시점에 HTTPS 가 아니라 HTTP 로만 열린다).</li></ul><h3 id="sx3">크리스토퍼 프레셰른, 『우아한 C언어 코딩 패턴』 — 설계와 패턴<a class="plink" href="sec119.html#sx3" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>원서는 오라일리에서 2022년에 나온 <span style="display: inline-block">Fluent C: Principles, Practices, and Patterns</span>다. 이 책이 다루는 것은 문법이 아니라 <strong>구조에 대한 결정</strong>이다 — 에러를 어떻게 돌려줄 것인가, 소유권과 수명을 어떻게 표시할 것인가, 유연한 인터페이스와 반복자를 어떻게 설계할 것인가. 이 책 제13부에서 계약이라는 이름으로 다룬 문제들이, 거기서는 패턴 목록의 형태로 정리되어 있다.</p><p>C를 배운 뒤 “이제 이걸로 뭘 어떻게 짜야 하지”라는 자리에서 막히는 독자에게 특히 맞다. 다만 평가가 갈리는 지점도 있다. 영어권 서평들은 공통적으로 <strong>입문자용이 아니라는 점</strong>을 강조한다 — 비자명한 프로그램을 하나쯤 써 본 뒤에 읽어야 값이 나온다는 것이다. 개발자 단체 ACCU의 서평은 “조건부 추천”을 주면서, 에러 처리에 두 장을 쓰면서도 시험(test)을 다루지 않는 점과 일부 패턴(지연 정리 같은)의 적절성에 의문을 제기했다. 패턴 목록을 규범이 아니라 <strong>선택지의 목록</strong>으로 읽으면 그 지적을 감안하고도 얻을 것이 많다.</p><p><strong>서지.</strong></p><ul><li>Christopher Preschern. 2022. <span style="display: inline-block">Fluent C: Principles, Practices, and Patterns</span>. O’Reilly Media, Sebastopol, CA. ISBN 978-1-4920-9733-4.</li><li>한국어판: 크리스토퍼 프레셰른. 2023. 『우아한 C언어 코딩 패턴』. 한빛미디어, 서울.</li><li>출판사 소개면: <a href="https://oreilly.com"><code>oreilly.com</code></a></li></ul><h3 id="sx4">온라인 참고서<a class="plink" href="sec119.html#sx4" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>주소부터 적어 둔다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>무엇</strong></th><th><strong>주소</strong></th></tr><tr><td>cppreference 의 C 항목</td><td><a href="https://en.cppreference.com/w/c"><code>en.cppreference.com/w/c</code></a></td></tr><tr><td>GCC 매뉴얼(옵션·경고·확장)</td><td><a href="https://gcc.gnu.org/onlinedocs/"><code>gcc.gnu.org/onlinedocs/</code></a></td></tr><tr><td>Clang 문서</td><td><a href="https://clang.llvm.org/docs/"><code>clang.llvm.org/docs/</code></a></td></tr><tr><td>MSVC 문서</td><td><a href="https://learn.microsoft.com/cpp/"><code>learn.microsoft.com/cpp/</code></a></td></tr><tr><td>WG14(표준 위원회) 문서</td><td><a href="https://open-std.org/jtc1/sc22/wg14/"><code>open-std.org/jtc1/sc22/wg14/</code></a></td></tr><tr><td>무료 초안 내려받기</td><td><a href="https://open-std.org/jtc1/sc22/wg14/www/docs/"><code>open-std.org/jtc1/sc22/wg14/www/docs/</code></a> (예: <code>n3220.pdf</code>)</td></tr><tr><td>ISO 온라인 스토어</td><td><a href="https://iso.org"><code>iso.org</code></a></td></tr><tr><td>한국표준정보망(KSSN)</td><td><a href="https://kssn.net"><code>kssn.net</code></a></td></tr></table></div><span id="proven-float-808"></span><p class="float-caption">표 115.1 — 표준 문서를 구하는 자리</p></figure><p><span style="display: inline-block">cppreference.com</span>의 C 항목이 사실상의 표준 레퍼런스다. 함수마다 어느 표준판에서 들어왔고 무엇이 바뀌었는지가 표시되어 있어, 이 책이 강조한 “판이 여럿인 언어”를 다루기에 알맞다. 컴파일러별 지원 현황과 경고 옵션은 GCC·Clang의 공식 문서가 가장 정확하다.</p><h3 id="sx5">브라우저에서 바로 돌려 보는 곳<a class="plink" href="sec119.html#sx5" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>이름</strong></th><th><strong>무엇을 주는가</strong></th><th><strong>특히 좋은 자리</strong></th></tr><tr><td>Compiler Explorer (<code>godbolt.org</code>)</td><td>소스와 어셈블리를 나란히. C 컴파일러 판본이 천 개가 넘고, 여러 컴파일러를 동시에 견줄 수 있다</td><td>최적화가 무엇을 지웠는지 보기(14장), 판마다 다른 동작 확인(17장)</td></tr><tr><td>OnlineGDB (<code>onlinegdb.com</code>)</td><td>편집·실행·디버깅. 중단점과 변수 보기가 브라우저 안에 있다</td><td>디버거를 설치 전에 먼저 익히기(18장)</td></tr><tr><td>Wandbox (<code>wandbox.org</code>)</td><td>컴파일러 판을 골라 실행. 여러 파일도 된다</td><td>「내 컴파일러에서만 되는 코드」 가려내기</td></tr><tr><td>Coliru (<code>coliru.stacked-crooked.com</code>)</td><td>명령줄을 직접 적어 컴파일. 군더더기가 없다</td><td>옵션을 바꿔 가며 경고를 관찰</td></tr><tr><td>Replit (<code>replit.com</code>)</td><td>파일 여럿과 터미널이 있는 작업 공간. 계정이 필요하다</td><td>여러 파일로 나눈 예제(60장)</td></tr><tr><td>TIO (<code>tio.run</code>)</td><td>수십 개 언어를 한 자리에서. 짧은 코드 비교에 좋다</td><td>다른 언어와 같은 일을 견주어 보기</td></tr></table></div><span id="proven-float-809"></span><p class="float-caption">표 115.2 — 더 읽을 책</p></figure><h3 id="sx6">눈으로 보는 도구<a class="plink" href="sec119.html#sx6" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>이름</strong></th><th><strong>보여 주는 것</strong></th><th><strong>연결되는 장</strong></th></tr><tr><td>Python Tutor의 C 모드 (<code>pythontutor.com/c.html</code>)</td><td>실행을 한 줄씩 세우고 스택·힙·포인터를 그림으로</td><td>36–46장(포인터·배열·수명·동적 메모리)</td></tr><tr><td>Compiler Explorer</td><td>소스 줄과 기계어 줄의 대응</td><td>14장(최적화), 52장(연산자가 무엇이 되는가)</td></tr><tr><td><code>cdecl.org</code></td><td>복잡한 선언을 사람 말로 풀기</td><td>69장(선언 읽는 법)</td></tr><tr><td>Godbolt의 실행 창</td><td>같은 코드의 출력과 종료 상태</td><td>59장(종료 상태)</td></tr></table></div><span id="proven-float-810"></span><p class="float-caption">표 115.3 — 볼 만한 강연과 이어지는 장</p></figure><p>시각화 도구는 <strong>작은 코드에 쓸 때 가장 쓸모가 크다.</strong> 20~30줄을 넘어가면 그림이 복잡해져 오히려 읽기 어렵다. 「포인터 하나가 어디를 가리키는가」처럼 물음이 좁을수록 잘 듣는다.</p><h3 id="sx7">문제를 주는 곳<a class="plink" href="sec119.html#sx7" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>이 책 다음에 필요한 것은 <strong>직접 써 보는 일</strong>이다. 성격이 꽤 다르므로 목적에 맞춰 고른다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>이름</strong></th><th><strong>성격</strong></th><th><strong>C를 배우는 사람에게</strong></th></tr><tr><td>Exercism (<code>exercism.org</code>)</td><td>작은 과제를 풀고 <strong>사람에게 첨삭</strong>을 받는다. C 트랙이 있다</td><td>문법을 뗀 직후에 가장 잘 맞는다</td></tr><tr><td>Advent of Code (<code>adventofcode.com</code>)</td><td>12월에 매일 하나씩 나오는 퍼즐. 언어는 자유</td><td>입력 파싱과 자료구조 연습에 좋다</td></tr><tr><td>Codewars (<code>codewars.com</code>)</td><td>난이도별 짧은 문제. 남의 풀이를 볼 수 있다</td><td>짧은 함수 하나를 다듬는 훈련</td></tr><tr><td>HackerRank·LeetCode</td><td>면접 대비 문제 은행</td><td>알고리즘 위주. C 자체 학습과는 결이 다르다</td></tr><tr><td>Project Euler</td><td>수학 문제를 프로그램으로</td><td>정수 넘침(28·90장)을 몸으로 겪게 된다</td></tr></table></div><span id="proven-float-811"></span><p class="float-caption">표 115.4 — 도구의 성격과 배우는 사람에게의 값</p></figure><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 문제 사이트만 풀면 C를 잘하게 되는가?</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> 절반만 자란다. 문제 사이트의 코드는 대개 <strong>짧고, 혼자 쓰고, 입력이 정해져 있고, 오늘 밤이면 버린다.</strong> 그 조건에서는 이 책이 강조한 것들 — 수명 관리, 소유권, 오류 경로, 인터페이스 설계 — 이 거의 필요 없다.</p><p>그래서 두 가지를 함께 하는 편이 낫다. 하나는 <strong>짧은 문제로 문법과 알고리즘의 손을 푸는 일</strong>, 다른 하나는 <strong>끝까지 만들어 보는 작은 프로그램 하나</strong>다. 후자가 없으면 「돌아가는 코드」와 「남에게 넘길 수 있는 코드」의 차이를 만날 일이 없다. 뒤쪽의 감각은 제13부(proven)와 109장 실전의 C가 다루는 자리이기도 하다.</p></p></div></div><h3 id="sx8">무료로 읽을 수 있는 자료<a class="plink" href="sec119.html#sx8" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>자료</strong></th><th><strong>무엇</strong></th><th><strong>비고</strong></th></tr><tr><td>cppreference의 C 항목 (<code>en.cppreference.com/w/c</code>)</td><td>사실상의 표준 레퍼런스</td><td>함수마다 도입된 표준판이 표시된다</td></tr><tr><td>Beej’s Guide to C Programming (<code>beej.us</code>)</td><td>가볍게 읽히는 무료 입문서</td><td>같은 저자의 네트워크 프로그래밍 안내서가 더 유명하다</td></tr><tr><td>옌스 구스테트, 『Modern C』</td><td>저자가 무료 PDF를 공개해 둔 중급 교재</td><td>부록 P에서 다룬 그 책이다</td></tr><tr><td>comp.lang.c FAQ (<code>c-faq.com</code>)</td><td>1990년대 뉴스그룹이 정리한 질문 모음</td><td>오래됐지만 「왜 그런가」의 답이 많다. 특히 포인터·배열</td></tr><tr><td>SEI CERT C Coding Standard</td><td>보안 관점의 규칙 모음</td><td>규칙마다 위반 예와 준수 예가 짝으로 있다</td></tr><tr><td>WG14 문서 (<code>open-std.org</code>)</td><td>표준 초안과 제안서</td><td>부록 P의 「표준 문서를 구하는 법」 참고</td></tr><tr><td>GCC·Clang 공식 문서</td><td>경고 옵션과 확장의 정확한 근거</td><td>「이 경고가 무슨 뜻인가」의 1차 자료</td></tr></table></div><span id="proven-float-812"></span><p class="float-caption">표 115.5 — 참고 자료</p></figure><h3 id="sx9">자료를 고르는 눈 — 오래된 것을 가려내기<a class="plink" href="sec119.html#sx9" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>C는 판이 여럿인 언어이고(17장), 인터넷에는 1990년대의 글이 그대로 살아 있다. 좋은 자료와 낡은 자료를 가르는 신호가 몇 개 있다. 아래 중 하나라도 보이면 <strong>그 자료는 최소 20년 전의 관행</strong>이라고 보면 된다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>이런 것이 보이면</strong></th><th><strong>왜 낡았는가</strong></th></tr><tr><td><code>void main()</code></td><td>표준이 정한 적 없는 형태다(59장)</td></tr><tr><td><code>gets(buf)</code></td><td>C11에서 아예 삭제됐다. 안전하게 쓸 방법이 없는 함수였다</td></tr><tr><td><code>malloc</code>의 반환을 캐스트</td><td>C에서는 불필요하고, 헤더 누락을 가린다(46장)</td></tr><tr><td><code>#include &lt;conio.h></code>·<code>clrscr()</code></td><td>옛 도스 컴파일러(터보 C)의 것이다</td></tr><tr><td><code>int</code> 를 생략한 선언(<code>f(x) int x; { }</code>)</td><td>K&amp;R 시절 문법. C23에서 완전히 사라졌다(25장)</td></tr><tr><td>「포인터는 정수다」식 설명</td><td>프로버넌스와 정렬을 무시한 설명이다(38장)</td></tr><tr><td><code>char</code> 가 언제나 부호 있다는 전제</td><td>구현 정의다(28·82장)</td></tr></table></div><span id="proven-float-813"></span><p class="float-caption">표 115.6 — 낡은 코드의 표식</p></figure><p>반대로 <strong>믿을 만한 신호</strong>도 있다 — 어느 표준판을 기준으로 말하는지 밝히고, 정의되지 않은 동작을 정의되지 않은 동작이라 부르고, 컴파일러 경고를 켠 상태의 출력을 함께 보여 주는 자료다.</p><div class="dev realcase"><p class="dev-label">실제 사례.<span style="white-space: pre-wrap">&#x20;&#x20;</span>검색 결과 첫 줄이 가장 위험할 때</p><div class="dev-body"><p>「C 문자열 입력」 같은 것을 검색하면 상위에 <code>gets</code>를 쓰는 예제가 지금도 나온다. 그 페이지들이 상위에 있는 이유는 옳아서가 아니라 <strong>오래되어 링크가 많이 쌓였기 때문</strong>이다. C처럼 나이 많은 언어에서는 검색 순위와 정확성의 상관이 특히 약하다.</p><p>실무의 요령은 이렇다 — <strong>레퍼런스를 먼저 보고(cppreference), 그다음 예제를 찾는다.</strong> 순서를 뒤집으면 낡은 관행을 먼저 배운 뒤에 고치게 된다. AI에게 물을 때도 같다: 답을 그대로 쓰기 전에 표준 레퍼런스에서 그 함수의 항목을 확인하는 편이 빠르다.</p></div></div><h3 id="sx10">표준 문서를 구하는 법<a class="plink" href="sec130.html#sx10" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>이 책은 표준을 “계약서”라 불러 왔다. 그 계약서는 실제로 살 수 있는 물건이고, 사지 않고 읽을 수 있는 길도 따로 있다.</p><p><strong>정식 표준을 사는 길.</strong> C의 현재 표준은 <strong>ISO/IEC 9899:2024</strong>(C23)이고, 2024년 10월에 발행됐다. ISO 온라인 스토어에서 PDF로 즉시 구매할 수 있으며 가격은 200 스위스 프랑대다(개정판이 나오면 문서 번호와 가격이 바뀐다). 각국 표준화 기관을 통해 사는 방법도 있는데, 한국에서는 한국표준협회가 운영하는 한국표준정보망(KSSN)에서 ISO·IEC 표준을 검색해 구매할 수 있다. 미국은 ANSI 웹스토어가 같은 역할을 한다. 어느 경로로 사든 내용은 같다.</p><p>이전 판들도 각각의 번호로 팔린다 — C17은 ISO/IEC 9899:2018, C11은 9899:2011, C99는 9899:1999다. 오래된 코드베이스의 기준 판을 확인해야 할 때 쓸모가 있다.</p><p><strong>무료 초안을 받는 길.</strong> 실무에서 훨씬 자주 쓰이는 쪽이 이것이다. 표준 위원회(ISO/IEC JTC1/SC22/WG14)는 작업 문서를 공개 저장소에 올려 둔다. <strong>이 초안들은 “발행된 표준”이 아니다</strong> — 이것부터 못박아 두자.</p><p>C99·C11·C17 은 사정이 단순하다. 발행 직전의 마지막 작업 초안(N1256·N1570· N2176)이 최종 표준과 사실상 같아서, 표준 문서 자체를 인용해야 하는 경우가 아니라면 그 초안으로 충분하다.</p><p><strong>C23 은 다르다.</strong> 널리 쓰이는 N3220 은 C23 발행 <strong>직전</strong>의 초안이 아니라, C23이 발행된 뒤에 나온 다음 판(C2y)의 초기 작업 초안이다 — C23 에 편집상 수정을 얹은 문서다. 내용이 C23 과 매우 가까워 실무에서 널리 참조되지만, <strong>정확한 인용이 필요하면 발행된 ISO/IEC 9899:2024 를 근거로 삼아야 한다.</strong></p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>표준판</strong></th><th><strong>정식 번호</strong></th><th><strong>무료 초안</strong></th></tr><tr><td>C23</td><td>ISO/IEC 9899:2024</td><td>N3220 (엄밀히는 C23 직후의 작업 초안)</td></tr><tr><td>C17</td><td>ISO/IEC 9899:2018</td><td>N2176</td></tr><tr><td>C11</td><td>ISO/IEC 9899:2011</td><td>N1570</td></tr><tr><td>C99</td><td>ISO/IEC 9899:1999</td><td>N1256 (정오표 반영판)</td></tr></table></div><span id="proven-float-814"></span><p class="float-caption">표 115.7 — 표준판과 무료 초안</p></figure><p>받는 곳은 WG14의 문서 목록이다 — <a href="https://open-std.org"><code>open-std.org</code></a> 아래 <code>jtc1/sc22/wg14/www/docs/</code>에 문서 번호 그대로 올라와 있다(예를 들어 C23 초안은 <code>n3220.pdf</code>다). 같은 자리에 결함 보고서와 제안서들도 쌓여 있어서, “이 조항이 왜 이렇게 되었나”를 추적할 때 요긴하다.</p><p><strong>읽는 요령.</strong> 표준 문서는 앞에서부터 읽는 책이 아니라 찾아보는 책이다. 목차와 색인으로 조항을 찾고, 그 조항의 문장만 정확히 읽는 것이 정석이다. 읽을 때 도움이 되는 규약이 몇 가지 있다.</p><ul><li>“shall”은 요구, “shall not”은 금지다. <strong>제약 조항의 shall을 어기면 진단(diagnostic)이 나오고, 제약 밖의 shall을 어기면 정의되지 않은 동작</strong>이다(56장).</li><li>부록 K에 정의되지 않은 동작·미지정 동작·구현 정의 동작의 <strong>목록</strong>이 모여 있다. 56장에서 다룬 세 회색지대를 한꺼번에 훑어보기 좋은 자리다.</li><li>각 조항 끝의 “EXAMPLE”과 각주는 규범이 아니라 설명이다. 다투는 자리에서는 본문 문장이 기준이다.</li></ul><h3 id="sx11">이 책 다음의 길<a class="plink" href="sec130.html#sx11" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>정리하면 세 갈래다.</p><ul><li><strong>더 읽는다</strong> — 앞에 든 책들과 무료 자료. 표준 문서를 직접 여는 습관까지.</li><li><strong>더 써 본다</strong> — 문제 사이트로 손을 풀고, 작은 프로그램 하나를 끝까지 만든다.</li><li><strong>더 깊이 본다</strong> — 109장 실전의 C가 가리키는 영역들(시스템 프로그래밍, 임베디드, 성능)과 제13부가 보여 준 라이브러리 설계.</li></ul><p>이 책이 목표한 것은 그 셋의 <strong>바닥</strong>이었다. 바닥이 단단하면 어느 갈래로 가든 덜 흔들린다.</p><p>★ 그런데 「그래서 내일 아침에 무엇을 시작할 것인가」는 이 부록이 답하지 않는다. 읽을거리가 아니라 <strong>만들 것과 갈 길</strong>이 필요하다면 <strong>부록 O</strong>로 간다 — 다 배웠는데 못 만들겠다는 자리에서, 갈래 넷과 작은 프로젝트 목록을 놓아 두었다.</p>
+<div class="nav"><a href="sec132.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="sec134.html">다음 →</a></div>
+</div></main>
+<script>(function(){var b=document.querySelector('.here-btn'),p=document.getElementById('here-panel');function open(o){if(!p)return;p.hidden=!o;if(b)b.setAttribute('aria-expanded',o);}if(b)b.addEventListener('click',function(){open(p.hidden);});if(p)p.addEventListener('click',function(e){if(e.target.tagName==='A'&&e.target.getAttribute('href').charAt(0)==='#')open(false);});document.addEventListener('keydown',function(e){if(e.key==='Escape')open(false);});var box=document.getElementById('setbox'),so=document.getElementById('set-open');if(!box||!so)return;var r=document.documentElement;function load(){try{return JSON.parse(localStorage.getItem('pcb-read')||'{}');}catch(e){return {};}}function save(s){try{localStorage.setItem('pcb-read',JSON.stringify(s));}catch(e){}}function css(n){return getComputedStyle(r).getPropertyValue(n).trim();}function paint(){var s=load();document.getElementById('s-width').checked=!!s.width;var t=s.theme||'auto';[].forEach.call(box.querySelectorAll('.segb'),function(x){x.setAttribute('aria-pressed',x.dataset.theme===t);});document.getElementById('s-fg').value=s.fg||hex(css('--fg'));document.getElementById('s-bg').value=s.bg||hex(css('--bg'));document.getElementById('s-link').value=s.link||hex(css('--link'));}function hex(v){var m=v.match(/^rgba?\((\d+)[ ,]+(\d+)[ ,]+(\d+)/);if(!m)return v.charAt(0)==='#'?v:'#000000';return '#'+[1,2,3].map(function(i){return ('0'+parseInt(m[i],10).toString(16)).slice(-2);}).join('');}so.addEventListener('click',function(){box.hidden=!box.hidden;so.setAttribute('aria-expanded',!box.hidden);if(!box.hidden)paint();});document.getElementById('s-width').addEventListener('change',function(){var s=load();s.width=this.checked;save(s);if(s.width)r.setAttribute('data-measure','on');else r.removeAttribute('data-measure');});[].forEach.call(box.querySelectorAll('.segb'),function(x){x.addEventListener('click',function(){var s=load();s.theme=x.dataset.theme;delete s.fg;delete s.bg;delete s.link;save(s);['--fg','--bg','--link'].forEach(function(n){r.style.removeProperty(n);});if(s.theme==='auto')r.removeAttribute('data-theme');else r.setAttribute('data-theme',s.theme);setTimeout(paint,0);});});[['s-fg','--fg','fg'],['s-bg','--bg','bg'],['s-link','--link','link']].forEach(function(a){document.getElementById(a[0]).addEventListener('input',function(){var s=load();s[a[2]]=this.value;save(s);r.style.setProperty(a[1],this.value);});});})();</script><script>
+(function(){
+  var q=document.getElementById('q'), out=document.getElementById('qr');
+  if(!q||!out) return;
+  var data=null, NONE="\ucc3e\uc740 \uac83\uc774 \uc5c6\ub2e4";
+  function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+  function run(){
+    var v=q.value.trim().toLowerCase();
+    out.innerHTML='';
+    if(!v||!data) return;
+    var hits=[];
+    for(var i=0;i<data.length && hits.length<40;i++){
+      if(data[i][0].toLowerCase().indexOf(v)>=0) hits.push(data[i]);
+    }
+    if(!hits.length){ out.innerHTML='<li>'+NONE+'</li>'; return; }
+    out.innerHTML=hits.map(function(h){
+      return '<li><a href="'+h[1]+'">'+esc(h[0])+'</a>'+
+             (h[2]?'<span class="where">'+esc(h[2])+'</span>':'')+'</li>';
+    }).join('');
+  }
+  q.addEventListener('input',function(){
+    if(data){ run(); return; }
+    fetch('search-index.json').then(function(r){return r.json();})
+      .then(function(j){ data=j; run(); })
+      .catch(function(){ out.innerHTML='<li>'+NONE+'</li>'; });
+  });
+})();
+</script></body></html>
