@@ -26,7 +26,7 @@ int main(void)
     memcpy(&u, &f, sizeof u);
     show("through memcpy", u);
 
-    /* ③ 포인터 캐스트 — *이것만 계약 밖이다*(엄격한 앨리어싱, 37장).
+    /* ③ 포인터 캐스트 — *이것만 계약 밖이다*(엄격한 앨리어싱, 56장).
          값이 같아 보여도 컴파일러가 순서를 바꿀 권리를 갖는다.
          아래 줄은 보이기 위해 적었을 뿐, 쓰면 안 되는 형태다. */
     puts("  through a pointer cast          *(uint32_t *)&f - outside the contract, not shown");

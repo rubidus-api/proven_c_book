@@ -3,7 +3,7 @@
 
 int main(void)
 {
-    /* 정수 승격: char·short는 계산 전에 int로 넓혀진다 */
+    /* 정수 진급: char·short는 계산 전에 int로 넓혀진다 */
     signed char a = 100;
     signed char b = 100;
     printf("100 + 100 (as chars) = %d\n", a + b);   /* 200 — char에는 안 담기는 값 */

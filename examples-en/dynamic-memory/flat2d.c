@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-/* The subscript macro: every argument wrapped in parentheses (chapter 57), and the
+/* The subscript macro: every argument wrapped in parentheses (chapter 65), and the
    product raised to size_t. i and j are evaluated once, so side effects are safe. */
 #define AT(p, cols, i, j)  ((p)[(size_t)(i) * (size_t)(cols) + (size_t)(j)])
 

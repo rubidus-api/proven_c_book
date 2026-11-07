@@ -63,7 +63,7 @@ int main(void)
 
     printf("\n[but the preprocessor runs before any of this]\n");
     printf("  %s\n", preproc);
-    printf("  #if and #define live in a different world (chapter 57)\n");
+    printf("  #if and #define live in a different world (chapter 65)\n");
 
     /* every line below is a compile error - the value must be exactly representable.
            constexpr unsigned int m = -1;      the value does not fit

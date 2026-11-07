@@ -13,7 +13,7 @@ static void one_base_type(void)
         printf("  a[%d] = %d\n", n, *p);
 
     /* for (int i = 0; double x = 0.0;) 는 문법 오류다 —
-       "expected expression before 'double'" (gcc·clang 모두) */
+       gcc 는 "expected expression before 'double'", clang 은 "expected expression" */
 }
 
 /* ② 이름의 수명은 루프 하나다 — 세 칸과 몸통까지, 그리고 거기서 끝난다. */

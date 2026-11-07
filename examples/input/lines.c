@@ -24,6 +24,6 @@ int main(void)
 
     puts("\n[two reasons reading stops]");
     puts("  when fgets returns NULL it is either end of file or an error.");
-    puts("  feof and ferror tell them apart; chapter 63 covers that properly.");
+    puts("  feof and ferror tell them apart; chapter 78 covers that properly.");
     return 0;
 }

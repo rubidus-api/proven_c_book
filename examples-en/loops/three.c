@@ -81,7 +81,7 @@ static int odd_sum_while_fixed(void)
 
 /* Where do-while really earns its keep - walking backwards with an unsigned index.
    size_t cannot go below 0, so for (size_t i = n-1; i >= 0; i--) is an endless
-   loop (chapter 41). do-while writes down exactly 'step down first, handle 0,
+   loop (chapter 42). do-while writes down exactly 'step down first, handle 0,
    then stop'. Since the body runs first, n must not be 0 - and that check is
    part of the pattern. */
 static void countdown(size_t n)

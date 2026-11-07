@@ -28,7 +28,7 @@ int main(void)
     show("through memcpy", u);
 
     /* (3) a pointer cast — *only this one is outside the contract* (strict
-         aliasing, chapter 37). The value may look right, but the compiler is
+         aliasing, chapter 56). The value may look right, but the compiler is
          entitled to reorder. The line below is shown, not used. */
     puts("  through a pointer cast       *(uint32_t *)&f — outside the contract, not run");
 

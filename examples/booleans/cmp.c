@@ -2,7 +2,7 @@
 
 int main(void)
 {
-    bool tall = 10 > 3;                 /* 비교의 결과는 bool 값이다 */
+    bool tall = 10 > 3;                 /* 비교의 결과(1)가 bool 에 담긴다 */
     printf("%d\n", tall);
     printf("%d\n", 3 < 5 && 2 + 2 == 4);
 

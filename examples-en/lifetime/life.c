@@ -16,7 +16,7 @@ int fresh_count(void)
 
 int main(void)
 {
-    /* calls with side effects get their own statements — chapter 29's rule as it is */
+    /* calls with side effects get their own statements — chapter 34's rule as it is */
     int t1 = next_ticket();
     int t2 = next_ticket();
     int t3 = next_ticket();

@@ -11,7 +11,7 @@
 #define MY_PROGRAM_VERSION  "v3.1.2"
 #define PROGRAM_TITLE       "my_program " MY_PROGRAM_VERSION
 
-/* 숫자로 관리하는 버전은 두 겹 우회로 문자열이 된다(57장) */
+/* 숫자로 관리하는 버전은 두 겹 우회로 문자열이 된다(65장) */
 #define VER_MAJOR 3
 #define VER_MINOR 1
 #define STR_RAW(x) #x
@@ -24,7 +24,7 @@ int main(void)
     printf("sizeof \"abcdef\" = %zu  (six characters + NUL)\n", sizeof "abcdef");
     printf("sizeof \"\"       = %zu  (even an empty string has its NUL)\n", sizeof "");
 
-    /* 배열이므로 첨자를 붙일 수 있다 — 38장의 a[i] == *(a+i) 그대로 */
+    /* 배열이므로 첨자를 붙일 수 있다 — 39장의 a[i] == *(a+i) 그대로 */
     printf("\"abcdef\"[3] = %c\n", "abcdef"[3]);
     printf("3[\"abcdef\"] = %c   <- the subscript can be swapped (it means the same)\n", 3["abcdef"]);
 

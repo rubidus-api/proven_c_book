@@ -16,7 +16,7 @@ int fresh_count(void)
 
 int main(void)
 {
-    /* 부수효과 있는 호출은 문장을 나눈다 — 29장의 수칙 그대로 */
+    /* 부수효과 있는 호출은 문장을 나눈다 — 34장의 수칙 그대로 */
     int t1 = next_ticket();
     int t2 = next_ticket();
     int t3 = next_ticket();

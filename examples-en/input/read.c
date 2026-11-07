@@ -2,7 +2,7 @@
 
 int main(void)
 {
-    char line[100];   /* room for 100 characters — properly explained in chapter 33 */
+    char line[100];   /* room for 100 characters — properly explained in chapter 39 */
     int n = 0;
 
     fgets(line, sizeof line, stdin);   /* step 1: read one whole line */

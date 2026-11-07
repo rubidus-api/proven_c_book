@@ -13,7 +13,7 @@ static void one_base_type(void)
         printf("  a[%d] = %d\n", n, *p);
 
     /* for (int i = 0; double x = 0.0;) is a syntax error -
-       "expected expression before 'double'" on both gcc and clang */
+       gcc: "expected expression before 'double'"; clang: "expected expression" */
 }
 
 /* 2. The name lives for one loop - the three slots and the body, and no further. */

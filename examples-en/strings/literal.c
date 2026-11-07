@@ -11,7 +11,7 @@
 #define MY_PROGRAM_VERSION  "v3.1.2"
 #define PROGRAM_TITLE       "my_program " MY_PROGRAM_VERSION
 
-/* a version kept as numbers becomes a string through a double indirection (chapter 57) */
+/* a version kept as numbers becomes a string through a double indirection (chapter 65) */
 #define VER_MAJOR 3
 #define VER_MINOR 1
 #define STR_RAW(x) #x
@@ -24,7 +24,7 @@ int main(void)
     printf("sizeof \"abcdef\" = %zu  (six characters + NUL)\n", sizeof "abcdef");
     printf("sizeof \"\"       = %zu  (an empty string is still one NUL)\n", sizeof "");
 
-    /* being an array, it takes a subscript — chapter 38's a[i] == *(a+i) as it is */
+    /* being an array, it takes a subscript — chapter 39's a[i] == *(a+i) as it is */
     printf("\"abcdef\"[3] = %c\n", "abcdef"[3]);
     printf("3[\"abcdef\"] = %c   <- the subscript commutes (it means the same)\n", 3["abcdef"]);
 

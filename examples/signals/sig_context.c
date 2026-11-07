@@ -66,7 +66,7 @@ int main(void)
            before, strerror(before), errno, strerror(errno));
 
     /* ③ 계산 도중에 끼어들어도 결과가 같다.
-       이 구현은 처리 뒤 SIG_DFL 로 되돌아가므로(76장) 다시 걸어 준다. */
+       이 구현은 처리 뒤 SIG_DFL 로 되돌아가므로(91장) 다시 걸어 준다. */
     signal(SIGUSR1, careful);
     hits = 0;
     long quiet = compute(0);            /* 신호 없이 */
@@ -77,7 +77,7 @@ int main(void)
     puts(quiet == hit ? "the same - the kernel saved every register and gave them back"
                       : "different - this should not happen");
 
-    puts("\nthis is where it differs from setjmp/longjmp (chapter 77):");
+    puts("\nthis is where it differs from setjmp/longjmp (chapter 92):");
     puts("  a signal: the kernel saves and restores the *whole* register set ->");
     puts("        you can return into the middle of an expression and the arithmetic continues.");
     puts("  longjmp: a jmp_buf holds only the *callee-saved* registers ->");

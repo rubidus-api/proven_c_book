@@ -2,7 +2,7 @@
 
 int main(void)
 {
-    bool tall = 10 > 3;                 /* the result of a comparison is a bool */
+    bool tall = 10 > 3;                 /* the comparison yields 1, stored in a bool */
     printf("%d\n", tall);
     printf("%d\n", 3 < 5 && 2 + 2 == 4);
 

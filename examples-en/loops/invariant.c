@@ -1,5 +1,5 @@
 /* Seeing an invariant - the proposition that holds on every turn, actually checked.
-   assert writes down "this must be true here" as code (chapter 17). */
+   assert writes down "this must be true here" as code (chapter 55). */
 #include <assert.h>
 #include <stdio.h>
 

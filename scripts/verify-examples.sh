@@ -117,6 +117,11 @@ for src in $(find "$root/$tree" -name '*.c' | sort); do
     if grep -q '#include <stdatomic.h>' "$src"; then
         extra="$extra -latomic"
     fi
+    # ★ `backtrace_symbols` 는 *동적* 심볼 표에서 이름을 찾는다. `-rdynamic` 없이
+    #   이으면 `main` 도 그 표에 오르지 않아, 부록의 「`main` 은 이름으로 나온다」가 틀린다.
+    if grep -q '#include <execinfo.h>' "$src"; then
+        extra="$extra -rdynamic"
+    fi
     if grep -q '#include <proven' "$src"; then
         if ! build_vendor; then
             echo "FAIL vendor build (needed by $rel)"

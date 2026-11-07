@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define LINE 64            /* the size of one cache line (chapter 11) */
+#define LINE 64            /* the size of one cache line (chapter 12) */
 
 /* Walk the order, take the cache-line number of each access, and count how
    many distinct lines appear and how often it is the same line as last time. */

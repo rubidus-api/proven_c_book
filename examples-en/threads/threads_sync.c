@@ -59,7 +59,7 @@ static int touch(void *arg)
 }
 
 /* -- 4: one copy per strand ------------------------------------------------ */
-static thread_local int mine;        /* a C23 keyword (chapter 82) */
+static thread_local int mine;        /* a C23 keyword (chapter 97) */
 static int per_thread(void *arg)
 {
     mine = *(int *)arg;              /* each strand has its own */

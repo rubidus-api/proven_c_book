@@ -59,7 +59,7 @@ static int touch(void *arg)
 }
 
 /* ── ④ 갈래마다 따로 ──────────────────────────────────────────── */
-static thread_local int mine;        /* C23 의 키워드 (81장) */
+static thread_local int mine;        /* C23 의 키워드 (97장) */
 static int per_thread(void *arg)
 {
     mine = *(int *)arg;              /* 갈래마다 제 몫이 따로 있다 */

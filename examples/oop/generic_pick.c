@@ -33,7 +33,7 @@ int main(void)
     /* C 에서 문자 상수는 int 다 */
     printf("%-16s -> %s\n", "'a'",        type_name('a'));
     printf("%-16s -> %s\n", "c (a char)", type_name(c));
-    printf("%-16s -> %s\n", "c + 1",      type_name(c + 1));   /* 승격된다 */
+    printf("%-16s -> %s\n", "c + 1",      type_name(c + 1));   /* 진급된다 */
     printf("%-16s -> %s\n", "byte",       type_name(byte));    /* uint8_t 는 typedef 다 */
     printf("%-16s -> %s\n", "ci (const)", type_name(ci));      /* 한정자가 떨어진다 */
     printf("%-16s -> %s\n", "arr",        type_name(arr));     /* 배열이 무너진다 */
