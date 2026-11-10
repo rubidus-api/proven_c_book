@@ -6,9 +6,13 @@
 # Termux 는 *진짜 ARM* 이다. 이 스크립트는 그 기계에서 예제를 책과 같은 옵션으로 짓고
 # 돌려, 기계 정보와 함께 한 파일로 모은다.
 #
-# 쓰는 법 (Termux):
+# 쓰는 법 (Termux) --- 두 줄이면 된다:
 #   curl -fsSLo arm-report.sh https://raw.githubusercontent.com/rubidus-api/proven_c_book/main/scripts/termux-arm-report.sh
 #   bash arm-report.sh
+#   → 끝나면 스크립트 *바로 옆*에 proven-arm-report-날짜.txt 가 생긴다. 그 파일 내용을 그대로 붙여 주면 된다.
+#
+#   - clang · curl · taskset(util-linux)이 없으면 pkg 로 설치한다(NOINSTALL=1 이면 설치하지 않고 멈춘다).
+#   - 돌리는 동안 termux-wake-lock 이 있으면 걸어 둔다(화면이 꺼져 느려지지 않게).
 #
 #   - 충전기를 꽂고 화면을 켜 둔 채로 돌린다(절전·발열이 수를 바꾼다).
 #   - 8 GB 를 건드리는 promise 예제는 여유 기억이 충분할 때만 돈다. 억지로 돌리려면 FULL=1.
@@ -18,24 +22,41 @@
 #     한 코어가 아니라 묶음인 까닭: 안드로이드는 쉬는 코어를 수시로 끈다 --- 꺼진 코어 하나에 묶으면
 #     taskset 이 Invalid argument 로 실패한다(실제로 그랬다). 묶지 않으려면 PIN=none.
 #
-# 이 스크립트는 기기에 아무것도 설치하지 않는다 --- clang 이 없으면 설치 명령을 알려 주고 멈춘다.
 set -u
 
 REF=${REF:-main}
 BASE=${BASE:-https://raw.githubusercontent.com/rubidus-api/proven_c_book/$REF}
 WORK=${WORK:-$HOME/proven-arm-work}
 STAMP=$(date +%Y%m%d-%H%M)
-REPORT=${REPORT:-$HOME/proven-arm-report-$STAMP.txt}
-SCRIPT_VERSION=3
+# 보고서는 스크립트 옆에 둔다(curl | bash 로 돌리면 지금 폴더에).
+case "$0" in
+    */*) HERE=$(cd "$(dirname "$0")" 2>/dev/null && pwd) ;;
+    *)   HERE=$(pwd) ;;
+esac
+REPORT=${REPORT:-${HERE:-$HOME}/proven-arm-report-$STAMP.txt}
+SCRIPT_VERSION=4
 
-EXAMPLES="apx-measured/clock_probe apx-measured/cache_ladder apx-measured/stride
+EXAMPLES=${EXAMPLES:-"apx-measured/clock_probe apx-measured/cache_ladder apx-measured/stride
 apx-measured/tlb_walk apx-measured/branch apx-measured/false_sharing apx-measured/fp_cost
-apx-memory/promise apx-memory/firsttouch apx-memory/cow apx-memory/layout"
+apx-memory/promise apx-memory/firsttouch apx-memory/cow apx-memory/layout"}
 
 say() { printf '%s\n' "$*" | tee -a "$REPORT"; }
 kv()  { printf '  %-22s %s\n' "$1" "$2" | tee -a "$REPORT"; }
 
 # ── 준비물 ──────────────────────────────────────────────────────────────
+need_pkg() {                 # need_pkg <명령> <패키지>
+    command -v "$1" >/dev/null 2>&1 && return 0
+    if [ "${NOINSTALL:-0}" = 1 ] || ! command -v pkg >/dev/null 2>&1; then return 1; fi
+    echo "[$1 이 없어 설치합니다: pkg install -y $2]"
+    pkg install -y "$2" >/dev/null 2>&1 || yes | pkg install "$2" >/dev/null 2>&1
+    command -v "$1" >/dev/null 2>&1
+}
+need_pkg curl curl
+[ -z "${CC:-}" ] && { need_pkg clang clang || true; }
+[ "${PIN:-auto}" = auto ] && { need_pkg taskset util-linux || true; }
+if command -v termux-wake-lock >/dev/null 2>&1; then
+    termux-wake-lock 2>/dev/null && trap 'termux-wake-unlock 2>/dev/null' EXIT
+fi
 if [ -z "${CC:-}" ]; then
     if command -v clang >/dev/null 2>&1; then CC=clang
     elif command -v gcc >/dev/null 2>&1; then CC=gcc
@@ -159,6 +180,21 @@ if [ -n "$fast" ]; then
         i=$((i + 1))
     done
 fi
+# 가장 느린 코어(효율 코어)와 그 묶음 --- 백로그의 「효율 코어 쪽 곡선」을 위한 것
+slow=$(for f in /sys/devices/system/cpu/cpu[0-9]*/cpufreq/cpuinfo_max_freq; do
+           [ -r "$f" ] && printf '%s %s\n' "$(cat "$f")" "$(echo "$f" | sed 's#.*/cpu\([0-9]*\)/cpufreq.*#\1#')"
+       done | sort -n | head -1 | awk '{print $2}')
+slowcluster=""
+if [ -n "$slow" ]; then
+    eval "spart=\"\${part_$slow:-?}\""
+    i=0
+    while [ "$i" -lt "$ncpu" ]; do
+        eval "pp=\"\${part_$i:-?}\""
+        [ "$pp" = "$spart" ] && slowcluster="${slowcluster:+$slowcluster,}$i"
+        i=$((i + 1))
+    done
+fi
+[ "$slowcluster" = "$cluster" ] && slowcluster=""
 PIN=${PIN:-auto}
 if [ "$PIN" = auto ]; then
     if command -v taskset >/dev/null 2>&1 && [ -n "$cluster" ]; then PIN=$cluster; else PIN=none; fi
@@ -213,6 +249,51 @@ for ex in $EXAMPLES; do
     grep -v '^#DATA' "$dir/out.txt" | sed 's/·/|/g; s/…/.../g; s/—/---/g' | tee -a "$REPORT"
     say "  [exit $rc | $(( $(date +%s) - start )) s${runner:+ | $runner}]"
 done
+
+
+# ── 백로그의 추가 측정 (script v4) ───────────────────────────────────────
+# ① 거짓 공유를 코어 묶음에 고정해서: 묶지 않았을 때 손해가 안 보인 까닭이 「두 스레드가
+#   서로 다른 묶음(다른 캐시)에 올라갔기 때문」인지 가른다. 두 스레드가 같은 묶음에 있어야 하므로
+#   코어가 둘 이상인 묶음만 쓴다.
+# ② 효율 코어 쪽 곡선: cache_ladder 를 가장 느린 코어 묶음에 묶어 다시 돈다.
+pinned_run() {               # pinned_run <예제> <cpus> <이름표>
+    ex=$1; cpus=$2; label=$3; dir="$WORK/$ex"
+    say ""
+    say "---------- $ex pinned to $label (cpus $cpus) ----------"
+    if [ ! -f "$dir/run.sh" ]; then say "  (not downloaded --- skipped)"; return; fi
+    if ! command -v taskset >/dev/null 2>&1; then say "  (no taskset --- pkg install util-linux)"; return; fi
+    need=$(need_kb "$ex")
+    if [ "${FULL:-0}" != 1 ] && [ -n "$avail_kb" ] && [ "$avail_kb" -lt "$need" ]; then
+        say "  SKIPPED --- needs about $((need / 1024)) MB free"; return
+    fi
+    start=$(date +%s)
+    ( cd "$dir" && taskset -c "$cpus" timeout 900 sh ./run.sh ) >"$dir/out-$label.txt" 2>&1
+    rc=$?
+    if grep -q "^taskset:" "$dir/out-$label.txt"; then
+        say "  (pinning failed: $(grep -m1 '^taskset:' "$dir/out-$label.txt") --- Android may have switched those cores off)"
+        return
+    fi
+    grep -v '^#DATA' "$dir/out-$label.txt" | sed 's/·/|/g; s/…/.../g; s/—/---/g' | tee -a "$REPORT"
+    say "  [exit $rc | $(( $(date +%s) - start )) s | taskset -c $cpus]"
+}
+ncl() { printf '%s' "$1" | awk -F, '{print NF}'; }
+say ""
+say "== extra runs: false sharing pinned, and the efficiency cores =="
+kv "fast cluster" "${cluster:-?} (cpu${fast:-?}, part ${fpart:-?})"
+kv "slow cluster" "${slowcluster:-none found} ${slow:+(cpu$slow, part ${spart:-?})}"
+if [ -n "$cluster" ] && [ "$(ncl "$cluster")" -ge 2 ]; then
+    pinned_run apx-measured/false_sharing "$cluster" fast-cluster
+else
+    say "  (fast cluster has fewer than two cores --- false sharing cannot be pinned there)"
+fi
+if [ -n "$slowcluster" ] && [ "$(ncl "$slowcluster")" -ge 2 ]; then
+    pinned_run apx-measured/false_sharing "$slowcluster" slow-cluster
+fi
+if [ -n "$slowcluster" ]; then
+    pinned_run apx-measured/cache_ladder "$slowcluster" slow-cluster
+else
+    say "  (no separate slow cluster --- the efficiency-core curve is not taken)"
+fi
 
 say ""
 say "== diagnosis: what /proc/self/smaps says after filling 64 MiB (cow reported 0 MB here) =="
@@ -269,7 +350,7 @@ kv "battery temp" "$(readv /sys/class/power_supply/battery/temp) (0.1 C) at end"
 say "===== END OF REPORT ====="
 echo
 echo "보고서 파일: $REPORT"
-echo "위의 ===== PROVEN C BOOK ARM REPORT 부터 END OF REPORT 까지 복사해 전달하면 됩니다."
+echo "이 파일 내용을 그대로 복사해 전달하면 됩니다:  cat \"$REPORT\""
 if command -v termux-clipboard-set >/dev/null 2>&1; then
     echo "(Termux:API 가 있으면:  termux-clipboard-set < \"$REPORT\"  로 한 번에 복사)"
 fi
