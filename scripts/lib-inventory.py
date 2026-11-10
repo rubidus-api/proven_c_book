@@ -109,6 +109,28 @@ def tidy_decl(decl, name):
 #   보는데, 함수 포인터를 돌려주는 선언에서는 그 자리에 타입이 온다 ---
 #   `void (*signal(int, void (*)(int)))(int);` 에서 `void (` 가 걸려
 #   `signal.h` 의 함수 목록에 **void** 가 들어와 있었다(2026-08-31 발견).
+# 부속서 B 가 소문자로 적은 매크로 · 타입 --- 산문 낱말과 갈라 낼 길이 없어 이름을 적는다.
+LOWER_MACROS = {
+    "errno", "math_errhandling", "offsetof", "unreachable", "stdin", "stdout", "stderr",
+    "va_arg", "va_copy", "va_end", "va_start", "complex", "imaginary",
+}
+# `<iso646.h>` 의 이름은 영어 낱말이라 다른 헤더의 조건 문장(「Only if … and …」)에도 나온다.
+ISO646 = {"and", "and_eq", "bitand", "bitor", "compl", "not", "not_eq", "or", "or_eq", "xor", "xor_eq"}
+LOWER_TYPES = {
+    "memory_order", "atomic_flag", "va_list", "jmp_buf",
+    "atomic_bool", "atomic_char", "atomic_schar", "atomic_uchar", "atomic_short", "atomic_ushort",
+    "atomic_int", "atomic_uint", "atomic_long", "atomic_ulong", "atomic_llong", "atomic_ullong",
+}
+# 이름처럼 생겼지만 헤더가 주는 것이 아닌 것: 키워드, 부속서 B 의 조건 문장 속 이름,
+# 표준이 줄을 바꾸며 쪼갠 조각.
+NOT_A_MACRO = {
+    "_Bool", "_Complex", "_Atomic", "_Noreturn", "_Imaginary", "_Decimal32", "_Decimal64", "_Decimal128",
+    "_Decimal32_t", "_Decimal64_t", "QVoid", "QChar", "QWchar_t",
+    "__STDC_WANT_LIB_EXT1__", "__STDC_WANT_IEC_60559_EXT__", "FP_FA", "FILEN",
+    "_Exit",    # 함수다 --- 이름이 대문자로 시작해 함수 정규식이 못 받는다
+}
+
+
 NOT_A_NAME = {
     "void", "int", "char", "long", "short", "float", "double", "signed",
     "unsigned", "const", "volatile", "restrict", "struct", "union", "enum",
@@ -140,9 +162,20 @@ def parse_header(chunk):
     functions = [{"name": b, "variants": sorted(v), "decl": decls[b if b in decls else v[0]]}
                  for b, v in sorted(groups.items())]
 
-    macros = sorted({m for m in re.findall(r"\b([A-Z][A-Z0-9_]{2,})\b", chunk)
-                     if not m.startswith("ISO")})
-    types = sorted(set(re.findall(r"\b([a-z_][a-z0-9_]*_t)\b", chunk)))
+    # ★ 매크로 이름은 대문자만이 아니다 (2026-11-10). 처음 정규식은 `[A-Z][A-Z0-9_]{2,}` 라
+    #   밑줄로 시작하는 것(`__STDC_VERSION_STDIO_H__` · `_PRINTF_NAN_LEN_MAX` · `_IOFBF`)과
+    #   소문자가 섞인 것(`PRIdN` · `SCNxPTR`)을 통째로 놓쳤다. 그래서 요람 검사가 그것들을
+    #   한 번도 묻지 않았다.
+    macros = {m for m in re.findall(r"(?<![A-Za-z0-9_])(_{1,2}[A-Za-z][A-Za-z0-9_]*|[A-Z][A-Z0-9_]{2,}"
+                                    r"|(?:PRI|SCN)[A-Za-z0-9]+)(?![A-Za-z0-9_])", chunk)
+              if not m.startswith("ISO")}
+    macros |= {w for w in re.findall(r"\b([a-z][a-z0-9_]*)\b", chunk) if w in LOWER_MACROS}
+    macros -= NOT_A_MACRO
+    types = set(re.findall(r"\b([a-z_][a-z0-9_]*_t)\b", chunk))
+    types |= {w for w in re.findall(r"\b([a-z][a-z0-9_]*)\b", chunk) if w in LOWER_TYPES}
+    types -= NOT_A_MACRO
+    fn = {v for f in functions for v in f["variants"]}
+    macros, types = sorted(macros - fn), sorted(types - fn)
     return {"functions": functions, "macros": macros, "types": types}
 
 
@@ -161,6 +194,8 @@ def main() -> int:
     inv = {}
     for hdr, chunk in split_headers(annex_b(text)):
         inv[hdr] = parse_header(chunk)
+        if hdr == "iso646.h":
+            inv[hdr]["macros"] = sorted(set(inv[hdr]["macros"]) | ISO646)
 
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(inv, ensure_ascii=False, indent=1), encoding="utf-8")

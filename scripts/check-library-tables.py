@@ -199,6 +199,27 @@ def every_header_has_section(inv, skip) -> int:
     return bad
 
 
+def group_patterns(text):
+    """요람이 *무리*로 적은 이름을 정규식으로 푼다 (2026-11-10).
+
+    매크로는 수십 개가 한 규칙으로 늘어선다. 요람은 그것을 하나하나 적지 않고
+    무리로 적는다 --- 그 표기를 풀어 읽지 못하면 매크로 대조는 잡음만 낸다.
+      · `…` 은 이름 조각 아무것: `ATOMIC_…_LOCK_FREE`, `FP_FAST_…`, `__STDC_VERSION_…_H__`, `SCN…`
+      · `PRI`·`SCN` 바로 뒤의 `B` 는 변환 글자 자리(`PRIBN` = `PRIdN`·`PRIxN` …),
+        자리에 오는 글자는 `b`·`d`·`i`·`o`·`u`·`x` 다(요람의 「형식 매크로를 읽는 규칙」 표). 대문자 `X` 판과
+        글자 그대로의 `PRIB…`(대문자 2진, 선택 사항)는 요람이 이름으로 적으므로 무리로 풀지 않는다.
+      · `N` 은 인벤토리도 `N` 으로 적으므로(부속서 B 의 표기) 그대로 맞춘다.
+    """
+    pats = []
+    for tok in set(re.findall(r"`([A-Za-z_][A-Za-z0-9_…]*)`", text)):
+        if "…" in tok:
+            pats.append(re.compile("^" + re.escape(tok).replace("…", "[A-Za-z0-9_]+") + "$"))
+        m = re.fullmatch(r"(PRI|SCN)B([A-Z]*N|MAX|PTR|LEASTN|FASTN)", tok)
+        if m:
+            pats.append(re.compile(f"^{m.group(1)}[bdioux]{m.group(2)}$"))
+    return pats
+
+
 def main() -> int:
     if not INV.exists():
         print("check-library-tables: 인벤토리가 없다 --- "
@@ -225,8 +246,20 @@ def main() -> int:
                 names = set(f["variants"]) | {f["name"]}
                 if not (names & listed):
                     missing.append((hdr, f["name"]))
+        # ★ 매크로 · 타입도 본다 (2026-11-10). 서두는 「함수 · 매크로 · 타입이 하나도
+        #   빠지지 않았음을 기계가 대조한다」고 말하는데, 이 검사는 함수만 보고 있었다.
+        pats = group_patterns(text)
+        missing_mt = []
+        for hdr, v in sorted(inv.items()):
+            if hdr in skip:
+                continue
+            for n in v.get("macros", []) + v.get("types", []):
+                if n not in listed and not any(p.match(n) for p in pats):
+                    missing_mt.append((hdr, n))
         done = sorted(h for h in inv if h not in skip)
-        print(f"  [{lang}] 다룬 헤더 {len(done)}/{len(inv)} · 빠진 함수 {len(missing)}건")
+        print(f"  [{lang}] 다룬 헤더 {len(done)}/{len(inv)} · 빠진 함수 {len(missing)}건"
+              f" · 빠진 매크로 · 타입 {len(missing_mt)}건")
+        missing += missing_mt
         show = missing if "--list" in sys.argv else missing[:15]
         for hdr, n in show:
             print(f"      ⚠️  {hdr}: {n}")
@@ -245,7 +278,7 @@ def main() -> int:
     if total_missing:
         print(f"check-library-tables: 빠진 항목 {total_missing}건")
         return 1
-    print(f"check-library-tables: 착수한 헤더의 함수가 모두 요람에 있다"
+    print(f"check-library-tables: 착수한 헤더의 함수 · 매크로 · 타입이 모두 요람에 있다"
           f"{' · 남은 헤더 ' + str(len(skip)) + '개' if skip else ' · 전 헤더 완료'}")
     return 0
 

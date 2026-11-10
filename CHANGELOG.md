@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 This project follows Keep a Changelog.
 
+## [v0.105.2] - 2026-11-10
+
+### Changed
+- **색인** 표제어 안에만 있던 병기(`메모리 주소(memory address)` 꼴 37곳)를 본문 정의 자리로 옮기고, 표제어는 맨 낱말로 남겼다. 같은 개념의 표제어를 하나로 모았다(프로버넌스 · 스코프 · 핸들 · 능력). v0.104.1 에서 미룬 정오표 세 항목이다.
+- **부록 D(표준 라이브러리 요람)** 함수만 대조하던 완전성 검사가 매크로 · 타입도 본다. 그 검사로 드러난 빠진 이름을 실었다 --- `<math.h>` 의 `float_t` · `double_t` · `FP_FAST_…` 무리 · `FP_CONTRACT` · `FP_ILOGB0` 등 · `FP_INT_…` · `HUGE_VAL_D…` · `__STDC_IEC_…` 표 하나, 헤더마다의 `__STDC_VERSION_…_H__`, `__STDC_LIB_EXT1__`, `_PRINTF_NAN_LEN_MAX`, `__bool_true_false_are_defined`, `<complex.h>` 의 `complex` · `imaginary`. 형식 매크로 규칙표에 2진 `b` 와 선택 사항인 대문자 2진 `PRIB…` 를 더했다.
+
 ## [v0.105.1] - 2026-11-10
 
 ### Changed
