@@ -15,7 +15,7 @@ static size_t put_varint(unsigned char *out, uint64_t v)
     return n;
 }
 
-/* 쓴 바이트 수를 돌려준다. 입력이 잘렸거나 너무 길면 0. */
+/* 읽은 바이트 수를 돌려준다. 입력이 잘렸거나 너무 길면 0. */
 static size_t get_varint(const unsigned char *in, size_t len, uint64_t *v)
 {
     uint64_t x = 0;

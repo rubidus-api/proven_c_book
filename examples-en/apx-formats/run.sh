@@ -9,7 +9,7 @@
 #   (`-nostdlib`, entry point `main`). With neither, that line is skipped *and says so* ---
 #   silently, the reader would think there are two formats.
 # ★ Where the MZ header points to the PE header differs by tool (lld-link on this machine: 0x78).
-#   The text does not quote the number; it has the reader look at the `next hdr` line.
+#   The text quotes this machine's number only as an example; it has the reader look at the `next hdr` line.
 set -eu
 cd "$(dirname "$0")"
 cc=${CC:-gcc}

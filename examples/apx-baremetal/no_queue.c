@@ -1,4 +1,4 @@
-/* 인터럽트는 세지 않는다 --- 대기 비트가 하나뿐이다. */
+/* 밀린 인터럽트는 개수로 쌓이지 않는다 --- 대기 비트가 하나뿐이다. */
 #define _POSIX_C_SOURCE 200809L
 #include <signal.h>
 #include <stdio.h>

@@ -106,7 +106,7 @@ int main(void)
     printf("  / a miss probability of 0.5 = about %.1f ns per misprediction\n", extra_per_elem / 0.5);
 
     printf("\n== how regular must it be to be predicted ==\n");
-    printf("  the same number of trues, with only the pattern changed.\n\n");
+    printf("  the same number of elements, with only the pattern of trues changed.\n\n");
     printf("  %-28s %12s %s\n", "pattern", "each", "note");
     struct { const char *name; int period; } pats[] = {
         { "always true",             1 },

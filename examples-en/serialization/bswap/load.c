@@ -1,5 +1,6 @@
 /* Two ways to read a 32-bit big-endian value from bytes.
-   Neither depends on the machine's own byte order. */
+      Neither gives a result that depends on the machine's byte order; (2) handles only
+   little- and big-endian machines and stops compiling on any other. */
 #include <stdint.h>
 #include <string.h>
 
@@ -18,7 +19,9 @@ uint32_t get_u32be_bswap(const unsigned char *p)
     uint32_t v;
     memcpy(&v, p, sizeof v);
 #if __STDC_ENDIAN_NATIVE__ == __STDC_ENDIAN_LITTLE__
-    v = __builtin_bswap32(v);
+        v = __builtin_bswap32(v);
+#elif __STDC_ENDIAN_NATIVE__ != __STDC_ENDIAN_BIG__
+#error "byte order is neither little nor big endian"
 #endif
     return v;
 }

@@ -83,7 +83,7 @@ int main(void)
            pmbr[0x1be + 4]);
     printf("  the reason: to stop a tool that does not know GPT taking it for empty\n\n");
 
-    /* (4) 진짜 지도는 두 번째 섹터(LBA 1)에 있다 --- GPT 헤더 */
+    /* (4) 진짜 배치도는 두 번째 섹터(LBA 1)에 있다 --- GPT 헤더 */
     unsigned char gpt[92] = { 0 };
     memcpy(gpt, "EFI PART", 8);
     put32(gpt + 8, 0x00010000u);      /* 개정 1.0 */

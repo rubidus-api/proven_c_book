@@ -36,7 +36,7 @@ static volatile float sink;
 
 static double now(void) { return (double)clock() / CLOCKS_PER_SEC; }
 
-/* job A: move every particle --- touches 6 of the 16 fields */
+/* job A: move every particle --- touches 6 of the 11 members */
 static double move_aos(void)
 {
     double t = now();
@@ -60,7 +60,7 @@ static double move_soa(void)
     return now() - t;
 }
 
-/* job B: look at scattered particles, all of their fields at once */
+/* job B: look at scattered particles, seven of their fields at once */
 static double look_aos(void)
 {
     double t = now(); float acc = 0;
@@ -116,12 +116,12 @@ int main(void)
 
     printf("%u particles; a struct is %zu bytes, a hot part %zu bytes\n\n",
            N, sizeof *aos, sizeof *hot);
-    puts("job A: move every particle (6 of the 16 fields)");
+    puts("job A: move every particle (6 of the 11 members)");
     if (s > 0 && h > 0) {
         printf("  AoS took            %.1f times as long as SoA\n", a / s);
         printf("  hot/cold split took %.1f times as long as SoA\n", h / s);
     } else puts("  the clock is too coarse on this machine to tell them apart");
-    puts("job B: read every field of particles picked at random");
+    puts("job B: read seven fields of particles picked at random");
     if (la > 0) printf("  SoA took            %.1f times as long as AoS\n", ls / la);
     else puts("  the clock is too coarse on this machine to tell them apart");
     puts("\n(ratios only: they change with the machine, the compiler and the run.)");

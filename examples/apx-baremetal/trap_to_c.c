@@ -14,7 +14,7 @@ static void on_trap(int sig, siginfo_t *si, void *ctx)
     (void)sig; (void)ctx;
     why = si->si_code;
     where = si->si_addr;
-    /* 트랩 처리기에서 그냥 돌아오는 것은 미정의 동작이다(C23 7.14.1.1 p3).
+    /* 이 SIGFPE·SIGSEGV 처리기에서 그냥 돌아오는 것은 미정의 동작이다(C23 7.14.1.1 p3).
        터진 명령을 다시 실행하려 들기 때문이다 --- 그래서 뛰어서 빠져나온다. */
     siglongjmp(escape, 1);
 }

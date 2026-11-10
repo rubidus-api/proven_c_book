@@ -1,5 +1,5 @@
 /* 바이트에서 32비트 빅 엔디안 값을 읽는 두 방법.
-   어느 쪽도 기계 자신의 바이트 순서에 기대지 않는다. */
+      어느 쪽도 결과가 기계의 바이트 순서에 따라 달라지지 않는다. (2)는 리틀 · 빅 엔디안 기계만 다룬다. */
 #include <stdint.h>
 #include <string.h>
 
@@ -18,7 +18,9 @@ uint32_t get_u32be_bswap(const unsigned char *p)
     uint32_t v;
     memcpy(&v, p, sizeof v);
 #if __STDC_ENDIAN_NATIVE__ == __STDC_ENDIAN_LITTLE__
-    v = __builtin_bswap32(v);
+        v = __builtin_bswap32(v);
+#elif __STDC_ENDIAN_NATIVE__ != __STDC_ENDIAN_BIG__
+#error "byte order is neither little nor big endian"
 #endif
     return v;
 }

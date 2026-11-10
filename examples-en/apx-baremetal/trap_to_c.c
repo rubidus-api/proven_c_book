@@ -14,7 +14,7 @@ static void on_trap(int sig, siginfo_t *si, void *ctx)
     (void)sig; (void)ctx;
     why = si->si_code;
     where = si->si_addr;
-    /* Simply returning from a trap handler is undefined behaviour (C23 7.14.1.1 p3).
+    /* Simply returning from this SIGFPE/SIGSEGV handler is undefined behaviour (C23 7.14.1.1 p3).
        It would re-run the faulting instruction --- so we jump out instead. */
     siglongjmp(escape, 1);
 }

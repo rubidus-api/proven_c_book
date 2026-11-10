@@ -1,5 +1,5 @@
 /* 같은 일을 폴링·인터럽트·DMA 로 할 때 무엇이 얼마나 드는가 --- 예산 계산.
-   하드웨어가 없으므로 이것은 *계산*이다. 값(비용)은 흔히 인용되는 자릿수를 가정으로
+   하드웨어가 없으므로 이것은 *계산*이다. 비용은 흔히 인용되는 자릿수를 가정으로
    두고, 그 가정을 화면에 함께 적는다 --- 가정을 감추면 계산이 아니라 주장이 된다. */
 #include <stdio.h>
 
@@ -54,7 +54,7 @@ int main(void)
         printf("  %-14s %-16.0f %.1f KiB/s\n", pct, rate, rate / 1024.0);
     }
 
-    /* 한글은 한 글자가 두 칸이라 %-Ns 로는 안 맞는다 --- 줄마다 손으로 적는다 */
+    /* 줄마다 손으로 적는다 */
     printf("\n== the three schemes compared ==\n");
     printf("  polling   : the CPU keeps asking.      latency = about half the period.\n");
     printf("              suits very frequent events, or very simple places.\n");
