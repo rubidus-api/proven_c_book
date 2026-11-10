@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 This project follows Keep a Changelog.
 
+## [v0.105.1] - 2026-11-10
+
+### Changed
+- **`vendor/proven/`** 책이 쓰지 않는 암호(`aes` · `aead` · `hmac` · `kex` · `sign` · `der` · `hash_legacy`) · 압축(`deflate` · `zstd` · `brotli`) · 인증서와 URL(`cert` · `url`) 모듈을 스냅샷에서 뺐다. 남은 파일은 상류 v0.112.5 그대로이고, `proven.h` 에서 뺀 헤더의 include 만 지웠다(`VENDOR.md`). 이로써 RFC 7932 의 Brotli 표도 실리지 않는다.
+- **109장 · 참고 문헌** 실린 범위를 그대로 적었다.
+
 ## [v0.105.0] - 2026-11-10
 
 함께 싣는 proven 스냅샷을 v0.6.0 에서 v0.112.5 로 올렸다. 라이브러리의 핵심(`include/` · `src/` · `platform/`)을 고치지 않고 그대로 싣고, 네트워크 층 `net/` 은 싣지 않는다.

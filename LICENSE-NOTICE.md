@@ -21,7 +21,7 @@
 
 ## 그 밖
 
-- `vendor/proven/`은 원저작물(proven C 라이브러리)의 라이선스를 따른다(MIT, [`vendor/proven/LICENSE`](vendor/proven/LICENSE)). 그 안에 든 제3자 자료(RFC 7932 의 Brotli 표)의 고지는 [`vendor/proven/THIRD_PARTY_NOTICES.md`](vendor/proven/THIRD_PARTY_NOTICES.md)에 있다.
+- `vendor/proven/`은 원저작물(proven C 라이브러리)의 라이선스를 따른다(MIT, [`vendor/proven/LICENSE`](vendor/proven/LICENSE)). 상류의 제3자 고지는 [`vendor/proven/THIRD_PARTY_NOTICES.md`](vendor/proven/THIRD_PARTY_NOTICES.md)에 그대로 두었다 --- 그중 Brotli 표는 이 스냅샷에 싣지 않았다.
 - 본문에 인용된 표준 문서·서적·사건의 저작권은 각 권리자에게 있다.
 
 Copyright (c) 2026 rubidus <rubidus@gmail.com>

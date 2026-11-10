@@ -28,20 +28,8 @@
 #include "proven/map.h"
 #include "proven/algorithm.h"
 #include "proven/hash.h"
-#include "proven/hash_legacy.h"
-#include "proven/hmac.h"
-#include "proven/deflate.h"
-#include "proven/zstd.h"
-#ifndef PROVEN_NO_BROTLI
-#include "proven/brotli.h"
-#endif
-#include "proven/cert.h"
-#include "proven/der.h"
-#include "proven/sign.h"
-#include "proven/aes.h"
-#include "proven/aead.h"
-#include "proven/kex.h"
-#include "proven/url.h"
+/* proven_c_book: the hash_legacy, hmac, deflate, zstd, brotli, cert, der, sign, aes, aead, kex
+   and url headers of upstream v0.112.5 are left out of this snapshot (see VENDOR.md). */
 #include "proven/encode.h"
 #include "proven/utf.h"
 #include "proven/random.h"
