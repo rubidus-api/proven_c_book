@@ -88,6 +88,41 @@ proven_utf8_char_t proven_utf8_decode_next(proven_u8str_view_t s, proven_size_t 
     return out;
 }
 
+proven_size_t proven_utf8_encode_one(proven_u32 cp, proven_byte_t out[4]) {
+    if (cp < 0x80) { out[0] = (proven_byte_t)cp; return 1; }
+    if (cp < 0x800) {
+        out[0] = (proven_byte_t)(0xC0 | (cp >> 6));
+        out[1] = (proven_byte_t)(0x80 | (cp & 0x3F));
+        return 2;
+    }
+    if (cp >= 0xD800 && cp <= 0xDFFF) return 0;      /* a surrogate is not a character */
+    if (cp < 0x10000) {
+        out[0] = (proven_byte_t)(0xE0 | (cp >> 12));
+        out[1] = (proven_byte_t)(0x80 | ((cp >> 6) & 0x3F));
+        out[2] = (proven_byte_t)(0x80 | (cp & 0x3F));
+        return 3;
+    }
+    if (cp > 0x10FFFF) return 0;
+    out[0] = (proven_byte_t)(0xF0 | (cp >> 18));
+    out[1] = (proven_byte_t)(0x80 | ((cp >> 12) & 0x3F));
+    out[2] = (proven_byte_t)(0x80 | ((cp >> 6) & 0x3F));
+    out[3] = (proven_byte_t)(0x80 | (cp & 0x3F));
+    return 4;
+}
+
+proven_err_t proven_utf8_validate(proven_u8str_view_t s, proven_size_t *bad_at) {
+    if (s.size > 0 && !s.ptr) return PROVEN_ERR_INVALID_ARG;
+    for (proven_size_t pos = 0; pos < s.size;) {
+        const proven_utf8_char_t c = proven_utf8_decode_next(s, pos);
+        if (c.err != PROVEN_OK) {                    /* malformed, or cut off at the end */
+            if (bad_at) *bad_at = pos;
+            return PROVEN_ERR_INVALID_ENCODING;
+        }
+        pos += c.len;
+    }
+    return PROVEN_OK;
+}
+
 static int utf16_decode(const proven_u16 *s, proven_size_t n, proven_u32 *cp_out) {
     proven_u32 u = s[0];
     if (u < 0xD800u || u > 0xDFFFu) {
@@ -261,6 +296,93 @@ proven_err_t proven_utf16_to_utf8(const proven_u16 *src, proven_size_t n, proven
     if (!proven_is_ok(st.err)) return st.err;
     if (written) *written = st.written;
     return PROVEN_OK;
+}
+
+// -------------------------------------------------------------
+// Lossy (RFC-0044): what cannot be decoded becomes U+FFFD
+// -------------------------------------------------------------
+
+/* One pass of each: `out` NULL measures. The replacement rule is utf8_decode_span's maximal
+ * subpart for UTF-8 - one U+FFFD per malformed step, and one for a character cut off at the end -
+ * and one U+FFFD per unpaired surrogate unit for UTF-16. */
+static proven_err_t utf8_to_utf16_lossy_run(proven_u8str_view_t src, proven_u16 *out, proven_size_t *count) {
+    if (src.size > 0 && !src.ptr) return PROVEN_ERR_INVALID_ARG;
+    proven_size_t w = 0;
+    for (proven_size_t i = 0; i < src.size;) {
+        proven_u32 cp;
+        proven_size_t bad = 1;
+        int r = utf8_decode_span(src.ptr + i, src.size - i, &cp, &bad);
+        if (r > 0) i += (proven_size_t)r;
+        else { cp = 0xFFFDu; i += r == 0 ? src.size - i : bad; }
+        const proven_size_t units = cp >= 0x10000u ? 2 : 1;
+        if (out) {
+            if (units == 2) {
+                out[w] = (proven_u16)(0xD800u + ((cp - 0x10000u) >> 10));
+                out[w + 1] = (proven_u16)(0xDC00u + ((cp - 0x10000u) & 0x3FFu));
+            } else {
+                out[w] = (proven_u16)cp;
+            }
+        }
+        if (PROVEN_CKD_ADD(&w, w, units)) return PROVEN_ERR_OVERFLOW;
+    }
+    *count = w;
+    return PROVEN_OK;
+}
+
+static proven_err_t utf16_to_utf8_lossy_run(const proven_u16 *src, proven_size_t n, proven_byte_t *out, proven_size_t *count) {
+    if (n > 0 && !src) return PROVEN_ERR_INVALID_ARG;
+    proven_size_t w = 0;
+    for (proven_size_t i = 0; i < n;) {
+        proven_u32 cp;
+        int r = utf16_decode(src + i, n - i, &cp);
+        if (r > 0) i += (proven_size_t)r;
+        else { cp = 0xFFFDu; i += 1; }
+        const int width = utf8_width(cp);
+        if (out) utf8_put(out + w, cp, width);
+        if (PROVEN_CKD_ADD(&w, w, (proven_size_t)width)) return PROVEN_ERR_OVERFLOW;
+    }
+    *count = w;
+    return PROVEN_OK;
+}
+
+proven_result_size_t proven_utf8_to_utf16_lossy_size(proven_u8str_view_t src) {
+    proven_result_size_t res = { PROVEN_OK, 0 };
+    res.err = utf8_to_utf16_lossy_run(src, NULL, &res.value);
+    if (res.err != PROVEN_OK) res.value = 0;
+    return res;
+}
+
+proven_result_size_t proven_utf16_to_utf8_lossy_size(const proven_u16 *src, proven_size_t n) {
+    proven_result_size_t res = { PROVEN_OK, 0 };
+    res.err = utf16_to_utf8_lossy_run(src, n, NULL, &res.value);
+    if (res.err != PROVEN_OK) res.value = 0;
+    return res;
+}
+
+proven_err_t proven_utf8_to_utf16_lossy(proven_u8str_view_t src, proven_u16 *out, proven_size_t out_cap,
+                                        proven_size_t *written) {
+    if (written) *written = 0;
+    if (out_cap > 0 && !out) return PROVEN_ERR_INVALID_ARG;
+    proven_result_size_t need = proven_utf8_to_utf16_lossy_size(src);
+    if (!proven_is_ok(need.err)) return need.err;
+    if (need.value > out_cap) return PROVEN_ERR_OUT_OF_BOUNDS;
+    proven_size_t n = 0;
+    proven_err_t e = need.value ? utf8_to_utf16_lossy_run(src, out, &n) : PROVEN_OK;
+    if (e == PROVEN_OK && written) *written = n;
+    return e;
+}
+
+proven_err_t proven_utf16_to_utf8_lossy(const proven_u16 *src, proven_size_t n, proven_byte_t *out,
+                                        proven_size_t out_cap, proven_size_t *written) {
+    if (written) *written = 0;
+    if (out_cap > 0 && !out) return PROVEN_ERR_INVALID_ARG;
+    proven_result_size_t need = proven_utf16_to_utf8_lossy_size(src, n);
+    if (!proven_is_ok(need.err)) return need.err;
+    if (need.value > out_cap) return PROVEN_ERR_OUT_OF_BOUNDS;
+    proven_size_t k = 0;
+    proven_err_t e = need.value ? utf16_to_utf8_lossy_run(src, n, out, &k) : PROVEN_OK;
+    if (e == PROVEN_OK && written) *written = k;
+    return e;
 }
 
 // -------------------------------------------------------------

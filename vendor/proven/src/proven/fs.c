@@ -14,7 +14,7 @@
 typedef struct {
     proven_err_t err;
     char *value;
-} internal_result_cstr_t;
+} proven_internal_result_cstr_t;
 
 static bool view_has_nul(proven_u8str_view_t view) {
     if (view.size > 0 && !view.ptr) return true;
@@ -24,18 +24,18 @@ static bool view_has_nul(proven_u8str_view_t view) {
     return false;
 }
 
-static internal_result_cstr_t internal_view_to_cstr(proven_allocator_t scratch, proven_u8str_view_t view) {
-    if (!proven_alloc_is_valid(scratch)) return (internal_result_cstr_t){.err = PROVEN_ERR_INVALID_ARG};
-    if (view.size == 0) return (internal_result_cstr_t){.err = PROVEN_ERR_INVALID_ARG};
-    if (view_has_nul(view)) return (internal_result_cstr_t){.err = PROVEN_ERR_INVALID_ARG};
+static proven_internal_result_cstr_t internal_view_to_cstr(proven_allocator_t scratch, proven_u8str_view_t view) {
+    if (!proven_alloc_is_valid(scratch)) return (proven_internal_result_cstr_t){.err = PROVEN_ERR_INVALID_ARG};
+    if (view.size == 0) return (proven_internal_result_cstr_t){.err = PROVEN_ERR_INVALID_ARG};
+    if (view_has_nul(view)) return (proven_internal_result_cstr_t){.err = PROVEN_ERR_INVALID_ARG};
     proven_size_t cap;
-    if (PROVEN_CKD_ADD(&cap, view.size, 1)) return (internal_result_cstr_t){.err = PROVEN_ERR_OVERFLOW};
+    if (PROVEN_CKD_ADD(&cap, view.size, 1)) return (proven_internal_result_cstr_t){.err = PROVEN_ERR_OVERFLOW};
     proven_result_mem_mut_t m_res = scratch.alloc_fn(scratch.ctx, cap, 1);
-    if (!proven_is_ok(m_res.err)) return (internal_result_cstr_t){.err = m_res.err};
+    if (!proven_is_ok(m_res.err)) return (proven_internal_result_cstr_t){.err = m_res.err};
     char *buf = (char *)m_res.value.ptr;
     for (proven_size_t i = 0; i < view.size; ++i) buf[i] = (char)view.ptr[i];
     buf[view.size] = '\0';
-    return (internal_result_cstr_t){.err = PROVEN_OK, .value = buf};
+    return (proven_internal_result_cstr_t){.err = PROVEN_OK, .value = buf};
 }
 
 static void internal_cstr_free(proven_allocator_t scratch, char *buf) {
@@ -54,7 +54,7 @@ static void internal_cstr_free(proven_allocator_t scratch, char *buf) {
 static proven_result_file_t internal_fs_open_with(proven_allocator_t scratch, proven_u8str_view_t path,
                                                   proven_fs_mode_t mode, int extra_pal_flags) {
     proven_result_file_t res = {0};
-    internal_result_cstr_t path_res = internal_view_to_cstr(scratch, path);
+    proven_internal_result_cstr_t path_res = internal_view_to_cstr(scratch, path);
     if (!proven_is_ok(path_res.err)) {
         res.err = path_res.err;
         return res;
@@ -339,10 +339,10 @@ proven_err_t proven_fs_sync_dir(proven_allocator_t scratch, proven_u8str_view_t 
  * hot path for an answer it holds.
  */
 static proven_err_t internal_rename_raw(proven_allocator_t scratch, proven_u8str_view_t src, proven_u8str_view_t dest) {
-    internal_result_cstr_t s_res = internal_view_to_cstr(scratch, src);
+    proven_internal_result_cstr_t s_res = internal_view_to_cstr(scratch, src);
     if (!proven_is_ok(s_res.err)) return s_res.err;
     
-    internal_result_cstr_t d_res = internal_view_to_cstr(scratch, dest);
+    proven_internal_result_cstr_t d_res = internal_view_to_cstr(scratch, dest);
     if (!proven_is_ok(d_res.err)) {
         internal_cstr_free(scratch, s_res.value);
         return d_res.err;
@@ -359,6 +359,8 @@ static proven_err_t internal_rename_raw(proven_allocator_t scratch, proven_u8str
         case PROVEN_SYS_FS_RENAME_OK:     return PROVEN_OK;
         case PROVEN_SYS_FS_RENAME_DENIED: return PROVEN_ERR_PERMISSION;
         case PROVEN_SYS_FS_RENAME_BUSY:   return PROVEN_ERR_BUSY;
+        case PROVEN_SYS_FS_RENAME_NOT_FOUND: return PROVEN_ERR_NOT_FOUND;
+        case PROVEN_SYS_FS_RENAME_CROSS_DEVICE: return PROVEN_ERR_UNSUPPORTED;
         default:                          return PROVEN_ERR_IO;
     }
 }
@@ -378,7 +380,7 @@ proven_err_t proven_fs_rename(proven_allocator_t scratch, proven_u8str_view_t sr
 }
 
 proven_err_t proven_fs_remove(proven_allocator_t scratch, proven_u8str_view_t path) {
-    internal_result_cstr_t p_res = internal_view_to_cstr(scratch, path);
+    proven_internal_result_cstr_t p_res = internal_view_to_cstr(scratch, path);
     if (!proven_is_ok(p_res.err)) return p_res.err;
     
     proven_sys_fs_open_result_t why = proven_sys_fs_remove_checked(p_res.value);
@@ -400,26 +402,93 @@ proven_err_t proven_fs_remove(proven_allocator_t scratch, proven_u8str_view_t pa
         case PROVEN_SYS_FS_OPEN_NOT_FOUND: return PROVEN_ERR_NOT_FOUND;
         case PROVEN_SYS_FS_OPEN_DENIED:    return PROVEN_ERR_PERMISSION;
         case PROVEN_SYS_FS_OPEN_BUSY:      return PROVEN_ERR_BUSY;
+        case PROVEN_SYS_FS_OPEN_NOT_EMPTY: return PROVEN_ERR_INVALID_STATE;   /* a directory with entries */
+        default:                           return PROVEN_ERR_IO;
+    }
+}
+
+/* The platform layer's reason as a public code. One table for the calls below, so that a
+ * reason added to one of them cannot be forgotten in another. */
+static proven_err_t internal_err_from_refusal(proven_sys_fs_open_result_t why) {
+    switch (why) {
+        case PROVEN_SYS_FS_OPEN_OK:        return PROVEN_OK;
+        case PROVEN_SYS_FS_OPEN_NOT_FOUND: return PROVEN_ERR_NOT_FOUND;
+        case PROVEN_SYS_FS_OPEN_DENIED:    return PROVEN_ERR_PERMISSION;
+        case PROVEN_SYS_FS_OPEN_BUSY:      return PROVEN_ERR_BUSY;
+        case PROVEN_SYS_FS_OPEN_EXISTS:    return PROVEN_ERR_EXISTS;
+        /* Not empty: nothing failed, the directory is in a state rmdir does not accept - empty
+         * it first. Across file systems: this route does not exist - copy instead. */
+        case PROVEN_SYS_FS_OPEN_NOT_EMPTY:    return PROVEN_ERR_INVALID_STATE;
+        case PROVEN_SYS_FS_OPEN_CROSS_DEVICE: return PROVEN_ERR_UNSUPPORTED;
         default:                           return PROVEN_ERR_IO;
     }
 }
 
 proven_err_t proven_fs_mkdir(proven_allocator_t scratch, proven_u8str_view_t path) {
-    internal_result_cstr_t p_res = internal_view_to_cstr(scratch, path);
+    proven_internal_result_cstr_t p_res = internal_view_to_cstr(scratch, path);
     if (!proven_is_ok(p_res.err)) return p_res.err;
-    
-    bool success = proven_sys_fs_mkdir(p_res.value);
+
+    proven_sys_fs_open_result_t why = proven_sys_fs_mkdir_checked(p_res.value);
     internal_cstr_free(scratch, p_res.value);
-    return success ? PROVEN_OK : PROVEN_ERR_IO;
+    return internal_err_from_refusal(why);
+}
+
+/* One level of proven_fs_mkdir_all: PROVEN_OK when `path` is a directory afterwards, whoever
+ * made it. mkdir answers EXISTS for a file of that name too - and the root of a Windows drive
+ * answers PERMISSION - so a failure is settled by asking what is there, not by its code. */
+static proven_err_t internal_mkdir_or_is_dir(proven_allocator_t scratch, proven_u8str_view_t path) {
+    proven_err_t err = proven_fs_mkdir(scratch, path);
+    if (err == PROVEN_OK || err == PROVEN_ERR_NOT_FOUND || err == PROVEN_ERR_NOMEM) return err;
+    proven_fs_stat_t st;
+    if (proven_fs_stat(scratch, path, &st) == PROVEN_OK && st.type == PROVEN_FS_TYPE_DIR) return PROVEN_OK;
+    return err;
+}
+
+static bool internal_is_separator(proven_byte_t c);   /* defined with the path helpers below */
+
+proven_err_t proven_fs_mkdir_all(proven_allocator_t scratch, proven_u8str_view_t path) {
+    if (path.size == 0 || !path.ptr) return PROVEN_ERR_INVALID_ARG;
+
+    /* "a/b/" names the same directory as "a/b"; a path that is only separators is the root. */
+    proven_size_t full = path.size;
+    while (full > 1 && internal_is_separator(path.ptr[full - 1])) --full;
+
+    /*
+     * Upwards first: try the whole path, and while the answer is "the parent is not there",
+     * try the parent. This finds the deepest directory that exists without ever asking about
+     * the levels above it - which matters where those cannot be asked about at all: the
+     * server and share of a UNC path, a drive prefix, a directory the caller may pass through
+     * but not read.
+     */
+    proven_size_t end = full;
+    for (;;) {
+        proven_err_t err = internal_mkdir_or_is_dir(scratch, (proven_u8str_view_t){ .ptr = path.ptr, .size = end });
+        if (err == PROVEN_OK) break;
+        if (err != PROVEN_ERR_NOT_FOUND) return err;
+        proven_size_t cut = end;
+        while (cut > 0 && !internal_is_separator(path.ptr[cut - 1])) --cut;   /* the last name */
+        while (cut > 0 && internal_is_separator(path.ptr[cut - 1])) --cut;    /* its separators */
+        if (cut == 0) return PROVEN_ERR_NOT_FOUND;   /* no parent left to try */
+        end = cut;
+    }
+
+    /* Then downwards, one name at a time, from that directory to the path asked for. */
+    while (end < full) {
+        while (end < full && internal_is_separator(path.ptr[end])) ++end;
+        while (end < full && !internal_is_separator(path.ptr[end])) ++end;
+        proven_err_t err = internal_mkdir_or_is_dir(scratch, (proven_u8str_view_t){ .ptr = path.ptr, .size = end });
+        if (err != PROVEN_OK) return err;
+    }
+    return PROVEN_OK;
 }
 
 proven_err_t proven_fs_rmdir(proven_allocator_t scratch, proven_u8str_view_t path) {
-    internal_result_cstr_t p_res = internal_view_to_cstr(scratch, path);
+    proven_internal_result_cstr_t p_res = internal_view_to_cstr(scratch, path);
     if (!proven_is_ok(p_res.err)) return p_res.err;
-    
-    bool success = proven_sys_fs_rmdir(p_res.value);
+
+    proven_sys_fs_open_result_t why = proven_sys_fs_rmdir_checked(p_res.value);
     internal_cstr_free(scratch, p_res.value);
-    return success ? PROVEN_OK : PROVEN_ERR_IO;
+    return internal_err_from_refusal(why);
 }
 
 proven_err_t proven_fs_copy(proven_allocator_t temp_alloc, proven_u8str_view_t src, proven_u8str_view_t dest) {
@@ -599,7 +668,7 @@ static int internal_dir_step_text(proven_sys_dir_handle_t dh, proven_sys_dir_ent
 
 proven_result_array_t proven_fs_list(proven_allocator_t alloc, proven_u8str_view_t path) {
     proven_result_array_t res = {0};
-    internal_result_cstr_t p_res = internal_view_to_cstr(alloc, path);
+    proven_internal_result_cstr_t p_res = internal_view_to_cstr(alloc, path);
     if (!proven_is_ok(p_res.err)) {
         res.err = p_res.err;
         return res;
@@ -698,15 +767,15 @@ typedef struct {
     proven_byte_t *ptr;
     proven_size_t  len;   /* bytes actually read */
     proven_size_t  cap;   /* live allocation size */
-} internal_slurp_t;
+} proven_internal_slurp_t;
 
-static internal_slurp_t internal_read_to_eof(proven_allocator_t alloc,
+static proven_internal_slurp_t internal_read_to_eof(proven_allocator_t alloc,
                                              proven_file_t f,
                                              proven_byte_t *ptr,
                                              proven_size_t cap,
                                              proven_size_t align,
                                              proven_size_t limit) {
-    internal_slurp_t res = {0};
+    proven_internal_slurp_t res = {0};
     proven_size_t len = 0;
 
     for (;;) {
@@ -797,12 +866,12 @@ static internal_slurp_t internal_read_to_eof(proven_allocator_t alloc,
  * they are being read. proven_fs_size still seeds the initial capacity, so a
  * regular file of known size is read in a single allocation and a single pass.
  */
-static internal_slurp_t internal_slurp_path(proven_allocator_t alloc,
+static proven_internal_slurp_t internal_slurp_path(proven_allocator_t alloc,
                                             proven_u8str_view_t path,
                                             proven_size_t extra,
                                             proven_size_t align,
                                             proven_size_t limit) {
-    internal_slurp_t res = {0};
+    proven_internal_slurp_t res = {0};
 
     proven_result_file_t f_res = proven_fs_open(alloc, path, PROVEN_FS_READ);
     if (!proven_is_ok(f_res.err)) {
@@ -861,7 +930,7 @@ static proven_result_mem_mut_t internal_read_all(proven_allocator_t alloc, prove
         return res;
     }
 
-    internal_slurp_t s = internal_slurp_path(alloc, path, 0, 1, limit);
+    proven_internal_slurp_t s = internal_slurp_path(alloc, path, 0, 1, limit);
     if (!proven_is_ok(s.err)) {
         res.err = s.err;
         return res;
@@ -912,7 +981,7 @@ proven_result_u8str_t proven_fs_read_all_u8str(proven_allocator_t alloc, proven_
      * it at that alignment. A block must be reallocated with the alignment it
      * was allocated with, so the string this returns has to be allocated exactly
      * as proven_u8str_create would have allocated it. */
-    internal_slurp_t s = internal_slurp_path(alloc, path, 1, PROVEN_DEFAULT_ALIGNMENT, PROVEN_SIZE_MAX);
+    proven_internal_slurp_t s = internal_slurp_path(alloc, path, 1, PROVEN_DEFAULT_ALIGNMENT, PROVEN_SIZE_MAX);
     if (!proven_is_ok(s.err)) {
         res.err = s.err;
         return res;
@@ -1347,7 +1416,7 @@ proven_err_t proven_fs_write_file_durable(proven_allocator_t scratch, proven_u8s
 
 proven_result_dir_t proven_fs_dir_open(proven_allocator_t scratch, proven_u8str_view_t path) {
     proven_result_dir_t res = {0};
-    internal_result_cstr_t p_res = internal_view_to_cstr(scratch, path);
+    proven_internal_result_cstr_t p_res = internal_view_to_cstr(scratch, path);
     if (!proven_is_ok(p_res.err)) {
         res.err = p_res.err;
         return res;
@@ -1405,12 +1474,12 @@ proven_err_t proven_fs_chmod(proven_allocator_t scratch, proven_u8str_view_t pat
     if (((proven_fs_perms_t)perms & ~supported_perms) != 0) {
         return PROVEN_ERR_INVALID_ARG;
     }
-    internal_result_cstr_t p_res = internal_view_to_cstr(scratch, path);
+    proven_internal_result_cstr_t p_res = internal_view_to_cstr(scratch, path);
     if (!proven_is_ok(p_res.err)) return p_res.err;
     
-    bool success = proven_sys_fs_chmod(p_res.value, (unsigned int)perms);
+    proven_sys_fs_open_result_t why = proven_sys_fs_chmod_checked(p_res.value, (unsigned int)perms);
     internal_cstr_free(scratch, p_res.value);
-    return success ? PROVEN_OK : PROVEN_ERR_IO;
+    return internal_err_from_refusal(why);
 }
 
 proven_err_t proven_fs_lock(proven_file_t file, proven_fs_lock_type_t type, bool wait) {
@@ -1426,10 +1495,11 @@ proven_err_t proven_fs_lock(proven_file_t file, proven_fs_lock_type_t type, bool
     }
     
 #if defined(_WIN32) || defined(_WIN64)
-    return proven_sys_fs_lock((proven_sys_file_handle_t){ .handle = file.internal.ptr }, t, wait) ? PROVEN_OK : PROVEN_ERR_IO;
+    proven_sys_file_handle_t h = { .handle = file.internal.ptr };
 #else
-    return proven_sys_fs_lock((proven_sys_file_handle_t){ .fd = file.internal.fd }, t, wait) ? PROVEN_OK : PROVEN_ERR_IO;
+    proven_sys_file_handle_t h = { .fd = file.internal.fd };
 #endif
+    return internal_err_from_refusal(proven_sys_fs_lock_checked(h, t, wait));
 }
 
 /*
@@ -1444,7 +1514,7 @@ static proven_err_t internal_stat_impl(proven_allocator_t scratch, proven_u8str_
                                        proven_fs_stat_t *out_stat, bool *out_missing) {
     if (!out_stat) return PROVEN_ERR_INVALID_ARG;
 
-    internal_result_cstr_t p_res = internal_view_to_cstr(scratch, path);
+    proven_internal_result_cstr_t p_res = internal_view_to_cstr(scratch, path);
     if (!proven_is_ok(p_res.err)) return p_res.err;
 
     proven_sys_fs_stat_t se;
@@ -1483,10 +1553,10 @@ proven_err_t proven_fs_stat(proven_allocator_t scratch, proven_u8str_view_t path
 }
 
 proven_err_t proven_fs_symlink(proven_allocator_t scratch, proven_u8str_view_t target, proven_u8str_view_t linkpath) {
-    internal_result_cstr_t t_res = internal_view_to_cstr(scratch, target);
+    proven_internal_result_cstr_t t_res = internal_view_to_cstr(scratch, target);
     if (!proven_is_ok(t_res.err)) return t_res.err;
 
-    internal_result_cstr_t l_res = internal_view_to_cstr(scratch, linkpath);
+    proven_internal_result_cstr_t l_res = internal_view_to_cstr(scratch, linkpath);
     if (!proven_is_ok(l_res.err)) {
         internal_cstr_free(scratch, t_res.value);
         return l_res.err;
@@ -1504,19 +1574,19 @@ proven_err_t proven_fs_symlink(proven_allocator_t scratch, proven_u8str_view_t t
 }
 
 proven_err_t proven_fs_link(proven_allocator_t scratch, proven_u8str_view_t oldpath, proven_u8str_view_t newpath) {
-    internal_result_cstr_t o_res = internal_view_to_cstr(scratch, oldpath);
+    proven_internal_result_cstr_t o_res = internal_view_to_cstr(scratch, oldpath);
     if (!proven_is_ok(o_res.err)) return o_res.err;
 
-    internal_result_cstr_t n_res = internal_view_to_cstr(scratch, newpath);
+    proven_internal_result_cstr_t n_res = internal_view_to_cstr(scratch, newpath);
     if (!proven_is_ok(n_res.err)) {
         internal_cstr_free(scratch, o_res.value);
         return n_res.err;
     }
 
-    bool success = proven_sys_fs_link(o_res.value, n_res.value);
+    proven_sys_fs_open_result_t why = proven_sys_fs_link_checked(o_res.value, n_res.value);
     internal_cstr_free(scratch, o_res.value);
     internal_cstr_free(scratch, n_res.value);
-    return success ? PROVEN_OK : PROVEN_ERR_IO;
+    return internal_err_from_refusal(why);
 }
 
 bool proven_fs_is_absolute(proven_u8str_view_t path) {

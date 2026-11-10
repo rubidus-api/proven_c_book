@@ -441,7 +441,8 @@ proven_fmt_result_t proven_u8str_fmt_internal(proven_allocator_t alloc, proven_u
  * @brief Appends formatted content, truncating if necessary.
  * CATEGORY: Best-Effort/Truncating
  * 
- * Returns actual written bytes and required bytes in proven_fmt_result_t.
+ * Returns actual written bytes and required bytes in proven_fmt_result_t. Output is cut only
+ * between UTF-8 characters: one that does not fit whole is left out.
  */
 #define proven_u8str_append_fmt_trunc(str, fmt, ...) \
     proven_u8str_fmt_internal((proven_allocator_t){0}, str, true, fmt, (proven_allocator_t){0}, \
@@ -467,5 +468,45 @@ proven_fmt_result_t proven_u8str_fmt_internal(proven_allocator_t alloc, proven_u
         (sizeof((proven_arg_t[]){ proven_arg_none() __VA_OPT__(,) __VA_ARGS__ }) / sizeof(proven_arg_t)))
 
 #define PROVEN_FMT_IS_OK(res) proven_is_ok((res).err)
+
+/**
+ * @brief How many arguments a format names: what a call with it must pass, exactly.
+ *
+ * The rule, which a project's own script can apply to a literal format as well: `{}` and `{:spec}`
+ * name the argument after the one the previous such placeholder named, starting from 0; `{N}` and
+ * `{N:spec}` name argument N and do not move that count; `{{` and `}}` are literal braces. A call
+ * must pass as many arguments as the highest number named plus one - no fewer, which would leave a
+ * placeholder with nothing, and no more, which would be an argument nobody shows. Otherwise the
+ * call writes nothing and says PROVEN_ERR_INVALID_ARG; built with `-DPROVEN_FMT_CHECK_ARGS`, the
+ * library panics instead (proven_panic), with the format and both counts in the message.
+ *
+ * @return the count; PROVEN_ERR_INVALID_FORMAT (or OUT_OF_BOUNDS, OVERFLOW) when it is not a
+ *         format the formatter would take whatever the arguments; PROVEN_ERR_INVALID_ARG for NULL.
+ *         Whether each argument suits its spec (`{:x}` on a string) is checked only by a call.
+ */
+[[nodiscard]]
+proven_result_size_t proven_fmt_arg_count(const char *fmt);
+
+/*
+ * MACRO SUPPORT for proven_fmt_to. Not a stable interface: call the macro.
+ */
+[[nodiscard]]
+proven_fmt_result_t proven_fmt_to_internal(char *buf, proven_size_t cap, const char *fmt, const proven_arg_t *args, proven_size_t args_count);
+
+/**
+ * @brief Formats into a caller's buffer, as snprintf does: `proven_fmt_to(buf, sizeof buf, "{} {}", ...)`.
+ * CATEGORY: Best-Effort/Truncating, into plain memory
+ *
+ * `cap` counts the NUL: at most `cap - 1` bytes are written, and when `cap > 0` the text always
+ * ends with a NUL - after an error too, when it is empty. Output that does not fit is cut where no
+ * UTF-8 character is cut, `written` says how much was kept, `required` how much the whole needs
+ * (without the NUL), and `err` is PROVEN_ERR_OUT_OF_BOUNDS. `cap == 0` (`buf` may be NULL) only
+ * measures. The same as proven_u8str_borrow and proven_u8str_append_fmt_trunc, in one call; to
+ * append to a string that grows, use proven_u8str_append_fmt_grow.
+ */
+#define proven_fmt_to(buf, cap, fmt, ...) \
+    proven_fmt_to_internal(buf, cap, fmt, \
+        ((const proven_arg_t[]){ proven_arg_none() __VA_OPT__(,) __VA_ARGS__ }), \
+        (sizeof((proven_arg_t[]){ proven_arg_none() __VA_OPT__(,) __VA_ARGS__ }) / sizeof(proven_arg_t)))
 
 #endif /* PROVEN_FMT_H */

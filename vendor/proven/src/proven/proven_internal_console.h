@@ -84,6 +84,7 @@ static inline proven_result_size_t proven_console_write_utf8(proven_console_io_t
         if (st.err == PROVEN_ERR_NEED_MORE) {
             /* At most three bytes: a fourth would have completed the character. */
             proven_size_t tail = n - used;
+            if (tail >= sizeof c->bytes) return (proven_result_size_t){ PROVEN_ERR_INVALID_ENCODING, used };
             for (proven_size_t i = 0; i < tail; ++i) c->bytes[i] = p[used + i];
             c->len = (proven_u8)tail;
             return (proven_result_size_t){ PROVEN_OK, n };

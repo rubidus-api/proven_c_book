@@ -24,6 +24,10 @@ static inline unsigned long long proven_sys_time_now_ns(void) {
     return 0;
 }
 
+static inline unsigned long long proven_sys_time_monotonic_ns(void) {
+    return 0;
+}
+
 static inline void proven_sys_time_now_local(proven_sys_datetime_t *out_dt) {
     if (out_dt) {
         out_dt->year = 1970;
@@ -54,6 +58,17 @@ static inline void proven_sys_time_sleep_ms(unsigned int ms) {
  *          epoch); only this line was wrong.
  */
 unsigned long long proven_sys_time_now_ns(void);
+
+/**
+ * @brief Nanoseconds from an arbitrary origin that is fixed for the life of the process, on a
+ *        clock that never goes backwards and is not set by anyone.
+ *
+ * POSIX: CLOCK_MONOTONIC. Windows: QueryPerformanceCounter scaled by its frequency. The origin
+ * differs between processes and between runs, so the value means nothing on its own - only the
+ * difference of two readings does. Whether the clock advances while the machine is suspended is
+ * the platform's choice and is not promised either way.
+ */
+unsigned long long proven_sys_time_monotonic_ns(void);
 
 /**
  * @brief Get the current local wall-clock time broken down.

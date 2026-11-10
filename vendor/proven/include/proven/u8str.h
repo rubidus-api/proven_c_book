@@ -180,6 +180,28 @@ typedef struct {
 [[nodiscard]] proven_size_t proven_u8str_view_find(proven_u8str_view_t haystack, proven_size_t start_offset, proven_u8str_view_t needle);
 [[nodiscard]] int proven_u8str_view_starts_with(proven_u8str_view_t str, proven_u8str_view_t prefix);
 [[nodiscard]] int proven_u8str_view_ends_with(proven_u8str_view_t str, proven_u8str_view_t suffix);
+/**
+ * @brief proven_u8str_view_eq and proven_u8str_view_starts_with with ASCII letters compared
+ * without case: 'A' to 'Z' match 'a' to 'z', and every other byte - '@', '[', '`', '{', anything
+ * from 0x80 - only itself. No locale and no Unicode case folding: what HTTP field names, URL
+ * schemes, MIME types and the like need. 1 or 0, as the case-sensitive pair.
+ */
+[[nodiscard]] int proven_u8str_view_eq_ascii_ci(proven_u8str_view_t a, proven_u8str_view_t b);
+[[nodiscard]] int proven_u8str_view_starts_with_ascii_ci(proven_u8str_view_t str, proven_u8str_view_t prefix);
+/** @brief proven_u8str_view_ends_with by the same rule. Since v0.112.0. */
+[[nodiscard]] int proven_u8str_view_ends_with_ascii_ci(proven_u8str_view_t str, proven_u8str_view_t suffix);
+/** @brief proven_u8str_view_cmp of the bytes made lower case by proven_ascii_lower: an order
+ *  that agrees with proven_u8str_view_eq_ascii_ci. Test the sign. Since v0.112.0. */
+[[nodiscard]] int proven_u8str_view_cmp_ascii_ci(proven_u8str_view_t a, proven_u8str_view_t b);
+/**
+ * @brief One byte with an ASCII letter made lower case, by the rule above: 'A' to 'Z' become 'a'
+ * to 'z' and every other byte - anything from 0x80 included - is returned as it is. No locale.
+ * For writing a name in its canonical form (HTTP/2 and HTTP/3 field names, a host in a cache
+ * key) where proven_u8str_view_eq_ascii_ci compares two. Since v0.110.0.
+ */
+[[nodiscard]] static inline proven_byte_t proven_ascii_lower(proven_byte_t c) {
+    return c >= 'A' && c <= 'Z' ? (proven_byte_t)(c + ('a' - 'A')) : c;
+}
 [[nodiscard]] proven_u8str_view_t proven_u8str_view_slice(proven_u8str_view_t str, proven_size_t index, proven_size_t len);
 
 // -------------------------------------------------------------
@@ -327,6 +349,12 @@ static inline proven_mem_view_t proven_mem_view_from_u8(proven_u8str_view_t view
 [[nodiscard]] static inline proven_u8str_view_t proven_u8str_view_from_cstr(const char *s) {
     if (!s) return (proven_u8str_view_t){ .ptr = (const proven_byte_t*)0, .size = 0 };
     return (proven_u8str_view_t){ .ptr = (const proven_byte_t *)s, .size = proven_cstr_len(s) };
+}
+
+/** @brief A view of `size` bytes at `ptr`, which may point at any object - a buffer of
+ *  `char`, `uint8_t` or a struct - without a cast at the call site. Nothing is copied. */
+[[nodiscard]] static inline proven_u8str_view_t proven_u8str_view_from_bytes(const void *ptr, proven_size_t size) {
+    return (proven_u8str_view_t){ .ptr = (const proven_byte_t *)ptr, .size = size };
 }
 
 [[nodiscard]] int proven_u8str_view_eq(proven_u8str_view_t a, proven_u8str_view_t b);

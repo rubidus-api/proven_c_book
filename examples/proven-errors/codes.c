@@ -21,6 +21,17 @@ static const char *name_of(proven_err_t e)
     case PROVEN_ERR_PERMISSION:       return "PERMISSION (not allowed)";
     case PROVEN_ERR_INVALID_FORMAT:   return "INVALID_FORMAT (wrong format)";
     case PROVEN_ERR_EXISTS:           return "EXISTS (the name is already taken)";
+    /* 아래 열 개는 네트워크 층(net/)과 인증서 모듈이 돌려준다 --- 이 책은 싣지 않았다 */
+    case PROVEN_ERR_TIMEOUT:          return "TIMEOUT (took too long)";
+    case PROVEN_ERR_REFUSED:          return "REFUSED (the connection was refused)";
+    case PROVEN_ERR_RESET:            return "RESET (the connection was reset)";
+    case PROVEN_ERR_UNREACHABLE:      return "UNREACHABLE (cannot reach the host)";
+    case PROVEN_ERR_UNTRUSTED:        return "UNTRUSTED (the certificate is not trusted)";
+    case PROVEN_ERR_EXPIRED:          return "EXPIRED (the certificate has expired)";
+    case PROVEN_ERR_NOT_YET_VALID:    return "NOT_YET_VALID (the certificate is not valid yet)";
+    case PROVEN_ERR_NAME_MISMATCH:    return "NAME_MISMATCH (the certificate is for another name)";
+    case PROVEN_ERR_PROTOCOL:         return "PROTOCOL (the peer broke the protocol)";
+    case PROVEN_ERR_CANCELLED:        return "CANCELLED (the operation was cancelled)";
     }
     return "(unknown)";
 }

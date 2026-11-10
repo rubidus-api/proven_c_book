@@ -4,6 +4,9 @@
 #include "proven/float_format.h"
 #include "proven_internal_memrange.h"
 #include "../../platform/proven_sys_mem.h"
+#if defined(PROVEN_FMT_CHECK_ARGS)
+#include "proven/panic.h"
+#endif
 
 // =============================================================================
 // Formatting Context
@@ -34,6 +37,7 @@ typedef struct {
     proven_size_t   written;
     proven_size_t   required;
     bool            measure_only;
+    bool            count_only;     /* proven_fmt_arg_count: the format is read, nothing is rendered */
 } proven_fmt_ctx_t;
 
 // =============================================================================
@@ -74,6 +78,18 @@ static void fmt_append_view(proven_fmt_ctx_t *ctx, proven_u8str_view_t view) {
     ctx->str->internal.len += to_copy;
     ctx->str->internal.ptr[ctx->str->internal.len] = 0;
     ctx->written += to_copy;
+}
+
+/* How much of the first n bytes of s to keep so that no UTF-8 character is cut: n, or less by
+ * the beginning of a last character whose lead byte says it needs more than is there. Bytes that
+ * are not UTF-8 are kept as they are. */
+static proven_size_t fmt_utf8_whole(const proven_u8 *s, proven_size_t n) {
+    proven_size_t i = n, back = 0;
+    while (i > 0 && back < 3 && (s[i - 1] & 0xC0u) == 0x80u) { --i; ++back; }
+    if (i == 0) return n;
+    const proven_u8 lead = s[i - 1];
+    const proven_size_t need = lead < 0x80u ? 1u : (lead & 0xE0u) == 0xC0u ? 2u : (lead & 0xF0u) == 0xE0u ? 3u : (lead & 0xF8u) == 0xF0u ? 4u : 1u;
+    return (i - 1) + need > n ? i - 1 : n;
 }
 
 static void fmt_append_byte(proven_fmt_ctx_t *ctx, proven_u8 b) {
@@ -275,10 +291,10 @@ static void render_integer(proven_fmt_ctx_t *ctx, unsigned long long mag, bool n
  * library has never seen, without allocating a scratch buffer for it. */
 typedef struct {
     proven_size_t len;
-} fmt_count_sink_t;
+} proven_fmt_count_sink_t;
 
 static proven_err_t fmt_count_sink_write(void *vctx, proven_u8str_view_t chunk) {
-    fmt_count_sink_t *s = (fmt_count_sink_t *)vctx;
+    proven_fmt_count_sink_t *s = (proven_fmt_count_sink_t *)vctx;
     if (chunk.size > 0 && !chunk.ptr) return PROVEN_ERR_INVALID_ARG;
     s->len += chunk.size;
     return PROVEN_OK;
@@ -300,7 +316,7 @@ static void render_custom(proven_fmt_ctx_t *ctx, proven_arg_custom_t c, proven_f
     /* Pass one: how long is it? The renderer must be deterministic; the check below
      * holds it to that, because a renderer that answers differently the second time
      * would silently produce a field of the wrong width. */
-    fmt_count_sink_t count = { .len = 0 };
+    proven_fmt_count_sink_t count = { .len = 0 };
     proven_err_t err = c.render((proven_fmt_sink_t){ .ctx = &count, .write = fmt_count_sink_write }, c.obj);
     if (!proven_is_ok(err)) {
         ctx->err = err;
@@ -403,10 +419,15 @@ static void render_arg(proven_fmt_ctx_t *ctx, const proven_arg_t *arg, proven_fm
     }
     if (spec.alt && !is_int) { ctx->err = PROVEN_ERR_INVALID_FORMAT; return; }
     if (spec.sign && !(is_int || is_float)) { ctx->err = PROVEN_ERR_INVALID_FORMAT; return; }
-    if (spec.precision >= 0 && !is_float) {
-        /* Precision on an integer or a string has no meaning here, and guessing one
-         * would be worse than refusing. */
+    bool is_text = (arg->type == PROVEN_ARG_CSTR || arg->type == PROVEN_ARG_STR_VIEW);
+    if (spec.precision >= 0 && !is_float && !is_text) {
+        /* Precision on an integer has no meaning here, and guessing one would be worse
+         * than refusing. On a string it is the most bytes to show (below). */
         ctx->err = PROVEN_ERR_INVALID_FORMAT;
+        return;
+    }
+    if (is_float && spec.precision > 60) {
+        ctx->err = PROVEN_ERR_OUT_OF_BOUNDS;
         return;
     }
 
@@ -549,12 +570,26 @@ static void render_arg(proven_fmt_ctx_t *ctx, const proven_arg_t *arg, proven_fm
         case PROVEN_ARG_CUSTOM:
             render_custom(ctx, arg->value.custom, spec);
             break;
-        case PROVEN_ARG_CSTR:
-            render_with_spec(ctx, arg->value.cstr, (proven_size_t)proven_cstr_len(arg->value.cstr), spec);
+        case PROVEN_ARG_CSTR: {
+            const char *s = arg->value.cstr;
+            proven_size_t n = 0;
+            if (spec.precision < 0) {
+                n = (proven_size_t)proven_cstr_len(s);
+            } else if (s) {
+                /* printf's %.Ns: no byte past the N-th is read, so the text need not end. */
+                while (n < (proven_size_t)spec.precision && s[n] != '\0') ++n;
+                if (n == (proven_size_t)spec.precision) n = fmt_utf8_whole((const proven_u8 *)s, n);
+            }
+            render_with_spec(ctx, s, n, spec);
             break;
-        case PROVEN_ARG_STR_VIEW:
-            render_with_spec(ctx, (const char*)arg->value.str_view.ptr, arg->value.str_view.size, spec);
+        }
+        case PROVEN_ARG_STR_VIEW: {
+            proven_size_t n = arg->value.str_view.size;
+            if (spec.precision >= 0 && n > (proven_size_t)spec.precision)
+                n = fmt_utf8_whole(arg->value.str_view.ptr, (proven_size_t)spec.precision);
+            render_with_spec(ctx, (const char*)arg->value.str_view.ptr, n, spec);
             break;
+        }
         case PROVEN_ARG_U16_VIEW:
             render_u16(ctx, arg->value.u16_view.ptr, arg->value.u16_view.size, spec);
             break;
@@ -659,6 +694,28 @@ static bool proven_fmt_parse_arg_index(const char **p_ptr, proven_size_t *out_id
 // =============================================================================
 // Format Engine
 // =============================================================================
+
+/* A call whose arguments are not as many as its format names: PROVEN_ERR_INVALID_ARG - or,
+ * built with PROVEN_FMT_CHECK_ARGS, a panic that says which format and both counts, so that a
+ * diagnostic that would have come out empty stops the program where it was written instead. */
+static proven_err_t fmt_arg_mismatch(const char *fmt, proven_size_t args_count) {
+#if defined(PROVEN_FMT_CHECK_ARGS)
+    char text[320];
+    proven_u8str_t msg = proven_u8str_borrow((proven_byte_t *)text, sizeof text);
+    proven_result_size_t named = proven_fmt_arg_count(fmt);
+    if (named.err == PROVEN_OK)
+        (void)proven_u8str_append_fmt_trunc(&msg, "proven fmt: \"{}\" names {} argument(s), {} given",
+                                            PROVEN_ARG_CSTR_N(fmt, 200), PROVEN_ARG(named.value), PROVEN_ARG(args_count - 1));
+    else
+        (void)proven_u8str_append_fmt_trunc(&msg, "proven fmt: \"{}\" is not a format, {} argument(s) given",
+                                            PROVEN_ARG_CSTR_N(fmt, 200), PROVEN_ARG(args_count - 1));
+    proven_panic(text);
+#else
+    (void)fmt;
+    (void)args_count;
+#endif
+    return PROVEN_ERR_INVALID_ARG;
+}
 
 static void fmt_run(proven_fmt_ctx_t *ctx, const char *fmt, const proven_arg_t *args, proven_size_t args_count, proven_size_t *max_idx) {
     const char *p = fmt;
@@ -781,7 +838,7 @@ static void fmt_run(proven_fmt_ctx_t *ctx, const char *fmt, const proven_arg_t *
                     int digit = (*p - '0');
                     if (PROVEN_CKD_MUL(&spec.precision, spec.precision, 10)) { ctx->err = PROVEN_ERR_OVERFLOW; return; }
                     if (PROVEN_CKD_ADD(&spec.precision, spec.precision, digit)) { ctx->err = PROVEN_ERR_OVERFLOW; return; }
-                    if (spec.precision > 60) { ctx->err = PROVEN_ERR_OUT_OF_BOUNDS; return; }
+                    if (spec.precision > 10000) { ctx->err = PROVEN_ERR_OUT_OF_BOUNDS; return; }
                     ++p;
                 }
             }
@@ -810,10 +867,12 @@ static void fmt_run(proven_fmt_ctx_t *ctx, const char *fmt, const proven_arg_t *
         }
         p++; // skip }
 
-        if (arg_idx != PROVEN_INDEX_NOT_FOUND && arg_idx > 0 && (size_t)arg_idx < args_count) {
+        if (ctx->count_only) {
+            /* Only which argument it names counts here. */
+        } else if (arg_idx != PROVEN_INDEX_NOT_FOUND && arg_idx > 0 && (size_t)arg_idx < args_count) {
             render_arg(ctx, &args[arg_idx], spec);
         } else {
-            ctx->err = PROVEN_ERR_INVALID_ARG;
+            ctx->err = fmt_arg_mismatch(fmt, args_count);
         }
     }
 }
@@ -939,7 +998,10 @@ proven_fmt_result_t proven_u8str_fmt_internal(proven_allocator_t alloc, proven_u
     // CSTR self-alias check (Option A: Explicitly reject as per docs)
     for (proven_size_t i = 0; i < args_count; i++) {
         if (args[i].type == PROVEN_ARG_CSTR) {
-            proven_bufref_t alias_ref = proven_bufref_capture(str->internal.ptr, str->internal.cap, args[i].value.cstr, 0);
+            /* Its first byte inside the buffer: one byte, not an empty range, which would also
+             * take a text that starts just past the buffer's end - nothing is written there, and
+             * an array that happens to follow the caller's buffer was refused (v0.112.3). */
+            proven_bufref_t alias_ref = proven_bufref_capture(str->internal.ptr, str->internal.cap, args[i].value.cstr, 1);
             if (alias_ref.valid) {
                 res.err = PROVEN_ERR_INVALID_ARG;
                 return res;
@@ -986,7 +1048,7 @@ proven_fmt_result_t proven_u8str_fmt_internal(proven_allocator_t alloc, proven_u
             if (PROVEN_CKD_ADD(&expected_args, max_idx, 1)) {
                 res.err = PROVEN_ERR_OVERFLOW;
             } else if (expected_args != args_count) {
-                res.err = PROVEN_ERR_INVALID_ARG;
+                res.err = fmt_arg_mismatch(fmt, args_count);
             }
         }
 
@@ -1002,6 +1064,14 @@ proven_fmt_result_t proven_u8str_fmt_internal(proven_allocator_t alloc, proven_u
         res.required = produced_required;
         res.written = produced_written;
         if (trunc && res.written < res.required) {
+            /* Cut short: not inside a UTF-8 character, which would leave its first bytes
+             * alone at the end (v0.109.0). */
+            if (res.written > 0) {
+                const proven_size_t keep = fmt_utf8_whole(str->internal.ptr + old_len, res.written);
+                str->internal.len = old_len + keep;
+                str->internal.ptr[str->internal.len] = 0;
+                res.written = keep;
+            }
             res.err = PROVEN_ERR_OUT_OF_BOUNDS;
         }
         return res;
@@ -1040,7 +1110,7 @@ proven_fmt_result_t proven_u8str_fmt_internal(proven_allocator_t alloc, proven_u
             if (PROVEN_CKD_ADD(&expected, one_max_idx, 1)) {
                 res.err = PROVEN_ERR_OVERFLOW;
             } else if (expected != args_count) {
-                res.err = PROVEN_ERR_INVALID_ARG;
+                res.err = fmt_arg_mismatch(fmt, args_count);
             } else if (one.written < one.required) {
                 res.err = PROVEN_ERR_OUT_OF_BOUNDS;
             }
@@ -1084,7 +1154,7 @@ proven_fmt_result_t proven_u8str_fmt_internal(proven_allocator_t alloc, proven_u
     }
     
     if (expected_args != args_count) {
-        res.err = PROVEN_ERR_INVALID_ARG;
+        res.err = fmt_arg_mismatch(fmt, args_count);
         return res;
     }
 
@@ -1169,4 +1239,19 @@ proven_fmt_result_t proven_u8str_fmt_internal(proven_allocator_t alloc, proven_u
     }
 
     return res;
+}
+
+proven_result_size_t proven_fmt_arg_count(const char *fmt) {
+    if (!fmt) return (proven_result_size_t){ .err = PROVEN_ERR_INVALID_ARG };
+    proven_fmt_ctx_t ctx = { .str = (void *)0, .err = PROVEN_OK, .measure_only = true, .count_only = true };
+    proven_size_t max_idx = 0;
+    fmt_run(&ctx, fmt, (void *)0, 0, &max_idx);
+    if (ctx.err != PROVEN_OK) return (proven_result_size_t){ .err = ctx.err };
+    return (proven_result_size_t){ .err = PROVEN_OK, .value = max_idx };
+}
+
+proven_fmt_result_t proven_fmt_to_internal(char *buf, proven_size_t cap, const char *fmt, const proven_arg_t *args, proven_size_t args_count) {
+    if (cap > 0 && !buf) return (proven_fmt_result_t){ .err = PROVEN_ERR_INVALID_ARG };
+    proven_u8str_t s = proven_u8str_borrow((proven_byte_t *)buf, cap);
+    return proven_u8str_fmt_internal((proven_allocator_t){0}, &s, true, fmt, (proven_allocator_t){0}, args, args_count);
 }

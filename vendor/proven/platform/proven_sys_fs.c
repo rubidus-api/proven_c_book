@@ -459,6 +459,10 @@ proven_sys_fs_rename_result_t proven_sys_fs_rename_checked(const char *src, cons
         /* MoveFileExW says ACCESS_DENIED for "in use" too; the POSIX rename says it for a
          * read-only target. Asking the file settles both. */
         result = rename_denied_reason(wdest);
+    } else if (saved_error == ERROR_FILE_NOT_FOUND || saved_error == ERROR_PATH_NOT_FOUND) {
+        result = PROVEN_SYS_FS_RENAME_NOT_FOUND;
+    } else if (saved_error == ERROR_NOT_SAME_DEVICE) {
+        result = PROVEN_SYS_FS_RENAME_CROSS_DEVICE;
     } else if (saved_error != 0) {
         result = PROVEN_SYS_FS_RENAME_ERROR;
     }
@@ -472,6 +476,8 @@ proven_sys_fs_rename_result_t proven_sys_fs_rename_checked(const char *src, cons
      * read-only file is ordinary here and does not reach this branch at all. */
     if (errno == EACCES || errno == EPERM || errno == EROFS) return PROVEN_SYS_FS_RENAME_DENIED;
     if (errno == EBUSY || errno == ETXTBSY) return PROVEN_SYS_FS_RENAME_BUSY;
+    if (errno == ENOENT || errno == ENOTDIR) return PROVEN_SYS_FS_RENAME_NOT_FOUND;
+    if (errno == EXDEV) return PROVEN_SYS_FS_RENAME_CROSS_DEVICE;
     return PROVEN_SYS_FS_RENAME_ERROR;
 #endif
 }
@@ -503,9 +509,12 @@ proven_sys_fs_open_result_t proven_sys_fs_remove_checked(const char *path) {
     if (e == ERROR_ACCESS_DENIED) return PROVEN_SYS_FS_OPEN_DENIED;
     if (e == ERROR_FILE_NOT_FOUND || e == ERROR_PATH_NOT_FOUND) return PROVEN_SYS_FS_OPEN_NOT_FOUND;
     if (e == ERROR_SHARING_VIOLATION || e == ERROR_LOCK_VIOLATION) return PROVEN_SYS_FS_OPEN_BUSY;
+    if (e == ERROR_DIR_NOT_EMPTY) return PROVEN_SYS_FS_OPEN_NOT_EMPTY;
     return PROVEN_SYS_FS_OPEN_ERROR;
 #else
     if (remove(path) == 0) return PROVEN_SYS_FS_OPEN_OK;
+    /* A directory that still holds entries: ENOTEMPTY, or EEXIST where POSIX allows it. */
+    if (errno == ENOTEMPTY || errno == EEXIST) return PROVEN_SYS_FS_OPEN_NOT_EMPTY;
     if (errno == ENOENT || errno == ENOTDIR) return PROVEN_SYS_FS_OPEN_NOT_FOUND;
     if (errno == EACCES || errno == EPERM || errno == EROFS) return PROVEN_SYS_FS_OPEN_DENIED;
     if (errno == EBUSY || errno == ETXTBSY) return PROVEN_SYS_FS_OPEN_BUSY;
@@ -517,28 +526,73 @@ bool proven_sys_fs_remove(const char *path) {
     return proven_sys_fs_remove_checked(path) == PROVEN_SYS_FS_OPEN_OK;
 }
 
-bool proven_sys_fs_mkdir(const char *path) {
+/*
+ * Why a path call was refused. The codes are the ones a caller can act on; everything else is
+ * ERROR. EXISTS is in the list for the calls that create a name (mkdir, link) - a call for
+ * which the platform's "exists" means something else must take it out before coming here.
+ */
+#if defined(_WIN32) || defined(_WIN64)
+static proven_sys_fs_open_result_t path_refusal(DWORD e) {
+    if (e == ERROR_FILE_NOT_FOUND || e == ERROR_PATH_NOT_FOUND) return PROVEN_SYS_FS_OPEN_NOT_FOUND;
+    if (e == ERROR_ACCESS_DENIED || e == ERROR_WRITE_PROTECT) return PROVEN_SYS_FS_OPEN_DENIED;
+    if (e == ERROR_SHARING_VIOLATION || e == ERROR_LOCK_VIOLATION) return PROVEN_SYS_FS_OPEN_BUSY;
+    if (e == ERROR_ALREADY_EXISTS || e == ERROR_FILE_EXISTS) return PROVEN_SYS_FS_OPEN_EXISTS;
+    if (e == ERROR_DIR_NOT_EMPTY) return PROVEN_SYS_FS_OPEN_NOT_EMPTY;
+    if (e == ERROR_NOT_SAME_DEVICE) return PROVEN_SYS_FS_OPEN_CROSS_DEVICE;
+    return PROVEN_SYS_FS_OPEN_ERROR;
+}
+#else
+static proven_sys_fs_open_result_t path_refusal(int e) {
+    if (e == ENOENT || e == ENOTDIR) return PROVEN_SYS_FS_OPEN_NOT_FOUND;
+    if (e == EACCES || e == EPERM || e == EROFS) return PROVEN_SYS_FS_OPEN_DENIED;
+    if (e == EBUSY || e == ETXTBSY) return PROVEN_SYS_FS_OPEN_BUSY;
+    if (e == EEXIST) return PROVEN_SYS_FS_OPEN_EXISTS;
+    if (e == ENOTEMPTY) return PROVEN_SYS_FS_OPEN_NOT_EMPTY;
+    if (e == EXDEV) return PROVEN_SYS_FS_OPEN_CROSS_DEVICE;
+    return PROVEN_SYS_FS_OPEN_ERROR;
+}
+#endif
+
+proven_sys_fs_open_result_t proven_sys_fs_mkdir_checked(const char *path) {
 #if defined(_WIN32) || defined(_WIN64)
     wchar_t *wpath = utf8_to_wide_alloc(path);
-    if (!wpath) return false;
+    if (!wpath) return PROVEN_SYS_FS_OPEN_ERROR;
     bool success = CreateDirectoryW(wpath, NULL) != 0;
+    DWORD e = success ? 0 : GetLastError();   /* before the free: HeapFree clobbers it */
     HeapFree(GetProcessHeap(), 0, wpath);
-    return success;
+    if (success) return PROVEN_SYS_FS_OPEN_OK;
+    SetLastError(e);
+    return path_refusal(e);
 #else
-    return mkdir(path, 0755) == 0;
+    if (mkdir(path, 0755) == 0) return PROVEN_SYS_FS_OPEN_OK;
+    return path_refusal(errno);
+#endif
+}
+
+bool proven_sys_fs_mkdir(const char *path) {
+    return proven_sys_fs_mkdir_checked(path) == PROVEN_SYS_FS_OPEN_OK;
+}
+
+proven_sys_fs_open_result_t proven_sys_fs_rmdir_checked(const char *path) {
+#if defined(_WIN32) || defined(_WIN64)
+    wchar_t *wpath = utf8_to_wide_alloc(path);
+    if (!wpath) return PROVEN_SYS_FS_OPEN_ERROR;
+    bool success = RemoveDirectoryW(wpath) != 0;
+    DWORD e = success ? 0 : GetLastError();
+    HeapFree(GetProcessHeap(), 0, wpath);
+    if (success) return PROVEN_SYS_FS_OPEN_OK;
+    SetLastError(e);
+    return path_refusal(e);
+#else
+    if (rmdir(path) == 0) return PROVEN_SYS_FS_OPEN_OK;
+    /* POSIX lets a directory that is not empty answer EEXIST instead of ENOTEMPTY. */
+    if (errno == EEXIST) return PROVEN_SYS_FS_OPEN_NOT_EMPTY;
+    return path_refusal(errno);
 #endif
 }
 
 bool proven_sys_fs_rmdir(const char *path) {
-#if defined(_WIN32) || defined(_WIN64)
-    wchar_t *wpath = utf8_to_wide_alloc(path);
-    if (!wpath) return false;
-    bool success = RemoveDirectoryW(wpath) != 0;
-    HeapFree(GetProcessHeap(), 0, wpath);
-    return success;
-#else
-    return rmdir(path) == 0;
-#endif
+    return proven_sys_fs_rmdir_checked(path) == PROVEN_SYS_FS_OPEN_OK;
 }
 
 proven_sys_dir_handle_t proven_sys_fs_dir_open(const char *path) {
@@ -785,26 +839,32 @@ bool proven_sys_fs_dir_next(proven_sys_dir_handle_t handle, proven_sys_dir_entry
     return proven_sys_fs_dir_step(handle, out_entry) == 1;
 }
 
-bool proven_sys_fs_chmod(const char *path, unsigned int perms) {
+proven_sys_fs_open_result_t proven_sys_fs_chmod_checked(const char *path, unsigned int perms) {
 #if defined(_WIN32) || defined(_WIN64)
     wchar_t *wpath = utf8_to_wide_alloc(path);
-    if (!wpath) return false;
+    if (!wpath) return PROVEN_SYS_FS_OPEN_ERROR;
+    DWORD e = 0;
     DWORD attr = GetFileAttributesW(wpath);
     if (attr == INVALID_FILE_ATTRIBUTES) {
-        HeapFree(GetProcessHeap(), 0, wpath);
-        return false;
+        e = GetLastError();
+    } else {
+        // Logic: If Owner-W (bit 7) is missing, set ReadOnly
+        if (!(perms & 0200)) attr |= FILE_ATTRIBUTE_READONLY;
+        else attr &= (DWORD)~((DWORD)FILE_ATTRIBUTE_READONLY);
+        if (!SetFileAttributesW(wpath, attr)) e = GetLastError();
     }
-    
-    // Logic: If Owner-W (bit 7) is missing, set ReadOnly
-    if (!(perms & 0200)) attr |= FILE_ATTRIBUTE_READONLY;
-    else attr &= (DWORD)~((DWORD)FILE_ATTRIBUTE_READONLY);
-    
-    bool success = SetFileAttributesW(wpath, attr) != 0;
     HeapFree(GetProcessHeap(), 0, wpath);
-    return success;
+    if (e == 0) return PROVEN_SYS_FS_OPEN_OK;
+    SetLastError(e);
+    return path_refusal(e);
 #else
-    return chmod(path, perms) == 0;
+    if (chmod(path, perms) == 0) return PROVEN_SYS_FS_OPEN_OK;
+    return path_refusal(errno);
 #endif
+}
+
+bool proven_sys_fs_chmod(const char *path, unsigned int perms) {
+    return proven_sys_fs_chmod_checked(path, perms) == PROVEN_SYS_FS_OPEN_OK;
 }
 
 bool proven_sys_fs_fchmod(proven_sys_file_handle_t handle, unsigned int perms) {
@@ -827,18 +887,22 @@ bool proven_sys_fs_fchmod(proven_sys_file_handle_t handle, unsigned int perms) {
 #endif
 }
 
-bool proven_sys_fs_lock(proven_sys_file_handle_t handle, int type, bool wait) {
+proven_sys_fs_open_result_t proven_sys_fs_lock_checked(proven_sys_file_handle_t handle, int type, bool wait) {
 #if defined(_WIN32) || defined(_WIN64)
-    if (!handle.handle) return false;
+    if (!handle.handle) return PROVEN_SYS_FS_OPEN_ERROR;
     HANDLE h = (HANDLE)handle.handle;
     OVERLAPPED ov = {0};
     DWORD flags = (type == 1) ? LOCKFILE_EXCLUSIVE_LOCK : 0;
     if (!wait) flags |= LOCKFILE_FAIL_IMMEDIATELY;
-    
-    if (type == 2) return UnlockFileEx(h, 0, 0xFFFFFFFF, 0xFFFFFFFF, &ov) != 0;
-    return LockFileEx(h, flags, 0, 0xFFFFFFFF, 0xFFFFFFFF, &ov) != 0;
+
+    if (type == 2) {
+        return UnlockFileEx(h, 0, 0xFFFFFFFF, 0xFFFFFFFF, &ov) != 0 ? PROVEN_SYS_FS_OPEN_OK : PROVEN_SYS_FS_OPEN_ERROR;
+    }
+    if (LockFileEx(h, flags, 0, 0xFFFFFFFF, 0xFFFFFFFF, &ov) != 0) return PROVEN_SYS_FS_OPEN_OK;
+    /* With LOCKFILE_FAIL_IMMEDIATELY a lock someone else holds is ERROR_LOCK_VIOLATION. */
+    return GetLastError() == ERROR_LOCK_VIOLATION ? PROVEN_SYS_FS_OPEN_BUSY : PROVEN_SYS_FS_OPEN_ERROR;
 #else
-    if (handle.fd < 0) return false;
+    if (handle.fd < 0) return PROVEN_SYS_FS_OPEN_ERROR;
     int fd = handle.fd;
     struct flock fl = {0};
     if (type == 0) fl.l_type = F_RDLCK;
@@ -848,8 +912,16 @@ bool proven_sys_fs_lock(proven_sys_file_handle_t handle, int type, bool wait) {
     fl.l_start = 0;
     fl.l_len = 0;
     int cmd = wait ? F_SETLKW : F_SETLK;
-    return fcntl(fd, cmd, &fl) == 0;
+    if (fcntl(fd, cmd, &fl) == 0) return PROVEN_SYS_FS_OPEN_OK;
+    /* F_SETLK answers EAGAIN or EACCES - POSIX allows either - when another process holds a
+     * conflicting lock. F_SETLKW never does: it waits. */
+    if (!wait && (errno == EAGAIN || errno == EACCES)) return PROVEN_SYS_FS_OPEN_BUSY;
+    return PROVEN_SYS_FS_OPEN_ERROR;
 #endif
+}
+
+bool proven_sys_fs_lock(proven_sys_file_handle_t handle, int type, bool wait) {
+    return proven_sys_fs_lock_checked(handle, type, wait) == PROVEN_SYS_FS_OPEN_OK;
 }
 
 proven_sys_fs_stat_result_t proven_sys_fs_stat_checked(const char *path, proven_sys_fs_stat_t *out_stat) {
@@ -944,22 +1016,30 @@ bool proven_sys_fs_stat(const char *path, proven_sys_fs_stat_t *out_stat) {
     return proven_sys_fs_stat_checked(path, out_stat) == PROVEN_SYS_FS_STAT_OK;
 }
 
-bool proven_sys_fs_link(const char *oldpath, const char *newpath) {
+proven_sys_fs_open_result_t proven_sys_fs_link_checked(const char *oldpath, const char *newpath) {
 #if defined(_WIN32) || defined(_WIN64)
     wchar_t *wold = utf8_to_wide_alloc(oldpath);
     wchar_t *wnew = utf8_to_wide_alloc(newpath);
     if (!wold || !wnew) {
         if (wold) HeapFree(GetProcessHeap(), 0, wold);
         if (wnew) HeapFree(GetProcessHeap(), 0, wnew);
-        return false;
+        return PROVEN_SYS_FS_OPEN_ERROR;
     }
     bool success = CreateHardLinkW(wnew, wold, NULL) != 0;
+    DWORD e = success ? 0 : GetLastError();
     HeapFree(GetProcessHeap(), 0, wold);
     HeapFree(GetProcessHeap(), 0, wnew);
-    return success;
+    if (success) return PROVEN_SYS_FS_OPEN_OK;
+    SetLastError(e);
+    return path_refusal(e);
 #else
-    return link(oldpath, newpath) == 0;
+    if (link(oldpath, newpath) == 0) return PROVEN_SYS_FS_OPEN_OK;
+    return path_refusal(errno);
 #endif
+}
+
+bool proven_sys_fs_link(const char *oldpath, const char *newpath) {
+    return proven_sys_fs_link_checked(oldpath, newpath) == PROVEN_SYS_FS_OPEN_OK;
 }
 
 proven_sys_fs_open_result_t proven_sys_fs_symlink_checked(const char *target, const char *linkpath) {

@@ -219,6 +219,10 @@ proven_err_t proven_fs_sync_dir(proven_allocator_t scratch, proven_u8str_view_t 
 
 /**
  * @brief Renames or moves a file/directory from src to dest.
+ * @return PROVEN_ERR_NOT_FOUND when `src`, or the directory of `dest`, is not there;
+ *         PROVEN_ERR_PERMISSION for a protected destination; PROVEN_ERR_BUSY when something
+ *         holds it; PROVEN_ERR_UNSUPPORTED when `src` and `dest` are on different file systems -
+ *         a rename never copies; PROVEN_ERR_IO otherwise.
  */
 [[nodiscard]]
 proven_err_t proven_fs_rename(proven_allocator_t scratch, proven_u8str_view_t src, proven_u8str_view_t dest);
@@ -227,7 +231,7 @@ proven_err_t proven_fs_rename(proven_allocator_t scratch, proven_u8str_view_t sr
  * @brief Deletes a file, or an empty directory, at the specified path.
  *
  * Like POSIX remove(): an empty directory goes too, on Windows as well. A non-empty one is
- * PROVEN_ERR_IO. A symlink is removed, never what it points to.
+ * PROVEN_ERR_INVALID_STATE. A symlink is removed, never what it points to.
  */
 [[nodiscard]]
 proven_err_t proven_fs_remove(proven_allocator_t scratch, proven_u8str_view_t path);
@@ -251,13 +255,37 @@ proven_err_t proven_fs_remove(proven_allocator_t scratch, proven_u8str_view_t pa
 proven_err_t proven_fs_copy(proven_allocator_t temp_alloc, proven_u8str_view_t src, proven_u8str_view_t dest);
 
 /**
- * @brief Creates a directory.
+ * @brief Creates one directory. Its parent must exist.
+ * @return PROVEN_ERR_EXISTS when the name is already taken - by a directory or by anything
+ *         else; PROVEN_ERR_NOT_FOUND when the parent is not there; PROVEN_ERR_PERMISSION when
+ *         the parent refuses it; PROVEN_ERR_IO otherwise.
  */
 [[nodiscard]]
 proven_err_t proven_fs_mkdir(proven_allocator_t scratch, proven_u8str_view_t path);
 
 /**
+ * @brief Creates a directory and every missing directory above it.
+ *
+ * A level that is already a directory is not an error, so the call may be repeated and two
+ * callers may race to create the same path. A level that exists and is NOT a directory - a
+ * file, a link to nothing - stops the call. Directories created before a failure are left
+ * in place. A trailing separator is ignored; `.` and `..` are passed to the platform as written.
+ *
+ * @param scratch Allocator for the path conversions; nothing is kept.
+ * @return PROVEN_OK when `path` is a directory afterwards; PROVEN_ERR_EXISTS when something
+ *         that is not a directory is in the way; PROVEN_ERR_PERMISSION when a level refuses the
+ *         creation; PROVEN_ERR_INVALID_ARG for the empty path; otherwise what proven_fs_mkdir
+ *         returned for the level that failed.
+ */
+[[nodiscard]]
+proven_err_t proven_fs_mkdir_all(proven_allocator_t scratch, proven_u8str_view_t path);
+
+/**
  * @brief Removes an empty directory.
+ * @return PROVEN_ERR_NOT_FOUND when the name is not there; PROVEN_ERR_PERMISSION when the
+ *         parent refuses it; PROVEN_ERR_BUSY when the platform reports the directory in use;
+ *         PROVEN_ERR_INVALID_STATE when the directory is not empty - empty it first;
+ *         PROVEN_ERR_IO otherwise.
  */
 [[nodiscard]]
 proven_err_t proven_fs_rmdir(proven_allocator_t scratch, proven_u8str_view_t path);
@@ -512,12 +540,18 @@ typedef enum {
 
 /**
  * @brief Set file permissions.
+ * @return PROVEN_ERR_INVALID_ARG for a bit outside the nine permission bits;
+ *         PROVEN_ERR_NOT_FOUND when the name is not there; PROVEN_ERR_PERMISSION when the
+ *         caller may not change it; PROVEN_ERR_IO otherwise.
  */
 [[nodiscard]]
 proven_err_t proven_fs_chmod(proven_allocator_t scratch, proven_u8str_view_t path, proven_fs_perms_t perms);
 
 /**
  * @brief Apply or release a file lock.
+ * @return PROVEN_ERR_BUSY when `wait` is false and another holder has a conflicting lock -
+ *         nothing is wrong and the call may be made again; PROVEN_ERR_INVALID_ARG for an
+ *         unknown `type`; PROVEN_ERR_IO otherwise.
  */
 [[nodiscard]]
 proven_err_t proven_fs_lock(proven_file_t file, proven_fs_lock_type_t type, bool wait);
@@ -568,6 +602,10 @@ proven_err_t proven_fs_symlink(proven_allocator_t scratch, proven_u8str_view_t t
 
 /**
  * @brief Create a hard link.
+ * @return PROVEN_ERR_EXISTS when `newpath` is already taken; PROVEN_ERR_NOT_FOUND when
+ *         `oldpath`, or the directory of `newpath`, is not there; PROVEN_ERR_PERMISSION when
+ *         the platform refuses it; PROVEN_ERR_UNSUPPORTED when the two names are on different
+ *         file systems - copy instead; PROVEN_ERR_IO otherwise.
  */
 [[nodiscard]]
 proven_err_t proven_fs_link(proven_allocator_t scratch, proven_u8str_view_t oldpath, proven_u8str_view_t newpath);

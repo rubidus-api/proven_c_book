@@ -3,7 +3,14 @@
 #include "proven/scan.h"
 #include "float_decimal.h"
 #include <limits.h>
+#if !defined(PROVEN_FREESTANDING)
 #include <string.h>
+#else
+/* A freestanding build may have no C library headers at all (bare Clang for wasm32 has none), so
+ * the runtime service this file uses is declared rather than included. It is one of
+ * the four the freestanding contract requires of the environment (B-034). */
+void *memcpy(void *dst, const void *src, proven_size_t n);
+#endif
 
 /* The special-value spellings ("NaN", "-Inf", ...) are short literals; their length is counted
  * here rather than with strlen, which is not among the runtime services a freestanding build

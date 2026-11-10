@@ -8,6 +8,14 @@
 #endif
 
 #include "proven_sys_math.h"
+
+#if defined(PROVEN_FREESTANDING)
+/* No <math.h>: a freestanding toolchain need not ship one (bare Clang for wasm32 does not). The
+ * compiler's builtin answers the same question with no header and no library call. */
+bool proven_sys_math_isfinite_f64(proven_sys_f64_t val) {
+    return __builtin_isfinite(val);
+}
+#else
 #include <math.h>
 
 bool proven_sys_math_isfinite_f64(proven_sys_f64_t val) {
@@ -20,3 +28,4 @@ bool proven_sys_math_isfinite_f64(proven_sys_f64_t val) {
     return (val == val) && (val != INFINITY) && (val != -INFINITY);
 #endif
 }
+#endif

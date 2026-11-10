@@ -24,6 +24,18 @@ unsigned long long proven_sys_time_now_ns(void) {
     return (ull.QuadPart - 116444736000000000ULL) * 100;
 }
 
+unsigned long long proven_sys_time_monotonic_ns(void) {
+    /* The frequency is fixed at boot and the call cannot fail on any Windows this builds for.
+     * Whole seconds and the remainder are scaled separately: counter * 1e9 overflows 64 bits
+     * after a few minutes at a 10 MHz frequency. */
+    LARGE_INTEGER freq, count;
+    QueryPerformanceFrequency(&freq);
+    QueryPerformanceCounter(&count);
+    unsigned long long f = (unsigned long long)freq.QuadPart;
+    unsigned long long c = (unsigned long long)count.QuadPart;
+    return (c / f) * 1000000000ULL + ((c % f) * 1000000000ULL) / f;
+}
+
 void proven_sys_time_now_local(proven_sys_datetime_t *out_dt) {
     SYSTEMTIME st;
     GetLocalTime(&st);
@@ -47,6 +59,12 @@ void proven_sys_time_sleep_ms(unsigned int ms) {
 unsigned long long proven_sys_time_now_ns(void) {
     struct timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
+    return (unsigned long long)ts.tv_sec * 1000000000ULL + (unsigned long long)ts.tv_nsec;
+}
+
+unsigned long long proven_sys_time_monotonic_ns(void) {
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
     return (unsigned long long)ts.tv_sec * 1000000000ULL + (unsigned long long)ts.tv_nsec;
 }
 

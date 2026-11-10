@@ -190,6 +190,10 @@ proven_time_t proven_time_now(void) {
     return (proven_time_t)proven_sys_time_now_ns();
 }
 
+proven_time_t proven_time_monotonic_now(void) {
+    return (proven_time_t)proven_sys_time_monotonic_ns();
+}
+
 proven_datetime_t proven_time_breakdown(proven_time_t time_ns) {
     proven_i64 seconds = time_ns / (proven_i64)1000000000;
     proven_i64 nsec = time_ns % (proven_i64)1000000000;

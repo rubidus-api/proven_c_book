@@ -18,8 +18,9 @@
  * string wrote one - and the one in `proven_time_u16_fmt` widened each UTF-8 BYTE into a code
  * unit, which is right for ASCII and mojibake for everything else.
  *
- * **Strict, everywhere.** Malformed input is refused with PROVEN_ERR_INVALID_ENCODING, never
- * repaired: no U+FFFD substitution, no skipping. Refused are overlong UTF-8 forms, encoded
+ * **Strict, unless asked by name.** Malformed input is refused with PROVEN_ERR_INVALID_ENCODING,
+ * never repaired: no U+FFFD substitution, no skipping - except by the four `_lossy` functions,
+ * which a caller names when losing a character is better than losing the text. Refused are overlong UTF-8 forms, encoded
  * surrogates (U+D800..U+DFFF), anything above U+10FFFF, stray continuation bytes, and in UTF-16
  * a low surrogate with no high one before it or a high surrogate followed by anything but a low
  * one. A converter that quietly repairs text is a converter that quietly changes it.
@@ -106,6 +107,24 @@ typedef struct {
 proven_utf8_char_t proven_utf8_decode_next(proven_u8str_view_t s, proven_size_t pos);
 
 /**
+ * @brief One code point as UTF-8, into `out[0]` to `out[3]`.
+ * @return its length, 1 to 4; 0 - and nothing written - for a surrogate (U+D800 to U+DFFF) or a
+ *         value above U+10FFFF, which are not characters. Pure computation, freestanding-available.
+ */
+[[nodiscard]]
+proven_size_t proven_utf8_encode_one(proven_u32 cp, proven_byte_t out[4]);
+
+/**
+ * @brief Whether all of `s` is well-formed UTF-8, by the rules of proven_utf8_decode_next; a
+ * character cut off at the end is malformed here (the text is taken as complete).
+ * @return PROVEN_OK; PROVEN_ERR_INVALID_ENCODING with the offset of the first byte that is not
+ *         part of a character in `*bad_at` (NULL: not wanted); PROVEN_ERR_INVALID_ARG for a NULL
+ *         pointer with a nonzero size. Pure computation, freestanding-available.
+ */
+[[nodiscard]]
+proven_err_t proven_utf8_validate(proven_u8str_view_t s, proven_size_t *bad_at);
+
+/**
  * @brief The number of UTF-16 code units `src` converts to.
  * @return PROVEN_ERR_INVALID_ENCODING for malformed input or input that ends mid-character.
  */
@@ -140,6 +159,44 @@ proven_err_t proven_utf8_to_utf16(proven_u8str_view_t src, proven_u16 *out, prov
 [[nodiscard]]
 proven_err_t proven_utf16_to_utf8(const proven_u16 *src, proven_size_t n, proven_byte_t *out,
                                   proven_size_t out_cap, proven_size_t *written);
+
+// -------------------------------------------------------------
+// Lossy, atomic: what cannot be decoded becomes U+FFFD (since v0.112.0)
+// -------------------------------------------------------------
+
+/**
+ * @brief Convert all of `src` into `out` with each malformed part replaced by U+FFFD, or nothing.
+ *
+ * For text that must arrive whole even when a piece of it is broken - a report built from what
+ * users' files contain, a name read from a damaged archive. UTF-8 to UTF-16 puts one U+FFFD per
+ * maximal subpart, the step proven_utf8_decode_next reports (Unicode's recommended practice,
+ * chapter 3), and one for a character cut off at the end. UTF-16 to UTF-8 puts one U+FFFD for each
+ * unpaired surrogate unit, as WideCharToMultiByte does without WC_ERR_INVALID_CHARS. Well-formed
+ * input converts exactly as the strict functions convert it.
+ *
+ * As the strict forms: measured before a unit is written, so on failure `out` is untouched and
+ * `*written` is 0; no terminator.
+ *
+ * @return PROVEN_ERR_OUT_OF_BOUNDS when the result needs more than `out_cap` units;
+ *         PROVEN_ERR_INVALID_ARG for a NULL pointer with a nonzero size. Never
+ *         PROVEN_ERR_INVALID_ENCODING.
+ */
+[[nodiscard]]
+proven_err_t proven_utf8_to_utf16_lossy(proven_u8str_view_t src, proven_u16 *out, proven_size_t out_cap,
+                                        proven_size_t *written);
+
+/** @brief The same, from UTF-16 code units into UTF-8 bytes (U+FFFD is EF BF BD). */
+[[nodiscard]]
+proven_err_t proven_utf16_to_utf8_lossy(const proven_u16 *src, proven_size_t n, proven_byte_t *out,
+                                        proven_size_t out_cap, proven_size_t *written);
+
+/** @brief The number of UTF-16 code units proven_utf8_to_utf16_lossy writes for `src`. */
+[[nodiscard]]
+proven_result_size_t proven_utf8_to_utf16_lossy_size(proven_u8str_view_t src);
+
+/** @brief The number of UTF-8 bytes proven_utf16_to_utf8_lossy writes for `n` code units. */
+[[nodiscard]]
+proven_result_size_t proven_utf16_to_utf8_lossy_size(const proven_u16 *src, proven_size_t n);
 
 // -------------------------------------------------------------
 // Partial: for text that arrives in pieces

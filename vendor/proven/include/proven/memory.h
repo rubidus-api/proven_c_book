@@ -175,4 +175,31 @@ proven_err_t proven_mem_copy(void *dst, proven_size_t dst_cap, proven_mem_view_t
  */
 proven_err_t proven_mem_move(void *dst, proven_size_t dst_cap, proven_mem_view_t src);
 
+/**
+ * @brief Whether two byte ranges are equal, in time that does not depend on where they differ.
+ *
+ * An ordinary comparison stops at the first byte that differs, and how long it took says how
+ * many leading bytes matched. Against a secret - a MAC, a token, a password hash - that lets
+ * someone who can time many attempts recover it a byte at a time. This comparison looks at
+ * every byte whatever it finds.
+ *
+ * The lengths are not secret: ranges of different sizes are unequal at once. What does not
+ * leak is the content. Use it wherever one side of the comparison is something an attacker is
+ * trying to guess.
+ */
+[[nodiscard]]
+bool proven_mem_equal_ct(proven_mem_view_t a, proven_mem_view_t b);
+
+/**
+ * @brief Overwrite memory with zeros in a way the compiler may not remove.
+ *
+ * A key or a password left in a buffer after use can be read by whatever uses that memory
+ * next, or found in a core dump. Clearing it with an ordinary loop or memset just before the
+ * buffer goes out of scope is exactly the write an optimiser deletes as dead. This one stays.
+ *
+ * It clears the bytes you name and nothing else: copies the compiler made in registers or on
+ * the stack, and pages the system wrote to swap, are beyond it.
+ */
+void proven_mem_wipe(proven_mem_mut_t mem);
+
 #endif /* PROVEN_MEMORY_H */

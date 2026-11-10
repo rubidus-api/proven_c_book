@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 This project follows Keep a Changelog.
 
+## [v0.105.0] - 2026-11-10
+
+함께 싣는 proven 스냅샷을 v0.6.0 에서 v0.112.5 로 올렸다. 라이브러리의 핵심(`include/` · `src/` · `platform/`)을 고치지 않고 그대로 싣고, 네트워크 층 `net/` 은 싣지 않는다.
+
+### Changed
+- **`vendor/proven/`** v0.112.5(상류 커밋 `1206c540`). v0.6.0 뒤 상류에 생긴 압축 · 암호 · 인증서 모듈도 핵심에 들어 있어 함께 실린다 --- 이 책은 그것들을 다루지 않는다. Brotli 사전 표(RFC 7932)의 고지는 `vendor/proven/THIRD_PARTY_NOTICES.md`.
+- **102장** 오류 코드는 이제 `PROVEN_OK` 까지 스물일곱 개다. 새 열 개(`ERR_TIMEOUT` ~ `ERR_CANCELLED`)는 네트워크 층 · 인증서 모듈이 돌려주는 코드라 표에 한 줄로 묶었다. 예제 `codes.c` 도 그 열 개를 이름으로 찍는다.
+- **109장 · 참고 문헌** 이 책이 쓴 판을 v0.112.5 로.
+
+### Fixed
+- **101장** 「이 부의 예제 29개를 포함해 책의 예제 223개」 → 27 · 270(지금 원고의 시연 수).
+
 ## [v0.104.1] - 2026-11-10
 
 두 번째 정오표(제8부~끝 · 부록 · 뒷부속, 1~2장 재독)의 1,259건(한국어 464 · 영어 795)을 반영했다. 색인 표제어에서 병기를 빼는 셋은 용어 규칙(정의 자리에 병기와 색인)과 부딪쳐 다음 판으로 미뤘다.

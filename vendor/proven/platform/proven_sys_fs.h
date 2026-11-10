@@ -49,7 +49,9 @@ typedef enum {
     PROVEN_SYS_FS_OPEN_DENIED,     /**< permission refused it */
     PROVEN_SYS_FS_OPEN_BUSY,       /**< something else holds it right now */
     PROVEN_SYS_FS_OPEN_EXISTS,     /**< an exclusive create found the name already there */
-    PROVEN_SYS_FS_OPEN_ERROR       /**< anything else */
+    PROVEN_SYS_FS_OPEN_ERROR,      /**< anything else */
+    PROVEN_SYS_FS_OPEN_NOT_EMPTY,  /**< a directory to be removed still holds entries */
+    PROVEN_SYS_FS_OPEN_CROSS_DEVICE /**< a link or rename would have to cross file systems */
 } proven_sys_fs_open_result_t;
 
 /**
@@ -91,6 +93,8 @@ typedef enum {
     PROVEN_SYS_FS_RENAME_OK = 0,
     PROVEN_SYS_FS_RENAME_DENIED,   /**< permission refused it: the target is protected */
     PROVEN_SYS_FS_RENAME_BUSY,     /**< something else holds it open right now */
+    PROVEN_SYS_FS_RENAME_NOT_FOUND, /**< the source, or the destination's directory, is not there */
+    PROVEN_SYS_FS_RENAME_CROSS_DEVICE, /**< source and destination are on different file systems */
     PROVEN_SYS_FS_RENAME_ERROR     /**< anything else */
 } proven_sys_fs_rename_result_t;
 
@@ -141,9 +145,30 @@ proven_sys_fs_open_result_t proven_sys_fs_remove_checked(const char *path);
 [[nodiscard]]
 bool proven_sys_fs_remove(const char *path);
 
+/**
+ * @brief Create one directory, saying WHY when it fails.
+ *
+ * EXISTS means the name is taken - by a directory or by anything else; the call does not look.
+ * NOT_FOUND means the parent is not there. A caller creating the directories of a path acts on
+ * the two in opposite ways, which is why a boolean is not enough here.
+ */
+[[nodiscard]]
+proven_sys_fs_open_result_t proven_sys_fs_mkdir_checked(const char *path);
+
+/** @brief Convenience wrapper over proven_sys_fs_mkdir_checked; it cannot say why. */
 [[nodiscard]]
 bool proven_sys_fs_mkdir(const char *path);
 
+/**
+ * @brief Remove an empty directory, saying WHY when it fails.
+ *
+ * A directory that is not empty is NOT_EMPTY, never EXISTS: POSIX allows either ENOTEMPTY or
+ * EEXIST for it, and the second does not mean here what EXISTS means everywhere else in this enum.
+ */
+[[nodiscard]]
+proven_sys_fs_open_result_t proven_sys_fs_rmdir_checked(const char *path);
+
+/** @brief Convenience wrapper over proven_sys_fs_rmdir_checked; it cannot say why. */
 [[nodiscard]]
 bool proven_sys_fs_rmdir(const char *path);
 
@@ -219,6 +244,11 @@ int proven_sys_fs_dir_step(proven_sys_dir_handle_t handle, proven_sys_dir_entry_
 [[nodiscard]]
 bool proven_sys_fs_dir_next(proven_sys_dir_handle_t handle, proven_sys_dir_entry_t *out_entry);
 
+/** @brief Set permissions by pathname, saying WHY when it fails. */
+[[nodiscard]]
+proven_sys_fs_open_result_t proven_sys_fs_chmod_checked(const char *path, unsigned int perms);
+
+/** @brief Convenience wrapper over proven_sys_fs_chmod_checked; it cannot say why. */
 [[nodiscard]]
 bool proven_sys_fs_chmod(const char *path, unsigned int perms);
 
@@ -235,6 +265,17 @@ bool proven_sys_fs_chmod(const char *path, unsigned int perms);
 [[nodiscard]]
 bool proven_sys_fs_fchmod(proven_sys_file_handle_t handle, unsigned int perms);
 
+/**
+ * @brief Take or release a whole-file advisory lock, saying WHY when it fails.
+ *
+ * `type` is 0 shared, 1 exclusive, 2 unlock. BUSY is the answer to a request made with
+ * `wait == false` while someone else holds a conflicting lock: nothing is wrong, and the
+ * caller may ask again.
+ */
+[[nodiscard]]
+proven_sys_fs_open_result_t proven_sys_fs_lock_checked(proven_sys_file_handle_t handle, int type, bool wait);
+
+/** @brief Convenience wrapper over proven_sys_fs_lock_checked; it cannot say why. */
 [[nodiscard]]
 bool proven_sys_fs_lock(proven_sys_file_handle_t handle, int type, bool wait);
 
@@ -272,6 +313,16 @@ proven_sys_fs_stat_result_t proven_sys_fs_stat_checked(const char *path, proven_
 [[nodiscard]]
 bool proven_sys_fs_stat(const char *path, proven_sys_fs_stat_t *out_stat);
 
+/**
+ * @brief Create a hard link, saying WHY when it fails.
+ *
+ * EXISTS: `newpath` is taken. NOT_FOUND: `oldpath`, or the directory of `newpath`, is not
+ * there. A link across file systems is CROSS_DEVICE.
+ */
+[[nodiscard]]
+proven_sys_fs_open_result_t proven_sys_fs_link_checked(const char *oldpath, const char *newpath);
+
+/** @brief Convenience wrapper over proven_sys_fs_link_checked; it cannot say why. */
 [[nodiscard]]
 bool proven_sys_fs_link(const char *oldpath, const char *newpath);
 

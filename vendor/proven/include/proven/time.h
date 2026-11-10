@@ -71,10 +71,28 @@ proven_err_t proven_time_u16_fmt(proven_allocator_t alloc, proven_u16str_t *str,
 #endif
 
 /**
- * @brief Get the current high-precision timestamp in nanoseconds.
+ * @brief The wall clock: nanoseconds since the Unix epoch.
+ *
+ * This is the clock that has a date. It is also the clock that is set - by NTP, by an
+ * administrator - and it steps, forwards or backwards, when that happens. Break it down or
+ * format it; do not measure with it.
  */
 [[nodiscard]]
 proven_time_t proven_time_now(void);
+
+/**
+ * @brief The monotonic clock: nanoseconds from an origin that is fixed for the life of the
+ *        process and means nothing outside it.
+ *
+ * It never goes backwards and nobody sets it, so the difference of two readings is an elapsed
+ * time. That is all it is for: a duration, a timeout, a deadline. The value has no date - do not
+ * pass it to proven_time_breakdown - and it cannot be compared with another process's reading
+ * or stored for a later run.
+ *
+ * In a freestanding build there is no clock to read and this returns 0, as proven_time_now does.
+ */
+[[nodiscard]]
+proven_time_t proven_time_monotonic_now(void);
 
 /**
  * @brief Convert nanoseconds since epoch to broken-down UTC time.
