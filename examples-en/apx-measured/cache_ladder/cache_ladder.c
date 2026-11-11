@@ -23,6 +23,7 @@ static uint64_t rnd(void)
 { rng_state ^= rng_state << 13; rng_state ^= rng_state >> 7; rng_state ^= rng_state << 17; return rng_state; }
 
 /* Sattolo's algorithm: make *one ring* through the whole array (it never splits into small rings) */
+// [excerpt cycle]
 static void make_cycle(size_t *next, size_t n)
 {
     for (size_t i = 0; i < n; i++) next[i] = i;
@@ -36,10 +37,12 @@ static void make_cycle(size_t *next, size_t n)
     memcpy(next, cyc, n * sizeof *cyc);
     free(cyc);
 }
+// [/excerpt]
 
 static volatile size_t sink;
 
 /* Step along the random ring `steps` times --- every step depends on the one before */
+// [excerpt chase]
 static double chase(size_t *next, size_t n, long steps)
 {
     size_t p = 0;
@@ -50,6 +53,7 @@ static double chase(size_t *next, size_t n, long steps)
     sink = p;
     return (t1 - t0) / (double)steps;
 }
+// [/excerpt]
 
 /* For comparison: scan in order --- the machine can prefetch the next place */
 static double sweep(size_t *buf, size_t n, long rounds)

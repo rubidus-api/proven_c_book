@@ -16,11 +16,6 @@ static void level3(void)                 /* static --- 동적 심볼 표에 오�
     for (int i = 0; i < n && i < 5; i++)
         printf("  [%d] %s\n", i, names[i]);
     free(names);
-
-    puts("\nnotice: main is named, the static functions are not.");
-    puts("a name here comes from the *symbol table*, and static functions are local");
-    puts("symbols -- they never reach the dynamic one. the debug information (DWARF)");
-    puts("still knows them, which is what addr2line reads.");
 }
 static void level2(void) { level3(); }
 static void level1(void) { level2(); }

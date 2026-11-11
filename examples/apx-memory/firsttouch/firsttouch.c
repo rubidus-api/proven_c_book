@@ -37,6 +37,7 @@ int main(void)
             puts("mmap refused; this machine cannot run the experiment.");
             return 0;
         }
+        // [excerpt touch]
         double t0 = ns();
         for (size_t i = 0; i < PAGES; i++) p[i * PAGE] = 1;
         double t1 = ns();
@@ -44,6 +45,7 @@ int main(void)
         double t2 = ns();
         first[r] = (t1 - t0) / (double)PAGES;
         again[r] = (t2 - t1) / (double)PAGES;
+        // [/excerpt]
         munmap(p, PAGE * PAGES);
     }
     qsort(first, R, sizeof *first, cmp_d);

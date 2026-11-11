@@ -18,19 +18,23 @@ static int cmp_d(const void *a, const void *b)
 { double x = *(const double *)a, y = *(const double *)b; return x < y ? -1 : x > y; }
 
 /* Work optimization may delete: nobody uses the result */
+// [excerpt discarded]
 static void sum_discarded(const int *a, size_t n)
 {
     long s = 0;
     for (size_t i = 0; i < n; i++) s += a[i];
     (void)s;
 }
+// [/excerpt]
 /* Work optimization cannot delete: the result is returned and the caller uses it */
+// [excerpt kept]
 static long sum_kept(const int *a, size_t n)
 {
     long s = 0;
     for (size_t i = 0; i < n; i++) s += a[i];
     return s;
 }
+// [/excerpt]
 static volatile long sink;
 
 /* ★ aarch64 Linux lets user programs read the CTR_EL0 register too (glibc answers the line
@@ -128,11 +132,13 @@ int main(void)
     printf("    Reading the clock costs more than that --- measured next.\n\n");
 
     printf("== 3. the cost of reading the clock ==\n");
+    // [excerpt callcost]
     const long N = 200000;
     double t0 = ns();
     for (long i = 0; i < N; i++) { struct timespec ts; clock_gettime(CLOCK_MONOTONIC, &ts); sink += ts.tv_nsec; }
     double t1 = ns();
     double call_ns = (t1 - t0) / (double)N;
+    // [/excerpt]
     printf("  one clock_gettime : %.1f ns\n", call_ns);
 
     /* the shortest interval we can actually see --- the smallest nonzero difference of two reads */
@@ -172,10 +178,12 @@ int main(void)
     /* ★ Here too ④'s trap struck first: if nobody reads what was filled, the memset
        vanishes whole and you get the phantom "filled 4 MiB in 38 ns". So *after* measuring
        we read one byte to show the result was used. */
+    // [excerpt warm]
     t0 = ns(); memset(b, 1, NA * sizeof *b); t1 = ns();
     double first = t1 - t0;  sink += ((unsigned char *)b)[NA / 2];
     t0 = ns(); memset(b, 2, NA * sizeof *b); t1 = ns();
     double second = t1 - t0; sink += ((unsigned char *)b)[NA / 2];
+    // [/excerpt]
     printf("  filling the same 4 MiB --- first  : %8.0f ns\n", first);
     printf("                          second : %8.0f ns\n", second);
     printf("  factor: %.1f x\n", first / second);

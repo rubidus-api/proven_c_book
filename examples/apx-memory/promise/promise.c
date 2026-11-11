@@ -44,6 +44,7 @@ int main(void)
     printf("#DATA-BEGIN\n");
     show("before", "before the request");
 
+    // [excerpt promise]
     char *p = malloc(want);
     held = p;
     if (!p) {
@@ -60,6 +61,7 @@ int main(void)
 
     free(p);
     show("freed", "after free");
+    // [/excerpt]
     printf("#DATA-END\n");
 
     puts("\n  * malloc drew a map; it did not fetch memory. The memory arrived one page");

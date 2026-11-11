@@ -26,6 +26,7 @@ static uint32_t crc32(const void *buf, size_t n)
 static void put32(unsigned char *p, uint32_t v)
 { p[0] = v & 0xff; p[1] = v >> 8 & 0xff; p[2] = v >> 16 & 0xff; p[3] = v >> 24; }
 
+// [excerpt part]
 static void put_part(unsigned char *e, uint8_t boot, uint8_t type,
                      uint32_t lba, uint32_t count)
 {
@@ -36,6 +37,7 @@ static void put_part(unsigned char *e, uint8_t boot, uint8_t type,
     put32(e + 8, lba);        /* 시작 --- 이쪽이 진짜로 쓰인다 */
     put32(e + 12, count);
 }
+// [/excerpt]
 
 static void hexdump(const unsigned char *p, size_t off, size_t n)
 {
@@ -76,8 +78,10 @@ int main(void)
 
     /* (3) GPT 를 쓰는 디스크의 첫 섹터 --- 보호 MBR */
     unsigned char pmbr[512] = { 0 };
+    // [excerpt protective]
     put_part(pmbr + 0x1be, 0x00, 0xee, 1, 0xffffffffu);  /* 0xEE = 「여기부터 끝까지 남의 것」 */
     pmbr[510] = 0x55; pmbr[511] = 0xaa;
+    // [/excerpt]
     printf("the protective MBR (first sector of a GPT disk)\n");
     printf("  partition type 0x%02x --- it tells old tools the disk is fully used\n",
            pmbr[0x1be + 4]);

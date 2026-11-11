@@ -18,19 +18,23 @@ static int cmp_d(const void *a, const void *b)
 { double x = *(const double *)a, y = *(const double *)b; return x < y ? -1 : x > y; }
 
 /* 최적화가 지워도 되는 계산: 결과를 아무도 안 쓴다 */
+// [excerpt discarded]
 static void sum_discarded(const int *a, size_t n)
 {
     long s = 0;
     for (size_t i = 0; i < n; i++) s += a[i];
     (void)s;
 }
+// [/excerpt]
 /* 최적화가 지울 수 없는 계산: 결과를 돌려주고, 부르는 쪽이 쓴다 */
+// [excerpt kept]
 static long sum_kept(const int *a, size_t n)
 {
     long s = 0;
     for (size_t i = 0; i < n; i++) s += a[i];
     return s;
 }
+// [/excerpt]
 static volatile long sink;
 
 /* ★ aarch64 리눅스는 CTR_EL0 레지스터를 사용자 프로그램에도 읽게 열어 둔다(glibc 도 이것으로
@@ -128,11 +132,13 @@ int main(void)
     printf("    Reading the clock costs more than that --- measured next.\n\n");
 
     printf("== 3. the cost of reading the clock ==\n");
+    // [excerpt callcost]
     const long N = 200000;
     double t0 = ns();
     for (long i = 0; i < N; i++) { struct timespec ts; clock_gettime(CLOCK_MONOTONIC, &ts); sink += ts.tv_nsec; }
     double t1 = ns();
     double call_ns = (t1 - t0) / (double)N;
+    // [/excerpt]
     printf("  one clock_gettime : %.1f ns\n", call_ns);
 
     /* 실제로 볼 수 있는 가장 짧은 간격 --- 두 번 읽어 차이가 0 이 아닌 최솟값 */
@@ -172,10 +178,12 @@ int main(void)
     /* ★ 여기서도 ④ 의 함정이 먼저 걸렸다: 채운 결과를 아무도 안 읽으면 memset 이
        통째로 사라져 「4 MiB 를 38 나노초에 채웠다」는 헛것이 나온다. 그래서 잰 *뒤에*
        한 바이트를 읽어 결과가 쓰였음을 알린다. */
+    // [excerpt warm]
     t0 = ns(); memset(b, 1, NA * sizeof *b); t1 = ns();
     double first = t1 - t0;  sink += ((unsigned char *)b)[NA / 2];
     t0 = ns(); memset(b, 2, NA * sizeof *b); t1 = ns();
     double second = t1 - t0; sink += ((unsigned char *)b)[NA / 2];
+    // [/excerpt]
     printf("  filling the same 4 MiB --- first  : %8.0f ns\n", first);
     printf("                          second : %8.0f ns\n", second);
     printf("  factor: %.1f x\n", first / second);

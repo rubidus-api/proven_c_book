@@ -19,9 +19,5 @@ int main(void)
 
     sigprocmask(SIG_SETMASK, &saved, NULL);  /* 푼다 --- 밀린 것이 쏟아질까? */
     printf("handler ran %d time(s) after unblocking\n", (int)runs);
-    puts("");
-    puts("a pending interrupt is a bit, not a counter: ten requests, one delivery.");
-    puts("hardware behaves the same way, which is why a handler must ask the device");
-    puts("what happened rather than assume it ran once per event.");
     return 0;
 }

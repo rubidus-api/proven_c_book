@@ -15,11 +15,13 @@ static void put(int kind, int val, const char *note)
 { log_[n_ev++] = (struct ev){ kind, val, note }; }
 
 /* One byte --- eight bits, high bit first, then the ninth clock is the ACK slot */
+// [excerpt byte]
 static void put_byte(uint8_t b, const char *what, int acked)
 {
     for (int i = 7; i >= 0; i--) put(EV_BIT, b >> i & 1, i == 7 ? what : NULL);
     put(acked ? EV_ACK : EV_NACK, acked ? 0 : 1, NULL);
 }
+// [/excerpt]
 
 static const char *kind_name(int k)
 {
@@ -46,6 +48,7 @@ int main(void)
            dev, dev << 1);
 
     /* ── a write: tell the device "write 0xAF to register 0" ── */
+    // [excerpt transaction]
     put(EV_START, 0, "the controller takes the bus");
     put_byte((uint8_t)(dev << 1 | 0), "device address + write", 1);
     put_byte(reg, "register number", 1);
@@ -60,6 +63,7 @@ int main(void)
     put_byte((uint8_t)(dev << 1 | 1), "device address + read", 1);
     put_byte(val, "the value the device returned", 0);   /* on the last byte the controller signals the end with a NACK */
     put(EV_STOP, 0, "end");
+    // [/excerpt]
 
     printf("== the order on the wire ==\n");
     int bitpos = 0; uint8_t acc = 0;

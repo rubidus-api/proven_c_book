@@ -25,9 +25,11 @@ int main(void)
     /* FAT 한 벌의 크기는 마음대로 정하는 값이 아니라 *계산해서 나오는* 값이다.
        규격이 주는 어림 공식(FAT32): 자료가 될 섹터를 「클러스터 하나가 먹는 섹터 +
        그 클러스터를 가리키는 FAT 항목이 먹는 자리」로 나눈다. */
+    // [excerpt fatsize]
     uint32_t t1 = tot_sec - rsvd_want;
     uint32_t t2 = (256 * spc_want + nfat_want) / 2;
     const uint32_t fat_sz = (t1 + t2 - 1) / t2;
+    // [/excerpt]
 
     /* ── BPB 를 규격대로 채운다 ─────────────────────────────── */
     bs[0] = 0xeb; bs[1] = 0x58; bs[2] = 0x90;      /* 0  : 점프 명령(3바이트) */
@@ -79,8 +81,10 @@ int main(void)
            get32(bs + 28));
 
     /* ── 자리 계산 ──────────────────────────────────────────── */
+    // [excerpt place]
     uint32_t first_data = rsvd + nfat * fatsz;         /* FAT32 는 루트 디렉터리 자리가 따로 없다 */
     uint32_t clusters   = (tot - first_data) / spc;
+    // [/excerpt]
 
     printf("== how the partition divides up ==\n");
     printf("  reserved area : sectors 0 - %u  (boot sector, FSInfo, copies)\n", rsvd - 1);
@@ -127,6 +131,7 @@ int main(void)
     printf("\n== when one file is scattered --- the FAT chain ==\n");
     printf("  the FAT is an array of cluster number -> next cluster number (4 bytes each).\n");
     printf("  if a file starts at cluster 3:\n\n");
+    // [excerpt chain]
     uint32_t n = 3;
     for (int step = 0; step < 8; step++) {
         uint32_t next = get32(fat + n * 4) & 0x0FFFFFFFu;   /* 위 4비트는 예약 */
@@ -137,6 +142,7 @@ int main(void)
         printf(" -> next is %u\n", next);
         n = next;
     }
+    // [/excerpt]
     printf("\n  so a file that is not contiguous can still be read. And damage to one FAT\n");
     printf("  removes the way to find the rest of a file --- which is why there are two copies.\n");
     return 0;

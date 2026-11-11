@@ -32,6 +32,7 @@ static uint64_t get64(const unsigned char *p)
 /* ★ The GUID trap: the byte order in writing and on disk *differ*.
    The first three groups (4, 2, 2 bytes) are stored reversed, little-endian; the last two
    (2, 6 bytes) keep text order. So a hex dump and a documented GUID look different. */
+// [excerpt guid]
 static void guid_parse(unsigned char *out, const char *s)
 {
     unsigned b[16]; int n = 0;
@@ -47,6 +48,7 @@ static void guid_parse(unsigned char *out, const char *s)
     out[6] = (unsigned char)b[7]; out[7] = (unsigned char)b[6];   /* the third group */
     for (int i = 8; i < 16; i++) out[i] = (unsigned char)b[i];    /* the rest as is */
 }
+// [/excerpt]
 static void guid_text(const unsigned char *g, char *out)
 {
     sprintf(out, "%02X%02X%02X%02X-%02X%02X-%02X%02X-%02X%02X-%02X%02X%02X%02X%02X%02X",
@@ -91,6 +93,7 @@ int main(void)
     /* ── header ──────────────────────────────────────────────── */
     uint64_t backup_lba = DISK_SECS - 1;
     uint64_t ents_sectors = (ENTRIES * ENTRY_SZ + SEC - 1) / SEC;   /* 32 */
+    // [excerpt header]
     memcpy(hdr, "EFI PART", 8);            /* 0  : signature */
     put32(hdr + 8, 0x00010000u);           /* 8  : revision 1.0 */
     put32(hdr + 12, 92);                   /* 12 : header size */
@@ -106,6 +109,7 @@ int main(void)
     put32(hdr + 84, ENTRY_SZ);             /* 84 : size of one entry */
     put32(hdr + 88, crc32(ents, ENTRIES * ENTRY_SZ));   /* 88 : CRC of the whole entry array */
     put32(hdr + 16, crc32(hdr, 92));       /* last, the header's own CRC */
+    // [/excerpt]
 
     printf("== the GPT header (LBA 1, 92 bytes) ==\n");
     printf("  signature        : %.8s\n", hdr);
@@ -124,7 +128,9 @@ int main(void)
     printf("  entry array CRC32: 0x%08x\n\n", get32(hdr + 88));
 
     printf("== checking it ==\n");
+    // [excerpt verify]
     unsigned char probe[92]; memcpy(probe, hdr, 92); put32(probe + 16, 0);
+    // [/excerpt]
     printf("  header CRC recomputed (that field zeroed) : 0x%08x -> %s\n",
            crc32(probe, 92), crc32(probe, 92) == get32(hdr + 16) ? "matches" : "does not match");
     printf("  entry array CRC recomputed               : 0x%08x -> %s\n\n",

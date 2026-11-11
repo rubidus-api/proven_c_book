@@ -9,6 +9,7 @@
 #define MAXW    4096u
 
 /* 8N1: 시작 1 + 자료 8 + 정지 1 = 10비트. 자료는 *낮은 자리부터* 나간다. */
+// [excerpt frame]
 static size_t make_frame(unsigned char *w, uint8_t byte, unsigned parity_bits)
 {
     size_t n = 0;
@@ -28,9 +29,11 @@ static size_t make_frame(unsigned char *w, uint8_t byte, unsigned parity_bits)
     for (unsigned i = 0; i < OS * 2; i++) w[n++] = 1;
     return n;
 }
+// [/excerpt]
 
 /* 수신기: 시작 비트의 내려감을 찾고, 제 비트 길이로 한가운데를 찍어 읽는다.
    rx_bit 이 16 이 아니면 그만큼 보율이 어긋난 것이다. */
+// [excerpt receive]
 static int receive(const unsigned char *w, size_t n, double rx_bit,
                    uint8_t *out, int *stop_ok)
 {
@@ -51,6 +54,7 @@ static int receive(const unsigned char *w, size_t n, double rx_bit,
     *out = v;
     return 0;
 }
+// [/excerpt]
 
 static void show_wave(const unsigned char *w, size_t n)
 {

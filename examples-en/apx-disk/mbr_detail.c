@@ -20,7 +20,9 @@ static void put_chs(unsigned char *p, uint32_t cyl, uint32_t head, uint32_t sect
     p[1] = (unsigned char)(((cyl >> 2) & 0xc0) | (sect & 0x3f));
     p[2] = (unsigned char)(cyl & 0xff);
 }
+// [excerpt chs]
 static void get_chs(const unsigned char *p, unsigned *cyl, unsigned *head, unsigned *sect)
+// [/excerpt]
 { *head = p[0]; *sect = p[1] & 0x3f; *cyl = ((unsigned)(p[1] & 0xc0) << 2) | p[2]; }
 
 static void put_part(unsigned char *e, uint8_t boot, uint8_t type,
@@ -104,6 +106,7 @@ int main(void)
     ebr2[510] = 0x55; ebr2[511] = 0xaa;                       /* entry 2 empty = end of the chain */
 
     printf("== the EBR chain inside the extended partition (extended start LBA=%u) ==\n", ext_start);
+    // [excerpt chain]
     uint32_t ebr_lba = ext_start;
     const unsigned char *chain[] = { ebr1, ebr2 };
     for (int i = 0; i < 2; i++) {
@@ -114,6 +117,7 @@ int main(void)
         if (next == 0) { printf("  -> end of the chain\n"); break; }
         ebr_lba = ext_start + next;
     }
+    // [/excerpt]
 
     /* ── the limit of CHS ────────────────────────────────────── */
     printf("\n== the limit of what CHS can express ==\n");

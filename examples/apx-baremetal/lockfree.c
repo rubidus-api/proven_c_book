@@ -14,11 +14,5 @@ int main(void)
            atomic_is_lock_free(&small) ? "yes" : "no");
     printf("128-bit atomic is lock-free: %s\n",
            atomic_is_lock_free(&big) ? "yes" : "no");
-    puts("");
-    puts("a non-lock-free atomic takes a lock behind your back.");
-    puts("if the code an interrupt suspended was holding that same lock,");
-    puts("the handler waits for a lock only the interrupted code can release.");
-    puts("that is why C23 7.14.1.1 allows <stdatomic.h> in a handler only when");
-    puts("the atomic arguments are lock-free.");
     return 0;
 }

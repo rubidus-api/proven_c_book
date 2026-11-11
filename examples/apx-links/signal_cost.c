@@ -7,8 +7,10 @@
 #include <time.h>
 #include <stdint.h>
 
+// [excerpt handler]
 static volatile sig_atomic_t hits;
 static void handler(int sig) { (void)sig; hits++; }
+// [/excerpt]
 
 static double now_ns(void)
 {
@@ -32,6 +34,7 @@ int main(void)
     /* 몸풀기 --- 첫 몇 번은 캐시가 차가워 느리다 */
     for (long i = 0; i < 1000; i++) raise(SIGUSR1);
 
+    // [excerpt measure]
     double t0 = now_ns();
     for (long i = 0; i < N; i++) raise(SIGUSR1);
     double t1 = now_ns();
@@ -41,6 +44,7 @@ int main(void)
     for (long i = 0; i < N; i++) plain_p();
     t1 = now_ns();
     double per_call = (t1 - t0) / (double)N;
+    // [/excerpt]
 
     printf("== measured on this machine (mean of %ld) ==\n", N);
     printf("  one ordinary function call     : %8.1f ns\n", per_call);

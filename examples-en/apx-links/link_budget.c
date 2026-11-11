@@ -9,6 +9,7 @@
 
 struct link { const char *name; double bytes_per_sec; };
 
+// [excerpt budget]
 static void budget(struct link L, double dma_block)
 {
     double irq_rate  = L.bytes_per_sec;                  /* an interrupt per byte */
@@ -21,6 +22,7 @@ static void budget(struct link L, double dma_block)
     snprintf(b, sizeof b, "%.3f%%", dma_busy);
     printf("  %-22s %12.0f %10s %12.0f %10s\n", L.name, irq_rate, a, dma_rate, b);
 }
+// [/excerpt]
 
 int main(void)
 {

@@ -32,6 +32,7 @@ static uint64_t get64(const unsigned char *p)
 /* ★ GUID 의 함정: 글로 쓸 때와 디스크에 놓일 때의 바이트 차례가 *다르다*.
    앞의 세 마디(4·2·2바이트)는 작은 끝으로 뒤집혀 저장되고, 뒤의 두 마디(2·6바이트)는
    글자 순서 그대로다. 그래서 16진수 덤프와 문서의 GUID 가 달라 보인다. */
+// [excerpt guid]
 static void guid_parse(unsigned char *out, const char *s)
 {
     unsigned b[16]; int n = 0;
@@ -47,6 +48,7 @@ static void guid_parse(unsigned char *out, const char *s)
     out[6] = (unsigned char)b[7]; out[7] = (unsigned char)b[6];   /* 셋째 마디 */
     for (int i = 8; i < 16; i++) out[i] = (unsigned char)b[i];    /* 나머지는 그대로 */
 }
+// [/excerpt]
 static void guid_text(const unsigned char *g, char *out)
 {
     sprintf(out, "%02X%02X%02X%02X-%02X%02X-%02X%02X-%02X%02X-%02X%02X%02X%02X%02X%02X",
@@ -91,6 +93,7 @@ int main(void)
     /* ── 헤더 ────────────────────────────────────────────────── */
     uint64_t backup_lba = DISK_SECS - 1;
     uint64_t ents_sectors = (ENTRIES * ENTRY_SZ + SEC - 1) / SEC;   /* 32 */
+    // [excerpt header]
     memcpy(hdr, "EFI PART", 8);            /* 0  : 서명 */
     put32(hdr + 8, 0x00010000u);           /* 8  : 개정 1.0 */
     put32(hdr + 12, 92);                   /* 12 : 헤더 크기 */
@@ -106,6 +109,7 @@ int main(void)
     put32(hdr + 84, ENTRY_SZ);             /* 84 : 항목 하나의 크기 */
     put32(hdr + 88, crc32(ents, ENTRIES * ENTRY_SZ));   /* 88 : 항목 배열 전체의 CRC */
     put32(hdr + 16, crc32(hdr, 92));       /* 마지막에 헤더 자신의 CRC */
+    // [/excerpt]
 
     printf("== the GPT header (LBA 1, 92 bytes) ==\n");
     printf("  signature        : %.8s\n", hdr);
@@ -124,7 +128,9 @@ int main(void)
     printf("  entry array CRC32: 0x%08x\n\n", get32(hdr + 88));
 
     printf("== checking it ==\n");
+    // [excerpt verify]
     unsigned char probe[92]; memcpy(probe, hdr, 92); put32(probe + 16, 0);
+    // [/excerpt]
     printf("  header CRC recomputed (that field zeroed) : 0x%08x -> %s\n",
            crc32(probe, 92), crc32(probe, 92) == get32(hdr + 16) ? "matches" : "does not match");
     printf("  entry array CRC recomputed               : 0x%08x -> %s\n\n",

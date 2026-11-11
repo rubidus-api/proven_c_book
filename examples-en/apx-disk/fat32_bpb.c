@@ -25,9 +25,11 @@ int main(void)
     /* The size of one FAT is not chosen freely; it *comes out of a calculation*.
        The specification's approximation (FAT32): divide the data sectors by "the sectors one
        cluster takes + the room its FAT entry takes". */
+    // [excerpt fatsize]
     uint32_t t1 = tot_sec - rsvd_want;
     uint32_t t2 = (256 * spc_want + nfat_want) / 2;
     const uint32_t fat_sz = (t1 + t2 - 1) / t2;
+    // [/excerpt]
 
     /* ── fill the BPB as the specification says ─────────────────── */
     bs[0] = 0xeb; bs[1] = 0x58; bs[2] = 0x90;      /* 0  : jump instruction (3 bytes) */
@@ -79,8 +81,10 @@ int main(void)
            get32(bs + 28));
 
     /* ── where things are ────────────────────────────────────── */
+    // [excerpt place]
     uint32_t first_data = rsvd + nfat * fatsz;         /* FAT32 has no separate root directory area */
     uint32_t clusters   = (tot - first_data) / spc;
+    // [/excerpt]
 
     printf("== how the partition divides up ==\n");
     printf("  reserved area : sectors 0 - %u  (boot sector, FSInfo, copies)\n", rsvd - 1);
@@ -127,6 +131,7 @@ int main(void)
     printf("\n== when one file is scattered --- the FAT chain ==\n");
     printf("  the FAT is an array of cluster number -> next cluster number (4 bytes each).\n");
     printf("  if a file starts at cluster 3:\n\n");
+    // [excerpt chain]
     uint32_t n = 3;
     for (int step = 0; step < 8; step++) {
         uint32_t next = get32(fat + n * 4) & 0x0FFFFFFFu;   /* the top 4 bits are reserved */
@@ -137,6 +142,7 @@ int main(void)
         printf(" -> next is %u\n", next);
         n = next;
     }
+    // [/excerpt]
     printf("\n  so a file that is not contiguous can still be read. And damage to one FAT\n");
     printf("  removes the way to find the rest of a file --- which is why there are two copies.\n");
     return 0;

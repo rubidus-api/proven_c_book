@@ -43,10 +43,5 @@ int main(void)
     printf("null store   : si_code=%d (SEGV_MAPERR=%d), address=%s\n",
            (int)why, SEGV_MAPERR, where == NULL ? "0x0" : "non-zero");
 
-    puts("");
-    puts("the path was: CPU exception -> kernel trap handler -> signal -> this C function.");
-    puts("three of the six standard signals are hardware exceptions:");
-    puts("  SIGFPE (floating-point exception), SIGILL (illegal instruction),");
-    puts("  SIGSEGV (segmentation violation).  SIGINT is literally named 'interrupt'.");
     return 0;
 }

@@ -68,6 +68,7 @@ int main(void)
     printf("#DATA-BEGIN\n");
 
     double base = 0;
+    // [excerpt stride]
     for (long stride = 1; stride <= 4096; stride *= 2) {
         size_t mask = BUF - 1;               /* BUF 가 2의 거듭제곱이라 & 로 감쌀 수 있다 */
         double s[5];
@@ -88,6 +89,7 @@ int main(void)
                stride, s[2], s[2] / base, lines_per_touch, wasted);
         printf("#DATA %ld %.3f\n", stride, s[2]);
     }
+    // [/excerpt]
     printf("#DATA-END\n");
 
     printf("\n  * the cost rises until the stride reaches %ld bytes (the line size), and\n", line);
@@ -99,7 +101,9 @@ int main(void)
     printf("\n== the same data, laid out differently ==\n");
     const size_t N = 4u << 20;               /* 원소 400만 개 */
 
+    // [excerpt particle]
     struct particle { double x, y, z, vx, vy, vz; int id, flags; };  /* 실제 크기는 아래에서 찍는다 */
+    // [/excerpt]
     struct particle *aos = malloc(N * sizeof *aos);
     double *xs = malloc(N * sizeof *xs);
     for (size_t i = 0; i < N; i++) {
@@ -111,6 +115,7 @@ int main(void)
     printf("  %zu elements --- %zu MiB in total\n\n", N, N * sizeof *aos / (1u << 20));
 
     double s1[5], s2[5];
+    // [excerpt layout]
     for (int r = 0; r < 5; r++) {
         double acc = 0, t0 = ns();
         for (size_t i = 0; i < N; i++) acc += aos[i].x;      /* 구조체 배열에서 x 만 */
@@ -120,6 +125,7 @@ int main(void)
         for (size_t i = 0; i < N; i++) acc += xs[i];         /* x 만 모아 둔 배열에서 */
         t1 = ns(); sink = (long)acc; s2[r] = (t1 - t0) / (double)N;
     }
+    // [/excerpt]
     qsort(s1, 5, sizeof *s1, cmp_d); qsort(s2, 5, sizeof *s2, cmp_d);
 
     printf("  %-34s %10s %10s %s\n", "layout", "per element", "factor", "bytes used per line");

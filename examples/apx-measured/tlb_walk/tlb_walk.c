@@ -49,6 +49,7 @@ static long anon_huge_kib(const void *addr)
 static volatile size_t sink;
 
 /* 쪽 하나에 한 칸씩 --- 쪽 사이를 무작위 고리로 잇는다 */
+// [excerpt walk]
 static double walk(unsigned char *mem, size_t pages, size_t page, long steps)
 {
     size_t *order = malloc(pages * sizeof *order);
@@ -72,6 +73,7 @@ static double walk(unsigned char *mem, size_t pages, size_t page, long steps)
     sink = p;
     return (t1 - t0) / (double)steps;
 }
+// [/excerpt]
 
 int main(void)
 {
@@ -117,10 +119,12 @@ int main(void)
         if (mem == MAP_FAILED) break;
         unsigned char *aligned = (unsigned char *)(((uintptr_t)mem + (2u << 20) - 1) & ~(uintptr_t)((2u << 20) - 1));
 #ifdef MADV_HUGEPAGE
+        // [excerpt madvise]
         madvise(aligned, bytes, mode ? MADV_HUGEPAGE : MADV_NOHUGEPAGE);
 #endif
         memset(aligned, 0, bytes);
         long ah = anon_huge_kib(aligned);
+        // [/excerpt]
         double s[5];
         for (int r = 0; r < 5; r++) s[r] = walk(aligned, big_pages, page, 2000000);
         qsort(s, 5, sizeof *s, cmp_d);
@@ -160,11 +164,13 @@ int main(void)
     unsigned char *mem = mmap(NULL, fp * page, PROT_READ | PROT_WRITE,
                               MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     double t0 = ns();
+    // [excerpt firsttouch]
     for (size_t i = 0; i < fp; i++) mem[i * page] = 1;      /* 쪽마다 첫 접촉 */
     double t1 = ns();
     double first = (t1 - t0) / (double)fp;
     t0 = ns();
     for (size_t i = 0; i < fp; i++) mem[i * page] = 2;      /* 이미 붙은 쪽 */
+    // [/excerpt]
     t1 = ns();
     double later = (t1 - t0) / (double)fp;
     munmap(mem, fp * page);

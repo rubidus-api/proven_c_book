@@ -54,6 +54,7 @@ int main(void)
     close(fd);
 
     /* 작은 쓰기 + fsync 를 되풀이 --- 데이터베이스가 하는 일 */
+    // [excerpt commit]
     fd = open(path, O_WRONLY);
     double s[9];
     for (int r = 0; r < 9; r++) {
@@ -66,6 +67,7 @@ int main(void)
         s[r] = (t1 - t0) / 20.0 / 1e6;         /* fsync 한 번당 밀리초 */
     }
     qsort(s, 9, sizeof *s, cmp_d);
+    // [/excerpt]
     double fsync_ms = s[4];
     close(fd);
     printf("  4 KiB write + fsync         : %8.3f ms each -> about %.0f per second\n",
@@ -78,6 +80,7 @@ int main(void)
     fd = open(path, O_RDONLY);
     double seq_cached = 0, seq_cold = 0, rnd_cached = 0, rnd_cold = 0;
 
+    // [excerpt drop]
     for (int cold = 0; cold < 2; cold++) {
         if (cold) posix_fadvise(fd, 0, 0, POSIX_FADV_DONTNEED);   /* 이 파일의 캐시만 버린다 */
         lseek(fd, 0, SEEK_SET);
@@ -88,6 +91,7 @@ int main(void)
         double mbs = FILE_MiB / ((t1 - t0) / 1e9);
         if (cold) seq_cold = mbs; else seq_cached = mbs;
     }
+    // [/excerpt]
     printf("  sequential read (cached)  : %8.1f MiB/s\n", seq_cached);
     printf("  sequential read (dropped) : %8.1f MiB/s  -> a factor of %.1f\n",
            seq_cold, seq_cached / seq_cold);

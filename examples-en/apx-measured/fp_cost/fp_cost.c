@@ -27,6 +27,7 @@ static double med(double *s, int n) { qsort(s, (size_t)n, sizeof *s, cmp_d); ret
 
 /* ★ A floating-point sum *changes when reordered* (addition is not associative).
    So the compiler may not vectorize it without permission. Only the two functions below get it. */
+// [excerpt vector]
 __attribute__((optimize("O3", "fast-math")))
 static double vec_double(const double *a, const double *b, int reps)
 {
@@ -34,6 +35,7 @@ static double vec_double(const double *a, const double *b, int reps)
     for (int r = 0; r < reps; r++) for (size_t i = 0; i < N; i++) s += a[i] * b[i];
     return s;
 }
+// [/excerpt]
 __attribute__((optimize("O3", "fast-math")))
 static float vec_float(const float *a, const float *b, int reps)
 {
@@ -61,8 +63,10 @@ int main(void)
     double normal_v = 0, denorm_v = 0;
     for (int mode = 0; mode < 2; mode++) {
         for (size_t i = 0; i < N; i++) {
+            // [excerpt denormal]
             a[i] = mode ? DBL_MIN / 8.0 : 1.0;      /* subnormal : normal */
             b[i] = 1.0;                             /* multiplying keeps the size --- the result is subnormal too */
+            // [/excerpt]
         }
         for (int r = 0; r < R; r++) {
             double a0 = 0, a1 = 0, a2 = 0, a3 = 0;
@@ -146,6 +150,7 @@ int main(void)
             double a0 = 0, a1 = 0, a2 = 0, a3 = 0, t0 = ns();
             for (int rep = 0; rep < REP; rep++)
                 for (size_t i = 0; i < N; i += 4) {
+                    // [excerpt ops]
                     switch (k) {
                     case 0: a0 += a[i] * b[i]; a1 += a[i+1] * b[i+1];
                             a2 += a[i+2] * b[i+2]; a3 += a[i+3] * b[i+3]; break;
@@ -158,6 +163,7 @@ int main(void)
                     default: a0 += sin(a[i]); a1 += sin(a[i+1]);
                              a2 += sin(a[i+2]); a3 += sin(a[i+3]); break;
                     }
+                    // [/excerpt]
                 }
             double t1 = ns(); dsink = a0 + a1 + a2 + a3; s[r] = (t1 - t0) / ((double)N * REP);
         }

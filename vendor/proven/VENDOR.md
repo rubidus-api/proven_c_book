@@ -1,15 +1,15 @@
-proven vendored snapshot: v0.112.5 (2026-11-10, from local proven_c_lib 1206c540)
+proven vendored snapshot: v0.113.0 (2026-11-11, from local proven_c_lib bd93f44d)
 
-Contents: the library core of that tag (`include/`, `src/`, `platform/`) with `LICENSE` and
-`THIRD_PARTY_NOTICES.md`, left out where this book does not use it:
+Contents: proven_base of that tag (`include/`, `src/proven/`, `platform/`) with `LICENSE` and
+`THIRD_PARTY_NOTICES.md`. From v0.113.0 upstream ships cryptography, certificates and compression
+as libraries of their own in the same tree, and this book uses none of them, so they are left out:
 
-- the network layer (`net/`, header `proven_net.h`);
-- cryptography: `aes`, `aead`, `hmac`, `kex`, `sign`, `der`, `hash_legacy` and the internal
-  `crypto_*`, `dh` units; platform `proven_sys_aes`, `proven_sys_chacha`, `proven_sys_cpu`;
-- compression: `deflate`, `zstd`, `brotli` (with its RFC 7932 tables);
-- certificates and URLs: `cert`, `cert_issue`, `cert_system`, `url`; platform `proven_sys_trust`.
+- proven_crypto (`crypto/`): SHA-2, HMAC, AES, AEAD, key exchange, signing, DER, X.509;
+- proven_codec (`codec/`): DEFLATE with zlib and gzip framing, Zstandard, Brotli;
+- proven_net (`net/`): the network layer.
 
-Every file that is here is byte-for-byte the upstream file, except `include/proven.h`, whose
-includes of the left-out headers are removed (one comment line marks the place).
-`include/proven/alias_xcv.h` still defines aliases for the left-out functions; they are macros
-only and nothing here uses them.
+Every file here is byte-for-byte the upstream file. `include/proven.h` includes the crypto, codec
+and network umbrella headers only when they are on the include path (`__has_include`), so it needs
+no change. `THIRD_PARTY_NOTICES.md` still describes the RFC 7932 Brotli tables, which live in
+`codec/` and are not shipped here. `include/proven/alias_xcv.h` defines aliases for functions of the
+left-out libraries; they are macros only and nothing here uses them.

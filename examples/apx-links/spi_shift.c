@@ -19,6 +19,7 @@ int main(void)
 
     printf("== one bit per clock ==\n");
     printf("  %-6s %-6s %-6s %-12s %-12s\n", "clock", "MOSI", "MISO", "controller", "device");
+    // [excerpt shift]
     for (int c = 1; c <= 8; c++) {
         unsigned mosi = m >> 7 & 1;          /* 주인이 내놓는 비트 (높은 자리부터) */
         unsigned miso = s >> 7 & 1;          /* 장치가 내놓는 비트 */
@@ -27,6 +28,7 @@ int main(void)
         bits8(m, mb); bits8(s, sb);
         printf("  %-6d %-6u %-6u %-12s %-12s\n", c, mosi, miso, mb, sb);
     }
+    // [/excerpt]
 
     printf("\n== after eight clocks ==\n");
     printf("  controller register : 0x%02X  <- what the device sent\n", m);

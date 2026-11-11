@@ -63,6 +63,7 @@ static void *page_aligned(size_t bytes)
 }
 
 /* ── ① each bumps its own slot (varying the distance between slots) ── */
+// [excerpt slot]
 struct slot { volatile long v; };
 static unsigned char *arena;
 static size_t slot_gap;
@@ -74,16 +75,19 @@ static void *bump(void *arg)
     for (long i = 0; i < ITERS; i++) (*p)++;
     return NULL;
 }
+// [/excerpt]
 
 /* ── ② one value, many hands --- atomics and locks ── */
 static atomic_long shared_atomic;
 static long shared_plain;
 static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 
+// [excerpt shared]
 static void *atomic_bump(void *arg)
 { (void)arg; for (long i = 0; i < ITERS / 10; i++) atomic_fetch_add_explicit(&shared_atomic, 1, memory_order_relaxed); return NULL; }
 static void *mutex_bump(void *arg)
 { (void)arg; for (long i = 0; i < ITERS / 100; i++) { pthread_mutex_lock(&lock); shared_plain++; pthread_mutex_unlock(&lock); } return NULL; }
+// [/excerpt]
 static double run(void *(*fn)(void *), int threads, long iters_each, void **args)
 {
     pthread_t th[64];

@@ -36,6 +36,7 @@ static long sum_branch(const int *a, size_t n, int t)
 /* ★ Compiled at -O2, the compiler turns the `if` above into a *conditional move* (cmov).
    Then there is no branch to predict, and the classic "sorting makes it faster" vanishes.
    So a *version that keeps a real branch* is kept apart --- cmov and vectorizing are off only here. */
+// [excerpt realbranch]
 __attribute__((optimize("no-if-conversion", "no-if-conversion2", "no-tree-vectorize")))
 static long sum_realbranch(const int *a, size_t n, int t)
 {
@@ -43,8 +44,10 @@ static long sum_realbranch(const int *a, size_t n, int t)
     for (size_t i = 0; i < n; i++) if (a[i] >= t) s += a[i];
     return s;
 }
+// [/excerpt]
 
 /* The same calculation without a branch --- the condition becomes *arithmetic* */
+// [excerpt branchless]
 static long sum_branchless(const int *a, size_t n, int t)
 {
     long s = 0;
@@ -54,6 +57,7 @@ static long sum_branchless(const int *a, size_t n, int t)
     }
     return s;
 }
+// [/excerpt]
 
 static double time_it(long (*fn)(const int *, size_t, int), const int *a, int t)
 {

@@ -22,7 +22,7 @@ same clean-room rule: use original code and project-local constants only.
 
 ## Brotli static dictionary and transforms (RFC 7932)
 
-`src/proven/brotli_dict.h` holds data generated from the text of RFC 7932,
+`codec/src/brotli_dict.h` holds data generated from the text of RFC 7932,
 "Brotli Compressed Data Format" (J. Alakuijala and Z. Szabadka, July 2016):
 the static dictionary (Appendix A), the word transforms (Appendix B) and the
 context lookup tables (section 7.1). The decoder and encoder code around it is

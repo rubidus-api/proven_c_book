@@ -36,6 +36,7 @@ static long sum_branch(const int *a, size_t n, int t)
 /* ★ 위 함수를 -O2 로 컴파일하면 컴파일러가 `if` 를 *조건 이동*(cmov)으로 바꿔 버린다.
    그러면 예측할 분기가 아예 없어 「정렬하면 빨라진다」는 고전적 현상이 사라진다.
    그래서 *진짜 분기를 남긴 판*을 따로 둔다 --- 조건 이동과 벡터화를 이 함수에서만 끈다. */
+// [excerpt realbranch]
 __attribute__((optimize("no-if-conversion", "no-if-conversion2", "no-tree-vectorize")))
 static long sum_realbranch(const int *a, size_t n, int t)
 {
@@ -43,8 +44,10 @@ static long sum_realbranch(const int *a, size_t n, int t)
     for (size_t i = 0; i < n; i++) if (a[i] >= t) s += a[i];
     return s;
 }
+// [/excerpt]
 
 /* 같은 계산, 분기 없이 --- 조건을 *산술*로 바꾼다 */
+// [excerpt branchless]
 static long sum_branchless(const int *a, size_t n, int t)
 {
     long s = 0;
@@ -54,6 +57,7 @@ static long sum_branchless(const int *a, size_t n, int t)
     }
     return s;
 }
+// [/excerpt]
 
 static double time_it(long (*fn)(const int *, size_t, int), const int *a, int t)
 {

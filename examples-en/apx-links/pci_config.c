@@ -84,12 +84,14 @@ int main(void)
     for (int i = 0; i < 6; i++) {
         if (!bar_size[i]) continue;
         unsigned off = 0x10 + 4u * (unsigned)i;
+        // [excerpt sizing]
         uint32_t saved = rd32(off);
         bar_write(i, 0xFFFFFFFFu);                 /* ① write all ones */
         uint32_t probe = rd32(off);                /* ② read back */
         uint32_t mask = probe & (bar_is_io[i] ? ~0x3u : ~0xFu);
         uint32_t size = ~mask + 1;                 /* ③ invert and add 1: the size */
         bar_write(i, saved);                       /* ④ put the original value back */
+        // [/excerpt]
         printf("  BAR%d: read back 0x%08X -> size %u bytes (%s)  %s\n", i, probe, size,
                size >= (1u << 20) ? "in MiB" : size >= 1024 ? "in KiB" : "bytes",
                size == bar_size[i] ? "matches what the device asked for" : "does not match");
@@ -98,6 +100,7 @@ int main(void)
     printf("    (restoring) and the device lands at the wrong address and the machine hangs.\n");
 
     printf("\n== walking the capability list ==\n");
+    // [excerpt caps]
     unsigned p = cfg[0x34];
     while (p) {
         unsigned id = cfg[p], next = cfg[p + 1];
@@ -106,6 +109,7 @@ int main(void)
                id == 0x10 ? "PCI Express" : "other", next);
         p = next;
     }
+    // [/excerpt]
     printf("  * it is a linked list. Zero means the end --- following the chain tells you\n");
     printf("    what this device knows how to do.\n");
     return 0;

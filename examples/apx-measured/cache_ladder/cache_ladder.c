@@ -23,6 +23,7 @@ static uint64_t rnd(void)
 { rng_state ^= rng_state << 13; rng_state ^= rng_state >> 7; rng_state ^= rng_state << 17; return rng_state; }
 
 /* 사톨로 알고리즘: 배열 전체를 도는 *하나의 고리*를 만든다(작은 고리로 갈라지지 않는다) */
+// [excerpt cycle]
 static void make_cycle(size_t *next, size_t n)
 {
     for (size_t i = 0; i < n; i++) next[i] = i;
@@ -36,10 +37,12 @@ static void make_cycle(size_t *next, size_t n)
     memcpy(next, cyc, n * sizeof *cyc);
     free(cyc);
 }
+// [/excerpt]
 
 static volatile size_t sink;
 
 /* 무작위 고리를 따라 steps 번 밟는다 --- 매 걸음이 앞 걸음의 결과에 의존한다 */
+// [excerpt chase]
 static double chase(size_t *next, size_t n, long steps)
 {
     size_t p = 0;
@@ -50,6 +53,7 @@ static double chase(size_t *next, size_t n, long steps)
     sink = p;
     return (t1 - t0) / (double)steps;
 }
+// [/excerpt]
 
 /* 견주기용: 차례로 훑는다 --- 기계가 다음 자리를 미리 가져올 수 있다 */
 static double sweep(size_t *buf, size_t n, long rounds)

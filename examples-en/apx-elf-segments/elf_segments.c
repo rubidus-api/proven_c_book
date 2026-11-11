@@ -52,8 +52,5 @@ int main(void)
         }
     }
     fclose(f);
-
-    printf("\nnote: where a piece is larger in memory than in the file,\n");
-    printf("      that difference is .bss --- there is no reason to store zeros.\n");
     return 0;
 }

@@ -34,9 +34,11 @@ static void ring_of_one_page(size_t pg)
     if (fd < 0 || ftruncate(fd, (long)pg) != 0) { puts("  (memfd unavailable)"); return; }
 
     /* First reserve a two-page-wide range, then map the same memory over it twice. */
+    // [excerpt ring]
     char *base = mmap(NULL, pg * 2, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     char *a = mmap(base,      pg, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_FIXED, fd, 0);
     char *b = mmap(base + pg, pg, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_FIXED, fd, 0);
+    // [/excerpt]
     if (a == MAP_FAILED || b == MAP_FAILED) { puts("  (mapping refused)"); return; }
 
     strcpy(a, "hello");
@@ -44,7 +46,9 @@ static void ring_of_one_page(size_t pg)
            (size_t)(b - a), b);
 
     /* Write 12 bytes starting 8 bytes before the end --- straight on, with no wrap check. */
+    // [excerpt wrap]
     memcpy(a + pg - 8, "ABCDEFGHIJKL", 12);
+    // [/excerpt]
     printf("  wrote 12 bytes 8 before the end; the last 4 came out at the start: \"%.4s\"\n", a);
     printf("#DATA ring %.4s\n", a);
     close(fd);
@@ -55,7 +59,9 @@ static void guard_page(size_t pg)
     struct sigaction sa;
     char *p = mmap(NULL, pg * 3, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     if (p == MAP_FAILED) { puts("  (mapping refused)"); return; }
+    // [excerpt guard]
     mprotect(p + pg * 2, pg, PROT_NONE);            /* take away the last page's permissions */
+    // [/excerpt]
 
     memset(&sa, 0, sizeof sa);
     sa.sa_handler = on_segv;

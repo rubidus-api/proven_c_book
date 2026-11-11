@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 This project follows Keep a Changelog.
 
+## [v0.106.0] - 2026-11-11
+
+### Changed
+- **부록 G\~N 의 시연** 코드 전체를 싣던 시연 스물두 곳이 *실행 결과와 핵심 구간 발췌*만 싣는다(재는 시연, 그리고 바이트를 지어 되읽는 시연). 발췌는 예제 파일 안의 `// [excerpt 이름]` 표지 사이에서 뽑으므로 지면의 조각도 빌드 · 실행된 코드 그대로다. 예제 파일은 저장소에 남아 표와 수치를 계속 검사한다. 짧은 시연 다섯(`trap_to_c` · `no_queue` · `lockfree` · `who_called_me` · `elf_segments`)은 전체를 싣되, 본문이 이미 설명하는 문장을 찍던 줄을 지웠다.
+- **`vendor/proven/`** 상류의 요청으로 proven v0.112.5 → v0.113.0. 이 판부터 암호 · 인증서(proven_crypto)와 압축(proven_codec)이 기본 라이브러리에서 떨어져 나갔고, 책은 기본 라이브러리 proven_base 만 바이트 그대로 싣는다 --- `proven.h` 도 이제 고치지 않는다. SHA-256 은 proven_crypto 의 `sha2.h` 로 옮겨 가 스냅샷에 없다. URL 모듈은 기본 라이브러리에 남아 함께 실린다.
+- **101장** 「암호 라이브러리가 아니다」를 바로잡았다 --- 서명 · 키 교환 · 인증 암호화 · TLS 가 「일부러 없다」는 문장은 v0.112.5 에서 이미 틀렸다. 이제 기본 라이브러리에는 없고 proven_crypto · proven_net 에 있다고 적는다. **102장 · 107장 · 109장 · 참고 문헌** 실린 범위와 SHA-256 의 자리를 새 판에 맞췄다.
+- **부록 J(디스크)** 도입부가 예제의 역할을 그대로 적는다 --- 표의 수를 확인하는 검사이고, 지면에는 출력과 해독 코드의 조각만 싣는다.
+
 ## [v0.105.3] - 2026-11-11
 
 ### Changed

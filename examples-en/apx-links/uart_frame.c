@@ -9,6 +9,7 @@
 #define MAXW    4096u
 
 /* 8N1: start 1 + data 8 + stop 1 = 10 bits. Data goes out *low bit first*. */
+// [excerpt frame]
 static size_t make_frame(unsigned char *w, uint8_t byte, unsigned parity_bits)
 {
     size_t n = 0;
@@ -28,9 +29,11 @@ static size_t make_frame(unsigned char *w, uint8_t byte, unsigned parity_bits)
     for (unsigned i = 0; i < OS * 2; i++) w[n++] = 1;
     return n;
 }
+// [/excerpt]
 
 /* Receiver: find the start bit's falling edge, then sample mid-bit using its own bit length.
    If rx_bit is not 16, the baud rate is off by that much. */
+// [excerpt receive]
 static int receive(const unsigned char *w, size_t n, double rx_bit,
                    uint8_t *out, int *stop_ok)
 {
@@ -51,6 +54,7 @@ static int receive(const unsigned char *w, size_t n, double rx_bit,
     *out = v;
     return 0;
 }
+// [/excerpt]
 
 static void show_wave(const unsigned char *w, size_t n)
 {

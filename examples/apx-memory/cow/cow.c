@@ -68,6 +68,7 @@ int main(void)
     show("parent0", "parent, 512 MB filled");
     fflush(stdout);                     /* ★ 자식이 부모의 버퍼를 물려받지 않도록 */
 
+    // [excerpt fork]
     pid_t kid = fork();
     if (kid == 0) {
         show("child0", "  child, just forked");
@@ -81,6 +82,7 @@ int main(void)
     }
     wait(NULL);
     show("parent1", "parent, after the child");
+    // [/excerpt]
     printf("#DATA-END\n");
 
     puts("\n  * forking cost nothing, and reading cost nothing. Writing cost everything.");
