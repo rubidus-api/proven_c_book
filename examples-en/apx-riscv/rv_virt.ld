@@ -3,10 +3,14 @@ ENTRY(_start)
 SECTIONS {
     . = 0x80000000;
     .text : { *(.text.start) *(.text*) }
-    .rodata : { *(.rodata*) }
-    .data : { *(.data*) }
-    .bss : { *(.bss*) *(COMMON) }
+    .rodata : { *(.rodata*) *(.srodata*) }
+    .data : { *(.data*) *(.sdata*) }
+    . = ALIGN(8);
+    _bss_start = .;
+    .bss : { *(.sbss*) *(.bss*) *(COMMON) }
+    . = ALIGN(8);
+    _bss_end = .;
     . = ALIGN(16);
-    . = . + 4096;          /* stack 4 KiB */
+    . = . + 16384;         /* 16 KiB stack */
     _stack_top = .;
 }

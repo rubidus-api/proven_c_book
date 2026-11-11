@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 This project follows Keep a Changelog.
 
+## [v0.107.0] - 2026-11-11
+
+### Added
+- **부록 I · J 의 드라이버 시연 다섯** 하드웨어에 명령을 보내는 자리만 함수 넷(`hw_read8` · `hw_read32` · `hw_write8` · `hw_write32`)으로 모으고, 그 위의 드라이버 코드는 한 벌로 썼다. 이 기계에서 짓는 판은 받은 명령을 찍고(읽기의 대답은 예제마다 둔 작은 대답 표가 꾸민다), RISC-V 교차 컴파일러로 짓는 판은 QEMU 9.2 의 기계 모형에서 진짜 레지스터에 읽고 쓴다. 16550 UART(루프백 시험, 보율 분주값), OpenCores I2C 로 LM75 온도 읽기, SiFive SPI 로 플래시의 JEDEC ID 와 첫 바이트 읽기, PCIe 열거(ECAM, BAR 크기 재기와 주소 나눠 주기, 능력 목록, 나눠 준 주소로 QEMU 의 edu 장치에 5! 을 시키기), 그리고 virtio 블록 드라이버 위에서 MBR · GPT(CRC 검사)와 FAT16 · FAT32 를 읽어 `KERNEL.BIN` 을 올리는 부트로더. 부트로더가 읽는 디스크 셋은 sfdisk · mkfs.fat · mcopy 와 QEMU 의 vvfat 이 그 자리에서 만든다. I2C 는 QEMU 의 RISC-V 기계에 제어기 모형이 없어 출력 판만 돈다고 적었다.
+
+### Changed
+- **부록 I** `pci_config`(설정 공간을 지어 되읽는 시연)를 위 열거 드라이버로 바꿨다. BAR 크기 재기의 넷째 걸음을 「원래 값을 되돌린다」에서 「주소를 되돌려 쓴다」로 고쳤다 --- 운영체제는 원래 값을, 펌웨어는 새로 떼어 준 주소를 쓴다. 재는 동안 해독을 꺼 두는 까닭도 적었다.
+- **부록 J** MBR · GPT · FAT32 검사 예제(`mbr_detail` · `gpt_detail` · `fat32_bpb`)는 출력만 싣고, 지면의 코드는 부트로더 시연에서 가져온다. FAT 의 종류를 클러스터 수로 정하는 규칙이 부트로더의 코드와 QEMU vvfat 디스크(FAT32 를 청해도 FAT16 부트 섹터를 낸다)에서 함께 보인다.
+- **`apx-riscv` 시작 코드** `.bss` 를 0 으로 채우고, 0번 하트만 남기며(sifive_u 는 하트 여럿이 함께 깨어난다), 스택을 16 KiB 로 늘렸다. 링커의 RWX 경고를 껐다.
+
 ## [v0.106.0] - 2026-11-11
 
 ### Changed

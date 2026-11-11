@@ -3,10 +3,14 @@ ENTRY(_start)
 SECTIONS {
     . = 0x80000000;
     .text : { *(.text.start) *(.text*) }
-    .rodata : { *(.rodata*) }
-    .data : { *(.data*) }
-    .bss : { *(.bss*) *(COMMON) }
+    .rodata : { *(.rodata*) *(.srodata*) }
+    .data : { *(.data*) *(.sdata*) }
+    . = ALIGN(8);
+    _bss_start = .;
+    .bss : { *(.sbss*) *(.bss*) *(COMMON) }
+    . = ALIGN(8);
+    _bss_end = .;
     . = ALIGN(16);
-    . = . + 4096;          /* 스택 4 KiB */
+    . = . + 16384;         /* 스택 16 KiB */
     _stack_top = .;
 }
