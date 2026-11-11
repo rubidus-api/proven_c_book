@@ -11,7 +11,8 @@ struct part {
     uint64_t lba, count;
 };
 
-/* 찾은 파티션 수. 표가 없거나 검사가 어긋나면 -1, 0번 섹터를 못 읽었으면 -2. */
-int partitions(struct vblk *d, struct part *out, int max);
+/* 찾은 파티션 수. 표가 없거나 검사가 어긋나면 -1, 0번 섹터를 못 읽었으면 -2.
+   GPT 라면 믿은 머리말의 섹터 번호를 *gpt_at 에 둔다(MBR 이면 0). */
+int partitions(struct vblk *d, struct part *out, int max, uint64_t *gpt_at);
 
 #endif

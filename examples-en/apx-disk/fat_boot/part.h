@@ -13,7 +13,8 @@ struct part {
 };
 
 /* Number of partitions found. -1 if there is no table or a check fails, -2 if sector 0
-   could not be read. */
-int partitions(struct vblk *d, struct part *out, int max);
+   could not be read. For GPT, the sector of the header that was trusted goes into
+   *gpt_at (0 for MBR). */
+int partitions(struct vblk *d, struct part *out, int max, uint64_t *gpt_at);
 
 #endif

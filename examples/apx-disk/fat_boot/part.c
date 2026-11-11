@@ -22,13 +22,15 @@ static uint32_t crc32_update(uint32_t crc, const uint8_t *p, uint32_t n)
 // [/excerpt]
 
 // [excerpt gpt]
-static int gpt(struct vblk *d, struct part *out, int max)
+/* lba 에 있는 GPT 머리말과 그것이 가리키는 항목 배열을 읽는다. */
+static int gpt(struct vblk *d, uint64_t lba, struct part *out, int max)
 {
-    if (vblk_read(d, 1, sec) != 0) return -1;
+    if (vblk_read(d, lba, sec) != 0) return -1;
     static const char sig[8] = { 'E', 'F', 'I', ' ', 'P', 'A', 'R', 'T' };
     for (int i = 0; i < 8; i++) if (sec[i] != (uint8_t)sig[i]) return -1;
     uint32_t hsize = le32(sec + 12);
     if (hsize < 92 || hsize > 512) return -1;
+    if (le64(sec + 24) != lba) return -1;           /* 적힌 제 자리가 맞아야 한다 */
 
     /* 머리말의 CRC 는 *자기 칸을 0 으로 두고* 셈한 값이다. */
     uint32_t want = le32(sec + 16);
@@ -63,11 +65,22 @@ static int gpt(struct vblk *d, struct part *out, int max)
 // [/excerpt]
 
 // [excerpt mbr]
-int partitions(struct vblk *d, struct part *out, int max)
+int partitions(struct vblk *d, struct part *out, int max, uint64_t *gpt_at)
 {
+    *gpt_at = 0;
     if (vblk_read(d, 0, sec) != 0) return -2;             /* 장치가 대답하지 않았다 */
     if (sec[510] != 0x55 || sec[511] != 0xAA) return -1;  /* 서명이 없으면 MBR 아님 */
-    if (sec[446 + 4] == 0xEE) return gpt(d, out, max);    /* 보호 MBR: 진짜는 GPT */
+    if (sec[446 + 4] == 0xEE) {                           /* 보호 MBR: 진짜는 GPT */
+        /* 앞의 GPT(1번 섹터)가 검사에 걸리면 디스크 맨 끝 섹터의 짝 GPT 를 읽는다.
+           짝의 항목 배열은 짝 머리말 바로 앞에 있고, 머리말이 그 자리를 적고 있다. */
+        *gpt_at = 1;
+        int n = gpt(d, *gpt_at, out, max);
+        if (n < 0) {
+            *gpt_at = d->sectors - 1;
+            n = gpt(d, *gpt_at, out, max);
+        }
+        return n;
+    }
     int n = 0;
     for (int i = 0; i < 4 && n < max; i++) {
         const uint8_t *e = sec + 446 + 16 * i;               /* 항목 16바이트 넷 */

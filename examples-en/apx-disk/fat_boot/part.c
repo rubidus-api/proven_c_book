@@ -23,13 +23,15 @@ static uint32_t crc32_update(uint32_t crc, const uint8_t *p, uint32_t n)
 // [/excerpt]
 
 // [excerpt gpt]
-static int gpt(struct vblk *d, struct part *out, int max)
+/* Read the GPT header at lba and the entry array it points to. */
+static int gpt(struct vblk *d, uint64_t lba, struct part *out, int max)
 {
-    if (vblk_read(d, 1, sec) != 0) return -1;
+    if (vblk_read(d, lba, sec) != 0) return -1;
     static const char sig[8] = { 'E', 'F', 'I', ' ', 'P', 'A', 'R', 'T' };
     for (int i = 0; i < 8; i++) if (sec[i] != (uint8_t)sig[i]) return -1;
     uint32_t hsize = le32(sec + 12);
     if (hsize < 92 || hsize > 512) return -1;
+    if (le64(sec + 24) != lba) return -1;  /* its recorded own LBA must match */
 
     /* The header CRC is computed *with its own field set to zero*. */
     uint32_t want = le32(sec + 16);
@@ -66,11 +68,23 @@ static int gpt(struct vblk *d, struct part *out, int max)
 // [/excerpt]
 
 // [excerpt mbr]
-int partitions(struct vblk *d, struct part *out, int max)
+int partitions(struct vblk *d, struct part *out, int max, uint64_t *gpt_at)
 {
+    *gpt_at = 0;
     if (vblk_read(d, 0, sec) != 0) return -2;  /* the device did not answer */
     if (sec[510] != 0x55 || sec[511] != 0xAA) return -1;  /* no signature, no MBR */
-    if (sec[446 + 4] == 0xEE) return gpt(d, out, max);    /* protective MBR: GPT */
+    if (sec[446 + 4] == 0xEE) {                           /* protective MBR: GPT */
+        /* If the primary GPT (sector 1) fails its checks, read the backup GPT in the
+           disk's last sector. The backup's entry array sits just before the backup
+           header, which records where. */
+        *gpt_at = 1;
+        int n = gpt(d, *gpt_at, out, max);
+        if (n < 0) {
+            *gpt_at = d->sectors - 1;
+            n = gpt(d, *gpt_at, out, max);
+        }
+        return n;
+    }
     int n = 0;
     for (int i = 0; i < 4 && n < max; i++) {
         const uint8_t *e = sec + 446 + 16 * i;  /* four entries of 16 bytes */
