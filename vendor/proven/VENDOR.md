@@ -1,4 +1,4 @@
-proven vendored snapshot: v0.113.0 (2026-11-11, from local proven_c_lib bd93f44d)
+proven vendored snapshot: v0.114.0 (2026-11-12, from local proven_c_lib 5236974e)
 
 Contents: proven_base of that tag (`include/`, `src/proven/`, `platform/`) with `LICENSE` and
 `THIRD_PARTY_NOTICES.md`. From v0.113.0 upstream ships cryptography, certificates and compression

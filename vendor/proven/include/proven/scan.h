@@ -97,7 +97,10 @@ void proven_scan_skip_whitespace(proven_scan_t *scan);
  * Finite decimal inputs are rounded to IEEE-754 binary64 with
  * round-to-nearest, ties-to-even behavior. Values below the half-way threshold
  * to the smallest subnormal round to signed zero with the input sign
- * preserved.
+ * preserved. Every spelling the formatter writes reads back, `inf`, `-inf`, `nan`,
+ * `Inf` and `NaN` included. In a format string, `{:f}`, `{:e}`, `{:E}`, `{:g}` and
+ * `{:G}` (scanf's letters) read a double argument this way, as `{}` does; on any other
+ * argument they are PROVEN_ERR_INVALID_FORMAT.
  */
 [[nodiscard]] proven_result_f64_t proven_scan_f64(proven_scan_t *scan);
 

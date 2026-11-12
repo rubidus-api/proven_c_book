@@ -383,14 +383,19 @@ void proven_scan_skip_until_number(proven_scan_t *scan) {
     }
 }
 
-/* The placeholder at p (which is '{'): "{}" or, for an integer, "{:x}" / "{:X}" - read it as
- * hexadecimal. Returns its length, or 0 when it is neither. */
-static int placeholder_len(const char *p, bool *hex) {
-    *hex = false;
+/* The placeholder at p (which is '{'): "{}"; for an integer "{:x}" / "{:X}" - read it as
+ * hexadecimal (*letter 'x'); for a double scanf's letters "{:f}", "{:e}", "{:E}", "{:g}",
+ * "{:G}" - read it as "{}" does, any form the formatter writes (*letter 'g'). Returns its
+ * length, or 0 when it is none of these. */
+static int placeholder_len(const char *p, char *letter) {
+    *letter = 0;
     if (p[1] == '}') return 2;
-    if (p[1] == ':' && (p[2] == 'x' || p[2] == 'X') && p[3] == '}') {
-        *hex = true;
-        return 4;
+    if (p[1] == ':' && p[2] != '\0' && p[3] == '}') {
+        switch (p[2]) {
+            case 'x': case 'X': *letter = 'x'; return 4;
+            case 'f': case 'e': case 'E': case 'g': case 'G': *letter = 'g'; return 4;
+            default: break;
+        }
     }
     return 0;
 }
@@ -408,8 +413,8 @@ static proven_err_t proven_scan_fmt_count_placeholders(const char *fmt, proven_s
 
     for (const char *p = fmt; *p; ++p) {
         if (*p == '{') {
-            bool hex;
-            int len = placeholder_len(p, &hex);
+            char letter;
+            int len = placeholder_len(p, &letter);
             if (len == 0) {
                 return PROVEN_ERR_INVALID_ARG;
             }
@@ -447,14 +452,17 @@ proven_err_t proven_scan_fmt_internal(proven_scan_t *scan, const char *fmt, cons
 
     while (*p != '\0') {
         if (*p == '{') {
-            bool hex = false;
-            int ph_len = placeholder_len(p, &hex);
+            char letter = 0;
+            int ph_len = placeholder_len(p, &letter);
             if (ph_len > 0) {
                 p += ph_len;
-                
+                const bool hex = letter == 'x';
+
                 if (arg_idx >= args_count) return PROVEN_ERR_INVALID_ARG;
-                
+
                 const proven_scan_arg_t *arg = &args[arg_idx++];
+                /* A float letter names a double. */
+                if (letter == 'g' && arg->type != PROVEN_SCAN_ARG_TYPE_F64) return PROVEN_ERR_INVALID_FORMAT;
                 
                 switch (arg->type) {
                     case PROVEN_SCAN_ARG_TYPE_I32: {
@@ -699,7 +707,7 @@ proven_err_t proven_scan_fmt_internal(proven_scan_t *scan, const char *fmt, cons
                         return PROVEN_ERR_INVALID_ARG;
                 }
             } else {
-                /* "{}" and "{:x}" only; anything else was refused by the count above. */
+                /* "{}", "{:x}" and the float letters only; anything else was refused by the count above. */
                 return PROVEN_ERR_INVALID_ARG;
             }
         } else {

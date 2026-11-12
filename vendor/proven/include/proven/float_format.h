@@ -29,6 +29,15 @@ typedef enum {
      *        the same one the default form already uses at the extremes.
      */
     PROVEN_FLOAT_FORMAT_MODE_SCIENTIFIC = 2,
+    /**
+     * @brief printf's %g (C17 7.21.6.1): `precision` SIGNIFICANT digits (0 means 1). The value
+     *        is rounded to them first; with X the exponent of the rounded value, the fixed
+     *        form with precision - 1 - X decimals when precision > X >= -4, else the
+     *        scientific form with precision - 1; then trailing zeros, and a point left bare,
+     *        are removed unless `alternate` is set. 0.1 + 0.2 at 6 digits is "0.3"; 999999.5
+     *        is "1e+06". Correctly rounded, like the other modes.
+     */
+    PROVEN_FLOAT_FORMAT_MODE_GENERAL = 3,
 } proven_float_format_mode_t;
 
 typedef struct {
@@ -44,6 +53,20 @@ typedef struct {
      * fixed form it was asked to force.
      */
     bool never_scientific;
+    /**
+     * @brief printf's `#` (the alternative form), FIXED, SCIENTIFIC and GENERAL: the decimal
+     *        point is always written, even with no digit after it; GENERAL keeps its trailing
+     *        zeros.
+     */
+    bool alternate;
+    /** @brief `E` for the exponent's letter, and `INF`/`NAN` under `printf_specials` (%E, %G). */
+    bool uppercase;
+    /**
+     * @brief Infinity and NaN as printf spells them: `inf`, `-inf`, `nan`, and `-nan` for a NaN
+     *        whose sign bit is set (glibc's spelling). Off: `Inf`, `-Inf`, `NaN` - the library's
+     *        own, which `{}` and `{:r}` keep.
+     */
+    bool printf_specials;
 } proven_float_format_options_t;
 
 static inline proven_float_format_options_t proven_float_format_options_fixed_default(void) {
@@ -57,6 +80,11 @@ static inline proven_float_format_options_t proven_float_format_options_shortest
 /** @brief Always-scientific with 6 digits after the point, like printf's default %e. */
 static inline proven_float_format_options_t proven_float_format_options_scientific(void) {
     return (proven_float_format_options_t){ .mode = PROVEN_FLOAT_FORMAT_MODE_SCIENTIFIC, .precision = 6 };
+}
+
+/** @brief printf's %g: six significant digits, its spellings of infinity and NaN. */
+static inline proven_float_format_options_t proven_float_format_options_general(void) {
+    return (proven_float_format_options_t){ .mode = PROVEN_FLOAT_FORMAT_MODE_GENERAL, .precision = 6, .printf_specials = true };
 }
 
 [[nodiscard]]

@@ -38,6 +38,9 @@ int main(void)
     proven_println("{} {:.2} {:.0} {:f} {:e} {:g}",
                    PROVEN_ARG(3.14159), PROVEN_ARG(3.14159), PROVEN_ARG(3.14159),
                    PROVEN_ARG(3.14159), PROVEN_ARG(3.14159), PROVEN_ARG(3.14159));
+    double sum = 0.1 + 0.2;
+    proven_println("0.1 + 0.2: {:g} under g, {:r} under r, {:.17g} under .17g",
+                   PROVEN_ARG(sum), PROVEN_ARG(sum), PROVEN_ARG(sum));
     proven_println("very large and very small: {} {}",
                    PROVEN_ARG(1e20), PROVEN_ARG(5e-7));
 

@@ -25,9 +25,9 @@ typedef struct {
     char align;      // '<', '>', '^'
     int  width;
     int  precision;  // -1 when unset
-    char type;       // 0, 'x', 'X', 'o', 'b', 'd', 'f', 'g', 'e'
+    char type;       // 0, 'x', 'X', 'o', 'b', 'd', 'f', 'e', 'E', 'g', 'G', 'r'
     char sign;       // 0, '+', ' '
-    bool alt;        // '#' - 0x / 0o / 0b prefix
+    bool alt;        // '#' - 0x / 0o / 0b prefix; on f, e, E, g, G printf's alternative form
     bool hex;        // kept: true when type is 'x' or 'X'
 } proven_fmt_spec_t;
  
@@ -410,14 +410,18 @@ static void render_arg(proven_fmt_ctx_t *ctx, const proven_arg_t *arg, proven_fm
         case 'x': case 'X': case 'o': case 'b': case 'd':
             if (!is_int) { ctx->err = PROVEN_ERR_INVALID_FORMAT; return; }
             break;
-        case 'f': case 'g': case 'e':
+        case 'f': case 'e': case 'E': case 'g': case 'G': case 'r':
             if (!is_float) { ctx->err = PROVEN_ERR_INVALID_FORMAT; return; }
             break;
         default:
             ctx->err = PROVEN_ERR_INVALID_FORMAT;
             return;
     }
-    if (spec.alt && !is_int) { ctx->err = PROVEN_ERR_INVALID_FORMAT; return; }
+    /* `#` on a float is printf's alternative form, so only where printf has one: f, e, g. */
+    if (spec.alt && !is_int && !(is_float && spec.type != 0 && spec.type != 'r')) { ctx->err = PROVEN_ERR_INVALID_FORMAT; return; }
+    /* The shortest form has no precision to honour; accepting one and ignoring it is how
+     * `{:.3g}` behaved until v0.114.0. */
+    if (spec.type == 'r' && spec.precision >= 0) { ctx->err = PROVEN_ERR_INVALID_FORMAT; return; }
     if (spec.sign && !(is_int || is_float)) { ctx->err = PROVEN_ERR_INVALID_FORMAT; return; }
     bool is_text = (arg->type == PROVEN_ARG_CSTR || arg->type == PROVEN_ARG_STR_VIEW);
     if (spec.precision >= 0 && !is_float && !is_text) {
@@ -485,10 +489,17 @@ static void render_arg(proven_fmt_ctx_t *ctx, const proven_arg_t *arg, proven_fm
             proven_float_format_options_t opt = proven_float_format_options_fixed_default();
             proven_float_format_policy_t policy = PROVEN_FLOAT_FORMAT_POLICY_DEFAULT;
 
-            if (spec.type == 'g') {
+            if (spec.type == 'r') {
+                /* The shortest form that reads back - `{:g}` until v0.114.0. */
                 opt = proven_float_format_options_shortest();
                 policy = PROVEN_FLOAT_FORMAT_POLICY_RYU;
-            } else if (spec.type == 'e') {
+            } else if (spec.type == 'g' || spec.type == 'G') {
+                /* printf %g: significant digits (six by default), the fixed or the
+                 * scientific form by the rounded value's exponent, trailing zeros dropped. */
+                opt = proven_float_format_options_general();
+                opt.precision = (spec.precision >= 0) ? spec.precision : 6;
+                policy = PROVEN_FLOAT_FORMAT_POLICY_SIMPLE;
+            } else if (spec.type == 'e' || spec.type == 'E') {
                 /* Always scientific, printf %e: precision digits after the point (default 6). */
                 opt.mode = PROVEN_FLOAT_FORMAT_MODE_SCIENTIFIC;
                 opt.precision = (spec.precision >= 0) ? spec.precision : 6;
@@ -516,6 +527,12 @@ static void render_arg(proven_fmt_ctx_t *ctx, const proven_arg_t *arg, proven_fm
              * 1e121 looked exactly like a typo in the spec, and no output buffer the caller
              * supplied could make it work. The number was fine; the scratch was not.
              */
+            if (spec.type != 0 && spec.type != 'r') {
+                /* A printf letter: printf's inf and nan, its `#`, and E/G in upper case. */
+                opt.printf_specials = true;
+                opt.alternate = spec.alt;
+                opt.uppercase = (spec.type == 'E' || spec.type == 'G');
+            }
             char fbuf[1536];
             proven_size_t flen = 0;
             proven_err_t ferr = proven_float_format_f64_policy(fbuf, sizeof fbuf, arg->value.f64,
@@ -545,6 +562,13 @@ static void render_arg(proven_fmt_ctx_t *ctx, const proven_arg_t *arg, proven_fm
              * the whole string, so the sign has to be lifted out and the zeros placed after
              * it here - the same fix render_integer already carries.
              */
+            {
+                /* printf pads infinity and NaN with spaces even under a 0 flag: "0000inf" is not
+                 * a number either. */
+                proven_size_t at = (flen > 0 && (fbuf[0] == '-' || fbuf[0] == '+' || fbuf[0] == ' ')) ? 1u : 0u;
+                char c0 = at < flen ? fbuf[at] : '0';
+                if (spec.fill == '0' && (c0 == 'i' || c0 == 'n' || c0 == 'I' || c0 == 'N')) spec.fill = ' ';
+            }
             if (spec.fill == '0' && spec.align == '>' && spec.width > 0 &&
                 (proven_size_t)spec.width > flen) {
                 proven_size_t sign_len = (flen > 0 && (fbuf[0] == '-' || fbuf[0] == '+' || fbuf[0] == ' ')) ? 1u : 0u;
@@ -845,7 +869,7 @@ static void fmt_run(proven_fmt_ctx_t *ctx, const char *fmt, const proven_arg_t *
 
             /* The type letter. */
             switch (*p) {
-                case 'x': case 'X': case 'o': case 'b': case 'd': case 'f': case 'g': case 'e':
+                case 'x': case 'X': case 'o': case 'b': case 'd': case 'f': case 'e': case 'E': case 'g': case 'G': case 'r':
                     spec.type = *p;
                     spec.hex = (*p == 'x' || *p == 'X');
                     ++p;

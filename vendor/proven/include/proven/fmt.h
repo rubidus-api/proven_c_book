@@ -196,11 +196,16 @@ static inline proven_arg_t proven_arg_u64(unsigned long long v) {
  *       rather than `printf`'s `0.000000`. That is more informative, and it is a
  *       difference worth knowing about before you diff two logs.
  * @note The spec grammar can ask for more than the default: `{:.3}` gives three
- *       decimals, `{:.0}` gives none, `{:f}` forces the fixed form, and `{:g}` gives
- *       the shortest representation that round-trips. Until v26.07.12i none of these
- *       existed - every float came out with exactly six decimals, forever, which is
- *       why a float column could not be aligned: 12.5 took nine characters and 100.0
- *       took ten, and the column broke.
+ *       decimals, `{:.0}` gives none, `{:f}` forces the fixed form, `{:e}`/`{:E}` the
+ *       scientific one, `{:g}`/`{:G}` printf's %g (six significant digits, `{:.Ng}` N
+ *       of them: 0.1 + 0.2 is "0.3"), and `{:r}` the shortest representation that
+ *       round-trips ("0.30000000000000004"). `#` on f, e and g is printf's alternative
+ *       form. Under f, e and g infinity and NaN are printf's `inf`, `-inf`, `nan`
+ *       (`INF`, `NAN` under E and G); `{}` and `{:r}` write `Inf`, `-Inf`, `NaN`.
+ *       Until v0.114.0 `{:g}` was the shortest form (now `{:r}`). Until v26.07.12i none
+ *       of these existed - every float came out with exactly six decimals, forever,
+ *       which is why a float column could not be aligned: 12.5 took nine characters
+ *       and 100.0 took ten, and the column broke.
  * @note The float path stays in double precision, so output is target-deterministic.
  */
 static inline proven_arg_t proven_arg_f64(double v) {
