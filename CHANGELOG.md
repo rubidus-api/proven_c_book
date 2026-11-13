@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 This project follows Keep a Changelog.
 
+## [v0.108.0] - 2026-11-13
+
+### Added
+- **부록 L 의 부팅 섹터 시연 `mbr_boot`** C 로 쓴 MBR 부트 코드(437바이트)와 VBR 을 한 벌로 짓고 두 번 돌린다. 이 기계에서 짓는 판은 BIOS 노릇을 하는 작은 프로그램 위에서 부트 코드가 내리는 명령(`int 13h` 섹터 읽기, 뛰기)을 찍고, 16비트 실모드(`gcc -m16`)로 짓는 판은 QEMU 10.0.13 의 PC 기계에서 SeaBIOS 1.16.3 이 부팅한다. MBR 은 자기를 0x0600 으로 옮기고, 부팅 표시가 붙은 파티션의 첫 섹터를 읽어 `55 aa` 를 본 뒤 DL · SI 를 넘기고, VBR 은 받은 칸을 확인하고 0번 섹터를 다시 읽어 sfdisk 가 적은 표를 바이트 그대로 찍는다. 디스크는 임시 디렉터리의 이미지 셋(MBR 표, VBR 이 없는 같은 표, GPT)이고 장치에는 아무것도 쓰지 않는다. GPT 디스크에서는 같은 MBR 이 보호 MBR 의 `0xEE` 칸에 부팅 표시가 없어 멈추는 것이 보인다. 진짜 PC 의 펌웨어에서는 돌려 보지 않았다고 적었다.
+
+### Changed
+- **부록 L** 「배열 하나를 채우고 다시 읽는」 `disk_layout` 을 위 시연으로 바꿨다(`examples/apx-boot/disk_layout.c` 를 지웠다). MBR 의 코드 자리를 446바이트에서 440바이트로 바로잡았다 --- 0x1B8 부터 디스크 서명 4바이트와 두 바이트가 있고, 시연에서 sfdisk 가 그 자리에 서명을 적는다. 자리 나눔 표, GRUB 단계 표, 요약을 맞추고, GPT 헤더의 CRC 검사는 부록 J 의 부트로더 시연을 가리킨다.
+
 ## [v0.107.2] - 2026-11-12
 
 ### Changed
