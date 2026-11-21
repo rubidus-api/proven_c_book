@@ -62,5 +62,5 @@ if [ -x "$tools/usr/sbin/sfdisk" ]; then
 fi
 # shellcheck disable=SC2086
 timeout 60 "$qemu" -machine virt -bios none -nographic -kernel ./rv.elf \
-    -global virtio-mmio.force-legacy=false $disks
+    -global virtio-mmio.force-legacy=false $disks </dev/null
 rm -rf ./rv.elf "$dir"

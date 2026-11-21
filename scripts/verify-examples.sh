@@ -188,13 +188,15 @@ for runner in $(find "$root/$tree" -name 'run.sh' | sort); do
     rel=${runner#"$root/$tree/"}
     out="$outdir/$rel.out"
     mkdir -p "$(dirname "$out")"
-    if ! sh "$runner" >"$out" 2>&1; then
+    run_rc=0
+    sh "$runner" </dev/null >"$out" 2>&1 || run_rc=$?
+    if [ "$run_rc" -ne 0 ]; then
         if reason=$(cross_reason "$rel"); then
             echo "skip: $rel — $reason"
             skipped=$((skipped + 1))
             continue
         fi
-        echo "FAIL run:   $rel"
+        echo "FAIL run:   $rel (exit $run_rc)"
         sed 's/^/    /' "$out"
         fail=1
         continue

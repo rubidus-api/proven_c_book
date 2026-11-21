@@ -705,33 +705,33 @@ t0 <strong><span class="tok-x">=</span></strong> <strong>ns</strong><strong><spa
     Reading the clock costs more than that --- measured next.
 
 == 3. the cost of reading the clock ==
-  one clock_gettime : 16.9 ns
+  one clock_gettime : 16.8 ns
   smallest interval actually distinguishable : 17.0 ns
   * so anything shorter than this is never measured once. Repeat and divide.
     Every measurement in this appendix is built that way.
 
 == 4. trap one: the optimiser removes what you meant to measure ==
-  a sum whose result is discarded :          2 ns  (0.00 ns per element)
-  a sum whose result is used      :     222120 ns  (0.21 ns per element)
-  factor                          : 98720.0 x
+  a sum whose result is discarded :          5 ns  (0.00 ns per element)
+  a sum whose result is used      :     214721 ns  (0.20 ns per element)
+  factor                          : 46678.5 x
   * if the first is near zero, that code never ran. The compiler removed it as
     a value nobody uses. When the result says your code is infinitely fast,
     suspect this before suspecting the machine.
 
 == 5. trap two: the first round is slow (warming up) ==
-  filling the same 4 MiB --- first  :  1464449 ns
-                          second :   123763 ns
-  factor: 11.8 x
+  filling the same 4 MiB --- first  :  1345367 ns
+                          second :   112027 ns
+  factor: 12.0 x
   * the first round mixes in the cost of the OS attaching pages one by one (page faults).
     So warm up before measuring, and discard the warm-up rounds.
 
 == 6. trap three: one interruption drags the mean ==
   results over 201 rounds
-  minimum           12356 ns
-  median            12466 ns  &lt;- what this appendix uses
-  mean              12641 ns
-  99th percentile        17294 ns
-  maximum           19528 ns
+  minimum           12360 ns
+  median            12416 ns  &lt;- what this appendix uses
+  mean              12493 ns
+  99th percentile        13243 ns
+  maximum           18985 ns
   mean / median = 1.01 x  (the further from 1, the more other work interfered)
   * this machine is shared. So the median is used rather than the mean, with the
     minimum alongside to show what it would be with no interference.
@@ -766,21 +766,21 @@ t0 <strong><span class="tok-x">=</span></strong> <strong>ns</strong><strong><spa
 
   working set  where      random access  factor     sequential
   4 KiB        L1             1.43 ns     1.0x     0.38 ns
-  8 KiB        L1             1.44 ns     1.0x     0.37 ns
+  8 KiB        L1             1.43 ns     1.0x     0.37 ns
   16 KiB       L1             1.44 ns     1.0x     0.37 ns
   32 KiB       L1             1.45 ns     1.0x     0.37 ns
   64 KiB       L2             2.53 ns     1.8x     0.37 ns
-  128 KiB      L2             3.67 ns     2.6x     0.37 ns
-  256 KiB      L2             4.80 ns     3.3x     0.43 ns
-  512 KiB      L3            10.34 ns     7.2x     0.40 ns
-  1 MiB        L3            13.34 ns     9.3x     0.43 ns
-  2 MiB        L3            14.83 ns    10.3x     0.42 ns
-  4 MiB        L3            15.59 ns    10.9x     0.39 ns
-  8 MiB        L3            27.26 ns    19.0x     0.44 ns
-  16 MiB       L3            58.09 ns    40.5x     0.56 ns
-  32 MiB       main memory    74.02 ns    51.6x     0.57 ns
-  64 MiB       main memory    81.89 ns    57.1x     0.57 ns
-  128 MiB      main memory    87.95 ns    61.3x     0.58 ns
+  128 KiB      L2             3.02 ns     2.1x     0.37 ns
+  256 KiB      L2             5.49 ns     3.8x     0.38 ns
+  512 KiB      L3             9.87 ns     6.9x     0.39 ns
+  1 MiB        L3            12.62 ns     8.8x     0.39 ns
+  2 MiB        L3            14.10 ns     9.8x     0.39 ns
+  4 MiB        L3            14.86 ns    10.4x     0.39 ns
+  8 MiB        L3            18.56 ns    12.9x     0.41 ns
+  16 MiB       L3            46.35 ns    32.3x     0.55 ns
+  32 MiB       main memory    67.69 ns    47.2x     0.57 ns
+  64 MiB       main memory    79.36 ns    55.3x     0.58 ns
+  128 MiB      main memory    87.12 ns    60.7x     0.57 ns
 
 == how to read this ==
   1. reading down the table shows steps. Wherever the working set passes
@@ -826,17 +826,17 @@ t0 <strong><span class="tok-x">=</span></strong> <strong>ns</strong><strong><spa
   stride     each           factor     lines touched    bytes fetched in vain
   1              0.64 ns     1.0x  0.016            0 bytes
   2              0.64 ns     1.0x  0.031            0 bytes
-  4              0.68 ns     1.1x  0.062            0 bytes
-  8              0.77 ns     1.2x  0.125            0 bytes
-  16             1.01 ns     1.6x  0.250            0 bytes
-  32             1.74 ns     2.7x  0.500            0 bytes
-  64             3.27 ns     5.1x  1.000            63 bytes
-  128            5.13 ns     8.0x  1.000            63 bytes
-  256            6.00 ns     9.4x  1.000            63 bytes
-  512            7.13 ns    11.2x  1.000            63 bytes
-  1024           7.46 ns    11.7x  1.000            63 bytes
-  2048           7.86 ns    12.3x  1.000            63 bytes
-  4096           6.75 ns    10.6x  1.000            63 bytes
+  4              0.67 ns     1.1x  0.062            0 bytes
+  8              0.75 ns     1.2x  0.125            0 bytes
+  16             1.04 ns     1.6x  0.250            0 bytes
+  32             1.65 ns     2.6x  0.500            0 bytes
+  64             3.18 ns     5.0x  1.000            63 bytes
+  128            4.86 ns     7.6x  1.000            63 bytes
+  256            5.84 ns     9.2x  1.000            63 bytes
+  512            6.83 ns    10.7x  1.000            63 bytes
+  1024           7.12 ns    11.2x  1.000            63 bytes
+  2048           7.54 ns    11.9x  1.000            63 bytes
+  4096           6.63 ns    10.4x  1.000            63 bytes
 
   * the cost rises until the stride reaches 64 bytes (the line size), and
     then flattens. A stride narrower than a line uses one line several times,
@@ -848,7 +848,7 @@ t0 <strong><span class="tok-x">=</span></strong> <strong>ns</strong><strong><spa
   4194304 elements --- 224 MiB in total
 
   layout                             per element     factor bytes used per line
-  array of structs (AoS) --- reading x only   2.856 ns      2.4x  8 / 56
+  array of structs (AoS) --- reading x only   2.792 ns      2.3x  8 / 56
   structs of arrays (SoA) --- reading the x array only   1.200 ns      1.0x  64 / 64
 
   * the same values were added the same number of times. Only the layout changed.
@@ -897,12 +897,12 @@ t0 <strong><span class="tok-x">=</span></strong> <strong>ns</strong><strong><spa
 
   pages      data touched each         factor
   16         64 KiB           3.45 ns    1.0x
-  64         256 KiB          7.70 ns    2.2x
-  256        1 MiB           15.76 ns    4.6x
-  1024       4 MiB           16.01 ns    4.6x
-  4096       16 MiB          33.14 ns    9.6x
-  16384      64 MiB          75.93 ns   22.0x
-  65536      256 MiB         89.08 ns   25.8x
+  64         256 KiB          6.51 ns    1.9x
+  256        1 MiB           14.70 ns    4.3x
+  1024       4 MiB           14.82 ns    4.3x
+  4096       16 MiB          38.32 ns   11.1x
+  16384      64 MiB          76.70 ns   22.3x
+  65536      256 MiB         88.85 ns   25.8x
 
   * the data is small (8 bytes per page), and yet more pages costs more.
     The bottleneck is address translation, not the cache. When the table
@@ -913,9 +913,9 @@ t0 <strong><span class="tok-x">=</span></strong> <strong>ns</strong><strong><spa
   normal pages advised         backed by huge pages: 0 KiB (0%)
   huge pages advised           backed by huge pages: 0 KiB (0%)
   the same 256 MiB is walked the same way.
-  normal pages (4 KiB)            88.33 ns
-  huge pages advised (MADV_HUGEPAGE)    88.18 ns
-  difference: 1.00 x --- no great difference in this run
+  normal pages (4 KiB)            90.06 ns
+  huge pages advised (MADV_HUGEPAGE)    88.16 ns
+  difference: 1.02 x --- no great difference in this run
   * one huge page replaces 512 pages of 4 KiB, so the translations needed to
     sweep the same data fall to a 512th. But madvise is a request, not an order.
     The "backed by huge pages" figure above says whether the request was taken ---
@@ -924,9 +924,9 @@ t0 <strong><span class="tok-x">=</span></strong> <strong>ns</strong><strong><spa
      may already have some mixed in.)
 
 == 3. the cost of touching a page for the first time ==
-  touching a page the first time :   1098.1 ns
-  touching an already-mapped page:      8.6 ns
-  factor: 128 x
+  touching a page the first time :   1114.5 ns
+  touching an already-mapped page:      8.5 ns
+  factor: 132 x
   * the address `malloc` returned is not memory yet. At each first touch the
     operating system attaches one page --- and that is its cost. Allocate a large
     buffer and measure at once and this cost is mixed in entire (hence warming up).
@@ -951,27 +951,27 @@ t0 <strong><span class="tok-x">=</span></strong> <strong>ns</strong><strong><spa
   the two arrays hold exactly the same contents --- only sortedness differs.
 
                                      random order sorted order sorted/random
-  source with an if (plain -O2)          0.684 ns     0.720 ns    0.95 x
-  code that kept a real branch           4.046 ns     0.832 ns    4.86 x
-  code with the branch turned into arithmetic     0.654 ns     0.664 ns    0.98 x
+  source with an if (plain -O2)          0.646 ns     0.640 ns    1.01 x
+  code that kept a real branch           3.894 ns     0.784 ns    4.97 x
+  code with the branch turned into arithmetic     0.626 ns     0.617 ns    1.01 x
 
   * the first two rows have the same source. Only the compiler settings differ.
     In the first, the compiler turned the `if` into a conditional move (cmov), so
     there is no branch to predict and sorting brings no gain. That is why the
     famous "sorted arrays are faster" story often fails to reproduce today.
 
-  extra time per element in the real-branch version: 3.214 ns
-  / a miss probability of 0.5 = about 6.4 ns per misprediction
+  extra time per element in the real-branch version: 3.110 ns
+  / a miss probability of 0.5 = about 6.2 ns per misprediction
 
 == how regular must it be to be predicted ==
   the same number of elements, with only the pattern of trues changed.
 
   pattern                              each note
-  always true                      0.526 ns always predicted
-  alternating                      0.869 ns short periods are memorised
-  one in four                      0.918 ns short periods are memorised
-  one in sixteen                   1.092 ns short periods are memorised
-  random                           3.993 ns cannot be predicted
+  always true                      0.490 ns always predicted
+  alternating                      0.837 ns short periods are memorised
+  one in four                      0.906 ns short periods are memorised
+  one in sixteen                   1.038 ns short periods are memorised
+  random                           3.893 ns cannot be predicted
 
 == how to read this ==
   0. today's compilers turn a short `if` into branchless code. So to measure
@@ -1002,7 +1002,7 @@ t0 <strong><span class="tok-x">=</span></strong> <strong>ns</strong><strong><spa
   cache line 64 bytes · 16 logical cores
 
 == 1. the baseline ==
-  one thread incrementing its own slot : 1.566 ns each
+  one thread incrementing its own slot : 1.567 ns each
   (measured on a local variable the compiler folds the loop away, so it is no baseline)
 
 == 2. two threads each incrementing their own slot --- only the distance changes ==
@@ -1012,12 +1012,12 @@ t0 <strong><span class="tok-x">=</span></strong> <strong>ns</strong><strong><spa
   baseline (0.783 ns). Anything above that is the loss.
 
   distance       per increment    vs perfect scaling same line?
-  8                   1.113 ns       1.42x  same line --- false sharing
-  16                  1.091 ns       1.39x  same line --- false sharing
-  32                  1.132 ns       1.45x  same line --- false sharing
-  64                  0.781 ns       1.00x  different lines
-  128                 0.780 ns       1.00x  different lines
-  256                 0.782 ns       1.00x  different lines
+  8                   1.140 ns       1.46x  same line --- false sharing
+  16                  1.132 ns       1.44x  same line --- false sharing
+  32                  1.130 ns       1.44x  same line --- false sharing
+  64                  0.782 ns       1.00x  different lines
+  128                 0.782 ns       1.00x  different lines
+  256                 0.783 ns       1.00x  different lines
 
   * the two threads touch different variables. But in the same cache line the
     line is passed back and forth between the cores --- that is false sharing.
@@ -1025,19 +1025,19 @@ t0 <strong><span class="tok-x">=</span></strong> <strong>ns</strong><strong><spa
 
 == 3. adding threads --- sharing a line, and apart ==
   threads    same line (8 bytes apart) different lines (128 bytes) factor
-  2                 1.122 ns        0.782 ns    1.4x
-  4                 1.459 ns        0.415 ns    3.5x
-  8                 1.186 ns        0.208 ns    5.7x
+  2                 1.144 ns        0.783 ns    1.5x
+  4                 0.699 ns        0.392 ns    1.8x
+  8                 0.674 ns        0.208 ns    3.2x
 
 == 4. when several really do touch one value ==
-  uncontended increment (baseline)        1.566 ns each
-  atomic increment --- 1 thread           5.215 ns each
-  atomic increment --- 2 threads         11.233 ns each
-  atomic increment --- 4 threads         19.966 ns each
-  increment under a lock --- 1 thread     17.434 ns each
-  increment under a lock --- 2 threads     57.622 ns each
+  uncontended increment (baseline)        1.567 ns each
+  atomic increment --- 1 thread           5.231 ns each
+  atomic increment --- 2 threads         19.673 ns each
+  atomic increment --- 4 threads         15.913 ns each
+  increment under a lock --- 1 thread     18.855 ns each
+  increment under a lock --- 2 threads     60.573 ns each
 
-  * uncontended (one thread), the atomic costs 3x and the lock 11x.
+  * uncontended (one thread), the atomic costs 3x and the lock 12x.
     But when several contend for one value it jumps several fold again --- one
     line has to be owned exclusively by each core in turn.
   * hence the discipline: count separately, and combine once at the end.
@@ -1070,19 +1070,19 @@ b<span class="tok-x">[</span>i<span class="tok-x">]</span> <strong><span class="
 == 1. denormals --- numbers very close to zero ==
   the smallest normal double: 2.22507e-308
   array filled with normals (1.0)    0.288 ns per element
-  array filled with denormals    20.570 ns per element
-  -> the denormal side is 71.5 x slower
+  array filled with denormals    20.532 ns per element
+  -> the denormal side is 71.3 x slower
   * here the magnitude of a value alone changes the time. On some machines it is
     tens of times; on recent chips it is almost nothing --- so measure before speaking.
     (this is the accident where audio processing slows suddenly as a sound fades.)
 
 == 2. float and double ==
-  double (8 bytes)                0.287 ns per element
-  float  (4 bytes)                0.287 ns per element
+  double (8 bytes)                0.286 ns per element
+  float  (4 bytes)                0.286 ns per element
   -> the float side is 1.00 x faster --- odd: no difference
 
   measuring the same computation again, this time allowing vector instructions:
-  double (vectors allowed)        0.574 ns per element
+  double (vectors allowed)        0.573 ns per element
   float  (vectors allowed)        0.286 ns per element
   -> this time the float side is 2.00 x faster
   * the benefit of narrower width appears only with vector instructions. But
@@ -1093,11 +1093,11 @@ b<span class="tok-x">[</span>i<span class="tok-x">]</span> <strong><span class="
 
 == 3. the operations cost differently ==
   operation                per element    vs multiply
-  multiply  a*b               0.308 ns      1.0x
-  add       a+b               0.506 ns      1.6x
-  divide    a/b               1.147 ns      3.7x
-  sqrt      sqrt(a)           1.721 ns      5.6x
-  sin(a)                      7.745 ns     25.1x
+  multiply  a*b               0.309 ns      1.0x
+  add       a+b               0.505 ns      1.6x
+  divide    a/b               1.146 ns      3.7x
+  sqrt      sqrt(a)           1.720 ns      5.6x
+  sin(a)                      7.732 ns     25.0x
 
   * multiply and add cost about the same. Divide is several times, trigonometry tens.
     Hence the common trick of one divide for a reciprocal and many multiplies.

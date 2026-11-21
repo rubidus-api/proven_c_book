@@ -39,14 +39,14 @@ int main(void)
     uint32_t seen = 0;
     for (;;) {
         if (ticks != seen) {                 /* 일은 주 루프가 한다 */
-            seen = ticks;
+            seen++;
             uart_puts("tick\n");
-            if (seen == 3) {
+            if (seen >= 3) {
                 uart_puts("three ticks; done\n");
                 *FINISH = 0x5555u;           /* 에뮬레이터를 끈다 */
+                for (;;) { __asm__ volatile ("wfi"); }
             }
-        }
-        __asm__ volatile ("wfi");            /* 할 일이 없으면 잔다 */
+        } else
+            __asm__ volatile ("wfi");        /* 할 일이 없으면 잔다 */
     }
-    for (;;) { }                             /* 돌아갈 곳이 없다 */
 }

@@ -29,5 +29,5 @@ printf 'BOOT OK\n' > "$img"
 truncate -s 32M "$img"
 timeout 60 "$qemu" -machine sifive_u -bios none -nographic -kernel ./rv.elf \
     -semihosting-config enable=on,target=native \
-    -drive file="$img",format=raw,if=mtd
+    -drive file="$img",format=raw,if=mtd </dev/null
 rm -f ./rv.elf "$img"

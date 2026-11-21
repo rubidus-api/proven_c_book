@@ -23,5 +23,5 @@ fi
 "$rv" -std=c23 -march=rv64imac_zicsr -mabi=lp64 -mcmodel=medany -O2 -Wall -Wextra -Werror \
     -ffreestanding -nostdlib -nostartfiles -Wl,--no-warn-rwx-segments -I. -I$hw -T $hw/rv_virt.ld \
     $hw/rv_start.S main.c uart16550.c $hw/hw_mmio.c -o ./rv.elf
-timeout 60 "$qemu" -machine virt -bios none -nographic -kernel ./rv.elf
+timeout 60 "$qemu" -machine virt -bios none -nographic -kernel ./rv.elf </dev/null
 rm -f ./rv.elf

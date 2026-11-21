@@ -17,7 +17,8 @@ if [ ! -x "$rv" ] || [ ! -x "$qemu" ]; then
     exit 0
 fi
 
+elf=$(mktemp "${TMPDIR:-/tmp}/apx-riscv.XXXXXX.elf")
+trap 'rm -f "$elf"' EXIT
 "$rv" -march=rv64imac_zicsr -mabi=lp64 -mcmodel=medany -O2 -Wall -Wextra \
-    -nostdlib -nostartfiles -Wl,--no-warn-rwx-segments -T rv_virt.ld rv_start.S rv_timer.c -o ./rv.elf
-timeout 60 "$qemu" -machine virt -bios none -nographic -kernel ./rv.elf
-rm -f ./rv.elf
+    -nostdlib -nostartfiles -Wl,--no-warn-rwx-segments -T rv_virt.ld rv_start.S rv_timer.c -o "$elf"
+timeout 60 "$qemu" -machine virt -bios none -nographic -kernel "$elf" </dev/null

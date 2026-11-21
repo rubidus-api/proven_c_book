@@ -39,14 +39,14 @@ int main(void)
     uint32_t seen = 0;
     for (;;) {
         if (ticks != seen) {                 /* the main loop does the work */
-            seen = ticks;
+            seen++;
             uart_puts("tick\n");
-            if (seen == 3) {
+            if (seen >= 3) {
                 uart_puts("three ticks; done\n");
                 *FINISH = 0x5555u;           /* switch the emulator off */
+                for (;;) { __asm__ volatile ("wfi"); }
             }
-        }
-        __asm__ volatile ("wfi");            /* sleep when there is nothing to do */
+        } else
+            __asm__ volatile ("wfi");        /* sleep when there is nothing to do */
     }
-    for (;;) { }                             /* nowhere to return to */
 }

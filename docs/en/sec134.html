@@ -1079,24 +1079,33 @@ virtio-blk at 0x10008000, 1032192 sectors
   but of the filesystem, the cache and the device together --- the whole stack.
 
 == 1. sequential writing ==
-  writing 64 MiB (into cache) :   5167.7 MiB/s
-  one fsync after it          :     65.0 ms  &lt;- this much had not reached the disk
-  4 KiB write + fsync         :    0.445 ms each -> about 2247 per second
+  writing 64 MiB (into cache) :   7754.0 MiB/s
+  one fsync after it          :     73.2 ms  &lt;- this much had not reached the disk
+  4 KiB write + fsync         :    0.769 ms each -> about 1301 per second
   * that is the cost of one database commit. Which is why designs gather several
     commits and flush them together (group commit).
 
 == 2. reading --- with the cache, and after asking to drop it ==
-  sequential read (cached)  :   7730.4 MiB/s
-  sequential read (dropped) :   6207.1 MiB/s  -> a factor of 1.2
-  random 4 KiB (cached)     :      4.6 us each -> 218151 per second
-  random 4 KiB (dropped)    :      4.6 us each -> 215676 per second
+  sequential read (cached)  :  10393.0 MiB/s
+  sequential read (dropped) :  11512.5 MiB/s  -> a factor of 0.9
+  random 4 KiB (cached)     :      2.6 us each -> 389900 per second
+  random 4 KiB (dropped)    :      2.5 us each -> 394106 per second
+
+  * the two are nearly equal --- the request to drop the cache was not honoured.
+    This filesystem keeps its own cache, which `posix_fadvise` does not
+    empty. So read the numbers above not as the speed of the device but as
+    the speed of reading a file that is already in memory.
+    (11513 MiB/s is the speed of memory, not of storage.)
+    Really measuring the device needs bypassing the cache (O_DIRECT) or the
+    privilege to drop the system cache, and this environment has neither ---
+    so what could not be measured is left unmeasured.
 
 == 3. placed on the ladder from earlier ==
   what                                   each against L1 (1.4 ns)
   L1 cache read                        1.4 ns            1 x
   main memory read                    75.0 ns           54 x
-  random 4 KiB (from cache)            4.6 us         3274 x
-  4 KiB write + fsync                445.1 us       317899 x
+  random 4 KiB (from cache)            2.6 us         1832 x
+  4 KiB write + fsync                768.7 us       549077 x
 
   * the ladder does not end at the cache. Several more orders of magnitude lie below.
     And on those lower rungs, reading in order matters far more.

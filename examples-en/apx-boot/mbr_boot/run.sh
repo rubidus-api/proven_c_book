@@ -67,7 +67,7 @@ for d in mbr novbr gpt; do
     rc=0
     LD_LIBRARY_PATH="$q/usr/lib/x86_64-linux-gnu" timeout 30 "$qemu" -L "$q/usr/share/seabios" \
         -L "$q/usr/share/qemu" -display none -serial stdio -monitor none -nic none \
-        -drive file="$dir/$d.img",format=raw -device isa-debug-exit,iobase=0xf4 > "$dir/out" || rc=$?
+        -drive file="$dir/$d.img",format=raw -device isa-debug-exit,iobase=0xf4 </dev/null > "$dir/out" || rc=$?
     tr -d '\r' < "$dir/out"
     # isa-debug-exit ends with (value << 1) | 1: 1 for stop(0), 3 for stop(1)
     case $rc in 1) echo "(stopped: reached the end)" ;; 3) echo "(stopped: the boot code gave up)" ;;
