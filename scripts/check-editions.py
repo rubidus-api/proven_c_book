@@ -113,6 +113,30 @@ def main() -> int:
                 f"{web}/index.html: 차례에 장 링크가 {links}개뿐이다 "
                 f"(장은 {n_ch}개) --- 차례에서 본문으로 가는 길이 끊겼다")
 
+    # 영어판 HTML·원고에 숫자/장참조 뒤 프라임 소유격(′s)이나 직선 아포스트로피('s)가 남지 않게 막는다
+    en_html_dir = ROOT / "docs" / "en"
+    if en_html_dir.exists():
+        for hp in sorted(en_html_dir.glob("*.html")):
+            c = hp.read_text(encoding="utf-8").count("\u2032s")
+            if c:
+                problems.append(f"docs/en/{hp.name}: 프라임 소유격(′s) {c}곳 발견")
+    straight_rx = re.compile(r"(?:\d\*?|#ch(?:ref|refs|range)\([^)]*\)|\*[^*\n]*\d\*)'s\b")
+    code_split_rx = re.compile(r"(```.*?```|`[^`\n]*`)", re.S)
+    for p in sorted((ROOT / "book-en").rglob("*.typ")):
+        if is_draft(p):
+            continue
+        raw = p.read_text(encoding="utf-8")
+        parts = code_split_rx.split(raw)
+        n_hits = 0
+        for idx in range(0, len(parts), 2):
+            seg = parts[idx]
+            n_hits += len(straight_rx.findall(seg))
+            if idx > 0 and re.search(r"\d`$", parts[idx - 1]) and re.match(r"'s\b", seg):
+                n_hits += 1
+        if n_hits:
+            rel = p.relative_to(ROOT)
+            problems.append(f"{rel}: 직선 's {n_hits}곳 (’s 로 써서 ′s 렌더를 막을 것)")
+
     if problems:
         for p in problems:
             print("⚠️ ", p)

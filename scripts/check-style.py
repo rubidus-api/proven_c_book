@@ -71,6 +71,39 @@ WARN_RE_EN = {
         r"(?:its|the|a) (?:danger|weakness|risk|curse)s?\b", re.I),
 }
 
+EN_META_RE = re.compile(r"\b(?:strands?|vessels?|tubs?|witness(?:es)?|interruptions?)\b", re.I)
+
+def _dtable_spans(text):
+    spans, i = [], 0
+    while True:
+        k = text.find("#dtable(", i)
+        if k == -1:
+            break
+        depth, j = 1, k + 8
+        while depth and j < len(text):
+            if text[j] == "(": depth += 1
+            elif text[j] == ")": depth -= 1
+            j += 1
+        block = text[k + 8:j - 1]
+        b = 0
+        while b < len(block):
+            if block[b] == "[":
+                bd, e = 1, b + 1
+                while bd and e < len(block):
+                    if block[e] == "[": bd += 1
+                    elif block[e] == "]": bd -= 1
+                    e += 1
+                spans.append(block[b + 1:e - 1])
+                b = e
+            else:
+                b += 1
+        i = j
+    return spans
+
+def count_en_metaphor_headings_tables(text):
+    chunks = re.findall(r"(?m)^=+ .+$", text) + _dtable_spans(text)
+    return sum(len(EN_META_RE.findall(c)) for c in chunks)
+
 NOTE_KO = ["첫째", "둘째", "셋째", "넷째", "짚는다", "셈이다", "그것이다",
            "핵심이다", "정리하면", "요약하면", "는 것이다", "즉 ", "곧 "]
 NOTE_EN = ["First,", "Second,", "Third,", "In fact,", "Therefore,"]
@@ -116,6 +149,10 @@ def scan():
         for store, pats in ((forbid, fp), (warn, wp), (note, np_)):
             for pat, n in count(t, pats).items():
                 store[(rel, pat)] = n
+        if rel.startswith("book-en/"):
+            mc = count_en_metaphor_headings_tables(t)
+            if mc:
+                warn[(rel, "en-title/table metaphor")] = mc
     return forbid, warn, note
 
 
