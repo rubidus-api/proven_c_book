@@ -818,34 +818,34 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
 65536 objects x 8 passes; each cell is a multiple of one direct call
 kinds:                          1       1       2       2       8       8
 order:                     sorted   mixed  sorted   mixed  sorted   mixed
-grouped by kind, direct      1.04    1.04    1.03    1.24    1.03    1.80
-switch                       1.44    1.44    1.61    4.10    1.55    6.25
-binary branches              1.43    1.42    1.60    3.97    1.23    7.19
-static const table           1.00    1.00    1.00    3.19    1.01    4.75
-table built at run time      1.00    1.00    1.00    3.19    1.01    4.78
-fat pointer                  1.19    1.18    1.19    3.18    1.19    4.76
-selector, no cache           3.49    3.48    3.45    6.35    3.43    8.60
-selector, class cache        1.60    1.60    1.45    3.99    1.42    5.75
-selector, inline cache       1.27    1.27    1.19    4.24    1.18    7.67
-selector, 4-way PIC          1.14    1.14    1.21    3.96    1.37    9.74
-switch, inlining allowed     1.06    1.06    0.98    3.42    0.94    5.15
+grouped by kind, direct      1.04    1.04    1.04    1.24    1.04    1.79
+switch                       1.44    1.44    1.61    4.12    1.55    6.27
+binary branches              1.43    1.43    1.61    4.02    1.23    7.20
+static const table           1.00    1.01    1.01    3.21    1.01    4.77
+table built at run time      1.00    1.01    1.01    3.21    1.01    4.79
+fat pointer                  1.19    1.19    1.19    3.21    1.20    4.78
+selector, no cache           3.49    3.50    3.47    6.40    3.45    8.61
+selector, class cache        1.61    1.61    1.46    4.02    1.42    5.77
+selector, inline cache       1.27    1.27    1.20    4.27    1.18    7.53
+selector, 4-way PIC          1.15    1.15    1.22    3.98    1.37    9.78
+switch, inlining allowed     1.07    1.07    0.98    3.45    0.94    5.16
 every way computed the same sum: yes
 switch compiled to: a jump table (one indirect jump)
 == clang -O2
 65536 objects x 8 passes; each cell is a multiple of one direct call
 kinds:                          1       1       2       2       8       8
 order:                     sorted   mixed  sorted   mixed  sorted   mixed
-grouped by kind, direct      1.14    1.14    1.11    1.34    1.18    1.96
-switch                       1.53    1.53    1.45    4.10    1.44    6.67
-binary branches              1.53    1.53    1.53    4.14    1.53    8.36
-static const table           1.15    1.15    1.15    3.48    1.15    5.26
-table built at run time      1.08    1.08    1.08    3.46    1.08    5.27
-fat pointer                  1.22    1.22    1.22    3.42    1.22    5.24
-selector, no cache           3.36    3.34    3.44    6.94    3.39    9.76
-selector, class cache        1.23    1.23    1.23    3.61    1.26    5.40
-selector, inline cache       1.20    1.20    1.20    4.71    1.21    8.02
-selector, 4-way PIC          1.07    1.07    1.14    3.66    1.20   11.14
-switch, inlining allowed     0.82    0.82    0.83    3.54    0.90    5.46
+grouped by kind, direct      1.14    1.14    1.11    1.34    1.18    1.97
+switch                       1.53    1.53    1.45    4.10    1.44    6.66
+binary branches              1.53    1.53    1.53    4.15    1.53    8.34
+static const table           1.14    1.14    1.14    3.50    1.15    5.25
+table built at run time      1.08    1.08    1.08    3.49    1.08    5.24
+fat pointer                  1.22    1.22    1.22    3.43    1.23    5.24
+selector, no cache           3.33    3.33    3.34    6.97    3.38    9.74
+selector, class cache        1.23    1.23    1.23    3.62    1.25    5.39
+selector, inline cache       1.20    1.20    1.20    4.73    1.21    8.02
+selector, 4-way PIC          1.06    1.06    1.13    3.67    1.20   11.11
+switch, inlining allowed     0.81    0.82    0.83    3.54    0.90    5.45
 every way computed the same sum: yes
 switch compiled to: a jump table (one indirect jump)
 </code></pre></div></div><div class="dev platform"><p class="dev-label">Platform note.<span style="white-space: pre-wrap">&#x20;&#x20;</span>The machine and the conditions</p><div class="dev-body">x86-64 Linux (Intel, 3.5 GHz, 8 cores and 16 threads, 16 MiB L3), GCC 14.2 and Clang 19.1, <code>-O2</code>. Other work runs on this machine, and at first the same cell moved by two or three times. So short measurements are taken 41 times, the ways taking turns, and the <strong>shortest</strong> is kept; the baseline is measured again for every condition; and the run is pinned to one CPU. After that, consecutive runs agreed within 1% per cell. When the code’s layout changed (splitting files, editing lines), cells moved by 10–15%. So the text below gives not the second decimal place but the <strong>ranges</strong> measured several times while writing, and only conclusions that did not flip within those ranges. The output above was measured again when this edition was built, so it may stray a little from those ranges. The machine has no <code>perf</code>, so the <strong>number</strong> of mispredictions was not counted — that prediction is the cause is shown by “an experiment that changes only the order”.</div></div><h3 id="s73-2">73.2 First, the cost of an indirect call comes from prediction<a class="plink" href="#s73-2" aria-label="Link to this section" title="Link to this section">#</a></h3><div></div><p>Look at the sorted columns first. Even with eight kinds, when the same kind follows the same kind, a call through a <code>static const</code> table took 1.0–1.4 times a direct call. The table built at run time and the fat pointer were within that range too. Here an indirect call is almost free. The CPU does not wait for the target of an indirect call to come out of memory. It remembers <strong>where this site jumped last time</strong> (branch target prediction), runs ahead there and starts the work, and checks later whether the guess was right.</p><figure class="fig"><img src="figures/predict-order.svg" alt="predict-order" loading="lazy"><span id="proven-float-376"></span><p class="float-caption">Figure 73.1 — When the same kind follows the same kind, the guess is wrong only where the kind changes. Mixed, it is wrong almost every time.</p></figure><p>In the mixed columns everything changes. With eight kinds mixed, the table took 4.7–5.6 times, <code>switch</code> 6.2–7.4 times and binary branches 7.2–8.7 times. Even with only <strong>two</strong> kinds, mixing them made the table 3.2–3.5 times — a guess between two is still wrong about half the time. Even the <code>switch</code> with inlined bodies took 5.1–5.9 times on eight mixed kinds — <strong>allowing inlining did not remove the cost of mixed kinds.</strong> When a guess is wrong, the CPU throws away the work done ahead and starts again from the right place. That cost is paid alike whether the choice goes through a table, jumps from a <code>switch</code> or splits by binary branches.</p><p>So the first conclusion is this. <strong>Most of the cost of choosing comes not from the shape of the choice but from whether the next kind can be guessed.</strong></p><h3 id="s73-3">73.3 Second, group objects of the same kind<a class="plink" href="#s73-3" aria-label="Link to this section" title="Link to this section">#</a></h3><div></div><p>The surest way to make guesses right is to <strong>group the same kinds</strong>. The <code>grouped by kind, direct</code> row keeps an index list per kind and, list by list, calls that kind’s function directly. With eight kinds mixed it took about 1.8–2.1 times — under half of a call through a table in the same column (4.7–5.6 times). What remains is not the cost of choosing but the cost of <strong>reading objects scattered behind an index</strong> (with one kind, too, this row is 1.0–1.2 times).</p><p>If the objects can be laid out by kind <strong>from the start</strong>, even the cost of reading through the index goes — that is the “sorted” column, and chapter 51’s per-kind arrays. Grouping by index is the next best thing when the layout cannot change.</p><h3 id="s73-4">73.4 Third, the shape of the code that chooses<a class="plink" href="#s73-4" aria-label="Link to this section" title="Link to this section">#</a></h3><div></div><p>Differences of shape show when guesses are right.</p><ul><li><strong>A <code>switch</code> can cost more than a table.</strong> In the columns where guesses are right, <code>switch</code> took 1.4–1.6 times, more than the table (1.0–1.4 times). Both compilers emitted this <code>switch</code> as a <strong>jump table</strong> (one indirect jump that looks up the address by number) — the output’s <code>switch compiled to</code> line checks that in the machine code. A function call follows, so there are two branches. A call through a table is one branch.</li><li><strong>Once the function bodies are inlined, the <code>switch</code> catches up with the table.</strong> The <code>switch, inlining allowed</code> row is left with one branch. Under Clang it was faster than every table (0.8–0.9 times); under GCC it was about the same as the table (0.9–1.1 times).</li><li><strong>Binary branches did not beat the table.</strong> Code that splits eight ways by three comparisons took 1.2–1.7 times in the sorted columns and was the worst in the mixed ones — every fork can be guessed wrong. This is how the SmallEiffel compiler, which we meet in chapter 74, dispatched instead of using tables.</li></ul><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> So is “use a <code>switch</code> instead of a table to go faster” wrong?</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> It comes with a condition. When the <code>switch</code>’s branches <strong>are inlined</strong> — the set of kinds is fixed and the bodies are in the same file — it is often right. If the <code>switch</code> ends up calling an outside function, the jump table plus the call make two branches, and where guesses are right it can cost more than a table. Either way, when kinds are mixed and guesses go wrong, the difference between the two is buried in that cost.</p></div></div><h3 id="s73-5">73.5 Devirtualisation — when the compiler removes an indirect call<a class="plink" href="#s73-5" aria-label="Link to this section" title="Link to this section">#</a></h3><div></div><p><strong>Devirtualisation</strong> is the optimisation in which the compiler, knowing <strong>which table</strong>, turns the indirect call into a direct one and may go on to spread the function’s body out at the call site (chapter 71). How narrow its condition is, we see in the machine code.</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/dynamic-vtables/devirt/devirt.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> When the compiler knows the table, and when it does not --- the same shape_area,</span></em>
@@ -1125,47 +1125,47 @@ run <span class="tok-s">"</span><span class="tok-s">clang -O2 -flto -fsanitize=c
 65536 objects x 8 passes; each cell is a multiple of one direct call
 kinds:                          1       1       2       2       8       8
 order:                     sorted   mixed  sorted   mixed  sorted   mixed
-grouped by kind, direct      0.95    0.95    0.99    1.21    1.03    1.78
-switch                       1.44    1.44    1.61    4.32    1.53    7.22
+grouped by kind, direct      0.96    0.95    1.00    1.21    1.03    1.80
+switch                       1.44    1.44    1.61    4.33    1.53    7.25
 binary branches              1.43    1.43    1.51    3.77    1.33    7.39
-static const table           7.65    7.60    7.45    7.60    7.74    7.50
-selector, class cache        8.05    8.08    8.12    8.06    8.05    8.11
-switch, inlining allowed     1.25    1.25    1.25    3.42    0.99    5.98
+static const table           7.42    7.60    7.46    7.62    7.69    7.59
+selector, class cache        8.07    8.12    8.11    8.05    8.06    8.14
+switch, inlining allowed     1.25    1.25    1.24    3.41    0.98    6.02
 every way computed the same sum: yes
 switch compiled to: a chain of compares (no indirect jump)
 == clang -O2 -mretpoline
 65536 objects x 8 passes; each cell is a multiple of one direct call
 kinds:                          1       1       2       2       8       8
 order:                     sorted   mixed  sorted   mixed  sorted   mixed
-grouped by kind, direct      1.14    1.14    1.14    1.37    1.19    1.95
-switch                       1.52    1.53    1.61    4.17    1.60    8.38
-binary branches              1.53    1.53    1.53    4.34    1.41    8.21
-static const table           8.14    8.17    8.20    8.20    8.16    8.28
-selector, class cache        8.21    8.17    8.04    7.97    8.09    7.99
-switch, inlining allowed     1.14    1.14    1.23    3.72    1.02    7.13
+grouped by kind, direct      1.14    1.14    1.15    1.37    1.20    1.96
+switch                       1.53    1.53    1.61    4.17    1.60    8.37
+binary branches              1.53    1.53    1.52    4.36    1.41    8.19
+static const table           8.19    8.20    8.17    8.23    8.18    8.22
+selector, class cache        8.32    8.11    8.36    7.95    7.97    8.18
+switch, inlining allowed     1.13    1.14    1.23    3.72    1.01    7.10
 every way computed the same sum: yes
 switch compiled to: a chain of compares (no indirect jump)
 == clang -O2 -flto (the control for CFI)
 65536 objects x 8 passes; each cell is a multiple of one direct call
 kinds:                          1       1       2       2       8       8
 order:                     sorted   mixed  sorted   mixed  sorted   mixed
-grouped by kind, direct      1.19    1.19    1.16    1.41    1.19    2.02
-switch                       1.44    1.44    1.45    4.76    1.44    7.35
-binary branches              1.60    1.60    1.60    4.53    1.47    8.67
-static const table           1.13    1.13    1.13    3.62    1.13    5.51
-selector, class cache        1.30    1.30    1.30    3.92    1.32    5.82
-switch, inlining allowed     1.00    1.00    1.10    4.32    1.13    6.55
+grouped by kind, direct      1.19    1.19    1.16    1.40    1.20    2.01
+switch                       1.44    1.44    1.44    4.75    1.44    7.34
+binary branches              1.60    1.60    1.60    4.56    1.49    8.66
+static const table           1.13    1.13    1.13    3.63    1.13    5.50
+selector, class cache        1.30    1.30    1.30    3.91    1.31    5.81
+switch, inlining allowed     1.00    1.00    1.10    4.33    1.13    6.54
 every way computed the same sum: yes
 == clang -O2 -flto -fsanitize=cfi-icall
 65536 objects x 8 passes; each cell is a multiple of one direct call
 kinds:                          1       1       2       2       8       8
 order:                     sorted   mixed  sorted   mixed  sorted   mixed
-grouped by kind, direct      1.18    1.20    1.17    1.40    1.20    2.01
-switch                       1.43    1.44    1.44    4.75    1.44    7.31
-binary branches              1.58    1.60    1.60    4.54    1.49    8.61
-static const table           1.47    1.49    1.49    4.03    1.53    6.04
-selector, class cache        1.97    1.99    2.00    4.76    2.08    6.67
-switch, inlining allowed     0.85    0.86    0.87    3.59    0.91    5.67
+grouped by kind, direct      1.20    1.20    1.17    1.41    1.20    2.03
+switch                       1.45    1.45    1.45    4.77    1.45    7.37
+binary branches              1.61    1.60    1.60    4.55    1.48    8.69
+static const table           1.49    1.50    1.50    4.05    1.53    6.10
+selector, class cache        2.00    2.00    1.99    4.78    2.07    6.71
+switch, inlining allowed     0.86    0.86    0.88    3.61    0.92    5.73
 every way computed the same sum: yes
 </code></pre></div></div><p>With retpoline switched on, a call through a table took 7.4–9.1 times whether sorted or not. The sorted columns’ 1.0–1.4 times was gone — with no guess, a run of the same kind does not help. <code>switch</code> and binary branches, on the other hand, stayed at 1.3–1.8 times in the sorted columns. That is because, under retpoline, both compilers stopped emitting the <code>switch</code> as a jump table and turned it into a chain of comparisons — the output’s <code>switch compiled to</code> line checks that in the machine code. Comparisons are ordinary conditional branches, untouched by retpoline. <strong>In a build with retpoline on, where the same kind follows the same kind, “a <code>switch</code> instead of a table” becomes very much right.</strong> With mixed kinds the <code>switch</code> is also around seven times, not far from the table.</p><div class="dev platform"><p class="dev-label">Platform note.<span style="white-space: pre-wrap">&#x20;&#x20;</span>This machine does not need retpoline</p><div class="dev-body">This machine’s kernel reports that it stops Spectre variant 2 in hardware (Enhanced IBRS) (<code>/sys/devices/system/cpu/vulnerabilities/spectre_v2</code>). Retpoline in a user program is a compile option, so it can be switched on and measured here, but the numbers above are “the cost of switching it on where it is not needed”. Older CPUs that really need retpoline were not measured.</div></div><span id="idx-entry-241"></span><p>Because of this cost, the Linux kernel took in <code>static_call</code> in 5.10. It rewrites the machine code while running to turn calls through a rarely changing global function pointer into <strong>direct calls</strong>, and rewrites those sites again when the target changes. It is meant for targets that change <strong>rarely</strong> — it does not speed up calls through tables whose target differs per object, that is, the dispatch of this chapter.<sup class="fnref" id="ch73-fnref-3"><a href="#ch73-fn-3" aria-label="Notes 3">3</a></sup></p><h4 id="s73-7-2">73.7.2 Indirect calls that check the type — CFI<a class="plink" href="#s73-7-2" aria-label="Link to this section" title="Link to this section">#</a></h4><div></div><span id="idx-entry-242"></span><p>The second mechanism checks <strong>the target’s type</strong> at every indirect call. CFI (control flow integrity) is the name of the idea “make sure the program jumps only to proper places”. Clang’s <code>-fsanitize=cfi-icall</code> checks, just before an indirect call, that the pointer points to one of the functions <strong>of the same type as the call</strong>. If not, it stops.</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/dynamic-vtables/cfi/cfi.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> A table slot holds a function of the wrong type. In C that is undefined behaviour</span></em>
 <em><span class="tok-c">   (6.3.2.3p8). An ordinary build just calls it; a Clang CFI build stops first. </span></em><em><span class="tok-c">*/</span></em>

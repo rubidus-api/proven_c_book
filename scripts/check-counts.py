@@ -17,6 +17,8 @@ import pathlib
 import re
 import sys
 
+from chapters import NO
+
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 
@@ -86,18 +88,19 @@ def main():
               23: "twenty-three", 24: "twenty-four", 25: "twenty-five",
               26: "twenty-six", 27: "twenty-seven", 28: "twenty-eight",
               29: "twenty-nine", 30: "thirty", 31: "thirty-one", 32: "thirty-two"}
+    bt_file = f"ch{NO['build-test']:03d}.typ"
     for ed, pat, table in (
         ("book", r"게이트가 (\S+) 개 있다\(`scripts/check-\*\.py`\)", ko_num),
         ("book-en", r"has (\S+) such gates \(`scripts/check-\*\.py`\)", en_num),
     ):
-        ch = (ROOT / ed / "chapters" / "ch112.typ")
+        ch = (ROOT / ed / "chapters" / bt_file)
         if not ch.exists():
             continue
         g = re.search(pat, ch.read_text(encoding="utf-8"))
         if not g:
-            bad.append(f"{ed}/chapters/ch112.typ: 게이트 수 문장을 찾지 못했다")
+            bad.append(f"{ed}/chapters/{bt_file}: 게이트 수 문장을 찾지 못했다")
         elif g.group(1) != table.get(n_gates):
-            bad.append(f"{ed}/chapters/ch112.typ: 게이트 「{g.group(1)}」 ≠ 실제 {n_gates}개")
+            bad.append(f"{ed}/chapters/{bt_file}: 게이트 「{g.group(1)}」 ≠ 실제 {n_gates}개")
 
     for line in bad:
         print("·  " + line, file=sys.stderr)

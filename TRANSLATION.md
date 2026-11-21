@@ -4,7 +4,7 @@
 `scripts/sync-status.py --write` 가 자동으로 갱신한다.
 The Korean edition is the source; this table is generated.
 
-- **synced** 156 · **stale** 0 · **pending** 0
+- **synced** 164 · **stale** 0 · **pending** 0
 
 | 원본 / source | 상태 / state |
 |---|---|
@@ -123,10 +123,17 @@ The Korean edition is the source; this table is generated.
 | `book/chapters/ch113.typ` | ✅ synced |
 | `book/chapters/ch114.typ` | ✅ synced |
 | `book/chapters/ch115.typ` | ✅ synced |
+| `book/chapters/ch116.typ` | ✅ synced |
+| `book/chapters/ch117.typ` | ✅ synced |
+| `book/chapters/ch118.typ` | ✅ synced |
+| `book/chapters/ch119.typ` | ✅ synced |
+| `book/chapters/ch120.typ` | ✅ synced |
+| `book/chapters/ch121.typ` | ✅ synced |
 | `book/parts/part01.typ` | ✅ synced |
 | `book/parts/part02.typ` | ✅ synced |
 | `book/parts/part11s.typ` | ✅ synced |
 | `book/parts/part12.typ` | ✅ synced |
+| `book/parts/part13-sumcsv.typ` | ✅ synced |
 | `book/exercises/ex01.typ` | ✅ synced |
 | `book/exercises/ex02.typ` | ✅ synced |
 | `book/exercises/ex03.typ` | ✅ synced |
@@ -141,6 +148,7 @@ The Korean edition is the source; this table is generated.
 | `book/exercises/ex12.typ` | ✅ synced |
 | `book/exercises/ex13.typ` | ✅ synced |
 | `book/exercises/ex14.typ` | ✅ synced |
+| `book/exercises/ex15.typ` | ✅ synced |
 | `book/front/preface.typ` | ✅ synced |
 | `book/front/reading-paths.typ` | ✅ synced |
 | `book/appendix/a1-operators.typ` | ✅ synced |

@@ -25,7 +25,7 @@ foundation to memory management, error handling, libraries and project structure
   typeset edition). Always current, independently of releases:
   [web](https://rubidus-api.github.io/proven_c_book/style-specimen.html) ·
   [PDF](https://rubidus-api.github.io/proven_c_book/style-specimen.pdf)
-- 14 parts, 115 chapters, appendices A–Q and an index — 1,546 pages in English, 1,437 in Korean
+- 15 parts, 121 chapters, appendices A–Q and an index — 1,583 pages in English, 1,476 in Korean
 - The change log lives in [CHANGELOG.md](CHANGELOG.md).
 
 ## Beyond the first C textbook
@@ -43,8 +43,8 @@ input conditions, its result and its promises when it fails.
 | Who allocates memory, and who frees it? | Lifetimes, ownership, allocators and arenas that group allocations with a shared lifetime |
 | How do strings and arrays keep track of their size? | Length and capacity, views that refer to data without copying it, and containers |
 | What remains when a function fails? | Returning errors as values and preserving the original state on failure |
-| What changes when the same problem is designed differently? | [Three small JSON implementations](docs/en/ch110.html): plain C, proven, and an explicit stack for nesting |
-| How do separate files become a maintainable project? | [Builds and tests](docs/en/ch112.html): headers, dependencies, public and internal boundaries, and regression tests |
+| What changes when the same problem is designed differently? | [Three small JSON implementations](docs/en/ch116.html): plain C, proven, and an explicit stack for nesting |
+| How do separate files become a maintainable project? | [Builds and tests](docs/en/ch118.html): headers, dependencies, public and internal boundaries, and regression tests |
 
 For readers who want to keep developing in C, these connections provide a next
 step. C++ is a separate language to choose according to a project's needs and
@@ -57,7 +57,7 @@ memory management, error handling and modules within C.
   the machine and its representations; [Hello world](docs/en/ch16.html) in Part III
   introduces the first program.
 - **Finished a first C book:** revisit pointers, lifetimes and conversions, then
-  move to library design in Part XIII and [project structure](docs/en/ch112.html).
+  move to [the plain-C `sumcsv` project](docs/en/ch100.html), library design in Part XIV and [project structure](docs/en/ch118.html).
   Each chapter states its prerequisites.
 - **Already using C:** look up a rule or a design choice you want to understand
   better. The dependency map and glossary help you find the background you need.
@@ -78,7 +78,7 @@ builds and tests; domain-specific tools and experience building programs come ne
 
 ## Design habits illustrated with proven
 
-Part XIII uses the [proven C library](https://github.com/rubidus-api/proven_c_lib) to
+Part XIV uses the [proven C library](https://github.com/rubidus-api/proven_c_lib) to
 show how recurring C problems can be handled through a common API. Alongside C23
 features, it explores **making memory origins, value lifetimes and the state left
 after failure explicit in code**.
@@ -98,8 +98,8 @@ one library's API.
 
 proven cannot prevent every lifetime violation or use of the wrong allocator.
 The verification scope of the bundled snapshot and considerations for adoption
-are covered in [the introduction to proven](docs/en/ch101.html) and
-[the library's boundaries](docs/en/ch109.html).
+are covered in [the introduction to proven](docs/en/ch107.html) and
+[the library's boundaries](docs/en/ch115.html).
 
 ## What is inside
 
@@ -113,8 +113,9 @@ are covered in [the introduction to proven](docs/en/ch101.html) and
 | X | Composition | **The world of names — four name spaces and three axes** / **Handling name collisions — from prefixes to `namespace`** / The preprocessor and translation phases / Functions as values |
 | XI | **Object orientation imitated in C** | Building the table --- polymorphism and inheritance / Dynamic virtual tables --- building, sealing and looking up / The cost of an indirect call --- measuring, reducing, guarding / Objects built in C --- systems and papers |
 | XII | **The standard library, closely read** | Streams in practice / Signals / Non-local jumps / Locales (two chapters) / Wide characters (two chapters) / Unicode in practice / Inside the allocator |
-| XIII | **Library design with proven** | Five bugs still shipping after 50 years / Errors are values / Allocation is a parameter / Writing it three ways — a small JSON reader |
-| XIV | Continuing into practice | C in practice / Builds and tests — the structure of a shared project / How the work gets done / The embedded toolbox / Modern C, gathered up |
+| XIII | **Building one program in plain C: `sumcsv`** | From a request to a specification / Parser and boundary policies / Summing without overflow / I/O boundaries / Splitting files, Makefile, golden and regression tests / Friction when requirements grow |
+| XIV | **Library design with proven** | Five bugs still shipping after 50 years / Errors are values / Allocation is a parameter / Writing it three ways — a small JSON reader |
+| XV | Continuing into practice | C in practice / Builds and tests — the structure of a shared project / How the work gets done / The embedded toolbox / Modern C, gathered up |
 
 The seventeen appendices include reference material on operators, `printf`/`scanf`
 formats, implicit conversions, further reading and the C grammar in EBNF, plus
@@ -124,7 +125,7 @@ layout, measurements and memory-management hardware.
 
 ## What makes it different
 
-- **Output comes from the examples.** All 275 listings have their execution output
+- **Output comes from the examples.** All 281 listings have their execution output
   captured by verification scripts. The book records full verification under GCC 14
   and cross-checks under Clang 22.1, with reasons for the 5 cross-check skips in
   [the skip list](docs/example-cross-skip.tsv).
