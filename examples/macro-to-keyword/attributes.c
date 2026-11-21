@@ -3,7 +3,8 @@
 #include <stdlib.h>
 
 /* ① nodiscard — 돌려준 값을 버리면 안 되는 함수.
-   실패를 값으로 알리는 함수에 붙이면, 확인을 잊은 코드가 경고가 된다. */
+   실패를 값으로 알리는 함수에 붙이면, 표준은 확인을 잊은 호출에 진단을 권장하고
+   gcc 와 clang 은 경고한다. */
 [[nodiscard]] static int checked_add(int a, int b, int *out)
 {
     if (b > 0 && a > 2147483647 - b) return 0;   /* 넘침: 실패 */

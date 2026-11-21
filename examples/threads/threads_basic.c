@@ -52,8 +52,8 @@ int main(void)
 
     long expected = (long)N * BUMPS, got = shared;
     printf("  expected %ld\n", expected);
-    printf("  actual   %ld%s\n", got, got == expected ? "" : "   <- updates were lost");
-    puts("  (the number differs on every run --- that is what a race looks like)");
+    printf("  actual   %ld%s\n", got, got == expected ? "" : "   <- this run lost updates");
+    puts("  (a data race: the value is not defined and may differ between runs)");
     return 0;
 }
 #endif

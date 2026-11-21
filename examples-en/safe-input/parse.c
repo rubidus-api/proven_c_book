@@ -15,8 +15,8 @@ struct parse_i64 {
     const char *why;       /* why it failed, in words a person reads */
 };
 
-/* [[nodiscard]] is C23 for "warn if this return value is thrown away".
-   The compiler catches the mistake of forgetting to check. */
+/* [[nodiscard]] is C23 for "do not throw this return value away". The standard
+   recommends a diagnostic for a call that does; gcc and clang warn --- a forgotten check shows up. */
 [[nodiscard]]
 static struct parse_i64 parse_int(const char *text)
 {
@@ -92,6 +92,6 @@ int main(void)
 
     puts("\n[5] let the compiler speak when a check is forgotten");
     puts("  parse_int and copy_line carry [[nodiscard]].");
-    puts("  Throw the return value away and a warning appears.");
+    puts("  The standard recommends a diagnostic when the value is dropped; gcc and clang warn (-Wunused-result).");
     return 0;
 }

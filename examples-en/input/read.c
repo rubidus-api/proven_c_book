@@ -2,7 +2,8 @@
 
 int main(void)
 {
-    char line[100];   /* room for 100 characters — properly explained in chapter 39 */
+    char line[100] = "";   /* room for 100 characters — properly explained in chapter 39. It starts
+                              empty: if input ends before a single character, fgets leaves it as is */
     int n = 0;
 
     fgets(line, sizeof line, stdin);   /* step 1: read one whole line */

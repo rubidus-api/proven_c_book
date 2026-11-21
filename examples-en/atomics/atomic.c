@@ -1,39 +1,49 @@
-/* A race condition and an atomic operation — the same work counted twice. */
+/* Atomic update — four threads bump one counter, only with an indivisible operation.
+   The race on an unprotected counter was shown by chapter 94's first demo. It is not
+   mixed into this run: one race makes the whole run undefined, so the atomic counter
+   beside it would prove nothing either. */
 #include <stdatomic.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <threads.h>
 
 #define THREADS 4
 #define BUMPS   200000
 
-static long        plain;   /* a plain long — unprotected */
-static atomic_long safe;    /* an atomic long     */
+static atomic_long count;   /* an atomic long */
 
 static int worker(void *unused)
 {
     (void)unused;
-    for (int i = 0; i < BUMPS; i++) {
-        plain = plain + 1;                    /* read-add-write: it comes apart */
-        atomic_fetch_add(&safe, 1);           /* it happens as one lump      */
-    }
+    for (int i = 0; i < BUMPS; i++)
+        atomic_fetch_add(&count, 1);          /* read-add-write happens as one lump */
     return 0;
 }
 
 int main(void)
 {
     thrd_t t[THREADS];
+    int made = 0;
 
-    for (int i = 0; i < THREADS; i++)
-        thrd_create(&t[i], worker, NULL);
-    for (int i = 0; i < THREADS; i++)
-        thrd_join(t[i], NULL);
+    for (; made < THREADS; made++)
+        if (thrd_create(&t[made], worker, NULL) != thrd_success)
+            break;
+    /* wait for every thread that was made, failure or not */
+    bool joined = true;
+    for (int i = 0; i < made; i++)
+        if (thrd_join(t[i], NULL) != thrd_success)
+            joined = false;
+    if (made < THREADS || !joined) {
+        fprintf(stderr, "created %d of %d threads, joined all: %s\n",
+                made, THREADS, joined ? "yes" : "no");
+        return EXIT_FAILURE;
+    }
 
-    long expected = (long)THREADS * BUMPS;
-    printf("expected   : %ld\n", expected);
-    printf("unprotected: %ld%s\n", plain, plain == expected ? "" : "  <- counts were lost");
-    printf("atomic     : %ld\n", (long)safe);
+    /* reaching here, all four threads were made and all have finished --- only then is 800,000 guaranteed */
+    printf("expected: %ld\n", (long)THREADS * BUMPS);
+    printf("atomic  : %ld\n", (long)atomic_load(&count));
 
     printf("\nis atomic_long lock-free? %s\n",
-           atomic_is_lock_free(&safe) ? "yes" : "no");
+           atomic_is_lock_free(&count) ? "yes" : "no");
     return 0;
 }

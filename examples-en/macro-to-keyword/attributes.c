@@ -3,8 +3,8 @@
 #include <stdlib.h>
 
 /* (1) nodiscard - a function whose result must not be thrown away.
-   Put it on a function that reports failure by value and forgetting the
-   check becomes a warning. */
+   Put it on a function that reports failure by value and the standard
+   recommends a diagnostic for a call that forgets the check; gcc and clang warn. */
 [[nodiscard]] static int checked_add(int a, int b, int *out)
 {
     if (b > 0 && a > 2147483647 - b) return 0;   /* overflow: failure */

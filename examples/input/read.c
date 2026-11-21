@@ -2,7 +2,8 @@
 
 int main(void)
 {
-    char line[100];   /* 글자 100칸짜리 공간 — 정식 설명은 39장 */
+    char line[100] = "";   /* 글자 100칸짜리 공간 — 정식 설명은 39장. 빈 문자열로 시작한다:
+                              한 글자도 못 읽고 입력이 끝나면 fgets 는 이 칸을 그대로 둔다 */
     int n = 0;
 
     fgets(line, sizeof line, stdin);   /* 1단계: 한 줄을 통째로 읽는다 */

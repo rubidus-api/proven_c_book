@@ -15,8 +15,8 @@ struct parse_i64 {
     const char *why;       /* 실패한 이유(사람이 읽는 말) */
 };
 
-/* [[nodiscard]] 는 "이 반환값을 버리면 경고하라"는 C23 의 표기다.
-   실패 확인을 잊는 실수를 컴파일러가 잡아 준다. */
+/* [[nodiscard]] 는 "이 반환값을 버리지 말라"는 C23 의 표기다. 표준은 버리는 호출에
+   진단을 *권장*하고, gcc 와 clang 은 경고한다 --- 실패 확인을 잊은 자리가 드러난다. */
 [[nodiscard]]
 static struct parse_i64 parse_int(const char *text)
 {
@@ -92,6 +92,6 @@ int main(void)
 
     puts("\n[5: let the compiler speak when you forget to check]");
     puts("  parse_int and copy_line are marked [[nodiscard]].");
-    puts("  dropping the return value warns - that stops you forgetting to check for failure.");
+    puts("  the standard recommends a diagnostic when the value is dropped; gcc and clang warn (-Wunused-result).");
     return 0;
 }

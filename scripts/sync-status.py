@@ -23,7 +23,7 @@ def digest(p):
 def sources():
     """번역 대상 = 한국어판의 장·부·앞부속 파일"""
     out = []
-    for sub in ("chapters", "parts", "front", "appendix", "back"):
+    for sub in ("chapters", "parts", "exercises", "front", "appendix", "back"):
         d = KO / sub
         if d.is_dir():
             out += sorted(d.glob("*.typ"))

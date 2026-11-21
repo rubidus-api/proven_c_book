@@ -7,6 +7,16 @@ int main(void) { puts("this implementation does not provide <threads.h>"); retur
 #else
 #include <threads.h>
 
+/* If creating, joining or setting up fails, stop here.
+   Every "expected" value printed below assumes all of them succeeded. */
+static void must(int rc, const char *what)
+{
+    if (rc != thrd_success) {
+        fprintf(stderr, "%s failed\n", what);
+        exit(EXIT_FAILURE);
+    }
+}
+
 /* -- 1: mutual exclusion -- the previous race, stopped by a lock ---------- */
 #define BUMPS 200000
 static long guarded;                 /* no volatile needed -- the lock gives the ordering */
@@ -72,20 +82,20 @@ int main(void)
     thrd_t w[N];
 
     puts("[1] the same counter, now guarded by a mutex");
-    mtx_init(&lock, mtx_plain);
+    must(mtx_init(&lock, mtx_plain), "mtx_init");
     guarded = 0;
-    for (int i = 0; i < N; i++) thrd_create(&w[i], bump_guarded, NULL);
-    for (int i = 0; i < N; i++) thrd_join(w[i], NULL);
+    for (int i = 0; i < N; i++) must(thrd_create(&w[i], bump_guarded, NULL), "thrd_create");
+    for (int i = 0; i < N; i++) must(thrd_join(w[i], NULL), "thrd_join");
     printf("  expected %ld, actual %ld%s\n", (long)N * BUMPS, guarded,
-           guarded == (long)N * BUMPS ? "   <- nothing lost, every run" : "   <- lost");
+           guarded == (long)N * BUMPS ? "   <- nothing lost (the mutex guarantees it)" : "   <- lost");
     mtx_destroy(&lock);
 
     puts("\n[2] a condition variable: wait until there is something");
-    mtx_init(&qlock, mtx_plain);
-    cnd_init(&not_empty);
+    must(mtx_init(&qlock, mtx_plain), "mtx_init");
+    must(cnd_init(&not_empty), "cnd_init");
     int taken = 0;
     thrd_t c;
-    thrd_create(&c, consumer, &taken);
+    must(thrd_create(&c, consumer, &taken), "thrd_create");
     for (int i = 0; i < 5; i++) {
         mtx_lock(&qlock);
         items += 1;
@@ -96,21 +106,21 @@ int main(void)
     closed = true;
     cnd_broadcast(&not_empty);        /* tell everyone we are done */
     mtx_unlock(&qlock);
-    thrd_join(c, NULL);
+    must(thrd_join(c, NULL), "thrd_join");
     printf("  produced 5, consumer took %d\n", taken);
     cnd_destroy(&not_empty);
     mtx_destroy(&qlock);
 
     puts("\n[3] call_once: four threads, one initialization");
-    for (int i = 0; i < N; i++) thrd_create(&w[i], touch, NULL);
-    for (int i = 0; i < N; i++) thrd_join(w[i], NULL);
+    for (int i = 0; i < N; i++) must(thrd_create(&w[i], touch, NULL), "thrd_create");
+    for (int i = 0; i < N; i++) must(thrd_join(w[i], NULL), "thrd_join");
     printf("  init ran %d time(s)\n", init_count);
 
     puts("\n[4] thread_local: each thread has its own");
     int vals[N];
     int got[N];
-    for (int i = 0; i < N; i++) { vals[i] = (i + 1) * 10; thrd_create(&w[i], per_thread, &vals[i]); }
-    for (int i = 0; i < N; i++) thrd_join(w[i], &got[i]);
+    for (int i = 0; i < N; i++) { vals[i] = (i + 1) * 10; must(thrd_create(&w[i], per_thread, &vals[i]), "thrd_create"); }
+    for (int i = 0; i < N; i++) must(thrd_join(w[i], &got[i]), "thrd_join");
     printf("  each thread saw:");
     for (int i = 0; i < N; i++) printf(" %d", got[i]);
     printf("\n  main's own copy is still %d\n", mine);
