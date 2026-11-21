@@ -171,12 +171,28 @@ static void utf8_put(proven_byte_t *out, proven_u32 cp, int width) {
 // Partial
 // -------------------------------------------------------------
 
+static proven_err_t utf8_to_utf16_check_args(proven_u8str_view_t src, const proven_u16 *out,
+                                             proven_size_t out_cap) {
+    if ((src.size > 0 && !src.ptr) || (out_cap > 0 && !out)) return PROVEN_ERR_INVALID_ARG;
+    proven_size_t out_bytes;
+    if (PROVEN_CKD_MUL(&out_bytes, out_cap, sizeof(proven_u16))) return PROVEN_ERR_OVERFLOW;
+    if (proven_range_overlaps(out, out_bytes, src.ptr, src.size)) return PROVEN_ERR_INVALID_ARG;
+    return PROVEN_OK;
+}
+
+static proven_err_t utf16_to_utf8_check_args(const proven_u16 *src, proven_size_t n,
+                                             const proven_byte_t *out, proven_size_t out_cap) {
+    if ((n > 0 && !src) || (out_cap > 0 && !out)) return PROVEN_ERR_INVALID_ARG;
+    proven_size_t src_bytes;
+    if (PROVEN_CKD_MUL(&src_bytes, n, sizeof(proven_u16))) return PROVEN_ERR_OVERFLOW;
+    if (proven_range_overlaps(out, out_cap, src, src_bytes)) return PROVEN_ERR_INVALID_ARG;
+    return PROVEN_OK;
+}
+
 proven_utf_step_t proven_utf8_to_utf16_partial(proven_u8str_view_t src, proven_u16 *out, proven_size_t out_cap) {
     proven_utf_step_t st = { PROVEN_OK, 0, 0 };
-    if ((src.size > 0 && !src.ptr) || (out_cap > 0 && !out)) {
-        st.err = PROVEN_ERR_INVALID_ARG;
-        return st;
-    }
+    st.err = utf8_to_utf16_check_args(src, out, out_cap);
+    if (!proven_is_ok(st.err)) return st;
 
     while (st.consumed < src.size) {
         proven_u32 cp;
@@ -203,10 +219,8 @@ proven_utf_step_t proven_utf8_to_utf16_partial(proven_u8str_view_t src, proven_u
 proven_utf_step_t proven_utf16_to_utf8_partial(const proven_u16 *src, proven_size_t n,
                                                proven_byte_t *out, proven_size_t out_cap) {
     proven_utf_step_t st = { PROVEN_OK, 0, 0 };
-    if ((n > 0 && !src) || (out_cap > 0 && !out)) {
-        st.err = PROVEN_ERR_INVALID_ARG;
-        return st;
-    }
+    st.err = utf16_to_utf8_check_args(src, n, out, out_cap);
+    if (!proven_is_ok(st.err)) return st;
 
     while (st.consumed < n) {
         proven_u32 cp;
@@ -271,7 +285,8 @@ proven_result_size_t proven_utf16_to_utf8_size(const proven_u16 *src, proven_siz
 proven_err_t proven_utf8_to_utf16(proven_u8str_view_t src, proven_u16 *out, proven_size_t out_cap,
                                   proven_size_t *written) {
     if (written) *written = 0;
-    if (out_cap > 0 && !out) return PROVEN_ERR_INVALID_ARG;
+    proven_err_t arg_err = utf8_to_utf16_check_args(src, out, out_cap);
+    if (!proven_is_ok(arg_err)) return arg_err;
 
     proven_result_size_t need = proven_utf8_to_utf16_size(src);
     if (!proven_is_ok(need.err)) return need.err;
@@ -286,7 +301,8 @@ proven_err_t proven_utf8_to_utf16(proven_u8str_view_t src, proven_u16 *out, prov
 proven_err_t proven_utf16_to_utf8(const proven_u16 *src, proven_size_t n, proven_byte_t *out,
                                   proven_size_t out_cap, proven_size_t *written) {
     if (written) *written = 0;
-    if (out_cap > 0 && !out) return PROVEN_ERR_INVALID_ARG;
+    proven_err_t arg_err = utf16_to_utf8_check_args(src, n, out, out_cap);
+    if (!proven_is_ok(arg_err)) return arg_err;
 
     proven_result_size_t need = proven_utf16_to_utf8_size(src, n);
     if (!proven_is_ok(need.err)) return need.err;
@@ -305,7 +321,8 @@ proven_err_t proven_utf16_to_utf8(const proven_u16 *src, proven_size_t n, proven
 /* One pass of each: `out` NULL measures. The replacement rule is utf8_decode_span's maximal
  * subpart for UTF-8 - one U+FFFD per malformed step, and one for a character cut off at the end -
  * and one U+FFFD per unpaired surrogate unit for UTF-16. */
-static proven_err_t utf8_to_utf16_lossy_run(proven_u8str_view_t src, proven_u16 *out, proven_size_t *count) {
+static proven_err_t utf8_to_utf16_lossy_run(proven_u8str_view_t src, proven_u16 *out, proven_size_t out_cap,
+                                            proven_size_t *count) {
     if (src.size > 0 && !src.ptr) return PROVEN_ERR_INVALID_ARG;
     proven_size_t w = 0;
     for (proven_size_t i = 0; i < src.size;) {
@@ -316,6 +333,7 @@ static proven_err_t utf8_to_utf16_lossy_run(proven_u8str_view_t src, proven_u16 
         else { cp = 0xFFFDu; i += r == 0 ? src.size - i : bad; }
         const proven_size_t units = cp >= 0x10000u ? 2 : 1;
         if (out) {
+            if (out_cap - w < units) return PROVEN_ERR_OUT_OF_BOUNDS;
             if (units == 2) {
                 out[w] = (proven_u16)(0xD800u + ((cp - 0x10000u) >> 10));
                 out[w + 1] = (proven_u16)(0xDC00u + ((cp - 0x10000u) & 0x3FFu));
@@ -329,7 +347,8 @@ static proven_err_t utf8_to_utf16_lossy_run(proven_u8str_view_t src, proven_u16 
     return PROVEN_OK;
 }
 
-static proven_err_t utf16_to_utf8_lossy_run(const proven_u16 *src, proven_size_t n, proven_byte_t *out, proven_size_t *count) {
+static proven_err_t utf16_to_utf8_lossy_run(const proven_u16 *src, proven_size_t n, proven_byte_t *out,
+                                            proven_size_t out_cap, proven_size_t *count) {
     if (n > 0 && !src) return PROVEN_ERR_INVALID_ARG;
     proven_size_t w = 0;
     for (proven_size_t i = 0; i < n;) {
@@ -338,7 +357,10 @@ static proven_err_t utf16_to_utf8_lossy_run(const proven_u16 *src, proven_size_t
         if (r > 0) i += (proven_size_t)r;
         else { cp = 0xFFFDu; i += 1; }
         const int width = utf8_width(cp);
-        if (out) utf8_put(out + w, cp, width);
+        if (out) {
+            if (out_cap - w < (proven_size_t)width) return PROVEN_ERR_OUT_OF_BOUNDS;
+            utf8_put(out + w, cp, width);
+        }
         if (PROVEN_CKD_ADD(&w, w, (proven_size_t)width)) return PROVEN_ERR_OVERFLOW;
     }
     *count = w;
@@ -347,14 +369,14 @@ static proven_err_t utf16_to_utf8_lossy_run(const proven_u16 *src, proven_size_t
 
 proven_result_size_t proven_utf8_to_utf16_lossy_size(proven_u8str_view_t src) {
     proven_result_size_t res = { PROVEN_OK, 0 };
-    res.err = utf8_to_utf16_lossy_run(src, NULL, &res.value);
+    res.err = utf8_to_utf16_lossy_run(src, NULL, 0, &res.value);
     if (res.err != PROVEN_OK) res.value = 0;
     return res;
 }
 
 proven_result_size_t proven_utf16_to_utf8_lossy_size(const proven_u16 *src, proven_size_t n) {
     proven_result_size_t res = { PROVEN_OK, 0 };
-    res.err = utf16_to_utf8_lossy_run(src, n, NULL, &res.value);
+    res.err = utf16_to_utf8_lossy_run(src, n, NULL, 0, &res.value);
     if (res.err != PROVEN_OK) res.value = 0;
     return res;
 }
@@ -362,12 +384,13 @@ proven_result_size_t proven_utf16_to_utf8_lossy_size(const proven_u16 *src, prov
 proven_err_t proven_utf8_to_utf16_lossy(proven_u8str_view_t src, proven_u16 *out, proven_size_t out_cap,
                                         proven_size_t *written) {
     if (written) *written = 0;
-    if (out_cap > 0 && !out) return PROVEN_ERR_INVALID_ARG;
+    proven_err_t arg_err = utf8_to_utf16_check_args(src, out, out_cap);
+    if (!proven_is_ok(arg_err)) return arg_err;
     proven_result_size_t need = proven_utf8_to_utf16_lossy_size(src);
     if (!proven_is_ok(need.err)) return need.err;
     if (need.value > out_cap) return PROVEN_ERR_OUT_OF_BOUNDS;
     proven_size_t n = 0;
-    proven_err_t e = need.value ? utf8_to_utf16_lossy_run(src, out, &n) : PROVEN_OK;
+    proven_err_t e = need.value ? utf8_to_utf16_lossy_run(src, out, out_cap, &n) : PROVEN_OK;
     if (e == PROVEN_OK && written) *written = n;
     return e;
 }
@@ -375,12 +398,13 @@ proven_err_t proven_utf8_to_utf16_lossy(proven_u8str_view_t src, proven_u16 *out
 proven_err_t proven_utf16_to_utf8_lossy(const proven_u16 *src, proven_size_t n, proven_byte_t *out,
                                         proven_size_t out_cap, proven_size_t *written) {
     if (written) *written = 0;
-    if (out_cap > 0 && !out) return PROVEN_ERR_INVALID_ARG;
+    proven_err_t arg_err = utf16_to_utf8_check_args(src, n, out, out_cap);
+    if (!proven_is_ok(arg_err)) return arg_err;
     proven_result_size_t need = proven_utf16_to_utf8_lossy_size(src, n);
     if (!proven_is_ok(need.err)) return need.err;
     if (need.value > out_cap) return PROVEN_ERR_OUT_OF_BOUNDS;
     proven_size_t k = 0;
-    proven_err_t e = need.value ? utf16_to_utf8_lossy_run(src, n, out, &k) : PROVEN_OK;
+    proven_err_t e = need.value ? utf16_to_utf8_lossy_run(src, n, out, out_cap, &k) : PROVEN_OK;
     if (e == PROVEN_OK && written) *written = k;
     return e;
 }

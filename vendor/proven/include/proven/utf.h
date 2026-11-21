@@ -34,6 +34,12 @@
  * Pure computation: no allocation except in the `_grow` forms, no OS, freestanding-available.
  * UTF-16 is handled as `proven_u16` code units in native byte order; byte order only matters
  * once text becomes bytes, which is `stream.h`'s job.
+ *
+ * **Disjoint buffers.** Every converting function (strict, `_lossy`, `_partial`, and growable)
+ * requires input and output buffers not to overlap: any byte overlap between `src` and the
+ * declared output `[out, out + out_cap * sizeof(elem))` (or `dst`'s storage) is refused with
+ * PROVEN_ERR_INVALID_ARG without writing, and a `proven_u16` unit count whose byte size
+ * overflows `proven_size_t` returns PROVEN_ERR_OVERFLOW.
  */
 
 /**
@@ -56,7 +62,10 @@ typedef enum {
  * - PROVEN_ERR_NEED_MORE: the input ends part-way through a character that could still be
  *   valid. `consumed` stops before it; keep those units and retry with more input.
  * - PROVEN_ERR_INVALID_ENCODING: the input at `consumed` is malformed.
- * - PROVEN_ERR_INVALID_ARG: a null pointer with a non-zero size.
+ * - PROVEN_ERR_INVALID_ARG: a null pointer with a non-zero size, or overlapping input and output
+ *   buffers (`consumed` and `written` are 0 and `out` is untouched).
+ * - PROVEN_ERR_OVERFLOW: a `proven_u16` unit count whose byte size overflows `proven_size_t`
+ *   (`consumed` and `written` are 0 and `out` is untouched).
  *
  * `consumed` counts input units (bytes for UTF-8, code units for UTF-16) and `written` output
  * units. Both only ever cover whole characters: a character is converted completely or not at
@@ -149,13 +158,21 @@ proven_result_size_t proven_utf16_to_utf8_size(const proven_u16 *src, proven_siz
  * untouched and `*written` is 0. No terminator is written.
  *
  * @return PROVEN_ERR_OUT_OF_BOUNDS when the result needs more than `out_cap` units;
- *         PROVEN_ERR_INVALID_ENCODING for malformed or truncated input.
+ *         PROVEN_ERR_INVALID_ENCODING for malformed or truncated input;
+ *         PROVEN_ERR_INVALID_ARG for a NULL pointer with a nonzero size or any byte overlap
+ *         between `src` and `[out, out + out_cap * sizeof(proven_u16))`;
+ *         PROVEN_ERR_OVERFLOW if `out_cap * sizeof(proven_u16)` overflows `proven_size_t`.
  */
 [[nodiscard]]
 proven_err_t proven_utf8_to_utf16(proven_u8str_view_t src, proven_u16 *out, proven_size_t out_cap,
                                   proven_size_t *written);
 
-/** @brief The same, from UTF-16 code units into UTF-8 bytes. */
+/**
+ * @brief The same, from UTF-16 code units into UTF-8 bytes.
+ * @return PROVEN_ERR_INVALID_ARG for a NULL pointer with a nonzero size or overlap between
+ *         `[src, src + n * sizeof(proven_u16))` and `[out, out + out_cap)`;
+ *         PROVEN_ERR_OVERFLOW if `n * sizeof(proven_u16)` overflows `proven_size_t`.
+ */
 [[nodiscard]]
 proven_err_t proven_utf16_to_utf8(const proven_u16 *src, proven_size_t n, proven_byte_t *out,
                                   proven_size_t out_cap, proven_size_t *written);
@@ -178,14 +195,22 @@ proven_err_t proven_utf16_to_utf8(const proven_u16 *src, proven_size_t n, proven
  * `*written` is 0; no terminator.
  *
  * @return PROVEN_ERR_OUT_OF_BOUNDS when the result needs more than `out_cap` units;
- *         PROVEN_ERR_INVALID_ARG for a NULL pointer with a nonzero size. Never
- *         PROVEN_ERR_INVALID_ENCODING.
+ *         PROVEN_ERR_INVALID_ARG for a NULL pointer with a nonzero size or any byte overlap
+ *         between `src` and `[out, out + out_cap * sizeof(proven_u16))`;
+ *         PROVEN_ERR_OVERFLOW if `out_cap * sizeof(proven_u16)` overflows `proven_size_t`.
+ *         Never PROVEN_ERR_INVALID_ENCODING.
  */
 [[nodiscard]]
 proven_err_t proven_utf8_to_utf16_lossy(proven_u8str_view_t src, proven_u16 *out, proven_size_t out_cap,
                                         proven_size_t *written);
 
-/** @brief The same, from UTF-16 code units into UTF-8 bytes (U+FFFD is EF BF BD). */
+/**
+ * @brief The same, from UTF-16 code units into UTF-8 bytes (U+FFFD is EF BF BD).
+ * @return PROVEN_ERR_INVALID_ARG for a NULL pointer with a nonzero size or overlap between
+ *         `[src, src + n * sizeof(proven_u16))` and `[out, out + out_cap)`;
+ *         PROVEN_ERR_OVERFLOW if `n * sizeof(proven_u16)` overflows `proven_size_t`.
+ *         Never PROVEN_ERR_INVALID_ENCODING.
+ */
 [[nodiscard]]
 proven_err_t proven_utf16_to_utf8_lossy(const proven_u16 *src, proven_size_t n, proven_byte_t *out,
                                         proven_size_t out_cap, proven_size_t *written);
@@ -204,13 +229,24 @@ proven_result_size_t proven_utf16_to_utf8_lossy_size(const proven_u16 *src, prov
 
 /**
  * @brief Convert as much of `src` as fits in `out`, stopping at a whole character.
+ *
+ * Rejects any byte overlap between `src` and `[out, out + out_cap * sizeof(proven_u16))` with
+ * PROVEN_ERR_INVALID_ARG (`consumed == 0`, `written == 0`, `out` untouched), and
+ * `out_cap * sizeof(proven_u16)` overflow with PROVEN_ERR_OVERFLOW.
+ *
  * @see proven_utf_step_t for what each stop means.
  */
 [[nodiscard]]
 proven_utf_step_t proven_utf8_to_utf16_partial(proven_u8str_view_t src, proven_u16 *out, proven_size_t out_cap);
 
-/** @brief The same, from UTF-16 code units into UTF-8 bytes. A high surrogate as the last
- *         unit is PROVEN_ERR_NEED_MORE: its low half may be in the next piece. */
+/**
+ * @brief The same, from UTF-16 code units into UTF-8 bytes. A high surrogate as the last
+ *        unit is PROVEN_ERR_NEED_MORE: its low half may be in the next piece.
+ *
+ * Rejects any byte overlap between `[src, src + n * sizeof(proven_u16))` and
+ * `[out, out + out_cap)` with PROVEN_ERR_INVALID_ARG (`consumed == 0`, `written == 0`, `out`
+ * untouched), and `n * sizeof(proven_u16)` overflow with PROVEN_ERR_OVERFLOW.
+ */
 [[nodiscard]]
 proven_utf_step_t proven_utf16_to_utf8_partial(const proven_u16 *src, proven_size_t n,
                                                proven_byte_t *out, proven_size_t out_cap);

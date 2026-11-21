@@ -33,6 +33,13 @@ proven_u64 proven_float_bits_f64(double value) {
 }
 
 proven_u128_parts_t proven_float_mul_u64_u64_to_u128(proven_u64 lhs, proven_u64 rhs) {
+#if defined(__SIZEOF_INT128__)
+    /* One multiply instruction where the compiler has the type: the four 32-bit partial
+     * products below cost ~15 instructions, and this function was 44 % of the exact
+     * formatter's instructions on random doubles (2026-11-13, perf on the build host). */
+    const unsigned __int128 p = (unsigned __int128)lhs * rhs;
+    return (proven_u128_parts_t){ .lo = (proven_u64)p, .hi = (proven_u64)(p >> 64) };
+#else
     const proven_u64 lhs_lo = lhs & 0xffffffffu;
     const proven_u64 lhs_hi = lhs >> 32;
     const proven_u64 rhs_lo = rhs & 0xffffffffu;
@@ -49,6 +56,7 @@ proven_u128_parts_t proven_float_mul_u64_u64_to_u128(proven_u64 lhs, proven_u64 
     out.lo = (p0 & 0xffffffffu) | (middle << 32);
     out.hi = p3 + (p1 >> 32) + (p2 >> 32) + (middle >> 32);
     return out;
+#endif
 }
 
 /*
@@ -1299,6 +1307,20 @@ static int proven_float_bigint_to_decimal(const proven_float_bigint_t *value, ch
         if (nchunks >= PROVEN_FLOAT_DECIMAL_CHUNKS) {
             return -1;
         }
+        if (work.len == 1u) {
+            /* The last limb: two chunks at most, by machine division - the general divmod
+             * cost more than the rest of a six-digit %g. */
+            proven_u64 w = work.limbs[0];
+            chunks[nchunks++] = w % 1000000000000000000ull;
+            w /= 1000000000000000000ull;
+            if (w != 0u) {
+                if (nchunks >= PROVEN_FLOAT_DECIMAL_CHUNKS) {
+                    return -1;
+                }
+                chunks[nchunks++] = w;
+            }
+            break;
+        }
         if (!proven_float_bigint_divmod(&work, &divisor, &quot, &rem)) {
             return -1;
         }
@@ -1362,15 +1384,46 @@ static int proven_float_bigint_to_decimal(const proven_float_bigint_t *value, ch
  * zero yields "0". This is the exact engine shared by the fixed-precision and
  * scientific formatters.
  */
+/* floor(|value| * 10^scale_exp10) in *quot, the remainder in *rem over the divisor *den.
+ * |value| = m * 2^e2 with m != 0. */
+static bool proven_float_scaled_divmod(proven_u64 m, proven_i64 e2, proven_i64 scale_exp10, proven_float_bigint_t *quot,
+                                       proven_float_bigint_t *rem, proven_float_bigint_t *den) {
+    proven_float_bigint_t num;
+    proven_i64 twoexp;
+
+    /* |value| * 10^F = m * 5^max(F,0) / 5^max(-F,0) * 2^(e2 + F). */
+    proven_float_bigint_set_u64(&num, m);
+    proven_float_bigint_set_u64(den, 1u);
+    if (scale_exp10 > 0) {
+        if (!proven_float_bigint_mul_pow5(&num, scale_exp10)) {
+            return false;
+        }
+    } else if (scale_exp10 < 0) {
+        if (!proven_float_bigint_mul_pow5(den, -scale_exp10)) {
+            return false;
+        }
+    }
+
+    twoexp = e2 + scale_exp10;
+    if (twoexp > 0) {
+        if (!proven_float_bigint_shl_bits(&num, twoexp)) {
+            return false;
+        }
+    } else if (twoexp < 0) {
+        if (!proven_float_bigint_shl_bits(den, -twoexp)) {
+            return false;
+        }
+    }
+    return proven_float_bigint_divmod(&num, den, quot, rem);
+}
+
 int proven_float_scaled_round_digits(double value, proven_i64 scale_exp10, char *out, proven_size_t out_cap) {
     proven_u64 bits = proven_float_bits_f64(value) & 0x7fffffffffffffffull;
     proven_u64 m = 0;
     proven_i64 e2 = 0;
-    proven_float_bigint_t num;
     proven_float_bigint_t den;
     proven_float_bigint_t quot;
     proven_float_bigint_t rem;
-    proven_i64 twoexp;
     int cmp;
     proven_u64 q_low;
 
@@ -1384,31 +1437,7 @@ int proven_float_scaled_round_digits(double value, proven_i64 scale_exp10, char 
         return 1;
     }
 
-    /* |value| * 10^F = m * 5^max(F,0) / 5^max(-F,0) * 2^(e2 + F). */
-    proven_float_bigint_set_u64(&num, m);
-    proven_float_bigint_set_u64(&den, 1u);
-    if (scale_exp10 > 0) {
-        if (!proven_float_bigint_mul_pow5(&num, scale_exp10)) {
-            return -1;
-        }
-    } else if (scale_exp10 < 0) {
-        if (!proven_float_bigint_mul_pow5(&den, -scale_exp10)) {
-            return -1;
-        }
-    }
-
-    twoexp = e2 + scale_exp10;
-    if (twoexp > 0) {
-        if (!proven_float_bigint_shl_bits(&num, twoexp)) {
-            return -1;
-        }
-    } else if (twoexp < 0) {
-        if (!proven_float_bigint_shl_bits(&den, -twoexp)) {
-            return -1;
-        }
-    }
-
-    if (!proven_float_bigint_divmod(&num, &den, &quot, &rem)) {
+    if (!proven_float_scaled_divmod(m, e2, scale_exp10, &quot, &rem, &den)) {
         return -1;
     }
 
@@ -1438,30 +1467,6 @@ int proven_float_scaled_round_digits(double value, proven_i64 scale_exp10, char 
 static int proven_float_compare_bigints_with_exp2(const proven_float_bigint_t *lhs_int, proven_i64 lhs_exp2,
                                                   const proven_float_bigint_t *rhs_int, proven_i64 rhs_exp2);
 
-/*
- * Returns the sign of (|value| - 10^k): >0 if |value| > 10^k, 0 if equal, <0 if
- * less. Exact (big-integer) comparison. m/e2 describe |value| = m * 2^e2.
- */
-static int proven_float_cmp_value_pow10(proven_u64 m, proven_i64 e2, proven_i64 k) {
-    proven_float_bigint_t lhs;
-    proven_float_bigint_t rhs;
-
-    proven_float_bigint_set_u64(&lhs, m);
-    if (k < 0) {
-        if (!proven_float_bigint_mul_pow5(&lhs, -k)) {
-            return 1; /* overflow: treat |value| as larger */
-        }
-    }
-    proven_float_bigint_set_u64(&rhs, 1u);
-    if (k > 0) {
-        if (!proven_float_bigint_mul_pow5(&rhs, k)) {
-            return -1;
-        }
-    }
-    /* |value| - 10^k has the sign of (m*5^max(-k,0))*2^e2 - 5^max(k,0)*2^k. */
-    return proven_float_compare_bigints_with_exp2(&lhs, e2, &rhs, k);
-}
-
 int proven_float_scaled_round_sig_digits(double value, int sig_digits, char *out, proven_size_t out_cap,
                                          proven_i64 *decimal_exp) {
     proven_u64 bits = proven_float_bits_f64(value) & 0x7fffffffffffffffull;
@@ -1474,7 +1479,9 @@ int proven_float_scaled_round_sig_digits(double value, int sig_digits, char *out
     int iter;
     int nd;
 
-    if (!out || !decimal_exp || sig_digits < 1 || out_cap < (proven_size_t)sig_digits + 1u) {
+    /* Room for one digit more than asked and the NUL: the division below writes sig + 1 digits
+     * whenever the exponent's seed is one too low (10, 100, ...), not only on a rounding carry. */
+    if (!out || !decimal_exp || sig_digits < 1 || out_cap < (proven_size_t)sig_digits + 2u) {
         return -1;
     }
 
@@ -1498,32 +1505,69 @@ int proven_float_scaled_round_sig_digits(double value, int sig_digits, char *out
         k -= 1;
     }
 
-    /* Correct k to the exact unrounded exponent: 10^k <= |value| < 10^(k+1). */
+    /*
+     * One division at the estimated exponent, not two exact comparisons to settle it first
+     * (each built a power of five as large as the division's). Q = floor(|value| *
+     * 10^(sig - 1 - k)) says how good the estimate was: sig digits when 10^k <= |value| <
+     * 10^(k+1); sig + 1 when k is one too low - then the extra digit and the remainder still
+     * decide the rounding exactly, since floor(Q / 10) is floor(|value| * 10^(sig - 2 - k));
+     * fewer than sig when k is too high, the one case that divides again. The seed is low by
+     * at most one for |value| >= 1 and can be high by one below it.
+     */
     for (iter = 0; iter < 6; ++iter) {
-        if (proven_float_cmp_value_pow10(m, e2, k) < 0) {
-            k -= 1;
-        } else if (proven_float_cmp_value_pow10(m, e2, k + 1) >= 0) {
-            k += 1;
-        } else {
-            break;
-        }
-    }
+        proven_float_bigint_t den;
+        proven_float_bigint_t quot;
+        proven_float_bigint_t rem;
+        bool up;
+        int i;
 
-    /* Round to sig_digits at the now-exact leading position. The result has
-     * sig_digits digits, or sig_digits+1 when rounding carries to 10^sig_digits. */
-    nd = proven_float_scaled_round_digits(value, (proven_i64)(sig_digits - 1) - k, out, out_cap);
-    if (nd < 0) {
-        return -1;
-    }
-    if (nd == sig_digits) {
-        *decimal_exp = k;
-        return sig_digits;
-    }
-    if (nd == sig_digits + 1) {
-        /* out == "1" followed by sig_digits zeros; keep the first sig_digits and
-         * bump the exponent. */
+        if (!proven_float_scaled_divmod(m, e2, (proven_i64)(sig_digits - 1) - k, &quot, &rem, &den)) {
+            return -1;
+        }
+        if (quot.len == 0u) {
+            k -= 1;
+            continue;
+        }
+        nd = proven_float_bigint_to_decimal(&quot, out, out_cap);
+        if (nd < 0) {
+            return -1;
+        }
+        if (nd < sig_digits) {
+            k -= (proven_i64)(sig_digits - nd);
+            continue;
+        }
+        if (nd > sig_digits + 1) {
+            k += (proven_i64)(nd - sig_digits - 1);
+            continue;
+        }
+        if (nd == sig_digits) {
+            /* Round half to even: 2*rem against den. */
+            int cmp;
+            if (!proven_float_bigint_shl_bits(&rem, 1)) {
+                return -1;
+            }
+            cmp = proven_float_bigint_cmp(&rem, &den);
+            up = cmp > 0 || (cmp == 0 && ((out[sig_digits - 1] - '0') & 1) != 0);
+        } else {
+            /* One digit too many: what is cut is (d + rem/den) / 10 of the last place kept. */
+            const int d = out[sig_digits] - '0';
+            up = d > 5 || (d == 5 && (rem.len != 0u || ((out[sig_digits - 1] - '0') & 1) != 0));
+            k += 1;
+        }
         out[sig_digits] = '\0';
-        *decimal_exp = k + 1;
+        if (up) {
+            for (i = sig_digits - 1; i >= 0 && out[i] == '9'; --i) {
+                out[i] = '0';
+            }
+            if (i >= 0) {
+                out[i] = (char)(out[i] + 1);
+            } else {
+                /* 99...9 rounded up: 10^sig, which is "1" and sig - 1 zeros one place higher. */
+                out[0] = '1';
+                k += 1;
+            }
+        }
+        *decimal_exp = k;
         return sig_digits;
     }
     return -1;

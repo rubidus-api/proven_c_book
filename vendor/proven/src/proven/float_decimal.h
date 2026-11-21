@@ -67,6 +67,7 @@ int proven_float_scaled_round_digits(double value, proven_i64 scale_exp10, char 
  * writing exactly that many digits (most significant first) to out and setting
  * *decimal_exp to the power of ten of the leading digit. Returns sig_digits or -1
  * on overflow. value must be finite; zero yields all-zero digits, exponent 0.
+ * out_cap must be at least sig_digits + 2 (one digit more is built on the way), or -1.
  */
 int proven_float_scaled_round_sig_digits(double value, int sig_digits, char *out, proven_size_t out_cap,
                                          proven_i64 *decimal_exp);

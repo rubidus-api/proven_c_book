@@ -31,8 +31,16 @@ static inline proven_u32 rotl32(proven_u32 x, int k) {
  * effect the optimiser must keep, and unlike explicit_bzero/memset_s it needs no libc, so it
  * works freestanding too. */
 static void secure_zero(void *buf, proven_size_t len) {
+#if (defined(__GNUC__) || defined(__clang__)) && !defined(PROVEN_FREESTANDING)
+    /* Wide stores, then a barrier that says the memory is read: the stores cannot be dropped.
+     * Byte-wide volatile stores cost a key-erasing generator (RFC-0048) more than its keystream
+     * for small draws. */
+    __builtin_memset(buf, 0, len);
+    __asm__ __volatile__("" : : "r"(buf) : "memory");
+#else
     volatile proven_byte_t *p = (volatile proven_byte_t *)buf;
     while (len--) *p++ = 0;
+#endif
 }
 
 /* 64x64 -> 128. __int128 where the compiler has it, a portable 32-bit decomposition where it
@@ -139,7 +147,15 @@ proven_rng_t proven_xoshiro256ss_rng(proven_xoshiro256ss_t *g) {
  * "never seeded" - must not be usable, and `used` alone cannot say so: `used == 0` is exactly
  * what a zeroed struct holds, and the fill path read that as "a fresh block is ready", handing
  * the caller its own uninitialised block[]. */
-#define CHACHA_SEEDED 0x5EEDEDu
+#define CHACHA_MAGIC 0x5EEDu
+/* The rest of `seeded` (RFC-0048): options, and the fork generation it was seeded in. */
+#define CHACHA_PLAIN (1u << 16)          /* PROVEN_CHACHA_RNG_NO_ERASURE */
+#define CHACHA_FORK (1u << 17)           /* seeded from entropy: a new key in a forked child */
+#define CHACHA_MIB (1u << 18)            /* PROVEN_CHACHA_RNG_RESEED_EVERY_MIB */
+#define CHACHA_GEN_SHIFT 20
+#define CHACHA_GEN_MASK 0xFFFu           /* the child's count is the parent's plus one: 12 bits tell them apart */
+#define CHACHA_EPOCH 16u                 /* blocks: the last of each is the next key */
+#define CHACHA_MIB_BLOCKS 16384u         /* 1 MiB of keystream */
 
 #define CHACHA_QR(a, b, c, d)                        \
     do {                                             \
@@ -149,10 +165,13 @@ proven_rng_t proven_xoshiro256ss_rng(proven_xoshiro256ss_t *g) {
         c += d; b ^= c; b = rotl32(b, 7);            \
     } while (0)
 
-/* One 64-byte keystream block from the current state, then step the counter. */
-static void chacha_block(proven_chacha_rng_t *g) {
+/* The keystream block of `state` as it stands (word 12 not stepped) into `out`, 64 bytes. */
+static void chacha_block_to(const proven_u32 state[16], proven_byte_t *out) {
+#ifndef PROVEN_FREESTANDING
+    if (proven_sys_chacha_keystream_width() > 0) { proven_sys_chacha_keystream1(state, out); return; }
+#endif
     proven_u32 x[16];
-    for (int i = 0; i < 16; ++i) x[i] = g->state[i];
+    for (int i = 0; i < 16; ++i) x[i] = state[i];
 
     /* 20 rounds = 10 double rounds: a column round then a diagonal round. */
     for (int i = 0; i < 10; ++i) {
@@ -170,23 +189,112 @@ static void chacha_block(proven_chacha_rng_t *g) {
     /* Add the original state back in - this is what makes the block function non-invertible -
      * and serialise little-endian, as the standard specifies. */
     for (int i = 0; i < 16; ++i) {
-        proven_u32 v = x[i] + g->state[i];
-        g->block[4 * i + 0] = (proven_byte_t)(v      );
-        g->block[4 * i + 1] = (proven_byte_t)(v >>  8);
-        g->block[4 * i + 2] = (proven_byte_t)(v >> 16);
-        g->block[4 * i + 3] = (proven_byte_t)(v >> 24);
-    }
-    g->used = 0;
-
-    /* Step the 32-bit block counter. 2^32 blocks is 256 GiB of keystream from one seed; past
-     * that the counter wraps and the stream would repeat, so carry into the first nonce word
-     * rather than silently reusing keystream. */
-    if (++g->state[12] == 0) {
-        ++g->state[13];
+        proven_u32 v = x[i] + state[i];
+        out[4 * i + 0] = (proven_byte_t)(v      );
+        out[4 * i + 1] = (proven_byte_t)(v >>  8);
+        out[4 * i + 2] = (proven_byte_t)(v >> 16);
+        out[4 * i + 3] = (proven_byte_t)(v >> 24);
     }
 }
 
-void proven_chacha_rng_seed(proven_chacha_rng_t *g, const proven_byte_t seed[PROVEN_CHACHA_SEED_SIZE]) {
+/* Step the 32-bit block counter by `n` blocks. 2^32 blocks is 256 GiB of keystream from one
+ * seed; past that the counter wraps and the stream would repeat, so carry into the first nonce
+ * word rather than silently reusing keystream. */
+static void chacha_step(proven_chacha_rng_t *g, proven_u32 n) {
+    const proven_u32 before = g->state[12];
+    g->state[12] = before + n;
+    if (g->state[12] < before) ++g->state[13];
+}
+
+static bool chacha_ok(const proven_chacha_rng_t *g) { return (g->seeded & 0xFFFFu) == CHACHA_MAGIC; }
+
+/* 32 bytes, little-endian, as the key words 4..11. */
+static void chacha_set_key(proven_chacha_rng_t *g, const proven_byte_t k[32]) {
+    for (int i = 0; i < 8; ++i) {
+        g->state[4 + i] = (proven_u32)k[4 * i] | ((proven_u32)k[4 * i + 1] << 8) | ((proven_u32)k[4 * i + 2] << 16) | ((proven_u32)k[4 * i + 3] << 24);
+    }
+}
+
+/* RFC-0048 E-1. `kb` holds the keystream of the epoch's last block (word 12 = 15 mod 16): its
+ * first 32 bytes are the next key, the counter moves past it, and it is wiped. Every MiB, with
+ * the option, 32 bytes from the entropy source are mixed in (XOR: as good as the better of the
+ * two); a source that fails is skipped. */
+/* With CHACHA_MIB, at each MiB of keystream - the key block just stepped past - new entropy into the key. */
+static void chacha_mib_mix(proven_chacha_rng_t *g) {
+    if ((g->seeded & CHACHA_MIB) && g->state[12] % CHACHA_MIB_BLOCKS == 0) {
+        proven_byte_t e[32];
+        if (proven_random_bytes(e, sizeof e)) {
+            for (int i = 0; i < 8; ++i) {
+                g->state[4 + i] ^= (proven_u32)e[4 * i] | ((proven_u32)e[4 * i + 1] << 8) | ((proven_u32)e[4 * i + 2] << 16) | ((proven_u32)e[4 * i + 3] << 24);
+            }
+        }
+        secure_zero(e, sizeof e);
+    }
+}
+
+static void chacha_rekey_from(proven_chacha_rng_t *g, proven_byte_t kb[64]) {
+    chacha_set_key(g, kb);
+    chacha_step(g, 1);
+    chacha_mib_mix(g);
+    secure_zero(kb, 64);
+}
+
+static void chacha_rekey(proven_chacha_rng_t *g) {
+    proven_byte_t kb[64];
+    chacha_block_to(g->state, kb);
+    chacha_rekey_from(g, kb);
+}
+
+/* After a block was made: with erasure, the epoch's last data block is followed at once by the
+ * new key - not at the next draw - so the old key is gone while its output is still in use. */
+static void chacha_after_block(proven_chacha_rng_t *g) {
+    if (!(g->seeded & CHACHA_PLAIN) && (g->state[12] & (CHACHA_EPOCH - 1)) == CHACHA_EPOCH - 1) chacha_rekey(g);
+}
+
+/* One 64-byte data block into the generator's buffer, then step the counter. */
+static void chacha_block(proven_chacha_rng_t *g) {
+    chacha_block_to(g->state, g->block);
+    g->used = 0;
+    chacha_step(g, 1);
+    chacha_after_block(g);
+}
+
+/* RFC-0048 E-2: a generator seeded from entropy, in a process the fork generation says is not
+ * the one it was seeded in, takes a new key before it draws - from the entropy source, or, if
+ * that fails (a draw cannot), from its key and this process's id. What was buffered is dropped. */
+#ifndef PROVEN_FREESTANDING
+static void chacha_fork_rekey(proven_chacha_rng_t *g, proven_u32 gen);
+#endif
+static inline void chacha_fork_check(proven_chacha_rng_t *g) {
+#ifndef PROVEN_FREESTANDING
+    if (!(g->seeded & CHACHA_FORK)) return;
+    const proven_u32 gen = (proven_u32)atomic_load_explicit(&proven_sys_fork_generation_, memory_order_relaxed) & CHACHA_GEN_MASK;
+    if (gen != g->seeded >> CHACHA_GEN_SHIFT) chacha_fork_rekey(g, gen);
+#else
+    (void)g;
+#endif
+}
+
+#ifndef PROVEN_FREESTANDING
+static void chacha_fork_rekey(proven_chacha_rng_t *g, proven_u32 gen) {
+    proven_byte_t k[64];
+    if (!proven_random_bytes(k, 32)) {
+        proven_u32 st[16];
+        for (int i = 0; i < 16; ++i) st[i] = g->state[i];
+        st[12] = 0; st[13] = 0; st[14] = 0xFFFFFFFFu; st[15] = (proven_u32)proven_sys_process_id();
+        chacha_block_to(st, k);
+        secure_zero(st, sizeof st);
+    }
+    chacha_set_key(g, k);
+    secure_zero(k, sizeof k);
+    g->state[12] = 0; g->state[13] = 0; g->state[14] = 0; g->state[15] = 0;
+    secure_zero(g->block, sizeof g->block);
+    g->used = 64;
+    g->seeded = (g->seeded & ((1u << CHACHA_GEN_SHIFT) - 1u)) | (gen << CHACHA_GEN_SHIFT);
+}
+#endif
+
+void proven_chacha_rng_seed_ex(proven_chacha_rng_t *g, const proven_byte_t seed[PROVEN_CHACHA_SEED_SIZE], unsigned options) {
     if (!g || !seed) return;
 
     /* "expand 32-byte k", as little-endian words. */
@@ -194,23 +302,22 @@ void proven_chacha_rng_seed(proven_chacha_rng_t *g, const proven_byte_t seed[PRO
     g->state[1] = 0x3320646Eu;
     g->state[2] = 0x79622D32u;
     g->state[3] = 0x6B206574u;
-
-    for (int i = 0; i < 8; ++i) {
-        g->state[4 + i] = (proven_u32)seed[4 * i + 0]
-                        | ((proven_u32)seed[4 * i + 1] <<  8)
-                        | ((proven_u32)seed[4 * i + 2] << 16)
-                        | ((proven_u32)seed[4 * i + 3] << 24);
-    }
+    chacha_set_key(g, seed);
 
     /* Counter 0, nonce 0. Every seed is a fresh key, so a fresh nonce buys nothing here - the
-     * (key, nonce, counter) triple is unique because the key is. */
+     * (key, nonce, counter) triple is unique because the key is (and, with erasure, every
+     * epoch's key is new). */
     g->state[12] = 0;
     g->state[13] = 0;
     g->state[14] = 0;
     g->state[15] = 0;
 
     g->used = 64;   /* nothing buffered: the next draw generates a block */
-    g->seeded = CHACHA_SEEDED;
+    g->seeded = CHACHA_MAGIC | ((options & PROVEN_CHACHA_RNG_NO_ERASURE) ? CHACHA_PLAIN : 0u);
+}
+
+void proven_chacha_rng_seed(proven_chacha_rng_t *g, const proven_byte_t seed[PROVEN_CHACHA_SEED_SIZE]) {
+    proven_chacha_rng_seed_ex(g, seed, 0u);
 }
 
 void proven_chacha_rng_fill(proven_chacha_rng_t *g, void *buf, proven_size_t len) {
@@ -221,31 +328,152 @@ void proven_chacha_rng_fill(proven_chacha_rng_t *g, void *buf, proven_size_t len
      * this frame's stack (which `used == 0` used to serve up as a "ready" block) or the fixed,
      * publicly derivable keystream of an all-zero key (which is what an advancing counter over
      * a zeroed state produces after the first block, and which passes every smell test). */
-    if (g->seeded != CHACHA_SEEDED) {
+    if (!chacha_ok(g)) {
         for (proven_size_t i = 0; i < len; ++i) p[i] = 0;
         return;
     }
+    chacha_fork_check(g);
+    const bool plain = (g->seeded & CHACHA_PLAIN) != 0;
 
-    while (len > 0) {
-        if (g->used >= 64) chacha_block(g);
-
-        proven_size_t avail = 64 - g->used;
-        proven_size_t take = (len < avail) ? len : avail;
+    /* What is left of the buffered block first; with erasure, what is handed out is wiped. */
+    if (g->used < 64) {
+        proven_size_t take = 64 - g->used;
+        if (take > len) take = len;
+#if (defined(__GNUC__) || defined(__clang__)) && !defined(PROVEN_FREESTANDING)
+        __builtin_memcpy(p, g->block + g->used, take);
+#else
         for (proven_size_t i = 0; i < take; ++i) p[i] = g->block[g->used + i];
-
+#endif
+        if (!plain) secure_zero(g->block + g->used, take);
         g->used += take;
+        if (take == len) return;                    /* the common small draw: the block had it */
         p += take;
         len -= take;
+    }
+
+    /* A generator never rests on a key block (the key is taken as soon as the block before it
+     * is made); one whose counter was set there by hand takes it now, as every path below would. */
+    if (len > 0 && !plain && (g->state[12] & (CHACHA_EPOCH - 1)) == CHACHA_EPOCH - 1) chacha_rekey(g);
+
+    /* Whole blocks straight into the caller's buffer: the same bytes, in the same order, as
+     * through the buffer, without the copy. Several at once where the processor has vector
+     * lanes. */
+#ifndef PROVEN_FREESTANDING
+    const int w = proven_sys_chacha_keystream_width();
+    if (plain && len >= 256 && w > 0) {
+        /* Never across a wrap of word 12 (which carries into word 13 between calls). */
+        while (len >= 256) {
+            proven_size_t n = (len / 64) & ~(proven_size_t)3;
+            const proven_u32 to_wrap = 0u - g->state[12];   /* 0: 2^32 blocks before the wrap */
+            if (to_wrap != 0 && n > to_wrap) n = to_wrap & ~(proven_u32)3;
+            if (n == 0) break;                              /* within three blocks of it */
+            if (n > ((proven_size_t)1 << 24)) n = (proven_size_t)1 << 24;
+            proven_sys_chacha_keystream(g->state, p, n);
+            chacha_step(g, (proven_u32)n);
+            p += 64 * n;
+            len -= 64 * n;
+        }
+    }
+    /* With erasure, in runs of whole groups of four that stay inside an epoch (an epoch is
+     * 16-aligned, so no run crosses the wrap of word 12): data blocks go straight out. The
+     * epoch's last group - blocks 12 to 15, or 8 to 15 where eight lanes cost less than four -
+     * holds the key block and is made aside: the data blocks still wanted are copied out, the
+     * key taken, the rest wiped. */
+    while (!plain && w > 0 && len >= 64) {
+        const proven_u32 pos = g->state[12] & (CHACHA_EPOCH - 1);
+        const proven_size_t left = (CHACHA_EPOCH - 1) - pos;           /* data blocks left in the epoch: 1..15 */
+        const proven_u32 tail = w >= 8 ? CHACHA_EPOCH - 8 : CHACHA_EPOCH - 4;
+        if (pos == 0 && w >= 8 && len >= 64 * CHACHA_EPOCH) {
+            /* A whole epoch with room behind it: all 16 blocks straight into the buffer. The key
+             * block lands where the next epoch's first block goes; it is read, and that block -
+             * which there is room for, so it is written before this call returns - covers it. */
+            proven_sys_chacha_keystream(g->state, p, CHACHA_EPOCH);
+            chacha_step(g, CHACHA_EPOCH - 1);
+            chacha_set_key(g, p + 64 * (CHACHA_EPOCH - 1));
+            chacha_step(g, 1);
+            /* As chacha_rekey_from, without a second step: stepping back and again would carry
+             * into word 13 twice where word 12 has just wrapped. */
+            chacha_mib_mix(g);
+            p += 64 * (CHACHA_EPOCH - 1);
+            len -= 64 * (CHACHA_EPOCH - 1);
+        } else if (pos == 0 && w >= 8 && len >= 64 * (CHACHA_EPOCH - 1)) {
+            proven_byte_t t[512];
+            proven_sys_chacha_keystream(g->state, p, 8);
+            chacha_step(g, 8);
+            proven_sys_chacha_keystream(g->state, t, 8);
+            for (int i = 0; i < 448; ++i) p[512 + i] = t[i];
+            chacha_step(g, 7);
+            chacha_rekey_from(g, t + 448);
+            secure_zero(t, 448);
+            p += 64 * (CHACHA_EPOCH - 1);
+            len -= 64 * (CHACHA_EPOCH - 1);
+        } else if (pos >= tail && len >= 64 * left) {
+            /* The last group aside; `left` of its blocks (from `pos`) are still to go out. */
+            proven_byte_t t[512];
+            const proven_u32 n = CHACHA_EPOCH - tail;
+            g->state[12] -= pos - tail;                                 /* back to the group's start: same epoch, no wrap */
+            proven_sys_chacha_keystream(g->state, t, n);
+            const proven_size_t skip = 64 * (pos - tail);
+            for (proven_size_t i = 0; i < 64 * left; ++i) p[i] = t[skip + i];
+            chacha_step(g, n - 1);
+            chacha_rekey_from(g, t + 64 * (n - 1));
+            secure_zero(t, 64 * (n - 1));
+            p += 64 * left;
+            len -= 64 * left;
+        } else if (left >= 4 && len >= 256) {
+            proven_size_t n = left & ~(proven_size_t)3;                     /* whole groups of data blocks */
+            if (w >= 8 && n >= 8 && pos < tail) n = (tail - pos) & ~(proven_size_t)3;   /* up to the eight-lane tail */
+            if (n == 0) n = 4;
+            const proven_size_t fit = (len / 64) & ~(proven_size_t)3;
+            if (n > fit) n = fit;
+            proven_sys_chacha_keystream(g->state, p, n);
+            chacha_step(g, (proven_u32)n);
+            chacha_after_block(g);                                          /* ended on the key block: take it */
+            p += 64 * n;
+            len -= 64 * n;
+        } else {
+            break;
+        }
+    }
+#endif
+    while (len >= 64) {
+        chacha_block_to(g->state, p);
+        chacha_step(g, 1);
+        chacha_after_block(g);
+        p += 64;
+        len -= 64;
+    }
+
+    /* The tail through the buffer, whose rest the next draw takes. */
+    if (len > 0) {
+        chacha_block(g);
+        for (proven_size_t i = 0; i < len; ++i) p[i] = g->block[i];
+        if (!plain) secure_zero(g->block, len);
+        g->used = len;
     }
 }
 
 proven_u64 proven_chacha_rng_next(proven_chacha_rng_t *g) {
-    if (!g || g->seeded != CHACHA_SEEDED) return 0;
+    if (!g || !chacha_ok(g)) return 0;
+    chacha_fork_check(g);
 
-    proven_byte_t b[8];
-    proven_chacha_rng_fill(g, b, sizeof b);
     proven_u64 v = 0;
-    for (int i = 0; i < 8; ++i) v |= (proven_u64)b[i] << (8 * i);
+    if (g->used <= 56) {            /* the common case: eight bytes still in the block */
+        proven_byte_t *q = g->block + g->used;
+#if (defined(__GNUC__) || defined(__clang__)) && defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__ && !defined(PROVEN_FREESTANDING)
+        __builtin_memcpy(&v, q, 8);                     /* the same little-endian word, in one load */
+        if (!(g->seeded & CHACHA_PLAIN)) { __builtin_memset(q, 0, 8); __asm__ __volatile__("" : : "r"(q) : "memory"); }
+#else
+        for (int i = 0; i < 8; ++i) v |= (proven_u64)q[i] << (8 * i);
+        if (!(g->seeded & CHACHA_PLAIN)) secure_zero(q, 8);
+#endif
+        g->used += 8;
+    } else {
+        proven_byte_t b[8];
+        proven_chacha_rng_fill(g, b, sizeof b);
+        for (int i = 0; i < 8; ++i) v |= (proven_u64)b[i] << (8 * i);
+        secure_zero(b, sizeof b);
+    }
     return v;
 }
 
@@ -265,7 +493,7 @@ static const proven_rng_vtable_t g_chacha_vt = {
 proven_rng_t proven_chacha_rng(proven_chacha_rng_t *g) {
     /* An unseeded generator is not a source of randomness, and must not claim to be one: every
      * helper - below, range, shuffle, f64 - draws from whatever it is handed. */
-    if (!g || g->seeded != CHACHA_SEEDED) return (proven_rng_t){0};
+    if (!g || !chacha_ok(g)) return (proven_rng_t){0};
     return (proven_rng_t){ .vt = &g_chacha_vt, .ctx = g };
 }
 
@@ -450,6 +678,10 @@ bool proven_random_u64_checked(proven_u64 *out) {
 }
 
 bool proven_chacha_rng_seed_from_entropy(proven_chacha_rng_t *g) {
+    return proven_chacha_rng_seed_from_entropy_ex(g, 0u);
+}
+
+bool proven_chacha_rng_seed_from_entropy_ex(proven_chacha_rng_t *g, unsigned options) {
     if (!g) return false;
 
     proven_byte_t seed[PROVEN_CHACHA_SEED_SIZE];
@@ -465,10 +697,40 @@ bool proven_chacha_rng_seed_from_entropy(proven_chacha_rng_t *g) {
         return false;
     }
 
-    proven_chacha_rng_seed(g, seed);
+    proven_chacha_rng_seed_ex(g, seed, options);
+#ifndef PROVEN_FREESTANDING
+    if (!(options & PROVEN_CHACHA_RNG_NO_FORK_RESEED)) {
+        g->seeded |= CHACHA_FORK | (((proven_u32)proven_sys_fork_watch() & CHACHA_GEN_MASK) << CHACHA_GEN_SHIFT);
+    }
+#endif
+    if ((options & PROVEN_CHACHA_RNG_RESEED_EVERY_MIB) && !(options & PROVEN_CHACHA_RNG_NO_ERASURE)) g->seeded |= CHACHA_MIB;
 
     /* Do not leave the seed lying in this frame - and do it in a way the optimiser cannot
      * throw away, because a plain loop here IS thrown away (the seed is never read again). */
     secure_zero(seed, sizeof seed);
     return true;
+}
+
+/* E-4: a generator of each thread's own. Thread-local, so no lock; seeded at the thread's first
+ * call; erasure and the fork check as for any generator seeded from entropy. */
+#ifndef PROVEN_FREESTANDING
+static _Thread_local proven_chacha_rng_t t_fast;
+
+bool proven_random_fast_bytes(void *buf, proven_size_t len) {
+    if (len == 0) return true;
+    if (!buf) return false;
+    if (!chacha_ok(&t_fast) && !proven_chacha_rng_seed_from_entropy(&t_fast)) return false;
+    proven_chacha_rng_fill(&t_fast, buf, len);
+    return true;
+}
+#else
+bool proven_random_fast_bytes(void *buf, proven_size_t len) { return proven_random_bytes(buf, len); }
+#endif
+
+unsigned proven_random_fork_generation(void) {
+#ifndef PROVEN_FREESTANDING
+    return proven_sys_fork_watch();
+#else
+    return 0;
+#endif
 }
