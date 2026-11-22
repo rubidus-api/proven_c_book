@@ -116,3 +116,7 @@ examples-en/build-test/stale/demo
 /scripts/install-hook.sh
 /scripts/readme-topline.sh
 /scripts/commit-both.sh
+/scripts/gh-push.sh
+/scripts/gh-release.sh
+/scripts/code-map.py
+/scripts/doc-toc.py
