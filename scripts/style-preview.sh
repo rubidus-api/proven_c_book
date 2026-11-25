@@ -29,7 +29,7 @@
 set -eu
 root=$(cd "$(dirname "$0")/.." && pwd)
 typst=${TYPST:-typst}
-fonts=${FONT_PATH:-$root/../toolchains/fonts}
+fonts=${FONT_PATH:-$root/../toolchain/fonts}
 ver=$(grep -m1 'Current:' "$root/VERSION.md" | sed 's/.*\*\*\(v[0-9.]*\)\*\*.*/\1/')
 mkdir -p "$root/build"
 pdf="$root/build/style-preview.pdf"

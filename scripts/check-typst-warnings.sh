@@ -26,7 +26,7 @@ command -v "$TYPST" >/dev/null 2>&1 || {
   echo "check-typst-warnings: typst 을 찾지 못했다 (TYPST 나 PATH 로 알려 달라)" >&2
   exit 1
 }
-FONTS="${FONTS:-$ROOT/../toolchains/fonts}"
+FONTS="${FONTS:-$ROOT/../toolchain/fonts}"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 

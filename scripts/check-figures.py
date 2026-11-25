@@ -27,8 +27,8 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 FONTS = {
-    False: ROOT.parent / "toolchains/fonts/noto-cjk-kr/NotoSansCJKkr-Regular.otf",
-    True: ROOT.parent / "toolchains/fonts/noto-cjk-kr/NotoSansCJKkr-Bold.otf",
+    False: ROOT.parent / "toolchain/fonts/noto-cjk-kr/NotoSansCJKkr-Regular.otf",
+    True: ROOT.parent / "toolchain/fonts/noto-cjk-kr/NotoSansCJKkr-Bold.otf",
 }
 # 0.5 단위 미만은 반올림·힌팅 차이로 보고 넘어간다
 TOLERANCE = 0.5
