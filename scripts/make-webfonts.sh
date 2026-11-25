@@ -19,7 +19,8 @@
 # 사용법: scripts/make-webfonts.sh
 set -eu
 root=$(cd "$(dirname "$0")/.." && pwd)
-fonts=${FONT_PATH:-$root/../toolchain/fonts}
+. "$root/scripts/ws-tools.sh"
+fonts=${FONT_PATH:-$(ws_fonts)}
 out="$root/docs/fonts"
 venv=${WEBFONT_VENV:-$root/build/fontvenv}
 

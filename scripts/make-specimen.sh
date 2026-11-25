@@ -20,8 +20,9 @@ set -eu
 root=$(cd "$(dirname "$0")/.." && pwd)
 typst=${TYPST:-typst}
 # 공용 도구는 작업공간의 usr/ 에 있다 --- 자리를 절대 경로로 적지 않는다.
-command -v "$typst" >/dev/null 2>&1 || typst="$root/../usr/toolchains/typst/typst"
-fonts=${FONT_PATH:-$root/../toolchain/fonts}
+. "$root/scripts/ws-tools.sh"
+command -v "$typst" >/dev/null 2>&1 || typst=$(ws_typst)
+fonts=${FONT_PATH:-$(ws_fonts)}
 ver=$(grep -m1 'Current:' "$root/VERSION.md" | sed 's/.*\*\*\(v[0-9.]*\)\*\*.*/\1/')
 mkdir -p "$root/dist" "$root/build"
 

@@ -29,7 +29,8 @@
 set -eu
 root=$(cd "$(dirname "$0")/.." && pwd)
 typst=${TYPST:-typst}
-fonts=${FONT_PATH:-$root/../toolchain/fonts}
+. "$root/scripts/ws-tools.sh"
+fonts=${FONT_PATH:-$(ws_fonts)}
 ver=$(grep -m1 'Current:' "$root/VERSION.md" | sed 's/.*\*\*\(v[0-9.]*\)\*\*.*/\1/')
 mkdir -p "$root/build"
 pdf="$root/build/style-preview.pdf"

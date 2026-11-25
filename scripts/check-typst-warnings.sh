@@ -21,12 +21,13 @@ TYPST="${TYPST:-typst}"
 #   「경고 0」으로 읽어 이 게이트가 *통과*했다. 실제로는 48건이 남아 있었다.
 #   이 파일 머리말이 경고하던 바로 그 실패를 이 파일 자신이 저질렀다.
 #   그래서 ① 빌드와 같은 자리에서 도구를 찾고 ② 컴파일이 실패하면 실패로 센다.
-command -v "$TYPST" >/dev/null 2>&1 || TYPST="$ROOT/../usr/toolchains/typst/typst"
+. "$ROOT/scripts/ws-tools.sh"
+command -v "$TYPST" >/dev/null 2>&1 || TYPST=$(ws_typst)
 command -v "$TYPST" >/dev/null 2>&1 || {
   echo "check-typst-warnings: typst 을 찾지 못했다 (TYPST 나 PATH 로 알려 달라)" >&2
   exit 1
 }
-FONTS="${FONTS:-$ROOT/../toolchain/fonts}"
+FONTS="${FONTS:-$(ws_fonts)}"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 

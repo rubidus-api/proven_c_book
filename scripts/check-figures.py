@@ -26,9 +26,19 @@ import re
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
+
+def _ws(rel):
+    """작업공간 공용 도구 자리 --- 프로젝트가 작업공간 바로 밑이든 proj/ 밑이든 찾는다."""
+    for base in (ROOT.parent, ROOT.parent.parent):
+        for pre in ("toolchain", "usr/toolchains"):
+            p = base / pre / rel
+            if p.exists():
+                return p
+    return ROOT.parent / "toolchain" / rel
+
 FONTS = {
-    False: ROOT.parent / "toolchain/fonts/noto-cjk-kr/NotoSansCJKkr-Regular.otf",
-    True: ROOT.parent / "toolchain/fonts/noto-cjk-kr/NotoSansCJKkr-Bold.otf",
+    False: _ws("fonts/noto-cjk-kr/NotoSansCJKkr-Regular.otf"),
+    True: _ws("fonts/noto-cjk-kr/NotoSansCJKkr-Bold.otf"),
 }
 # 0.5 단위 미만은 반올림·힌팅 차이로 보고 넘어간다
 TOLERANCE = 0.5

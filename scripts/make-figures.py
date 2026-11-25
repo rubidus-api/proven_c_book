@@ -12,14 +12,24 @@
 import pathlib
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
+
+def _ws(rel):
+    """작업공간 공용 도구 자리 --- 프로젝트가 작업공간 바로 밑이든 proj/ 밑이든 찾는다."""
+    for base in (ROOT.parent, ROOT.parent.parent):
+        for pre in ("toolchain", "usr/toolchains"):
+            p = base / pre / rel
+            if p.exists():
+                return p
+    return ROOT.parent / "toolchain" / rel
+
 FONT = "Noto Sans CJK KR, Noto Sans, sans-serif"
 
 # ── 글자 폭 재기 ─────────────────────────────────────────────
 # 상자에 글자가 삐져나오는 사고를 막으려면 *재야* 한다. 실제 글꼴로 재고,
 # 글꼴이나 PIL 이 없으면 어림값으로 물러선다 --- 그림 생성이 빌드를 막으면 안 된다.
 _FONT_FILES = {
-    False: ROOT.parent / "toolchain/fonts/noto-cjk-kr/NotoSansCJKkr-Regular.otf",
-    True: ROOT.parent / "toolchain/fonts/noto-cjk-kr/NotoSansCJKkr-Bold.otf",
+    False: _ws("fonts/noto-cjk-kr/NotoSansCJKkr-Regular.otf"),
+    True: _ws("fonts/noto-cjk-kr/NotoSansCJKkr-Bold.otf"),
 }
 _font_cache = {}
 

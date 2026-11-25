@@ -18,8 +18,10 @@ cflags="-std=c23 -Wall -Wextra -Werror"
 # "없음"을 인쇄한다 — 어느 쪽이든 통과한다. 저장소 밖에 로케일을 만들어 두었다면
 # 여기서 잡아 준다. 직접 만들려면:
 #     localedef -i ko_KR -f UTF-8 <경로>/ko_KR.UTF-8
-[ -z "${LOCPATH:-}" ] && [ -d "$root/../usr/locale" ] && \
-    LOCPATH=$(cd "$root/../usr/locale" && pwd) && export LOCPATH
+. "$root/scripts/ws-tools.sh"
+if [ -z "${LOCPATH:-}" ] && _loc=$(ws_find usr/locale) && [ -d "$_loc" ]; then
+    LOCPATH=$(cd "$_loc" && pwd) && export LOCPATH
+fi
 tree=${1:-examples}
 case "$tree" in
   examples)    outdir="$root/build/examples-out";    bindir="$root/build/examples-bin" ;;

@@ -28,8 +28,18 @@ from chapters import is_draft   # chapters/ 안의 작업 폴더는 원고가 �
 import tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
+
+def _ws(rel):
+    """작업공간 공용 도구 자리 --- 프로젝트가 작업공간 바로 밑이든 proj/ 밑이든 찾는다."""
+    for base in (ROOT.parent, ROOT.parent.parent):
+        for pre in ("toolchain", "usr/toolchains"):
+            p = base / pre / rel
+            if p.exists():
+                return p
+    return ROOT.parent / "toolchain" / rel
+
 BASE = ROOT / "docs" / "snippet-baseline.tsv"
-AVR = ROOT.parent / "usr/toolchains/avr-gcc-16.1.0-x64-linux/bin/avr-gcc"
+AVR = _ws("avr-gcc-16.1.0-x64-linux/bin/avr-gcc")
 
 BLOCK = re.compile(r"^```c\n(.*?)^```", re.M | re.S)
 HEAD = ("#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n"

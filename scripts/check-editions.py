@@ -113,6 +113,25 @@ def main() -> int:
                 f"{web}/index.html: 차례에 장 링크가 {links}개뿐이다 "
                 f"(장은 {n_ch}개) --- 차례에서 본문으로 가는 길이 끊겼다")
 
+    # ★ 쪽 안 링크가 남의 쪽으로 새지 않는가 (2026-11-26, 외부 제보).
+    #   번호 없는 절의 id(`sx1` …)는 쪽마다 다시 센다. 앵커 지도가 「마지막으로 본 쪽」을
+    #   고르자 answers.html 의 `#sx1` 이 sec02.html 로 이어졌다 --- 링크 자체는 살아
+    #   있으므로 끊긴 링크 검사로는 안 잡힌다. 그래서 「그 쪽에 같은 id 가 있는데
+    #   다른 쪽의 같은 id 로 보내는 링크」를 센다.
+    xref_rx = re.compile(r'href="([a-z0-9_-]+\.html)#([^"]+)"')
+    for web in ("docs/ko", "docs/en"):
+        d = ROOT / web
+        if not d.exists():
+            continue
+        for hp in sorted(d.glob("*.html")):
+            html = hp.read_text(encoding="utf-8")
+            local = set(re.findall(r'id="([^"]+)"', html))
+            stray = sorted({f"{tgt}#{aid}" for tgt, aid in xref_rx.findall(html)
+                            if tgt != hp.name and aid in local})
+            if stray:
+                problems.append(f"{web}/{hp.name}: 이 쪽에 있는 id 를 다른 쪽으로 잇는 링크 "
+                                f"{len(stray)}개 (예: {stray[0]})")
+
     # 영어판 HTML·원고에 숫자/장참조 뒤 프라임 소유격(′s)이나 직선 아포스트로피('s)가 남지 않게 막는다
     en_html_dir = ROOT / "docs" / "en"
     if en_html_dir.exists():
