@@ -40,6 +40,14 @@ skipped=0
 refcc=${REF_CC:-gcc}
 cross=0
 [ "$(basename "$cc")" != "$(basename "$refcc")" ] && cross=1
+# ★ 교차 검증은 자기 캡처를 *따로* 둔다. 책(PDF · 웹판)은 기준 컴파일러의 캡처만
+#   읽는다. 같은 자리에 쓰던 때는 release.sh 가 GCC 로 책을 찍은 뒤 clang 교차
+#   검증이 캡처를 덮어써, 그 뒤 예제를 다시 돌리지 않은 빌드(웹판만 다시 만들기)가
+#   clang 의 출력(`-nan` 대신 `nan`, 다른 측정값)을 실었다(2026-11-26 에 드러났다).
+if [ "$cross" -eq 1 ]; then
+    outdir="$outdir-cross"
+    bindir="$bindir-cross"
+fi
 skiplist="$root/docs/example-cross-skip.tsv"
 ccname=$(basename "$cc")
 ccmajor=$($cc --version 2>/dev/null | sed -n 's/.*version \([0-9][0-9]*\).*/\1/p' | head -1)

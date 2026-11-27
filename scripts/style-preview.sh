@@ -11,7 +11,8 @@
 #
 # ★ 「견본만 고치기」 (저자 지시 2026-08-10, RFC-0027 §5)
 #   책을 건드리지 않고 값을 시험해 볼 수 있다. 이 스크립트는 `--input trial=1`
-#   을 주고, style.typ 의 값들은 그때만 *시험 칸*을 쓴다.
+#   을 주고, 조판 값들은 그때만 *시험 칸*을 쓴다. 값은 2026-11-26 부터 공용 문서
+#   도구의 typst/doc-style.typ 에 있다(book/style.typ 는 그것을 다시 내보낼 뿐이다).
 #
 #     #let body-leading = _pick(0.78em, 0.94em)   왼쪽=책, 오른쪽=시험
 #
@@ -20,8 +21,9 @@
 #   딱 한 번 다시 찍는다.
 #
 # 쓰는 법
-#   1. 시험할 값을 고친다 --- PDF 는 book/style.typ 의 _pick 오른쪽,
-#      웹은 styles/book-trial.css.
+#   1. 시험할 값을 고친다 --- PDF 는 공용 문서 도구 typst/doc-style.typ 의 _pick 오른쪽
+#      (비공개 사본 ops/vendor/ 는 고치지 않는다: 도구 쪽에서 고쳐 다시 받는다),
+#      웹은 이 책의 styles/book-trial.css.
 #   2. scripts/style-preview.sh
 #   3. build/style-preview.{pdf,html} 을 본다.
 #   4. 저자에게 보일 때는 scripts/make-specimen.sh → docs/style-specimen.html
@@ -30,7 +32,9 @@ set -eu
 root=$(cd "$(dirname "$0")/.." && pwd)
 typst=${TYPST:-typst}
 . "$root/scripts/ws-tools.sh"
+command -v "$typst" >/dev/null 2>&1 || typst=$(ws_typst)
 fonts=${FONT_PATH:-$(ws_fonts)}
+kit=$(doc_kit) || { echo "style-preview: 공용 문서 도구의 사본이 없다 (ops/vendor/)" >&2; exit 1; }
 ver=$(grep -m1 'Current:' "$root/VERSION.md" | sed 's/.*\*\*\(v[0-9.]*\)\*\*.*/\1/')
 mkdir -p "$root/build"
 pdf="$root/build/style-preview.pdf"
@@ -48,7 +52,7 @@ raw="$root/build/style-preview.raw.html"
 if "$typst" compile --root "$root" --font-path "$fonts" --features html \
        --format html --input mode=html --input lang=ko --input trial=1 --input "ver=$ver 서식 예시" \
        "$root/book/style-specimen.typ" "$raw" 2>/dev/null; then
-  python3 "$root/scripts/style-preview-html.py" "$raw" "$html" "$root/styles/book.css"
+  python3 "$root/scripts/style-preview-html.py" "$raw" "$html" "$kit/web/doc.css"
   rm -f "$raw"
   web="· HTML build/style-preview.html"
 else
@@ -58,4 +62,4 @@ fi
 pages=$(python3 -c "
 from pypdf import PdfReader; print(len(PdfReader('$pdf').pages))" 2>/dev/null || echo '?')
 echo "style-preview: ${pages}쪽 · ${ms}ms → build/style-preview.pdf ${web}"
-echo "  값을 고치는 자리는 둘뿐이다 --- book/style.typ · styles/book.css"
+echo "  값의 자리는 공용 문서 도구다 --- typst/doc-style.typ · web/doc.css (사본은 고치지 않는다)"

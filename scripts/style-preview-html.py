@@ -35,8 +35,10 @@ inner = raw.read_text(encoding="utf-8")
 m = re.search(r"<body[^>]*>(.*)</body>", inner, re.S)
 body = m.group(1) if m else inner
 css = css_path.read_text(encoding="utf-8")
-# ★ 시험 중인 값은 견본에만 실린다 --- 책의 웹판은 book.css 만 쓴다.
-trial = css_path.parent / "book-trial.css"
+# ★ 시험 중인 값은 견본에만 실린다 --- 책의 웹판은 디자인 CSS 만 쓴다.
+#   시험 CSS 는 이 책의 것이라 styles/ 에 있다. 디자인 CSS 가 공용 문서 도구의
+#   비공개 사본(ops/vendor/ 아래)으로 옮겨 간 뒤로는 그 옆에서 찾으면 없다.
+trial = pathlib.Path(__file__).resolve().parent.parent / "styles" / "book-trial.css"
 if trial.exists():
     css += "\n" + trial.read_text(encoding="utf-8")
 

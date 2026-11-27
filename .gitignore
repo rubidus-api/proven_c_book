@@ -120,3 +120,13 @@ examples-en/build-test/stale/demo
 /scripts/gh-release.sh
 /scripts/code-map.py
 /scripts/doc-toc.py
+
+# The web edition and PDFs are published on the gh-pages branch, never in main
+# (doc-standard DS-G5); they are still built here. scripts/stage-pages.sh gathers them.
+/docs/ko/
+/docs/en/
+/docs/fonts/
+/docs/.nojekyll
+/docs/index.html
+/docs/style-specimen.html
+/docs/style-specimen.pdf

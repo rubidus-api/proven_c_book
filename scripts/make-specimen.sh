@@ -13,7 +13,8 @@
 # 그리고 docs/style-specimen.html --- 웹판과 같은 자리에서 바로 본다.
 #
 # 쓰는 법
-#   1. 값을 고친다 --- PDF 는 book/style.typ, 웹은 styles/book.css. 그 둘뿐이다.
+#   1. 값은 공용 문서 도구에 있다 --- PDF 는 typst/doc-style.typ, 웹은 web/doc.css
+#      (비공개 사본 ops/vendor/ 는 여기서 고치지 않는다: 도구 쪽에서 고쳐 다시 받는다).
 #   2. scripts/style-preview.sh   (0.25초, 눈으로 확인)
 #   3. 마음에 들면 그때 전체 빌드 --- 이 스크립트는 release.sh 가 부른다.
 set -eu
@@ -23,6 +24,7 @@ typst=${TYPST:-typst}
 . "$root/scripts/ws-tools.sh"
 command -v "$typst" >/dev/null 2>&1 || typst=$(ws_typst)
 fonts=${FONT_PATH:-$(ws_fonts)}
+kit=$(doc_kit) || { echo "make-specimen: 공용 문서 도구의 사본이 없다 (ops/vendor/)" >&2; exit 1; }
 ver=$(grep -m1 'Current:' "$root/VERSION.md" | sed 's/.*\*\*\(v[0-9.]*\)\*\*.*/\1/')
 mkdir -p "$root/dist" "$root/build"
 
@@ -39,11 +41,11 @@ raw="$root/build/style-specimen.raw.html"
 # ① 혼자 돌아다닐 판 --- 글꼴을 data: 로 심는다
 python3 "$root/scripts/style-preview-html.py" "$raw" \
     "$root/dist/proven_c_book-$ver-style-specimen.html" \
-    "$root/styles/book.css" --embed-fonts "$root/docs/fonts"
+    "$kit/web/doc.css" --embed-fonts "$root/docs/fonts"
 # ② 웹판 옆에 두는 판 --- 같은 글꼴 파일을 나눠 쓴다(용량이 붙지 않는다)
 python3 "$root/scripts/style-preview-html.py" "$raw" \
     "$root/docs/style-specimen.html" \
-    "$root/styles/book.css" --font-prefix "fonts/"
+    "$kit/web/doc.css" --font-prefix "fonts/"
 # ★ 텍스트 판 견본도 웹에 둔다 --- 릴리스를 내지 않고 보여 주려면 여기여야 한다
 #   (저자 지시 2026-08-10: 「견본만 다시 깃허브에 올려서 테스트」).
 cp "$pdf" "$root/docs/style-specimen.pdf"

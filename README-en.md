@@ -1,4 +1,4 @@
-[한국어](README.md) | **English** — **Proven C Book v0.109.1** — [PDF(ko)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.109.1/proven_c_book-v0.109.1-ko.pdf) · [PDF(en)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.109.1/proven_c_book-v0.109.1-en.pdf) · [ZIP(ko)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.109.1/proven_c_book-v0.109.1-ko.zip) · [ZIP(en)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.109.1/proven_c_book-v0.109.1-en.zip) · [ZIP(all)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.109.1/proven_c_book-v0.109.1-all.zip)
+[한국어](README.md) | **English** — **Proven C Book v0.110.0** — [PDF(en)](https://rubidus-api.github.io/proven_c_book/proven_c_book-en.pdf) · [PDF(ko)](https://rubidus-api.github.io/proven_c_book/proven_c_book-ko.pdf) · [Web(en)](https://rubidus-api.github.io/proven_c_book/en/) · [웹(ko)](https://rubidus-api.github.io/proven_c_book/ko/)
 
 # Proven C Book — An Introduction to Modern C with the Proven C Library
 
@@ -15,14 +15,12 @@ foundation to memory management, error handling, libraries and project structure
 > [proven C library](https://github.com/rubidus-api/proven_c_lib) and comparative
 > examples to show **how those rules inform program design**.
 
-- **Current edition**: v0.109.1 — **draft**
-- **Download the PDF** — [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.109.1/proven_c_book-v0.109.1-en.pdf) · [Korean PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.109.1/proven_c_book-v0.109.1-ko.pdf)
+- **Current edition**: v0.110.0 — **draft**
+- **Download the PDF** — [English PDF](https://rubidus-api.github.io/proven_c_book/proven_c_book-en.pdf) · [Korean PDF](https://rubidus-api.github.io/proven_c_book/proven_c_book-ko.pdf) (always the latest edition; its number is on the cover)
 - **Read on the web** — [English](https://rubidus-api.github.io/proven_c_book/en/) · [한국어](https://rubidus-api.github.io/proven_c_book/ko/)
-- **Bundles (zip)** — [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.109.1/proven_c_book-v0.109.1-en.zip) · [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.109.1/proven_c_book-v0.109.1-ko.zip) · [all](https://github.com/rubidus-api/proven_c_book/releases/download/v0.109.1/proven_c_book-v0.109.1-all.zip)
-- Copies inside the repository: [en PDF](dist/proven_c_book-v0.109.1-en.pdf) · [ko PDF](dist/proven_c_book-v0.109.1-ko.pdf)
 - **Style specimen** — every device the book uses, gathered in one place, with each
   element labelled by its own name (CSS selector on the web, function name in the
-  typeset edition). Always current, independently of releases:
+  typeset edition). Updated with the web edition at each release:
   [web](https://rubidus-api.github.io/proven_c_book/style-specimen.html) ·
   [PDF](https://rubidus-api.github.io/proven_c_book/style-specimen.pdf)
 - 15 parts, 121 chapters, appendices A–Q and an index — 1,582 pages in English, 1,475 in Korean
