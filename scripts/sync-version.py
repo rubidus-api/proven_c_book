@@ -2,7 +2,7 @@
 """판 번호를 한 곳에서 뿌린다 (저자 지적 2026-08-06: README 가 갱신되지 않았다).
 
 단일 출처는 `book/main.typ` 의 `book-version` 이다. 여기서 읽어
-`book-en/main.typ`·`VERSION.md`·`README.md`·`README-en.md` 를 맞춘다.
+`book-en/main.typ`·`VERSION.md`·`README.md`·`README-en.md`·웹 첫 쪽(`ops/doc-src/site/index.html`)을 맞춘다.
 
 README 에서 갱신하는 자리는 둘뿐이다.
   ① "현재 판: vX.Y.Z" / "Current edition: vX.Y.Z"
@@ -61,7 +61,8 @@ def main() -> int:
     check = "--check" in sys.argv
     ver = current()
     targets = [ROOT / "book-en" / "main.typ", ROOT / "VERSION.md",
-               ROOT / "README.md", ROOT / "README-en.md"]
+               ROOT / "README.md", ROOT / "README-en.md",
+               ROOT / "ops" / "doc-src" / "site" / "index.html"]
 
     stale = []
     for path in targets:

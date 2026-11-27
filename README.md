@@ -1,4 +1,4 @@
-**한국어** | [English](README-en.md) — **Proven C Book v0.110.0** — [PDF(ko)](https://rubidus-api.github.io/proven_c_book/proven_c_book-ko.pdf) · [PDF(en)](https://rubidus-api.github.io/proven_c_book/proven_c_book-en.pdf) · [웹(ko)](https://rubidus-api.github.io/proven_c_book/ko/) · [Web(en)](https://rubidus-api.github.io/proven_c_book/en/)
+**한국어** | [English](README-en.md) — **Proven C Book v0.110.1** — [PDF(ko)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.110.1/proven_c_book-v0.110.1-ko.pdf) · [PDF(en)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.110.1/proven_c_book-v0.110.1-en.pdf) · [HTML.zip(ko)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.110.1/proven_c_book-v0.110.1-ko-html.zip) · [HTML.zip(en)](https://github.com/rubidus-api/proven_c_book/releases/download/v0.110.1/proven_c_book-v0.110.1-en-html.zip) · [웹(ko)](https://rubidus-api.github.io/proven_c_book/ko/) · [Web(en)](https://rubidus-api.github.io/proven_c_book/en/)
 
 # Proven C Book — 프로븐 C 라이브러리와 함께하는 현대적 C 입문
 
@@ -13,8 +13,9 @@
 > 기계의 표현과 C의 규칙을 연결하고, [proven](https://github.com/rubidus-api/proven_c_lib)
 > C 라이브러리와 비교 예제로 **그 규칙을 프로그램 설계에 옮기는 과정**을 보여 준다.
 
-- **현재 판**: v0.110.0 — **초안(draft)**
-- **PDF 바로 받기** — [한국어 PDF](https://rubidus-api.github.io/proven_c_book/proven_c_book-ko.pdf) · [English PDF](https://rubidus-api.github.io/proven_c_book/proven_c_book-en.pdf) (늘 최신 판 하나다. 판 번호는 표지에 있다)
+- **현재 판**: v0.110.1 — **초안(draft)**
+- **PDF 바로 받기** — [한국어 PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.110.1/proven_c_book-v0.110.1-ko.pdf) · [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.110.1/proven_c_book-v0.110.1-en.pdf) (GitHub 릴리스)
+- **HTML판 묶음(zip)** — [한국어](https://github.com/rubidus-api/proven_c_book/releases/download/v0.110.1/proven_c_book-v0.110.1-ko-html.zip) · [English](https://github.com/rubidus-api/proven_c_book/releases/download/v0.110.1/proven_c_book-v0.110.1-en-html.zip) (웹판 · 글꼴 · 라이선스. 풀어서 `ko/index.html` · `en/index.html` 을 연다)
 - **웹으로 읽기** — [한국어](https://rubidus-api.github.io/proven_c_book/ko/) · [English](https://rubidus-api.github.io/proven_c_book/en/)
 - **서식 예시(style specimen)** — 책에 쓰이는 모든 장치를 한자리에 모아 둔 견본이다.
   각 요소 옆에 그 이름(웹은 CSS 선택자, 텍스트 판은 함수 이름)이 붙어 있다.
@@ -162,14 +163,13 @@ CC=clang scripts/verify-examples.sh     # 다른 컴파일러로 교차 검증
   빌드된다.
 
 > 원고(Typst 소스)와 조판 스크립트는 공개하지 않는다. 저장소의 `scripts/`에는
-> 예제 검증과 점검 도구만 둔다. 이 저장소가 담는 것은 완성된 책(PDF·HTML)과
-> 예제 코드다.
+> 예제 검증과 점검 도구만 둔다. 이 저장소가 담는 것은 예제 코드와 책의 문서다.
+> 완성된 책은 릴리스(PDF · HTML판 zip)와 GitHub Pages(웹판)로 낸다.
 
 ## 구성
 
 ```
-dist/        배포물 — PDF(ko·en)와 zip 묶음
-docs/        GitHub Pages 가 서비스하는 HTML 판 (ko/, en/)
+docs/        책의 문서와 검사 자료(의존 관계도 · 절 지도 · 용어 · 측정값 · 기준선). 웹판은 gh-pages 가지에만 있다
 examples/    본문의 실행 예제 (여러 파일을 쓰는 시연 포함)
 examples-en/ 같은 예제의 영어판 (주석·문자열·출력이 영어)
 scripts/     예제 검증 스크립트

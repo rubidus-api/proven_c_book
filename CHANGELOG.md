@@ -6,6 +6,11 @@ This project follows Keep a Changelog.
 
 ## [Unreleased]
 
+## [v0.110.1] - 2026-11-27
+
+### Changed
+- **받는 자리를 다시 나눴다** 릴리스마다 언어별로 파일 둘을 올린다: PDF(`proven_c_book-v0.110.1-ko.pdf` · `…-en.pdf`)와 HTML판 묶음(`…-ko-html.zip` · `…-en-html.zip`; 웹판 · 글꼴 · 라이선스, 풀어서 `ko/index.html` 을 연다). 파일 이름에 판 번호가 들어간다. GitHub Pages 에는 웹판만 둔다 --- v0.110.0 에서 Pages 에 두었던 판 번호 없는 PDF 두 권은 빠졌고, README · 웹판의 PDF 단추 · 웹 첫 쪽의 PDF 링크는 이 판의 릴리스 파일을 가리킨다. 본문은 v0.110.0 과 같다.
+
 ## [v0.110.0] - 2026-11-27
 
 ### Changed
