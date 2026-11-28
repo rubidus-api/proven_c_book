@@ -1,0 +1,585 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>83 로케일 ① — 프로그램의 지역 설정 — Proven C Book</title><style>@font-face { font-family:"Doc Serif"; src:url("../fonts/serif.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-italic.woff2") format("woff2");
+  font-weight:400; font-style:italic; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-kr.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-kr-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans-kr.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans-kr-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Mono"; src:url("../fonts/mono.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Mono"; src:url("../fonts/mono-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+:root { color-scheme: light dark; --bg:#fafaf8; --bg2:#f2f2f0; --bg3:#e6e6e3; --fg:#141414; --muted:#555555; --line:#c9c9c9; --line-strong:#8a8a8a; --accent:#1a4f8a; --accent-fg:#ffffff; --accent2:#96530f; --honey:#f2b04a; --honey-fg:#2b1d00; --honey-text:#855400; --honey-soft:#fbebc6; --danger:#9b1b30; --ok:#1d6e37; --warn:#855400; --select:#d4dde8;
+  --rule:var(--line); --box-bg:var(--bg2); --code-bg:var(--bg2); --box-rule:var(--line); --link:var(--accent);
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg:#121314; --bg2:#1c1e20; --bg3:#2a2c2f; --fg:#e8e8e8; --muted:#a6a6a6; --line:#3a3d40; --line-strong:#75787c; --accent:#8ab4e8; --accent-fg:#121314; --accent2:#d4883b; --honey:#f2b04a; --honey-fg:#121314; --honey-text:#f2b04a; --honey-soft:#3b311e; --danger:#f07a8c; --ok:#7bcb95; --warn:#f2b04a; --select:#2f3d52;
+    --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+:root[data-theme="dark"] { color-scheme: dark; --bg:#121314; --bg2:#1c1e20; --bg3:#2a2c2f; --fg:#e8e8e8; --muted:#a6a6a6; --line:#3a3d40; --line-strong:#75787c; --accent:#8ab4e8; --accent-fg:#121314; --accent2:#d4883b; --honey:#f2b04a; --honey-fg:#121314; --honey-text:#f2b04a; --honey-soft:#3b311e; --danger:#f07a8c; --ok:#7bcb95; --warn:#f2b04a; --select:#2f3d52;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; }
+:root[data-theme="light"] { color-scheme: light; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Doc Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.here-head { display:flex; align-items:center; gap:.8rem; padding:.2rem 0 .5rem;
+  border-bottom:1px solid var(--rule,#ddd); margin-bottom:.5rem; }
+.here-head .sp { flex:1; }
+.here-all { margin-left:auto; font-size:.9rem; }
+.here-x { font:inherit; font-size:.9rem; cursor:pointer; background:none;
+  border:1px solid var(--line-strong); padding:.05rem .45rem;
+  color:inherit; }
+.here-body a, .tf-secs a { display:block; text-decoration:none; padding:.12rem 0;
+  line-height:1.45; }
+.here-body a:hover, .tf-secs a:hover { text-decoration:underline; }
+.here-body a.lv4, .tf-secs a.lv4 { padding-left:1.6rem; font-size:.94rem;
+  color:var(--muted,#555); }
+.tf-no { display:inline-block; min-width:3.2rem; color:var(--muted,#666);
+  font-variant-numeric:tabular-nums; }
+.toc-full .tf-ch { margin:.9rem 0 .15rem; font-weight:700; }
+.toc-full .tf-secs { margin:0 0 .5rem .2rem; border-left:2px solid var(--rule,#e2e2e2);
+  padding-left:.7rem; }
+.toc-full h4.toc-part { margin-top:1.8rem; }
+.toc a.toc-detail { font-weight:700; }
+@media print { .here-btn, .here-panel { display:none; } }
+.bar { position:sticky; top:0; z-index:20; display:flex; flex-wrap:nowrap; gap:.25rem; align-items:center;
+       min-height:44px; padding:0 clamp(.4rem,2vw,1.6rem); background:var(--bg2);
+       border-bottom:1px solid var(--line); font-size:.9rem;
+       font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--fg); text-decoration:none; } .bar a:hover { text-decoration:none; }
+.bar .sp { display:none; }
+main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
+.wrap { width:100%; }
+main .wrap { max-width:960px; margin-inline:auto; }
+:root[data-measure="fit"] main .wrap { max-width:none; margin:0; }
+h1,h2,h3,h4 { font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35;
+  padding-bottom:.18rem; border-bottom:1px solid var(--rule); }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem;
+     padding-bottom:.22rem; border-bottom:1.5px solid var(--fg); }
+p { margin:.9rem 0; } a { color:var(--link); }
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+.src-note { font-size: .86em; color: var(--muted, #666); }
+.src-note code { font-size: .95em; }
+sup.fnref { font-size: .72em; line-height: 0; vertical-align: super; }
+sup.fnref a { text-decoration: none; padding: 0 .1em; }
+sup.fnref a::before { content: "["; }
+sup.fnref a::after  { content: "]"; }
+.chapter-notes { margin: 3rem 0 1rem; padding-top: .9rem;
+                 border-top: 2px solid var(--rule, #333); }
+.chapter-notes h2 { font-size: 1.05rem; margin: 0 0 .6rem; }
+.chapter-notes ol { margin: 0; padding-left: 1.6em; }
+.chapter-notes li { font-size: .92em; margin: .35em 0; text-indent: 0; }
+.chapter-notes a.fnback { text-decoration: none; }
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
+pre,code,kbd { font-family:"Doc Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
+pre code { background:none; padding:0; }
+.tblwrap { overflow-x:auto; text-align:center; }
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.float-list { list-style:none; padding-left:0; }
+.float-list li { margin:.12rem 0; }
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"Doc Mono","D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"Doc Mono","D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"Doc Mono","D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+.dev { margin:1.15rem 0; padding:0; background:none; border:none; border-radius:0; }
+.dev > .dev-label { border-left:4px solid var(--fg);
+  padding:.1rem .8rem .25rem .8rem; margin:0 0 .34rem; }
+.dev > .dev-body { border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem .35rem .8rem; margin:0; }
+.dev > .dev-body > *:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child { margin-bottom:0; }
+.float-caption { text-align:center; font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+.dev.open { border:none; border-radius:0; background:none;
+  padding:0; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
+  text-indent:0; border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+.dev.open > .open-body { margin:0; padding:.35rem .8rem;
+  border-left:2px solid var(--box-rule); }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+.dev.open .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.06rem 0 .06rem .7rem; margin:.32rem 0 0; }
+.prereq .dev-label, .deepqa .dev-label, .why .dev-label,
+.organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+.qa-box { border:none; margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:0; background:none; }
+.qa-box .qa-q { border-left:4px solid var(--fg);
+  padding:.1rem .8rem .25rem .8rem; margin:0; }
+.qa-box .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem; margin:.34rem 0 0; }
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:0; }
+.dev.recap { border:none; background:none; padding:0; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
+  text-indent:0; border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > .dev-body > p, .dev.recap > .dev-body > div:not(.demo),
+.dev.recap > .dev-body > figure { margin:.3rem 0; padding:0; }
+.dev > .dev-body > .demo { margin:.7rem 0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:none; border-radius:0; background:none; padding:0; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem; text-indent:0;
+  border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
+.dev > .dev-body > figure, .dev > .open-body > p {
+  margin:.35rem 0; padding:0; }
+.bar .menu-btn { flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center;
+  min-width:38px; min-height:38px; padding:0; font:inherit; font-size:1.25rem; line-height:1;
+  color:var(--fg); background:none; border:0; cursor:pointer; text-decoration:none; }
+.bar .back, .bar .bar-nav .nb { flex:0 0 auto; display:inline-flex; align-items:center; gap:.3em;
+  min-height:32px; padding:0 .65rem; border:1px solid var(--line); background:var(--bg);
+  color:var(--fg); font-weight:600; white-space:nowrap; text-decoration:none; }
+.bar .menu-btn[aria-expanded="true"] { background:var(--bg3); }
+.bar .place { flex:1 1 auto; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
+  padding:0 .35rem; }
+.bar .place strong a { color:var(--honey-text); }
+.bar .place .cur { color:var(--fg); }
+.bar .bar-nav { flex:0 0 auto; display:flex; gap:.3rem; align-items:center; white-space:nowrap; }
+.bar .bar-nav .off { color:var(--muted); border-color:var(--line); opacity:.45; }
+.bar .back:hover, .bar .menu-btn:hover, .bar .bar-nav a.nb:hover, .bar .place a:hover { background:var(--bg3); }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+.dev.antipattern > .dev-label { border-left-style:solid; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.2rem; }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em;
+            padding-bottom:0; border-bottom:none; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
+.toc { columns:24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.toc > .toc-part:first-child, .toc > .toc-keep:first-child > .toc-part, .toc-full > .toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
+.toc-group { padding-left:.85rem; }
+.toc-keep, .toc a { break-inside:avoid; }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+code.style-name { font-family:"Doc Mono","D2Coding",ui-monospace,monospace;
+  font-size:.72em; color:var(--muted); background:var(--rule);
+  padding:.05em .35em; border-radius:3px; white-space:nowrap;
+  font-weight:400; letter-spacing:0; }
+.dev.open > .dev-label { padding-top:.42rem; padding-bottom:.42rem; }
+.dev.open > .open-body { padding-top:.4rem; padding-bottom:.4rem; }
+.dev.open > .open-body > p { margin:.6rem 0; }
+.dev > .dev-body { padding-top:.5rem; padding-bottom:.5rem; }
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
+.dev > .dev-body > figure { margin:.55rem 0; }
+main { line-height:1.85; }
+p { margin:1.15rem 0; }
+h2 { margin-top:2.4rem; }
+h3 { margin-top:2rem; }
+li { margin:.3rem 0; }
+h1, h2, h3, h4 { border-bottom-color:var(--box-rule) !important; }
+.toc { line-height:1.45; }
+.toc a { padding:.16rem 0; }
+.toc-part { margin:.85rem 0 .2rem; }
+.metalist { line-height:1.45; gap:.2rem 1.2rem; }
+.metalist dt, .metalist dd { margin:0; }
+.demo { border-color:var(--box-rule); }
+.demo > .demo-head { border-bottom-color:var(--box-rule); }
+.dev > .dev-label,
+.dev.open > .dev-label,
+.qa-box .qa-q,
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  border-left-color:var(--box-rule); }
+.dev > .dev-body,
+.dev > .open-body,
+.dev.open .qa-a,
+.qa-box .qa-a,
+.deepqa .qa-a { border-left-color:var(--box-rule); }
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div {
+  border-color:var(--box-rule); }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+.dev.open > .open-body,
+.dev.open > .qa-a,
+.dev.open .qa-a,
+.dev.deepqa .qa-a,
+.qa-box > .qa-a,
+.qa-box > .qa-q { border-left-color:var(--box-rule); }
+.bar .bar-toc { font-size:1.15em; line-height:1; text-decoration:none; }
+.dev, .dev-body, .open-body, .qa-box, .qa-q, .qa-a, .dev-label,
+.toc-full, .toc-full .tf-secs { line-height:inherit; font-size:1rem; }
+.dev > .dev-body > p, .dev > .open-body > p,
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:1.15rem 0; }
+.dev > .dev-body > *:first-child, .dev > .open-body > *:first-child,
+.qa-box .qa-q > p:first-child, .qa-box .qa-a > p:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child, .dev > .open-body > *:last-child,
+.qa-box .qa-q > p:last-child, .qa-box .qa-a > p:last-child { margin-bottom:0; }
+.dev > .dev-label, .dev.open > .dev-label { font-size:.98rem; line-height:1.4; }
+h1,h2,h3,h4 { padding-bottom:.34rem; }
+h1 { margin:.2rem 0 1.3rem; }
+h2 { padding-bottom:.42rem; margin-bottom:1.15rem; }
+h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
+.dev.open > .open-body > * { margin:.3rem 0; }
+.dev.open > .open-body > p { margin:.5rem 0; }
+.dev.open > .open-body > div { margin:.15rem 0; }
+.dev.open ul, .dev.open ol { margin:.3rem 0; }
+.dev.open li, .dev.open ol.qlist li { margin:0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open .qa-a > p { margin:.35rem 0; }
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div { border-color:var(--box-rule); }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+a:focus-visible, button:focus-visible, summary:focus-visible, input:focus-visible {
+  outline:2px solid var(--accent2); outline-offset:2px; }
+:target, h1, h2, h3, h4, [id] { scroll-margin-top:4.2rem; }
+.skip { position:absolute; left:-9999px; top:0; z-index:30;
+        background:var(--bg); color:var(--fg); border:1px solid var(--fg);
+        padding:.5rem .8rem; font-size:.9rem; text-decoration:none; }
+.skip:focus { left:.5rem; top:.5rem; }
+.here-panel { position:fixed; top:46px; left:clamp(.2rem,1vw,1rem); z-index:19;
+  width:min(32rem, calc(100vw - .4rem)); max-height:calc(100vh - 54px); overflow:auto;
+  padding:.7rem .9rem .9rem; border:1px solid var(--line); --k:var(--line-strong);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-size:.9rem; line-height:1.4;
+  background:
+    linear-gradient(var(--k),var(--k)) left top / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) left top / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) right top / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) right top / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) left bottom / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) left bottom / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) right bottom / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) right bottom / 3px 8px no-repeat,
+    color-mix(in srgb, var(--bg) 97%, transparent); }
+.here-panel .tools { display:flex; flex-wrap:wrap; gap:.3rem .4rem; align-items:center;
+  margin-bottom:.6rem; }
+.tool, .segb { font:inherit; font-size:.88rem; color:var(--fg); background:none;
+  border:1px solid var(--line-strong); padding:0 .6rem; min-height:30px;
+  display:inline-flex; align-items:center; text-decoration:none; cursor:pointer; white-space:nowrap; }
+.tool:hover, .segb:hover, .nav a:hover, .here-panel .here-body a:hover { background:var(--bg3); }
+.segb[aria-pressed="true"] { background:var(--select); border-color:var(--accent); font-weight:700; }
+.tool, .segb, .bar a, .bar button, .nav a, .here-panel a { transition:background-color .08s; }
+@media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
+main a { text-decoration:underline; text-decoration-color:var(--box-rule);
+  text-underline-offset:2px; }
+main a:hover { background:var(--box-bg); text-decoration-color:var(--link); }
+main .toc a, main .toc-full a, main .here-body a { text-decoration:none; }
+main .toc a:hover, main .toc-full a:hover { background:var(--box-bg); text-decoration:underline; }
+.setbox { margin:0 0 .6rem; }
+.setrow { display:flex; flex-wrap:wrap; gap:.4rem .5rem; align-items:center; margin:.35rem 0; }
+.setlbl { min-width:4.2rem; font-size:.82rem; font-weight:700; }
+.seg { display:inline-flex; flex-wrap:wrap; gap:.25rem; }
+.col { display:inline-flex; align-items:center; gap:.3rem; }
+.col input[type=color] { width:2rem; height:1.4rem; padding:0; border:1px solid var(--line-strong);
+  background:none; cursor:pointer; }
+.setnote { margin:.5rem 0 0; font-size:.82rem; }
+.here-panel .ver { font-size:.82rem; color:var(--muted); padding:.2rem .45rem .2rem 0;
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; white-space:nowrap; }
+.demo pre, .demo pre code {
+  white-space:pre-wrap; overflow-wrap:anywhere; word-break:break-word; }
+.demo > .demo-body { overflow-x:visible; }
+.plink {
+  margin-left: .4em; font-weight: 400; text-decoration: none;
+  color: var(--muted, #888); opacity: 0;
+}
+h3:hover > .plink, h4:hover > .plink,
+h3 > .plink:focus, h4 > .plink:focus { opacity: 1; }
+@media (hover: none) { .plink { opacity: .45; } }
+.searchbox { margin:.6em 0 0; }
+.searchbox input[type=search] {
+  width: 100%; padding: .45em .6em; font: inherit;
+  border: 1px solid var(--line-strong);
+  background: var(--bg); color: var(--fg);
+}
+.search-hint { color: var(--muted, #777); font-size: .85em; margin:.3em 0 0; }
+.search-results { list-style: none; padding: 0; margin: .5em 0 0; }
+.search-results li { margin: .15em 0; }
+.search-results .where { color: var(--muted, #777); font-size: .85em; margin-left: .4em; }
+@media (max-width: 900px), (orientation: portrait) {
+  :root:not([data-layout="desktop"]) .bar .place .cur { display:none; }
+  :root:not([data-layout="desktop"]) .bar .back,
+  :root:not([data-layout="desktop"]) .bar .bar-nav .nb { min-height:40px; padding:0 .5rem; }
+}
+@media (max-width: 480px) {
+  :root:not([data-layout="desktop"]) .bar .bar-nav .prev .lbl,
+  :root:not([data-layout="desktop"]) .bar .bar-nav .next .lbl { display:none; }
+  :root:not([data-layout="desktop"]) .bar .bar-nav .nb { min-width:44px; justify-content:center; }
+  :root:not([data-layout="desktop"]) .bar { gap:.2rem; }
+}
+:root[data-layout="mobile"] .bar .place .cur { display:none; }
+:root[data-layout="mobile"] .bar .back, :root[data-layout="mobile"] .bar .bar-nav .nb { min-height:40px; padding:0 .5rem; }
+:root[data-layout="mobile"] main .wrap { max-width:34rem; }
+@media (pointer: coarse), (max-width: 900px) {
+  .bar .menu-btn { min-width:44px; min-height:44px; }
+  .tool, .segb { min-height:38px; }
+}
+@media print { .bar, .here-panel { display:none; } }
+
+body { font-family:"Doc Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Doc Sans","Noto Sans CJK KR","Noto Sans KR",system-ui,sans-serif; }
+pre,code,kbd { font-family:"Doc Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+</style>
+<script>(function(){try{var L=localStorage,o='pcb-read';if(o&&o!=='doc-read'&&L.getItem(o)!==null&&L.getItem('doc-read')===null){var v=JSON.parse(L.getItem(o)||'{}');delete v.width;L.setItem('doc-read',JSON.stringify(v));L.removeItem(o);}var s=JSON.parse(L.getItem('doc-read')||'{}');var r=document.documentElement;if(s.theme&&s.theme!=='auto')r.setAttribute('data-theme',s.theme);if(s.fg)r.style.setProperty('--fg',s.fg);if(s.bg)r.style.setProperty('--bg',s.bg);if(s.link)r.style.setProperty('--link',s.link);if(s.width==='fit')r.setAttribute('data-measure','fit');if(s.layout==='desktop'||s.layout==='mobile')r.setAttribute('data-layout',s.layout);if(s.layout==='desktop'){var m=document.querySelector('meta[name=viewport]');if(m)m.setAttribute('content','width=1100');}}catch(e){}})();</script></head>
+<body>
+<a class="skip" href="#content">본문으로 건너뛰기</a>
+<div class="bar"><button class="menu-btn" id="set-open" type="button" aria-expanded="false" aria-controls="here-panel" aria-label="메뉴" title="메뉴">☰</button><a class="back" href="index.html" title="뒤로">← <span class="lbl">뒤로</span></a><span class="place"><strong><a href="index.html">Proven C Book</a></strong><span class="cur"> › 83장</span></span><span class="bar-nav"><a class="nb prev" href="ch82.html">‹ <span class="lbl">이전</span></a><a class="nb toc" href="index.html"><span class="lbl">목차</span></a><a class="nb next" href="ch84.html"><span class="lbl">다음</span> ›</a></span></div><div id="here-panel" class="here-panel" hidden><div class="setbox" id="setbox"><div class="setrow"><span class="setlbl">언어</span><span class="seg"><a class="segb" href="../en/ch83.html">English</a></span></div><div class="setrow"><span class="setlbl">본문 폭</span><span class="seg" id="s-width"><button type="button" class="segb" data-width="960">960</button><button type="button" class="segb" data-width="fit">창에 맞춤</button></span></div><div class="setrow"><span class="setlbl">배치</span><span class="seg" id="s-layout"><button type="button" class="segb" data-layout="auto">자동</button><button type="button" class="segb" data-layout="desktop">PC</button><button type="button" class="segb" data-layout="mobile">모바일</button></span></div><div class="setrow"><span class="setlbl">테마</span><span class="seg"><button type="button" class="segb" data-theme="auto">시스템</button><button type="button" class="segb" data-theme="light">밝게</button><button type="button" class="segb" data-theme="dark">어둡게</button></span></div><div class="setrow"><span class="setlbl">색</span><label class="col"><span>글자</span><input type="color" id="s-fg"></label><label class="col"><span>배경</span><input type="color" id="s-bg"></label><label class="col"><span>링크</span><input type="color" id="s-link"></label></div><p class="setnote">설정은 이 브라우저에만 저장된다.</p></div><div class="tools"><span class="ver">v0.110.2</span><a class="tool" href="toc.html">▤ 상세 차례</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book/releases/download/v0.110.2/proven_c_book-v0.110.2-ko.pdf">⤓ PDF</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book" title="이 책의 GitHub 저장소">Git</a><a class="tool" href="https://rubidus-api.github.io/" title="rubidus-api.github.io --- 공개된 모든 프로젝트">⌂ 전체 사이트</a><a class="tool" href="https://github.com/rubidus-api" title="github.com/rubidus-api --- 모든 저장소">≡ 저장소 목록</a></div><div class="here-head"><strong>이 장의 차례</strong></div><div class="here-body"><a class="lv3" href="#s83-1"><span class="tf-no">83.1</span>왜 있는가 — 관습은 나라마다 다르다</a><a class="lv3" href="#s83-2"><span class="tf-no">83.2</span>로케일은 프로그램 전역 상태다</a><a class="lv3" href="#s83-3"><span class="tf-no">83.3</span>여섯 범주 — 무엇이 무엇을 지배하는가</a><a class="lv3" href="#s83-4"><span class="tf-no">83.4</span>setlocale의 정확한 계약</a><a class="lv3" href="#s83-5"><span class="tf-no">83.5</span>로케일 이름의 문법</a><a class="lv4" href="#s83-5-1"><span class="tf-no">83.5.1</span>문자집합 이름과 정규화</a><a class="lv4" href="#s83-5-2"><span class="tf-no">83.5.2</span>다른 세계의 이름 — BCP 47과 Windows</a><a class="lv3" href="#s83-6"><span class="tf-no">83.6</span>환경 변수의 우선순위</a><a class="lv3" href="#s83-7"><span class="tf-no">83.7</span>로케일 데이터는 어디에 있는가</a></div></div>
+<main id="content"><div class="wrap">
+<h2>83 로케일 ① — 프로그램의 지역 설정</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>82장 문자 분류 · 판정이 로케일에 달렸다는 것</div><div>59장 <code>main</code>의 세 얼굴 · 환경 변수</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>82장에서 <code>isalpha</code>의 답이 “현재 로케일”에 달렸다고 했다. 그런데 나는 로케일을 설정한 적이 없다. 설정하지 않은 것에 답이 달려 있다는 말은 무슨 뜻인가?</p><div class="qa-a"><p><p><span class="dev-label">답.</span> <strong>설정하지 않아도 하나가 이미 정해져 있기 때문</strong>이다. 표준이 그것까지 정해 두었다 — 프로그램이 시작할 때 <code>setlocale(LC_ALL, "C")</code>를 부른 것과 같은 상태가 된다(§7.11.1.1p4). 그래서 아무것도 하지 않은 프로그램은 「C 로케일」이라는 최소 환경에서 돈다.</p><p>로케일은 <strong>프로그램 밖의 설정이 프로그램 안의 동작을 바꾸는 장치</strong>다. 같은 실행 파일이 서울에서는 <code>2026년 8월 6일</code>을, 베를린에서는 <code>06.08.2026</code>을, 그리고 <code>printf("%f")</code>에서 <code>3,14</code>를 찍게 만드는 것이 이것이다. 이 장은 그 장치의 이름과 규칙을, 다음 장은 그것이 바꾸는 것들을 본다.</p></p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">로케일을 두 장으로 편 것은 이것이 C 에서 가장 과소평가된 전역 상태이기 때문이다. 82장이 「판정마저 로케일에 달렸다」를 보인 직후가 그 정체를 캐물을 때다. 그리고 이 장이 없으면 85장의 멀티바이트 변환이 어디에 기대는지 설명할 길이 없다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body"><span id="idx-entry-283"></span>로케일이 무엇인지 밑바닥부터 본다. 왜 있는지, 여섯 범주가 무엇을 나누는지, <code>setlocale</code>의 정확한 계약, <code>ko_KR.UTF-8</code> 같은 이름이 어떤 규칙과 어떤 국제 표준으로 만들어지는지, 환경 변수의 우선순위, 그리고 로케일 데이터가 기계 어디에 있는지까지.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>로케일은 번역인가?</li><li>범주를 섞어 쓸 수 있는가?</li><li>이 문법은 어느 표준이 정한 것인가?</li></ol></div></div><div></div><h3 id="s83-1">83.1 왜 있는가 — 관습은 나라마다 다르다<a class="plink" href="#s83-1" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>프로그램이 사람에게 무언가를 보여 줄 때, 「옳은 표기」는 하나가 아니다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>무엇</strong></th><th><strong>한국</strong></th><th><strong>독일</strong></th></tr><tr><td>소수점</td><td><code>3.14</code></td><td><code>3,14</code></td></tr><tr><td>천 단위</td><td><code>1,234,567</code></td><td><code>1.234.567</code></td></tr><tr><td>날짜</td><td><code>2026년 8월 6일</code></td><td><code>06.08.2026</code></td></tr><tr><td>통화</td><td><code>₩1,234</code></td><td><code>1.234,00 €</code></td></tr><tr><td>정렬</td><td>가나다순</td><td><code>ä</code>를 <code>a</code>와 같은 자리에</td></tr></table></div><span id="doc-float-410"></span><p class="float-caption">표 83.1 — 로케일이 바꾸는 것 — 한국과 독일</p></figure><p>이것을 프로그램마다 손으로 적으면 나라 수만큼 코드가 늘어난다. 그래서 유닉스와 C는 다른 길을 택했다 — <strong>관습을 데이터로 만들어 프로그램 밖에 두고, 프로그램은 “지금 어느 관습으로 일할지”만 고른다.</strong> 그 데이터 묶음의 이름이 로케일이다.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 로케일은 번역인가?</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> 아니다. 이 구별이 중요하다. 로케일은 <strong>관습</strong>(convention)을 다룬다 — 소수점, 자리 묶음, 날짜 배열, 정렬 순서, 대소문자, 통화 기호. 반면 프로그램이 내는 메시지를 다른 언어로 바꾸는 일, 즉 <strong>번역</strong>(translation)은 표준 C의 범위 밖이다.</p><p>유닉스에는 번역을 위한 <code>LC_MESSAGES</code> 범주와 <code>gettext</code> 같은 도구가 따로 있지만, C 표준이 정한 여섯 범주에 그것은 없다. 이 책이 다루는 것도 관습까지다.</p></p></div></div><h3 id="s83-2">83.2 로케일은 프로그램 전역 상태다<a class="plink" href="#s83-2" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>로케일의 성격을 한 줄로 적으면 이렇다 — <strong>프로세스 하나에 로케일 하나</strong>.</p><div class="demo demo-src"><p class="demo-head"><code>examples/locale1/locale_probe.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> 로케일은 프로그램 전역 상태다 — 무엇으로 시작하고, 무엇으로 바뀌는가. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">locale.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdlib.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">string.h</span><span class="tok-s">></span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> setlocale 의 반환값은 "지금 설정된 로케일의 이름"이다.</span></em>
+<em><span class="tok-c">   두 번째 인자를 NULL 로 주면 바꾸지 않고 묻기만 한다. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong>show_current</strong><span class="tok-x">(</span><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>when<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s"> LC_ALL=</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> when</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>setlocale</strong><strong><span class="tok-x">(</span></strong><strong>LC_ALL</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">NULL</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ① 프로그램은 언제나 "C" 로케일로 시작한다 (표준 §7.11.1.1p4) </span></em><em><span class="tok-c">*/</span></em>
+    <strong>show_current</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">right at start: </span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ② ""(빈 문자열)은 "환경이 정한 로케일"이라는 뜻이다.</span></em>
+<em><span class="tok-c">          LC_ALL > LC_xxx > LANG 순으로 환경 변수를 본다. </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>applied <strong><span class="tok-x">=</span></strong> <strong>setlocale</strong><strong><span class="tok-x">(</span></strong><strong>LC_ALL</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>applied<span class="tok-x">)</span>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">setlocale(LC_ALL,</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">): </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> applied</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">else</span></strong>
+        <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">setlocale(LC_ALL,</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">) failed - the environment has no locale</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ③ 한 글자를 담는 데 필요한 최대 바이트 수는 로케일에 달렸다.</span></em>
+<em><span class="tok-c">          MB_CUR_MAX 는 매크로처럼 보이지만 *지금 로케일*을 보는 값이다. </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">MB_CUR_MAX:            </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">size_t</span></strong><strong><span class="tok-x">)</span></strong><strong>MB_CUR_MAX</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ④ 요청한 로케일이 이 기계에 없으면 setlocale 은 널을 돌려준다.</span></em>
+<em><span class="tok-c">          그래서 반환값을 반드시 본다 — 조용히 실패하는 자리다. </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>candidates<span class="tok-x">[</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span>
+        <span class="tok-s">"</span><span class="tok-s">C</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-s">"</span><span class="tok-s">C.UTF-8</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-s">"</span><span class="tok-s">en_US.UTF-8</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-s">"</span><span class="tok-s">ko_KR.UTF-8</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-s">"</span><span class="tok-s">ko_KR.EUC-KR</span><span class="tok-s">"</span><span class="tok-x">,</span>
+        <span class="tok-s">"</span><span class="tok-s">de_DE.UTF-8</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-s">"</span><span class="tok-s">tr_TR.UTF-8</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-s">"</span><span class="tok-s">ja_JP.UTF-8</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-s">"</span><span class="tok-s">no_SUCH.locale</span><span class="tok-s">"</span><span class="tok-x">,</span>
+    <span class="tok-x">}</span><span class="tok-x">;</span>
+
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">available on this machine:</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-t">char</span></strong> saved<span class="tok-x">[</span><span class="tok-n">128</span><span class="tok-x">]</span><span class="tok-x">;</span>
+    <strong>snprintf</strong><strong><span class="tok-x">(</span></strong><strong>saved</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> saved</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>setlocale</strong><strong><span class="tok-x">(</span></strong><strong>LC_ALL</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">NULL</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> <strong><span class="tok-k">sizeof</span></strong> candidates <strong><span class="tok-x">/</span></strong> <strong><span class="tok-k">sizeof</span></strong> <strong><span class="tok-x">*</span></strong>candidates<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+        <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>got <strong><span class="tok-x">=</span></strong> <strong>setlocale</strong><strong><span class="tok-x">(</span></strong><strong>LC_ALL</strong><strong><span class="tok-x">,</span></strong><strong> candidates</strong><strong><span class="tok-x">[</span></strong><strong>i</strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>got<span class="tok-x">)</span> <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  </span></strong><strong><span class="tok-s">%-15s</span></strong><strong><span class="tok-s"> yes  MB_CUR_MAX=</span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                        candidates</strong><strong><span class="tok-x">[</span></strong><strong>i</strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">size_t</span></strong><strong><span class="tok-x">)</span></strong><strong>MB_CUR_MAX</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong><span class="tok-k">else</span></strong>     <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  </span></strong><strong><span class="tok-s">%-15s</span></strong><strong><span class="tok-s"> no</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> candidates</strong><strong><span class="tok-x">[</span></strong><strong>i</strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ⑤ 원래대로 되돌린다 — 이름 문자열을 그대로 다시 넘기면 된다.</span></em>
+<em><span class="tok-c">          단, setlocale 이 돌려준 포인터는 다음 호출에 덮어써질 수 있으므로</span></em>
+<em><span class="tok-c">          복사해 두어야 한다. </span></em><em><span class="tok-c">*/</span></em>
+    <strong>setlocale</strong><strong><span class="tok-x">(</span></strong><strong>LC_ALL</strong><strong><span class="tok-x">,</span></strong><strong> saved</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>show_current</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">after restoring:</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ⑥ 범주는 따로 바꿀 수 있다. 실무의 관용구가 이것이다 —</span></em>
+<em><span class="tok-c">          사람에게 보일 것은 환경대로, 기계가 읽을 숫자는 "C" 로. </span></em><em><span class="tok-c">*/</span></em>
+    <strong>setlocale</strong><strong><span class="tok-x">(</span></strong><strong>LC_ALL</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>setlocale</strong><strong><span class="tok-x">(</span></strong><strong>LC_NUMERIC</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">C</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">a mixed setting - LC_CTYPE=</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">, LC_NUMERIC=</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong>setlocale</strong><strong><span class="tok-x">(</span></strong><strong>LC_CTYPE</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">NULL</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>setlocale</strong><strong><span class="tok-x">(</span></strong><strong>LC_NUMERIC</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">NULL</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> LC_ALL 로 물으면 범주가 하나라도 다를 때 전체가 세미콜론으로 나열된다 </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">asking through LC_ALL: </span></strong><strong><span class="tok-s">%.60s</span></strong><strong><span class="tok-s">...</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>setlocale</strong><strong><span class="tok-x">(</span></strong><strong>LC_ALL</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">NULL</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>right at start:  LC_ALL=C
+setlocale(LC_ALL,""): C.UTF-8
+MB_CUR_MAX:            6
+
+available on this machine:
+  C               yes  MB_CUR_MAX=1
+  C.UTF-8         yes  MB_CUR_MAX=6
+  en_US.UTF-8     yes  MB_CUR_MAX=6
+  ko_KR.UTF-8     yes  MB_CUR_MAX=6
+  ko_KR.EUC-KR    yes  MB_CUR_MAX=2
+  de_DE.UTF-8     yes  MB_CUR_MAX=6
+  tr_TR.UTF-8     yes  MB_CUR_MAX=6
+  ja_JP.UTF-8     yes  MB_CUR_MAX=6
+  no_SUCH.locale  no
+after restoring: LC_ALL=C.UTF-8
+a mixed setting - LC_CTYPE=C.UTF-8, LC_NUMERIC=C
+asking through LC_ALL: LC_CTYPE=C.UTF-8;LC_NUMERIC=C;LC_TIME=C.UTF-8;LC_COLLATE=C.U...
+</code></pre></div></div><p>시연의 첫 줄이 표준의 규정을 그대로 보인다. 무엇을 하기도 전에 <code>LC_ALL</code>이 <code>C</code>다. 그리고 <code>setlocale(LC_ALL, "")</code> 한 번에 환경이 정한 로케일로 바뀐다.</p><p>전역 상태라는 사실에서 두 가지가 따라 나온다.</p><p><strong>첫째, 내가 <code>setlocale</code>을 부르지 않아도 로케일이 바뀔 수 있다.</strong> 링크한 라이브러리가 <code>setlocale</code>을 부르면 그 순간부터 내 <code>printf("%f")</code>도 영향을 받는다. GUI 툴킷이 흔히 그렇게 한다.</p><p><strong>둘째, 스레드 사이에 데이터 경쟁이 생길 수 있다.</strong> C23은 이 점을 명시한다 — <code>setlocale</code> 호출은 다른 <code>setlocale</code> 호출이나 로케일에 영향받는 함수들과 <strong>데이터 경쟁을 일으킬 수 있다</strong>(§7.11.1.1p5). 스레드마다 다른 로케일을 쓰고 싶다면 표준 C로는 길이 없고, POSIX의 <code>uselocale</code> 계열이 필요하다(84장).</p><h3 id="s83-3">83.3 여섯 범주 — 무엇이 무엇을 지배하는가<a class="plink" href="#s83-3" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>로케일은 한 덩어리가 아니라 <strong>범주</strong>(category)로 나뉜다. 표준이 정한 것은 여섯 개이고, 각 범주가 무엇에 영향을 주는지도 표준이 직접 열거한다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>범주</strong></th><th><strong>무엇을 지배하는가</strong></th><th><strong>영향받는 함수</strong></th></tr><tr><td><code>LC_CTYPE</code></td><td>문자 분류, 대소문자, <strong>멀티바이트 문자 변환</strong></td><td><code>isalpha</code> 계열(82장), <code>mbrtowc</code> 계열(85장)</td></tr><tr><td><code>LC_NUMERIC</code></td><td>비통화 숫자의 소수점과 자리 묶음</td><td>★ <code>printf</code>·<code>scanf</code>·<code>strtod</code></td></tr><tr><td><code>LC_MONETARY</code></td><td>통화 표기 정보</td><td><code>localeconv</code></td></tr><tr><td><code>LC_COLLATE</code></td><td>문자열 비교 순서</td><td><code>strcoll</code>, <code>strxfrm</code></td></tr><tr><td><code>LC_TIME</code></td><td>날짜·시각 표기</td><td><code>strftime</code>, <code>wcsftime</code></td></tr><tr><td><code>LC_ALL</code></td><td>(위 전부를 한꺼번에 가리키는 이름)</td><td>—</td></tr></table></div><span id="doc-float-411"></span><p class="float-caption">표 83.2 — 로케일 범주와 영향받는 함수</p></figure><p>이 표를 외울 필요는 없지만 <strong><code>LC_NUMERIC</code>이 <code>printf</code>를 지배한다</strong>는 한 줄만은 기억해 둘 만하다. 로케일이 실무에서 데이터를 망가뜨리는 거의 모든 사고가 그 한 줄에서 나온다(84장).</p><div class="dev platform"><p class="dev-label">플랫폼 노트.<span style="white-space: pre-wrap">&#x20;&#x20;</span>POSIX가 더한 범주들</p><div class="dev-body"><p>표준 C의 여섯 개 위에 POSIX와 glibc가 범주를 더 얹었다. <code>LC_MESSAGES</code> (메시지 번역), 그리고 glibc의 <code>LC_PAPER</code>(용지 크기), <code>LC_NAME</code>(이름 표기 순서), <code>LC_ADDRESS</code>, <code>LC_TELEPHONE</code>, <code>LC_MEASUREMENT</code>(미터법 여부), <code>LC_IDENTIFICATION</code>. 시연에서 <code>LC_ALL</code>로 물었을 때 세미콜론으로 길게 이어져 나온 목록이 그것이다.</p><p>표준이 “<code>LC_</code>로 시작하고 대문자가 이어지는 이름은 구현이 더 정의할 수 있다”고 열어 둔 자리다(§7.11p3). 그래서 이 이름들은 리눅스에서는 통하고 다른 곳에서는 통하지 않을 수 있다.</p></div></div><h3 id="s83-4">83.4 <code>setlocale</code>의 정확한 계약<a class="plink" href="#s83-4" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>함수는 하나뿐이고 모양도 단순한데, 계약이 촘촘하다.</p><pre><code data-lang="c"><strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong><strong>setlocale</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> category<span class="tok-x">,</span> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>locale<span class="tok-x">)</span><span class="tok-x">;</span></code></pre><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>두 번째 인자</strong></th><th><strong>뜻</strong></th></tr><tr><td><code>"C"</code></td><td>표준이 정한 최소 환경. 프로그램의 출발점</td></tr><tr><td><code>""</code>(빈 문자열)</td><td><strong>환경이 정한 로케일</strong> — 환경 변수를 본다</td></tr><tr><td><code>NULL</code></td><td>바꾸지 말고 지금 값을 묻기만 하라</td></tr><tr><td>그 밖의 문자열</td><td>구현이 정한 이름(<code>"ko_KR.UTF-8"</code> 등)</td></tr></table></div><span id="doc-float-412"></span><p class="float-caption">표 83.3 — <code>setlocale</code> 두 번째 인자의 뜻</p></figure><p>반환값의 계약이 두 갈래다. 성공하면 <strong>설정된(또는 지금 설정되어 있는) 로케일의 이름</strong>을 담은 문자열을 돌려주고, 실패하면 널을 돌려준다.</p><div class="dev misconception"><p class="dev-label">흔한 오해. <strong>“<code>setlocale</code>은 실패하지 않는다”</strong></p><div class="dev-body"><p>가장 조용한 사고가 여기서 난다. 요청한 로케일이 그 기계에 <strong>설치되어 있지 않으면</strong> <code>setlocale</code>은 널을 돌려주고 <strong>아무것도 바꾸지 않는다.</strong> 반환값을 보지 않으면 프로그램은 로케일이 바뀐 줄 알고 계속 돌고, 날짜는 영어로 나오고 한글은 깨진다.</p><p>시연의 <code>no_SUCH.locale</code> 줄이 그 경우다. 리눅스 배포판이 용량을 아끼려고 로케일을 최소한만 넣어 두는 일이 많아서(컨테이너 이미지가 특히 그렇다), 로케일이 없는 이 경우는 개발 기계에서 되던 것이 배포 환경에서 안 되는 전형적인 자리이기도 하다.</p><pre><code data-lang="c"><strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong><strong>setlocale</strong><strong><span class="tok-x">(</span></strong><strong>LC_ALL</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+    <strong>fprintf</strong><strong><span class="tok-x">(</span></strong><strong>stderr</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">경고: 로케일을 적용하지 못했다. C 로케일로 계속한다.</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<span class="tok-x">}</span></code></pre></div></div><p>반환된 포인터에도 규칙이 있다. 그 문자열은 <strong>다음 <code>setlocale</code> 호출이 덮어쓸 수 있는</strong> 정적 영역을 가리킨다. 나중에 되돌릴 생각이라면 시연처럼 복사해 두어야 한다.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 범주를 섞어 쓸 수 있는가?</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> 쓸 수 있고, 그것이 실무의 정석이다. 시연의 마지막 부분이 그 관용구다.</p><pre><code data-lang="c"><strong>setlocale</strong><strong><span class="tok-x">(</span></strong><strong>LC_ALL</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>        <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 우선 환경대로 전부 맞추고 </span></em><em><span class="tok-c">*/</span></em>
+<strong>setlocale</strong><strong><span class="tok-x">(</span></strong><strong>LC_NUMERIC</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">C</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 숫자만 "C" 로 되돌린다 </span></em><em><span class="tok-c">*/</span></em></code></pre><p>사람에게 보여 줄 날짜·정렬·통화는 환경을 따르되, <strong>기계가 읽고 쓸 숫자는 로케일에 흔들리지 않게</strong> 고정하는 것이다. 이 두 줄이 84장에서 볼 데이터 파손 사고의 대부분을 막는다.</p><p>이렇게 범주가 섞이면 <code>setlocale(LC_ALL, NULL)</code>이 돌려주는 문자열이 <code>LC_CTYPE=…;LC_NUMERIC=…;…</code> 꼴로 길어진다. 시연의 마지막 줄이 그것이다 — “전부 같으면 이름 하나, 다르면 목록”이 규칙이다.</p></p></div></div><h3 id="s83-5">83.5 로케일 이름의 문법<a class="plink" href="#s83-5" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p><code>ko_KR.UTF-8</code>. 이 이름이 어떻게 생겼는지 뜯어보면 그 안에 국제 표준 세 개가 들어 있다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>자리</strong></th><th><strong>보기</strong></th><th><strong>무엇이 정하는가</strong></th></tr><tr><td>언어</td><td><code>ko</code></td><td>ISO 639-1 두 글자(또는 ISO 639-2/-3 세 글자)</td></tr><tr><td><code>_</code>+지역</td><td><code>_KR</code></td><td>ISO 3166-1 alpha-2 국가 코드</td></tr><tr><td><code>.</code>+문자집합</td><td><code>.UTF-8</code></td><td>문자집합 이름(IANA 등록부·ISO 8859 계열 등)</td></tr><tr><td><code>@</code>+변종</td><td><code>@euro</code></td><td>정하는 표준이 없다 — 같은 언어·지역의 다른 관습(선택)</td></tr></table></div><span id="doc-float-413"></span><p class="float-caption">표 83.4 — 로케일 이름의 자리와 그것을 정하는 것</p></figure><p>전체 문법은 이렇게 적을 수 있다.</p><pre><code data-lang="text">언어[_지역][.문자집합][@변종]
+
+ko_KR.UTF-8      한국어, 대한민국, UTF-8
+de_DE@euro       독일어, 독일, 유로화 변종
+sr_RS@latin      세르비아어를 라틴 문자로
+C  또는  POSIX   표준이 정한 최소 로케일</code></pre><span id="idx-entry-284"></span><span id="idx-entry-285"></span><p>여기서 언어와 지역이 <strong>다른 표준의 코드를 빌려 온 것</strong>이라는 점이 중요하다. <code>ko</code>는 ISO 639-1이 한국어에 준 코드이고 <code>KR</code>은 ISO 3166-1이 대한민국에 준 코드다. 즉 로케일 이름은 C가 발명한 것이 아니라, 이미 있던 국제 코드 체계를 조립한 것이다.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 이 문법은 어느 표준이 정한 것인가?</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> C 표준이 아니다. C는 <code>"C"</code>와 <code>""</code> 두 개만 정하고, 나머지는 <strong>구현이 정한 문자열</strong>이라고만 말한다(§7.11.1.1p3).</p><p>그런데 표준의 각주 하나가 길을 가리킨다 — “<strong>ISO/IEC 9945</strong>가 C를 위한 로케일과 charmap 형식을 규정한다.” ISO/IEC 9945는 곧 <strong>POSIX</strong>(IEEE Std 1003.1)다. 위의 <code>언어_지역.문자집합@변종</code> 문법도, 로케일 정의 파일의 형식도, 환경 변수의 우선순위도 모두 POSIX가 정한다.</p><p>그래서 이 장의 이름 규칙은 <strong>유닉스 계열에서 통하는 규칙</strong>이다. Windows는 다른 체계를 쓰고, 웹은 또 다른 체계를 쓴다 — 뒤에서 견주어 본다.</p></p></div></div><h4 id="s83-5-1">83.5.1 문자집합 이름과 정규화<a class="plink" href="#s83-5-1" aria-label="이 절의 주소" title="이 절의 주소">#</a></h4><div></div><p><code>.UTF-8</code>, <code>.utf8</code>, <code>.UTF8</code> — 셋 다 같은 것을 가리킨다. glibc는 이름에서 대소문자와 <code>-</code>를 무시하고 견주기 때문이다. 그래서 <code>locale -a</code>가 <code>ko_KR.utf8</code>이라고 찍어도 프로그램에서는 <code>"ko_KR.UTF-8"</code>로 요청해도 된다.</p><p>문자집합 이름 자체는 또 다른 등록부에서 온다. <code>UTF-8</code>·<code>EUC-KR</code>·<code>ISO-8859-1</code> 같은 이름은 IANA의 문자집합 등록부에 등록된 것이고, 그 뿌리에는 ISO/IEC 8859 계열이나 유니코드(ISO/IEC 10646)가 있다.</p><p><strong>문자집합 부분이 이름의 나머지보다 중요할 때가 많다.</strong> <code>ko_KR.UTF-8</code>과 <code>ko_KR.EUC-KR</code>은 언어와 지역이 같지만 <strong>한 글자가 몇 바이트인지</strong>가 다르다. 시연에서 두 로케일의 <code>MB_CUR_MAX</code>가 6과 2로 갈린 것이 그 차이다.</p><div class="dev realcase"><p class="dev-label">실제 사례.<span style="white-space: pre-wrap">&#x20;&#x20;</span>같은 나라, 다른 인코딩 — <code>ko_KR.EUC-KR</code>의 시대</p><div class="dev-body"><p>1990년대와 2000년대 초의 한국 유닉스 환경은 <code>ko_KR.eucKR</code>(또는 <code>ko_KR.EUC-KR</code>)이 기본이었다. 한글 한 글자가 2바이트인 세계다. 그 시절에 쓰인 코드에는 “한글은 2바이트”라는 가정이 곳곳에 박혀 있다 — 문자열 길이를 2로 나누고, 커서를 2씩 옮기고, 잘림을 짝수 바이트로 맞추는 코드들이다.</p><p>UTF-8로 옮겨 오면서 그 가정이 전부 깨졌다. 한글은 3바이트가 되었고, 그 코드들은 글자를 반쪽으로 자르기 시작했다. 이것이 인코딩 전환기에 한국에서 실제로 겪은 사고이고, 87장에서 볼 “바이트·코드포인트·글자” 세 층위를 구별해야 하는 이유이기도 하다.</p></div></div><h4 id="s83-5-2">83.5.2 다른 세계의 이름 — BCP 47과 Windows<a class="plink" href="#s83-5-2" aria-label="이 절의 주소" title="이 절의 주소">#</a></h4><div></div><p>같은 「한국어(대한민국)」를 가리키는 이름이 체계마다 다르다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>체계</strong></th><th><strong>표기</strong></th><th><strong>근거</strong></th></tr><tr><td>POSIX·C</td><td><code>ko_KR.UTF-8</code></td><td>ISO/IEC 9945(POSIX)</td></tr><tr><td>BCP 47(웹·XML·HTTP)</td><td><code>ko-KR</code></td><td>RFC 5646(태그)·RFC 4647(대응)</td></tr><tr><td>Windows(Vista 이후)</td><td><code>ko-KR</code></td><td>BCP 47을 따른다</td></tr><tr><td>Windows(옛 방식)</td><td><code>Korean_Korea.949</code></td><td>Windows 고유</td></tr><tr><td>유니코드 CLDR</td><td><code>ko_KR</code></td><td>UTS #35 (LDML)</td></tr></table></div><span id="doc-float-414"></span><p class="float-caption">표 83.5 — 로케일 표기의 근거가 되는 표준</p></figure><span id="idx-entry-286"></span><p>BCP 47은 인터넷 표준으로, HTML의 <code>lang="ko-KR"</code>이나 HTTP의 <code>Accept-Language</code> 헤더에 쓰이는 그 태그다. 밑줄 대신 붙임표를 쓰고 문자집합 부분이 없다 — 웹은 인코딩을 따로 다루기 때문이다. 문자체계를 밝힐 때는 <code>sr-Latn-RS</code>처럼 ISO 15924 코드가 가운데 들어간다.</p><p><strong>프로그램이 두 세계에 걸쳐 있으면 이름을 옮겨야 한다.</strong> 브라우저가 보낸 <code>ko-KR</code>을 받아 <code>setlocale</code>에 넘기려면 <code>ko_KR.UTF-8</code>로 바꿔야 하고, 그 변환표를 어디선가 들고 있어야 한다는 뜻이다. 이 자리에서 실수가 잦다.</p><div class="dev platform"><p class="dev-label">플랫폼 노트.<span style="white-space: pre-wrap">&#x20;&#x20;</span>로케일 데이터의 현대적 출처 — CLDR</p><div class="dev-body"><p>실제 관습 데이터(어느 나라가 날짜를 어떻게 적는가, 통화 기호가 무엇인가)를 누가 관리하는가? 오늘날의 답은 유니코드 컨소시엄의 <strong>CLDR</strong>(Common Locale Data Repository)이고, 그 형식은 UTS #35(LDML)가 정한다. ICU(International Components for Unicode)·자바·안드로이드· 브라우저가 모두 여기서 데이터를 가져온다.</p><p>glibc의 로케일 정의는 그보다 오래된 계보에 있다 — ISO/IEC TR 14652(문화 규약 명세 방법)와 ISO/IEC 15897(문화 요소 등록 절차)이 그 배경이고, 실제 파일은 <code>/usr/share/i18n/locales/</code>에 사람이 읽을 수 있는 형식으로 들어 있다.</p><p>두 계보가 다르므로 <strong>같은 로케일이라도 값이 미세하게 다를 수 있다.</strong> 자바로 짠 프로그램과 C로 짠 프로그램이 같은 날짜를 다르게 찍는 일이 여기서 생긴다.</p></div></div><h3 id="s83-6">83.6 환경 변수의 우선순위<a class="plink" href="#s83-6" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p><code>setlocale(LC_ALL, "")</code>이 「환경이 정한 로케일」을 쓴다고 했다. 그 환경이 정확히 무엇인가 — POSIX가 우선순위를 정해 두었다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>순위</strong></th><th><strong>변수</strong></th><th><strong>뜻</strong></th></tr><tr><td>1</td><td><code>LC_ALL</code></td><td>있으면 이것이 모든 범주를 덮어쓴다</td></tr><tr><td>2</td><td><code>LC_CTYPE</code>·<code>LC_TIME</code> 등</td><td>해당 범주만 정한다</td></tr><tr><td>3</td><td><code>LANG</code></td><td>위의 것이 없는 범주의 기본값</td></tr></table></div><span id="doc-float-415"></span><p class="float-caption">표 83.6 — 로케일 환경 변수의 순위</p></figure><p>즉 <code>LANG=ko_KR.UTF-8 LC_NUMERIC=C ./program</code>처럼 부르면 대부분은 한국어 관습을 쓰되 숫자만 C 관습이 된다. 서버 프로그램을 띄우는 스크립트가 <code>LC_ALL=C</code>를 박아 두는 것도 같은 우선순위를 쓴 것이다 — <strong>로그와 파싱을 환경으로부터 격리</strong>하는 것이다.</p><pre><code data-lang="sh"><strong>$</strong><strong> locale                 </strong><em><span class="tok-c">#</span></em><em><span class="tok-c"> 지금 환경이 무엇을 정하고 있는지 본다</span></em>
+<strong>$</strong><strong> locale</strong><strong><span class="tok-x"> -</span></strong><strong>a              </strong><em><span class="tok-c">#</span></em><em><span class="tok-c"> 이 기계에 설치된 로케일 목록</span></em>
+<strong>$</strong><strong> locale</strong><strong><span class="tok-x"> -</span></strong><strong>k</strong><strong> LC_NUMERIC   </strong><em><span class="tok-c">#</span></em><em><span class="tok-c"> 특정 범주의 값들을 자세히</span></em></code></pre><h3 id="s83-7">83.7 로케일 데이터는 어디에 있는가<a class="plink" href="#s83-7" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>로케일은 프로그램에 들어 있지 않다. <strong>기계에 설치되어 있어야</strong> 한다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>단계</strong></th><th><strong>무엇</strong></th></tr><tr><td>정의 파일</td><td><code>/usr/share/i18n/locales/ko_KR</code> — 사람이 읽는 형식</td></tr><tr><td>문자집합 정의</td><td><code>/usr/share/i18n/charmaps/UTF-8.gz</code></td></tr><tr><td>컴파일</td><td><code>localedef -i ko_KR -f UTF-8 ko_KR.UTF-8</code></td></tr><tr><td>설치 위치</td><td><code>/usr/lib/locale/</code>(또는 <code>locale-archive</code>)</td></tr><tr><td>찾는 경로</td><td><code>LOCPATH</code> 환경 변수로 바꿀 수 있다</td></tr></table></div><span id="doc-float-416"></span><p class="float-caption">표 83.7 — glibc 의 로케일 데이터 — 파일 · 명령 · 경로</p></figure><p>이 구조를 알면 앞의 “없는 로케일” 문제를 스스로 풀 수 있다. 컨테이너에서 <code>ko_KR.UTF-8</code>이 없다면 정의 파일을 넣고 <code>localedef</code>로 만들면 된다.</p><div class="dev realcase"><p class="dev-label">실제 사례.<span style="white-space: pre-wrap">&#x20;&#x20;</span>이 책의 로케일 표는 어떻게 확인했는가</p><div class="dev-body"><p>이 책을 만드는 기계에도 처음에는 <code>C</code>·<code>C.UTF-8</code>·<code>POSIX</code> 셋뿐이었다. 그래서 다음 장의 표들을 확인하려고 glibc 2.41의 로케일 정의에서 필요한 것들을 직접 만들었다.</p><pre><code data-lang="sh"><strong>localedef</strong><strong><span class="tok-x"> -</span></strong><strong>i</strong><strong> ko_KR</strong><strong><span class="tok-x"> -</span></strong><strong>f</strong><strong> UTF-8 </strong><strong><span class="tok-x">&lt;</span></strong><strong>경로</strong><strong><span class="tok-x">></span></strong><strong>/ko_KR.UTF-8</strong>
+<strong>localedef</strong><strong><span class="tok-x"> -</span></strong><strong>i</strong><strong> de_DE</strong><strong><span class="tok-x"> -</span></strong><strong>f</strong><strong> UTF-8 </strong><strong><span class="tok-x">&lt;</span></strong><strong>경로</strong><strong><span class="tok-x">></span></strong><strong>/de_DE.UTF-8</strong>
+<strong><span class="tok-k">export</span></strong><strong> </strong><strong>LOCPATH</strong><strong><span class="tok-x">=</span></strong><strong><span class="tok-x">&lt;</span></strong><strong>경로</strong><strong><span class="tok-x">></span></strong></code></pre><p>그래서 이 책에 실린 다른 로케일의 값들은 어림한 것이 아니라 <strong>그렇게 만들어 돌려 본 결과</strong>다. 반대로 독자의 기계에 그 로케일이 없다면 예제는 “이 기계에 없음”을 인쇄한다 — 예제들이 로케일의 존재를 전제하지 않도록 짜 두었다.</p></div></div><div class="dev recap"><p class="dev-label">복습 정리</p><div class="dev-body"><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>기억할 것</strong></th><th><strong>요점</strong></th></tr><tr><td>정체</td><td>프로그램 밖의 <strong>관습</strong> 설정. 번역이 아니다</td></tr><tr><td>시작값</td><td>언제나 <code>"C"</code> — 표준이 그렇게 정한다</td></tr><tr><td>범위</td><td>프로세스 전역. 라이브러리가 바꿀 수 있고 스레드 사이에 경쟁</td></tr><tr><td>범주</td><td><code>LC_CTYPE</code>·<code>LC_NUMERIC</code>·<code>LC_MONETARY</code>·<code>LC_COLLATE</code>·<code>LC_TIME</code>(+<code>LC_ALL</code>)</td></tr><tr><td><code>setlocale</code></td><td><code>""</code>=환경, <code>NULL</code>=질의. <strong>반환값이 널이면 실패</strong></td></tr><tr><td>이름</td><td><code>언어_지역.문자집합@변종</code> — ISO 639·ISO 3166·문자집합 등록부</td></tr><tr><td>근거</td><td>문법과 형식은 POSIX(ISO/IEC 9945). 웹·Windows 는 BCP 47</td></tr><tr><td>환경</td><td><code>LC_ALL</code> > <code>LC_</code>범주 > <code>LANG</code></td></tr><tr><td>실무</td><td><code>LC_ALL, ""</code> 뒤에 <code>LC_NUMERIC, "C"</code></td></tr></table></div><span id="doc-float-417"></span><p class="float-caption">표 83.8 — 로케일 ① — 기억할 것</p></figure></div></div><p>로케일이 무엇이고 어떻게 고르는지를 보았다. 다음 장은 그것이 <strong>무엇을 어떻게</strong> 바꾸는지다 — 숫자, 통화, 시간, 정렬을 차례로 뜯어본다.</p>
+<div class="nav"><a href="ch82.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch84.html">다음 →</a></div>
+</div></main>
+<script>(function(){var b=document.querySelector('.menu-btn'),p=document.getElementById('here-panel');function open(o){if(!p)return;p.hidden=!o;if(b)b.setAttribute('aria-expanded',o);}if(b)b.addEventListener('click',function(){open(p.hidden);});if(p)p.addEventListener('click',function(e){if(e.target.tagName==='A'&&e.target.getAttribute('href').charAt(0)==='#')open(false);});document.addEventListener('keydown',function(e){if(e.key==='Escape'&&p&&!p.hidden){open(false);if(b)b.focus();}});document.addEventListener('click',function(e){if(p&&!p.hidden&&!p.contains(e.target)&&!(b&&b.contains(e.target)))open(false);});var bk=document.querySelector('.bar .back');if(bk)bk.addEventListener('click',function(e){if(history.length>1&&document.referrer){e.preventDefault();history.back();}});var box=document.getElementById('setbox');if(!box)return;var r=document.documentElement;function load(){try{return JSON.parse(localStorage.getItem('doc-read')||'{}');}catch(e){return {};}}function save(s){try{localStorage.setItem('doc-read',JSON.stringify(s));}catch(e){}}function css(n){return getComputedStyle(r).getPropertyValue(n).trim();}function paint(){var s=load();var t=s.theme||'auto',w=s.width==='fit'?'fit':'960';[].forEach.call(box.querySelectorAll('.segb[data-theme]'),function(x){x.setAttribute('aria-pressed',x.dataset.theme===t);});[].forEach.call(box.querySelectorAll('.segb[data-width]'),function(x){x.setAttribute('aria-pressed',x.dataset.width===w);});var ly=s.layout||'auto';[].forEach.call(box.querySelectorAll('.segb[data-layout]'),function(x){x.setAttribute('aria-pressed',x.dataset.layout===ly);});document.getElementById('s-fg').value=s.fg||hex(css('--fg'));document.getElementById('s-bg').value=s.bg||hex(css('--bg'));document.getElementById('s-link').value=s.link||hex(css('--link'));}function hex(v){var m=v.match(/^rgba?\((\d+)[ ,]+(\d+)[ ,]+(\d+)/);if(!m)return v.charAt(0)==='#'?v:'#000000';return '#'+[1,2,3].map(function(i){return ('0'+parseInt(m[i],10).toString(16)).slice(-2);}).join('');}paint();[].forEach.call(box.querySelectorAll('.segb[data-width]'),function(x){x.addEventListener('click',function(){var s=load();if(x.dataset.width==='fit'){s.width='fit';r.setAttribute('data-measure','fit');}else{delete s.width;r.removeAttribute('data-measure');}save(s);setTimeout(paint,0);});});[].forEach.call(box.querySelectorAll('.segb[data-layout]'),function(x){x.addEventListener('click',function(){var s=load(),v=x.dataset.layout;if(v==='auto'){delete s.layout;r.removeAttribute('data-layout');}else{s.layout=v;r.setAttribute('data-layout',v);}save(s);var m=document.querySelector('meta[name=viewport]');var want=v==='desktop'?'width=1100':'width=device-width, initial-scale=1';if(m&&m.getAttribute('content')!==want)location.reload();else setTimeout(paint,0);});});[].forEach.call(box.querySelectorAll('.segb[data-theme]'),function(x){x.addEventListener('click',function(){var s=load();s.theme=x.dataset.theme;delete s.fg;delete s.bg;delete s.link;save(s);['--fg','--bg','--link'].forEach(function(n){r.style.removeProperty(n);});if(s.theme==='auto')r.removeAttribute('data-theme');else r.setAttribute('data-theme',s.theme);setTimeout(paint,0);});});[['s-fg','--fg','fg'],['s-bg','--bg','bg'],['s-link','--link','link']].forEach(function(a){document.getElementById(a[0]).addEventListener('input',function(){var s=load();s[a[2]]=this.value;save(s);r.style.setProperty(a[1],this.value);});});})();</script><script>
+(function(){
+  var q=document.getElementById('q'), out=document.getElementById('qr');
+  if(!q||!out) return;
+  var data=null, NONE="\ucc3e\uc740 \uac83\uc774 \uc5c6\ub2e4";
+  function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+  function run(){
+    var v=q.value.trim().toLowerCase();
+    out.innerHTML='';
+    if(!v||!data) return;
+    var hits=[];
+    for(var i=0;i<data.length && hits.length<40;i++){
+      if(data[i][0].toLowerCase().indexOf(v)>=0) hits.push(data[i]);
+    }
+    if(!hits.length){ out.innerHTML='<li>'+NONE+'</li>'; return; }
+    out.innerHTML=hits.map(function(h){
+      return '<li><a href="'+h[1]+'">'+esc(h[0])+'</a>'+
+             (h[2]?'<span class="where">'+esc(h[2])+'</span>':'')+'</li>';
+    }).join('');
+  }
+  q.addEventListener('input',function(){
+    if(data){ run(); return; }
+    fetch('search-index.json').then(function(r){return r.json();})
+      .then(function(j){ data=j; run(); })
+      .catch(function(){ out.innerHTML='<li>'+NONE+'</li>'; });
+  });
+})();
+</script></body></html>

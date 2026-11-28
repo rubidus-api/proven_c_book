@@ -1,0 +1,727 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>46 동적 메모리 — Proven C Book</title><style>@font-face { font-family:"Doc Serif"; src:url("../fonts/serif.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-italic.woff2") format("woff2");
+  font-weight:400; font-style:italic; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-kr.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-kr-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans-kr.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans-kr-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Mono"; src:url("../fonts/mono.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Mono"; src:url("../fonts/mono-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+:root { color-scheme: light dark; --bg:#fafaf8; --bg2:#f2f2f0; --bg3:#e6e6e3; --fg:#141414; --muted:#555555; --line:#c9c9c9; --line-strong:#8a8a8a; --accent:#1a4f8a; --accent-fg:#ffffff; --accent2:#96530f; --honey:#f2b04a; --honey-fg:#2b1d00; --honey-text:#855400; --honey-soft:#fbebc6; --danger:#9b1b30; --ok:#1d6e37; --warn:#855400; --select:#d4dde8;
+  --rule:var(--line); --box-bg:var(--bg2); --code-bg:var(--bg2); --box-rule:var(--line); --link:var(--accent);
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg:#121314; --bg2:#1c1e20; --bg3:#2a2c2f; --fg:#e8e8e8; --muted:#a6a6a6; --line:#3a3d40; --line-strong:#75787c; --accent:#8ab4e8; --accent-fg:#121314; --accent2:#d4883b; --honey:#f2b04a; --honey-fg:#121314; --honey-text:#f2b04a; --honey-soft:#3b311e; --danger:#f07a8c; --ok:#7bcb95; --warn:#f2b04a; --select:#2f3d52;
+    --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+:root[data-theme="dark"] { color-scheme: dark; --bg:#121314; --bg2:#1c1e20; --bg3:#2a2c2f; --fg:#e8e8e8; --muted:#a6a6a6; --line:#3a3d40; --line-strong:#75787c; --accent:#8ab4e8; --accent-fg:#121314; --accent2:#d4883b; --honey:#f2b04a; --honey-fg:#121314; --honey-text:#f2b04a; --honey-soft:#3b311e; --danger:#f07a8c; --ok:#7bcb95; --warn:#f2b04a; --select:#2f3d52;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; }
+:root[data-theme="light"] { color-scheme: light; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Doc Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.here-head { display:flex; align-items:center; gap:.8rem; padding:.2rem 0 .5rem;
+  border-bottom:1px solid var(--rule,#ddd); margin-bottom:.5rem; }
+.here-head .sp { flex:1; }
+.here-all { margin-left:auto; font-size:.9rem; }
+.here-x { font:inherit; font-size:.9rem; cursor:pointer; background:none;
+  border:1px solid var(--line-strong); padding:.05rem .45rem;
+  color:inherit; }
+.here-body a, .tf-secs a { display:block; text-decoration:none; padding:.12rem 0;
+  line-height:1.45; }
+.here-body a:hover, .tf-secs a:hover { text-decoration:underline; }
+.here-body a.lv4, .tf-secs a.lv4 { padding-left:1.6rem; font-size:.94rem;
+  color:var(--muted,#555); }
+.tf-no { display:inline-block; min-width:3.2rem; color:var(--muted,#666);
+  font-variant-numeric:tabular-nums; }
+.toc-full .tf-ch { margin:.9rem 0 .15rem; font-weight:700; }
+.toc-full .tf-secs { margin:0 0 .5rem .2rem; border-left:2px solid var(--rule,#e2e2e2);
+  padding-left:.7rem; }
+.toc-full h4.toc-part { margin-top:1.8rem; }
+.toc a.toc-detail { font-weight:700; }
+@media print { .here-btn, .here-panel { display:none; } }
+.bar { position:sticky; top:0; z-index:20; display:flex; flex-wrap:nowrap; gap:.25rem; align-items:center;
+       min-height:44px; padding:0 clamp(.4rem,2vw,1.6rem); background:var(--bg2);
+       border-bottom:1px solid var(--line); font-size:.9rem;
+       font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--fg); text-decoration:none; } .bar a:hover { text-decoration:none; }
+.bar .sp { display:none; }
+main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
+.wrap { width:100%; }
+main .wrap { max-width:960px; margin-inline:auto; }
+:root[data-measure="fit"] main .wrap { max-width:none; margin:0; }
+h1,h2,h3,h4 { font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35;
+  padding-bottom:.18rem; border-bottom:1px solid var(--rule); }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem;
+     padding-bottom:.22rem; border-bottom:1.5px solid var(--fg); }
+p { margin:.9rem 0; } a { color:var(--link); }
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+.src-note { font-size: .86em; color: var(--muted, #666); }
+.src-note code { font-size: .95em; }
+sup.fnref { font-size: .72em; line-height: 0; vertical-align: super; }
+sup.fnref a { text-decoration: none; padding: 0 .1em; }
+sup.fnref a::before { content: "["; }
+sup.fnref a::after  { content: "]"; }
+.chapter-notes { margin: 3rem 0 1rem; padding-top: .9rem;
+                 border-top: 2px solid var(--rule, #333); }
+.chapter-notes h2 { font-size: 1.05rem; margin: 0 0 .6rem; }
+.chapter-notes ol { margin: 0; padding-left: 1.6em; }
+.chapter-notes li { font-size: .92em; margin: .35em 0; text-indent: 0; }
+.chapter-notes a.fnback { text-decoration: none; }
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
+pre,code,kbd { font-family:"Doc Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
+pre code { background:none; padding:0; }
+.tblwrap { overflow-x:auto; text-align:center; }
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.float-list { list-style:none; padding-left:0; }
+.float-list li { margin:.12rem 0; }
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"Doc Mono","D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"Doc Mono","D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"Doc Mono","D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+.dev { margin:1.15rem 0; padding:0; background:none; border:none; border-radius:0; }
+.dev > .dev-label { border-left:4px solid var(--fg);
+  padding:.1rem .8rem .25rem .8rem; margin:0 0 .34rem; }
+.dev > .dev-body { border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem .35rem .8rem; margin:0; }
+.dev > .dev-body > *:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child { margin-bottom:0; }
+.float-caption { text-align:center; font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+.dev.open { border:none; border-radius:0; background:none;
+  padding:0; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
+  text-indent:0; border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+.dev.open > .open-body { margin:0; padding:.35rem .8rem;
+  border-left:2px solid var(--box-rule); }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+.dev.open .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.06rem 0 .06rem .7rem; margin:.32rem 0 0; }
+.prereq .dev-label, .deepqa .dev-label, .why .dev-label,
+.organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+.qa-box { border:none; margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:0; background:none; }
+.qa-box .qa-q { border-left:4px solid var(--fg);
+  padding:.1rem .8rem .25rem .8rem; margin:0; }
+.qa-box .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem; margin:.34rem 0 0; }
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:0; }
+.dev.recap { border:none; background:none; padding:0; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
+  text-indent:0; border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > .dev-body > p, .dev.recap > .dev-body > div:not(.demo),
+.dev.recap > .dev-body > figure { margin:.3rem 0; padding:0; }
+.dev > .dev-body > .demo { margin:.7rem 0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:none; border-radius:0; background:none; padding:0; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem; text-indent:0;
+  border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
+.dev > .dev-body > figure, .dev > .open-body > p {
+  margin:.35rem 0; padding:0; }
+.bar .menu-btn { flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center;
+  min-width:38px; min-height:38px; padding:0; font:inherit; font-size:1.25rem; line-height:1;
+  color:var(--fg); background:none; border:0; cursor:pointer; text-decoration:none; }
+.bar .back, .bar .bar-nav .nb { flex:0 0 auto; display:inline-flex; align-items:center; gap:.3em;
+  min-height:32px; padding:0 .65rem; border:1px solid var(--line); background:var(--bg);
+  color:var(--fg); font-weight:600; white-space:nowrap; text-decoration:none; }
+.bar .menu-btn[aria-expanded="true"] { background:var(--bg3); }
+.bar .place { flex:1 1 auto; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
+  padding:0 .35rem; }
+.bar .place strong a { color:var(--honey-text); }
+.bar .place .cur { color:var(--fg); }
+.bar .bar-nav { flex:0 0 auto; display:flex; gap:.3rem; align-items:center; white-space:nowrap; }
+.bar .bar-nav .off { color:var(--muted); border-color:var(--line); opacity:.45; }
+.bar .back:hover, .bar .menu-btn:hover, .bar .bar-nav a.nb:hover, .bar .place a:hover { background:var(--bg3); }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+.dev.antipattern > .dev-label { border-left-style:solid; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.2rem; }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em;
+            padding-bottom:0; border-bottom:none; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
+.toc { columns:24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.toc > .toc-part:first-child, .toc > .toc-keep:first-child > .toc-part, .toc-full > .toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
+.toc-group { padding-left:.85rem; }
+.toc-keep, .toc a { break-inside:avoid; }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+code.style-name { font-family:"Doc Mono","D2Coding",ui-monospace,monospace;
+  font-size:.72em; color:var(--muted); background:var(--rule);
+  padding:.05em .35em; border-radius:3px; white-space:nowrap;
+  font-weight:400; letter-spacing:0; }
+.dev.open > .dev-label { padding-top:.42rem; padding-bottom:.42rem; }
+.dev.open > .open-body { padding-top:.4rem; padding-bottom:.4rem; }
+.dev.open > .open-body > p { margin:.6rem 0; }
+.dev > .dev-body { padding-top:.5rem; padding-bottom:.5rem; }
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
+.dev > .dev-body > figure { margin:.55rem 0; }
+main { line-height:1.85; }
+p { margin:1.15rem 0; }
+h2 { margin-top:2.4rem; }
+h3 { margin-top:2rem; }
+li { margin:.3rem 0; }
+h1, h2, h3, h4 { border-bottom-color:var(--box-rule) !important; }
+.toc { line-height:1.45; }
+.toc a { padding:.16rem 0; }
+.toc-part { margin:.85rem 0 .2rem; }
+.metalist { line-height:1.45; gap:.2rem 1.2rem; }
+.metalist dt, .metalist dd { margin:0; }
+.demo { border-color:var(--box-rule); }
+.demo > .demo-head { border-bottom-color:var(--box-rule); }
+.dev > .dev-label,
+.dev.open > .dev-label,
+.qa-box .qa-q,
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  border-left-color:var(--box-rule); }
+.dev > .dev-body,
+.dev > .open-body,
+.dev.open .qa-a,
+.qa-box .qa-a,
+.deepqa .qa-a { border-left-color:var(--box-rule); }
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div {
+  border-color:var(--box-rule); }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+.dev.open > .open-body,
+.dev.open > .qa-a,
+.dev.open .qa-a,
+.dev.deepqa .qa-a,
+.qa-box > .qa-a,
+.qa-box > .qa-q { border-left-color:var(--box-rule); }
+.bar .bar-toc { font-size:1.15em; line-height:1; text-decoration:none; }
+.dev, .dev-body, .open-body, .qa-box, .qa-q, .qa-a, .dev-label,
+.toc-full, .toc-full .tf-secs { line-height:inherit; font-size:1rem; }
+.dev > .dev-body > p, .dev > .open-body > p,
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:1.15rem 0; }
+.dev > .dev-body > *:first-child, .dev > .open-body > *:first-child,
+.qa-box .qa-q > p:first-child, .qa-box .qa-a > p:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child, .dev > .open-body > *:last-child,
+.qa-box .qa-q > p:last-child, .qa-box .qa-a > p:last-child { margin-bottom:0; }
+.dev > .dev-label, .dev.open > .dev-label { font-size:.98rem; line-height:1.4; }
+h1,h2,h3,h4 { padding-bottom:.34rem; }
+h1 { margin:.2rem 0 1.3rem; }
+h2 { padding-bottom:.42rem; margin-bottom:1.15rem; }
+h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
+.dev.open > .open-body > * { margin:.3rem 0; }
+.dev.open > .open-body > p { margin:.5rem 0; }
+.dev.open > .open-body > div { margin:.15rem 0; }
+.dev.open ul, .dev.open ol { margin:.3rem 0; }
+.dev.open li, .dev.open ol.qlist li { margin:0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open .qa-a > p { margin:.35rem 0; }
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div { border-color:var(--box-rule); }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+a:focus-visible, button:focus-visible, summary:focus-visible, input:focus-visible {
+  outline:2px solid var(--accent2); outline-offset:2px; }
+:target, h1, h2, h3, h4, [id] { scroll-margin-top:4.2rem; }
+.skip { position:absolute; left:-9999px; top:0; z-index:30;
+        background:var(--bg); color:var(--fg); border:1px solid var(--fg);
+        padding:.5rem .8rem; font-size:.9rem; text-decoration:none; }
+.skip:focus { left:.5rem; top:.5rem; }
+.here-panel { position:fixed; top:46px; left:clamp(.2rem,1vw,1rem); z-index:19;
+  width:min(32rem, calc(100vw - .4rem)); max-height:calc(100vh - 54px); overflow:auto;
+  padding:.7rem .9rem .9rem; border:1px solid var(--line); --k:var(--line-strong);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-size:.9rem; line-height:1.4;
+  background:
+    linear-gradient(var(--k),var(--k)) left top / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) left top / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) right top / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) right top / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) left bottom / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) left bottom / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) right bottom / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) right bottom / 3px 8px no-repeat,
+    color-mix(in srgb, var(--bg) 97%, transparent); }
+.here-panel .tools { display:flex; flex-wrap:wrap; gap:.3rem .4rem; align-items:center;
+  margin-bottom:.6rem; }
+.tool, .segb { font:inherit; font-size:.88rem; color:var(--fg); background:none;
+  border:1px solid var(--line-strong); padding:0 .6rem; min-height:30px;
+  display:inline-flex; align-items:center; text-decoration:none; cursor:pointer; white-space:nowrap; }
+.tool:hover, .segb:hover, .nav a:hover, .here-panel .here-body a:hover { background:var(--bg3); }
+.segb[aria-pressed="true"] { background:var(--select); border-color:var(--accent); font-weight:700; }
+.tool, .segb, .bar a, .bar button, .nav a, .here-panel a { transition:background-color .08s; }
+@media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
+main a { text-decoration:underline; text-decoration-color:var(--box-rule);
+  text-underline-offset:2px; }
+main a:hover { background:var(--box-bg); text-decoration-color:var(--link); }
+main .toc a, main .toc-full a, main .here-body a { text-decoration:none; }
+main .toc a:hover, main .toc-full a:hover { background:var(--box-bg); text-decoration:underline; }
+.setbox { margin:0 0 .6rem; }
+.setrow { display:flex; flex-wrap:wrap; gap:.4rem .5rem; align-items:center; margin:.35rem 0; }
+.setlbl { min-width:4.2rem; font-size:.82rem; font-weight:700; }
+.seg { display:inline-flex; flex-wrap:wrap; gap:.25rem; }
+.col { display:inline-flex; align-items:center; gap:.3rem; }
+.col input[type=color] { width:2rem; height:1.4rem; padding:0; border:1px solid var(--line-strong);
+  background:none; cursor:pointer; }
+.setnote { margin:.5rem 0 0; font-size:.82rem; }
+.here-panel .ver { font-size:.82rem; color:var(--muted); padding:.2rem .45rem .2rem 0;
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; white-space:nowrap; }
+.demo pre, .demo pre code {
+  white-space:pre-wrap; overflow-wrap:anywhere; word-break:break-word; }
+.demo > .demo-body { overflow-x:visible; }
+.plink {
+  margin-left: .4em; font-weight: 400; text-decoration: none;
+  color: var(--muted, #888); opacity: 0;
+}
+h3:hover > .plink, h4:hover > .plink,
+h3 > .plink:focus, h4 > .plink:focus { opacity: 1; }
+@media (hover: none) { .plink { opacity: .45; } }
+.searchbox { margin:.6em 0 0; }
+.searchbox input[type=search] {
+  width: 100%; padding: .45em .6em; font: inherit;
+  border: 1px solid var(--line-strong);
+  background: var(--bg); color: var(--fg);
+}
+.search-hint { color: var(--muted, #777); font-size: .85em; margin:.3em 0 0; }
+.search-results { list-style: none; padding: 0; margin: .5em 0 0; }
+.search-results li { margin: .15em 0; }
+.search-results .where { color: var(--muted, #777); font-size: .85em; margin-left: .4em; }
+@media (max-width: 900px), (orientation: portrait) {
+  :root:not([data-layout="desktop"]) .bar .place .cur { display:none; }
+  :root:not([data-layout="desktop"]) .bar .back,
+  :root:not([data-layout="desktop"]) .bar .bar-nav .nb { min-height:40px; padding:0 .5rem; }
+}
+@media (max-width: 480px) {
+  :root:not([data-layout="desktop"]) .bar .bar-nav .prev .lbl,
+  :root:not([data-layout="desktop"]) .bar .bar-nav .next .lbl { display:none; }
+  :root:not([data-layout="desktop"]) .bar .bar-nav .nb { min-width:44px; justify-content:center; }
+  :root:not([data-layout="desktop"]) .bar { gap:.2rem; }
+}
+:root[data-layout="mobile"] .bar .place .cur { display:none; }
+:root[data-layout="mobile"] .bar .back, :root[data-layout="mobile"] .bar .bar-nav .nb { min-height:40px; padding:0 .5rem; }
+:root[data-layout="mobile"] main .wrap { max-width:34rem; }
+@media (pointer: coarse), (max-width: 900px) {
+  .bar .menu-btn { min-width:44px; min-height:44px; }
+  .tool, .segb { min-height:38px; }
+}
+@media print { .bar, .here-panel { display:none; } }
+
+body { font-family:"Doc Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Doc Sans","Noto Sans CJK KR","Noto Sans KR",system-ui,sans-serif; }
+pre,code,kbd { font-family:"Doc Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+</style>
+<script>(function(){try{var L=localStorage,o='pcb-read';if(o&&o!=='doc-read'&&L.getItem(o)!==null&&L.getItem('doc-read')===null){var v=JSON.parse(L.getItem(o)||'{}');delete v.width;L.setItem('doc-read',JSON.stringify(v));L.removeItem(o);}var s=JSON.parse(L.getItem('doc-read')||'{}');var r=document.documentElement;if(s.theme&&s.theme!=='auto')r.setAttribute('data-theme',s.theme);if(s.fg)r.style.setProperty('--fg',s.fg);if(s.bg)r.style.setProperty('--bg',s.bg);if(s.link)r.style.setProperty('--link',s.link);if(s.width==='fit')r.setAttribute('data-measure','fit');if(s.layout==='desktop'||s.layout==='mobile')r.setAttribute('data-layout',s.layout);if(s.layout==='desktop'){var m=document.querySelector('meta[name=viewport]');if(m)m.setAttribute('content','width=1100');}}catch(e){}})();</script></head>
+<body>
+<a class="skip" href="#content">본문으로 건너뛰기</a>
+<div class="bar"><button class="menu-btn" id="set-open" type="button" aria-expanded="false" aria-controls="here-panel" aria-label="메뉴" title="메뉴">☰</button><a class="back" href="index.html" title="뒤로">← <span class="lbl">뒤로</span></a><span class="place"><strong><a href="index.html">Proven C Book</a></strong><span class="cur"> › 46장</span></span><span class="bar-nav"><a class="nb prev" href="ch45.html">‹ <span class="lbl">이전</span></a><a class="nb toc" href="index.html"><span class="lbl">목차</span></a><a class="nb next" href="ex07.html"><span class="lbl">다음</span> ›</a></span></div><div id="here-panel" class="here-panel" hidden><div class="setbox" id="setbox"><div class="setrow"><span class="setlbl">언어</span><span class="seg"><a class="segb" href="../en/ch46.html">English</a></span></div><div class="setrow"><span class="setlbl">본문 폭</span><span class="seg" id="s-width"><button type="button" class="segb" data-width="960">960</button><button type="button" class="segb" data-width="fit">창에 맞춤</button></span></div><div class="setrow"><span class="setlbl">배치</span><span class="seg" id="s-layout"><button type="button" class="segb" data-layout="auto">자동</button><button type="button" class="segb" data-layout="desktop">PC</button><button type="button" class="segb" data-layout="mobile">모바일</button></span></div><div class="setrow"><span class="setlbl">테마</span><span class="seg"><button type="button" class="segb" data-theme="auto">시스템</button><button type="button" class="segb" data-theme="light">밝게</button><button type="button" class="segb" data-theme="dark">어둡게</button></span></div><div class="setrow"><span class="setlbl">색</span><label class="col"><span>글자</span><input type="color" id="s-fg"></label><label class="col"><span>배경</span><input type="color" id="s-bg"></label><label class="col"><span>링크</span><input type="color" id="s-link"></label></div><p class="setnote">설정은 이 브라우저에만 저장된다.</p></div><div class="tools"><span class="ver">v0.110.2</span><a class="tool" href="toc.html">▤ 상세 차례</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book/releases/download/v0.110.2/proven_c_book-v0.110.2-ko.pdf">⤓ PDF</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book" title="이 책의 GitHub 저장소">Git</a><a class="tool" href="https://rubidus-api.github.io/" title="rubidus-api.github.io --- 공개된 모든 프로젝트">⌂ 전체 사이트</a><a class="tool" href="https://github.com/rubidus-api" title="github.com/rubidus-api --- 모든 저장소">≡ 저장소 목록</a></div><div class="here-head"><strong>이 장의 차례</strong></div><div class="here-body"><a class="lv3" href="#s46-1"><span class="tf-no">46.1</span>동적 메모리란 무엇인가 — 실행 중에 빌리는 기억</a><a class="lv3" href="#s46-2"><span class="tf-no">46.2</span>malloc 으로 빌리고, free 로 돌려준다</a><a class="lv3" href="#s46-3"><span class="tf-no">46.3</span>malloc을 어떻게 적을 것인가 — 오래된 논쟁</a><a class="lv4" href="#s46-3-1"><span class="tf-no">46.3.1</span>대상에서 크기를 가져오는 표기(①)가 권장되는 이유 넷</a><a class="lv4" href="#s46-3-2"><span class="tf-no">46.3.2</span>타입을 적고 캐스트하는 표기(②)를 권하는 쪽의 근거 — CERT MEM02-C</a><a class="lv4" href="#s46-3-3"><span class="tf-no">46.3.3</span>절충 표기(③)와 「C++ 호환」이라는 이유 — 정말 그런가</a><a class="lv3" href="#s46-4"><span class="tf-no">46.4</span>돌려받은 주소의 정렬 — 무엇을 담을지 모르므로</a><a class="lv3" href="#s46-5"><span class="tf-no">46.5</span>값싸 보이는 malloc·free 두 줄의 비용 — 할당은 왜 비싼가</a><a class="lv3" href="#s46-6"><span class="tf-no">46.6</span>1차원으로 빌려 2차원으로 쓰기</a><a class="lv3" href="#s46-7"><span class="tf-no">46.7</span>소유 — 누가 돌려줄 책임을 지는가</a><a class="lv3" href="#s46-8"><span class="tf-no">46.8</span>제7부를 닫으며</a></div></div>
+<main id="content"><div class="wrap">
+<h2>46 동적 메모리</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>45장 수명과 저장 기간 · 자동 수명의 한계</div><div>5장 기억의 구역들 · 창고(힙)</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>45장에서 자동 수명(함수와 함께 죽는다)과 정적 수명(프로그램 내내 산다)을 배웠다. 그러면 “입력에 따라 크기가 정해지고, 필요한 동안만 살아야 하는” 기억은 — 둘 중 어디에 두는가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 어느 쪽도 맞지 않는다. 크기가 실행 중에 정해지고 수명이 프로그램의 논리에 따라 갈리는 기억이 필요하다 — 그래서 세 번째 자리가 있다: <span id="idx-entry-140"></span><strong>할당 저장 기간</strong>, 흔히 <strong>힙</strong>(heap)이라 부르는 창고다. 이 자리의 규칙은 앞의 둘과 결정적으로 다르다 — <strong>태어남과 죽음을 프로그래머가 직접 지시한다.</strong></p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">7부의 마지막이자 기억 배치의 완성이다. 힙을 맨 뒤에 둔 것은 그것이 가장 어려워서가 아니라, <strong>가장 늦게까지 미룰 수 있어서</strong>다 — 앞의 열 장이 전부 힙 없이 돌아갔다. 그래서 여기 올 때쯤이면 「왜 굳이 손으로 빌리고 갚아야 하는가」라는 질문이 저절로 생겨 있다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">제7부의 마지막 자리 — 실행 중에 크기를 정하고, 원하는 때까지 살려 <span id="idx-entry-141"></span>두는 기억이다. <code>malloc</code>과 <code>free</code>, 소유라는 개념, 그리고 이 세계의 세 가지 대표 사고(누수·이중 해제·해제 후 사용)까지. 기억의 배치가 여기서 완성된다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>그러면 캐스트가 맞는 자리는 없는가?</li><li>그래서 이 책은 어느 쪽인가?</li><li>포인터의 배열(<code>int **</code>)로 만들면 <code>m[i][j]</code> 문법을 그대로 쓸 수 있지 않은가?</li><li>그러면 동적 메모리를 되도록 피하는 것이 상책인가?</li></ol></div></div><div></div><h3 id="s46-1">46.1 동적 메모리란 무엇인가 — 실행 중에 빌리는 기억<a class="plink" href="#s46-1" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>지금까지의 객체는 크기와 수명이 <strong>소스에 적혀</strong> 있었다. <code>int a[100];</code> 은 컴파일할 때 크기가 정해지고, 지역 변수라면 블록이 끝날 때 사라지며, 전역이라면 프로그램이 끝날 때까지 산다 (45장). 그런데 그것으로는 풀리지 않는 일이 셋 있다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>필요</strong></th><th><strong>예</strong></th></tr><tr><td>크기가 <strong>실행 중에야</strong> 정해진다</td><td>파일에서 읽을 줄 수, 사용자가 고른 이미지의 가로·세로. 크기가 실행 중에 정해지는 지역 배열(가변 길이 배열)이 위험하다는 것은 39장에서 보았다</td></tr><tr><td>만든 함수보다 <strong>오래 살아야</strong> 한다</td><td>함수가 만들어 돌려주는 목록. 지역 배열의 주소를 돌려주면 안 된다는 것은 41장에서 보았다</td></tr><tr><td><strong>크다</strong></td><td>수 메가바이트짜리 표. 스택에 두면 넘친다(40장)</td></tr></table></div><span id="doc-float-207"></span><p class="float-caption">표 46.1 — 소스에 적힌 크기와 수명으로는 안 되는 일</p></figure><p>답은 <strong>실행 중에, 필요한 만큼, 필요한 동안</strong> 기억을 빌리는 것이다. 이것을 <strong>동적 메모리</strong>(dynamic memory) 할당이라 한다. 빌린 기억이 사는 구역을 흔히 <strong>힙</strong>(heap)이라 부르고(5장의 네 구역 가운데 하나), 빌린 기억의 수명을 표준은 넷째 저장 기간인 <strong>할당 저장 기간</strong>(allocated storage duration)으로 둔다(45장). 표준이 그 수명을 정하는 문장은 이것이다.</p><p>“ 할당된 객체의 수명은 <strong>할당부터 해제까지</strong>다. 그런 할당 하나하나는 다른 어떤 객체와도 겹치지 않는 객체를 가리키는 포인터를 낸다. … 공간을 할당할 수 없으면 <strong>널 포인터</strong>를 돌려준다.<sup class="fnref" id="ch46-fnref-1"><a href="#ch46-fn-1" aria-label="주 1">1</a></sup> ”</p><p>이 문장 하나에 이 장의 규칙이 다 들어 있다. 수명은 <strong>언어가 아니라 프로그래머가</strong> 정한다 — 빌리는 순간 시작되고, 돌려주는 순간 끝난다. 돌려주지 않으면 끝나지 않고(누수), 돌려준 뒤에 쓰면 이미 끝난 수명을 건드린다(해제 후 사용). 그리고 빌리기는 <strong>실패할 수 있다</strong>. 지역 변수와 달리 누수·해제 후 사용·빌리기 실패, 이 셋을 컴파일러가 대신 챙겨 주지 않는다는 것이 동적 메모리의 무게다.</p><h3 id="s46-2">46.2 <code>malloc</code> 으로 빌리고, <code>free</code> 로 돌려준다<a class="plink" href="#s46-2" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>문법은 함수 두 개다. <code>malloc(바이트 수)</code>는 창고에서 그만큼의 연속된 칸을 빌려 그 시작 주소를 돌려주고, <code>free(주소)</code>는 빌린 것을 돌려준다.</p><div class="demo demo-src"><p class="demo-head"><code>examples/dynamic-memory/dyn.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdlib.h</span><span class="tok-s">></span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">int</span></strong> count <strong><span class="tok-x">=</span></strong> <span class="tok-n">5</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>scores <strong><span class="tok-x">=</span></strong> <strong>malloc</strong><strong><span class="tok-x">(</span></strong><strong>count </strong><strong><span class="tok-x">*</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong>scores</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 창고에서 빌린다 </span></em><em><span class="tok-c">*/</span></em>
+
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>scores <strong><span class="tok-x">==</span></strong> nullptr<span class="tok-x">)</span> <span class="tok-x">{</span>                        <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 빌리기는 실패할 수 있다 </span></em><em><span class="tok-c">*/</span></em>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">allocation failed</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong><span class="tok-k">return</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+
+    <strong><span class="tok-t">int</span></strong> sum <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> count<span class="tok-x">;</span> i <strong><span class="tok-x">+=</span></strong> <span class="tok-n">1</span><span class="tok-x">)</span> <span class="tok-x">{</span>
+        scores<span class="tok-x">[</span>i<span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">(</span>i <strong><span class="tok-x">+</span></strong> <span class="tok-n">1</span><span class="tok-x">)</span> <strong><span class="tok-x">*</span></strong> <span class="tok-n">10</span><span class="tok-x">;</span>
+        sum <strong><span class="tok-x">+=</span></strong> scores<span class="tok-x">[</span>i<span class="tok-x">]</span><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">total: </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> sum</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>free</strong><strong><span class="tok-x">(</span></strong><strong>scores</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>                                   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 빌린 것은 돌려준다 </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>total: 150
+</code></pre></div></div><p>세 가지 관행이 시연에 박혀 있다.</p><p><strong>크기 계산은 <code>sizeof *포인터</code>로.</strong> <code>count * sizeof *scores</code>는 “원소 하나의 크기 × 개수”인데, 타입 이름 대신 <strong>대상</strong>으로 크기를 물었다 — 나중에 타입이 바뀌어도 이 줄은 고칠 필요가 없다.</p><p><strong>빌리기는 실패할 수 있다.</strong> <code>malloc</code>은 창고가 부족하면 널 포인터를 돌려준다 — 그래서 <strong>쓰기 전에 확인한다</strong>(37장의 수칙이 여기서 실전이 된다). 확인 없이 쓰면 널 역참조로 붕괴다.</p><p><strong>빌린 것은 돌려준다.</strong> <code>free</code>를 잊으면 그 칸은 프로그램이 끝날 때까지 묶여 있다 — <strong>메모리 누수</strong>(leak)다. 짧은 프로그램에서는 티가 안 나지만, 오래 도는 서버에서는 조금씩 새어 나가 결국 기계를 잡아먹는다.</p><div class="dev misconception"><p class="dev-label">흔한 오해. <strong>“<code>calloc</code>으로 잡으면 포인터가 널로 초기화된다”</strong></p><div class="dev-body"><p><code>calloc</code>이 약속하는 것은 <strong>모든 비트를 0으로 채운다</strong>는 것 하나다. 그것이 「널 포인터」나 「0.0」을 뜻하는 것은 아니다 — 37장에서 본 표기와 표현의 구별이 여기서도 그대로 걸린다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong><code>calloc</code>이 약속하는 것</strong></th><th><strong>약속하지 않는 것</strong></th></tr><tr><td>잡은 기억의 모든 비트가 0</td><td>그 비트가 널 포인터를 뜻한다는 것</td></tr><tr><td>정수 0을 담은 것과 같은 비트</td><td>부동소수 0.0을 뜻한다는 것(IEEE 754에서는 우연히 맞다)</td></tr></table></div><span id="doc-float-208"></span><p class="float-caption">표 46.2 — <code>calloc</code> 이 약속하는 것과 하지 않는 것</p></figure><p>오늘날의 주류 기계에서는 모든 비트가 0인 표현, 널 포인터, 부동소수 0.0 — 셋이 전부 일치하므로 사고가 나지 않는다. 다만 <strong>포인터 배열을 <code>calloc</code>으로 잡고 “전부 널이니 검사만 하면 된다”고 적는 코드는, 그 우연 위에 서 있다</strong>는 것을 알고 쓰는 편이 낫다. 이식성이 걸린 코드라면 잡은 뒤 루프로 <code>nullptr</code>를 채우거나, 애초에 「비어 있음」을 0이 아닌 다른 방법으로 표시한다.</p></div></div><h3 id="s46-3">46.3 <code>malloc</code>을 어떻게 적을 것인가 — 오래된 논쟁<a class="plink" href="#s46-3" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>같은 할당을 적는 방법이 여럿이고, 어느 쪽이 옳은가를 두고 C 세계가 30년째 다투고 있다. 인터넷에서 이 주제의 글을 만나면 대개 격앙되어 있는데, 양쪽 다 근거가 있어서 그렇다. 실제로 재어 보고 판단하자.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>표기</strong></th><th><strong>모양</strong></th><th><strong>누가 권하는가</strong></th></tr><tr><td>① 대상에서 크기를 가져오기</td><td><code>p = malloc(n * sizeof *p);</code></td><td>리눅스 커널, C FAQ</td></tr><tr><td>② 타입을 적고 캐스트</td><td><code>p = (T *)malloc(n * sizeof(T));</code></td><td>CERT MEM02-C, C++ 호환을 중시하는 코드베이스</td></tr><tr><td>③ 절충</td><td><code>p = (T *)malloc(n * sizeof *p);</code></td><td>캐스트는 필요하되 크기는 어긋나지 않게</td></tr></table></div><span id="doc-float-209"></span><p class="float-caption">표 46.3 — <code>malloc</code> 호출을 적는 세 표기</p></figure><div class="demo demo-src"><p class="demo-head"><code>examples/dynamic-memory/malloc_style.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> malloc 을 적는 세 가지 표기 — 무엇이 다른가. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdlib.h</span><span class="tok-s">></span>
+
+<strong><span class="tok-t">struct</span></strong> node <span class="tok-x">{</span> <strong><span class="tok-t">int</span></strong> id<span class="tok-x">;</span> <strong><span class="tok-t">double</span></strong> weight<span class="tok-x">;</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── 권장 표기: 타입 이름이 한 번도 안 나온다 ── </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">struct</span></strong> node <strong><span class="tok-x">*</span></strong>a <strong><span class="tok-x">=</span></strong> <strong>malloc</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">4</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong>a</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong>a<span class="tok-x">)</span> <strong><span class="tok-k">return</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── C++ 호환을 노린 표기: 타입 이름이 두 번 ── </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">struct</span></strong> node <strong><span class="tok-x">*</span></strong>b <strong><span class="tok-x">=</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">struct</span></strong> node <strong><span class="tok-x">*</span></strong><span class="tok-x">)</span><strong>malloc</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">4</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> node</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong>b<span class="tok-x">)</span> <span class="tok-x">{</span> <strong>free</strong><strong><span class="tok-x">(</span></strong><strong>a</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <strong><span class="tok-k">return</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span> <span class="tok-x">}</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── 절충: 캐스트는 붙이되 크기는 대상에서 가져온다 ── </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">struct</span></strong> node <strong><span class="tok-x">*</span></strong>c <strong><span class="tok-x">=</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">struct</span></strong> node <strong><span class="tok-x">*</span></strong><span class="tok-x">)</span><strong>malloc</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">4</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong>c</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong>c<span class="tok-x">)</span> <span class="tok-x">{</span> <strong>free</strong><strong><span class="tok-x">(</span></strong><strong>a</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <strong>free</strong><strong><span class="tok-x">(</span></strong><strong>b</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <strong><span class="tok-k">return</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span> <span class="tok-x">}</span>
+
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">all three reserve the same size: </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s">, </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s">, </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> bytes</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-n">4</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong>a</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">4</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> node</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">4</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong>c</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">[sizeof *p does not read p - an unevaluated operand]</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-t">struct</span></strong> node <strong><span class="tok-x">*</span></strong>nul <strong><span class="tok-x">=</span></strong> <span class="tok-n">NULL</span><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  even with p null, sizeof *p works out to </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong>nul</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  the size comes from the *type*, not from the value.</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">[write the name twice and the two can drift apart]</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  struct node *p = (struct node *)malloc(n * sizeof(struct gadget));</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  ^ the type name is in two places, so it is possible to fix only one.</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  written as sizeof *p, that mistake *cannot be written*.</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">[a risk both spellings carry - overflow in the multiplication]</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-t">size_t</span></strong> huge <strong><span class="tok-x">=</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong><span class="tok-x">)</span><strong><span class="tok-x">-</span></strong><span class="tok-n">1</span> <strong><span class="tok-x">/</span></strong> <strong><span class="tok-k">sizeof</span></strong><span class="tok-x">(</span><strong><span class="tok-t">struct</span></strong> node<span class="tok-x">)</span> <strong><span class="tok-x">+</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  huge * sizeof *a wraps around to </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">size_t</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">(</span></strong><strong>huge </strong><strong><span class="tok-x">*</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong>a</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  -> malloc can then succeed with a 'tiny' size. Check the count first, or</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">     use calloc(count, size), which checks the multiplication itself.</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>free</strong><strong><span class="tok-x">(</span></strong><strong>a</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <strong>free</strong><strong><span class="tok-x">(</span></strong><strong>b</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <strong>free</strong><strong><span class="tok-x">(</span></strong><strong>c</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>all three reserve the same size: 64, 64, 64 bytes
+
+[sizeof *p does not read p - an unevaluated operand]
+  even with p null, sizeof *p works out to 16
+  the size comes from the *type*, not from the value.
+
+[write the name twice and the two can drift apart]
+  struct node *p = (struct node *)malloc(n * sizeof(struct gadget));
+  ^ the type name is in two places, so it is possible to fix only one.
+  written as sizeof *p, that mistake *cannot be written*.
+
+[a risk both spellings carry - overflow in the multiplication]
+  huge * sizeof *a wraps around to 0
+  -> malloc can then succeed with a 'tiny' size. Check the count first, or
+     use calloc(count, size), which checks the multiplication itself.
+</code></pre></div></div><h4 id="s46-3-1">46.3.1 대상에서 크기를 가져오는 표기(①)가 권장되는 이유 넷<a class="plink" href="#s46-3-1" aria-label="이 절의 주소" title="이 절의 주소">#</a></h4><div></div><p><strong>첫째, 타입이 바뀌어도 고칠 자리가 하나다.</strong> 이것이 가장 큰 이유다. 리눅스 커널의 코딩 스타일 문서가 그 이유를 이렇게 적는다 — 타입 이름을 풀어 적는 형태는 「<strong>읽기를 해치고, 포인터 변수의 타입이 바뀌었는데 할당자에 넘기는 <code>sizeof</code> 는 바뀌지 않을 때 생기는 버그의 기회를 만든다</strong>」.</p><p><code>int *</code> 였던 것을 <code>struct node *</code> 로 바꾸는 흔한 일을 생각해 보라. ①은 선언 한 줄만 고치면 크기가 저절로 따라오지만, ②는 <strong>두 곳</strong>을 고쳐야 하고 한쪽을 잊으면 크기가 모자란 채로 컴파일된다.</p><p><strong>둘째, 타입 이름을 아예 적지 않으니 어긋날 수가 없다.</strong> 「고칠 자리가 하나」보다 한 걸음 더 나아간 성질이다 — ①에는 <strong>틀리게 쓸 방법 자체가 없다.</strong></p><p><strong>셋째, <code>sizeof *p</code> 는 <code>p</code> 를 읽지 않는다.</strong> 처음 보면 「아직 할당도 안 된 포인터를 역참조하는 것 아닌가」 싶은데, 아니다. <code>sizeof</code> 의 피연산자는 <strong>평가되지 않는다</strong> (52장). 시연이 그것을 확인한다 — <code>p</code> 가 널이어도 <code>sizeof *p</code> 는 멀쩡히 계산된다. 크기는 <strong>타입</strong>에서 나오지 값에서 나오지 않기 때문이다.</p><p><strong>넷째, 캐스트가 옛날에는 버그를 숨겼다.</strong> 표준 이전과 C89 시절, <code>&lt;stdlib.h></code> 를 포함하지 않고 <code>malloc</code> 을 부르면 컴파일러가 「<code>int</code> 를 돌려주는 함수」로 가정했다. 그 <code>int</code> 를 포인터에 넣으면 진단이 나오는데, <strong>캐스트가 그 진단을 흐려 버린다.</strong> 실측으로 재현하면 이렇다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>선언 없이 부를 때(C89, 내장 지식 끄고)</strong></th><th><strong>컴파일러가 하는 말</strong></th></tr><tr><td><code>p = (int *)f(4);</code></td><td><code>cast to pointer from integer of different size</code> — 캐스트 탓으로 뭉개진다</td></tr><tr><td><code>p = f(4);</code></td><td><code>initialization of 'int *' from 'int' makes pointer from integer without a cast</code> — <strong>정확히</strong> 짚는다</td></tr></table></div><span id="doc-float-210"></span><p class="float-caption">표 46.4 — 선언 없이 부를 때 컴파일러가 하는 말</p></figure><p>다만 이 넷째 논거는 <strong>오늘날 거의 힘을 잃었다</strong>는 것을 정직하게 적어 둔다. C99 가 암묵적 함수 선언을 없앴고, C23 에서는 아예 오류다 — 실측하면 캐스트가 있든 없든 <code>error: implicit declaration of function 'malloc'</code> 이 난다. 「캐스트가 버그를 숨긴다」는 말은 <strong>이제 역사적 설명</strong>이지 현재의 이유가 아니다. 이 논거를 지금도 결정타처럼 드는 글을 보면, 그 글이 몇 년도의 사정을 말하는지 확인하는 편이 좋다.</p><h4 id="s46-3-2">46.3.2 타입을 적고 캐스트하는 표기(②)를 권하는 쪽의 근거 — CERT MEM02-C<a class="plink" href="#s46-3-2" aria-label="이 절의 주소" title="이 절의 주소">#</a></h4><div></div><p>반대편에도 규격의 지지가 있다. SEI CERT C 코딩 표준의 <strong>MEM02-C</strong> 는 제목부터 「<strong>메모리 할당 함수의 결과를 즉시 할당된 타입의 포인터로 캐스트하라</strong>」이고, 근거는 이것이다 — 「<code>malloc()</code> 의 결과를 알맞은 포인터 타입으로 캐스트하면 <strong>뒤이은 부주의한 포인터 변환을 컴파일러가 잡을 수 있다</strong>.」</p><p>이 주장은 실제로 성립한다. CERT 가 든 예를 그대로 컴파일해 보면 차이가 분명하다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>코드</strong></th><th><strong>GCC 14 가 내는 것</strong></th></tr><tr><td><code>widget *p = malloc(sizeof(gadget));</code></td><td><strong>경고</strong> — <code>allocation of insufficient size '1' for type 'struct widget' with size '40'</code></td></tr><tr><td><code>widget *p = (gadget *)malloc(sizeof(gadget));</code></td><td><strong>오류</strong> — <code>assignment to 'struct widget *' from incompatible pointer type</code></td></tr><tr><td><code>widget *p = malloc(sizeof *p);</code></td><td>아무것도 — <strong>그 버그를 쓸 수가 없다</strong></td></tr></table></div><span id="doc-float-211"></span><p class="float-caption">표 46.5 — 할당에서 나오는 실수와 진단</p></figure><p>캐스트가 경고를 오류로 격상시키는 것은 사실이다. 다만 표의 셋째 줄이 이 논쟁의 핵심을 보여 준다 — <strong>①은 진단이 필요 없다. 진단할 잘못을 애초에 만들 수 없기 때문이다.</strong> 그리고 CERT 자신도 이 권고의 위험도를 <strong>심각도 낮음 / 가능성 희박 / 우선순위 P3</strong> 로 매겨 두었다.</p><h4 id="s46-3-3">46.3.3 절충 표기(③)와 「C++ 호환」이라는 이유 — 정말 그런가<a class="plink" href="#s46-3-3" aria-label="이 절의 주소" title="이 절의 주소">#</a></h4><div></div><p>가장 자주 듣는 캐스트의 이유는 「C++ 컴파일러로도 빌드해야 해서」다. C++ 는 <code>void *</code>에서 다른 포인터로의 암묵 변환을 허용하지 않으므로, 캐스트가 없으면 정말로 컴파일이 안 된다 — 실측하면 <code>error: invalid conversion from 'void*' to 'int*'</code> 다.</p><p>그런데 이 이유를 그대로 받아들이기 전에 세 가지를 따져야 한다.</p><p><strong>첫째, C++ 는 애초에 <code>malloc</code> 을 권하지 않는다.</strong> C++ 에서 메모리를 잡는 길은 <code>new</code>, 더 정확히는 컨테이너와 스마트 포인터다. 그러니 「C++ 로도 빌드되는 <code>malloc</code> 호출」이라는 것은 <strong>C++ 에서 권장되지 않는 코드를 C++ 문법에 맞춰 두는 일</strong>이다. 목적이 무엇인지 스스로 물어야 한다.</p><p><strong>둘째, 그 호환이 실제로는 얻어지지 않는다.</strong> 이것이 결정적이다. 캐스트를 성실히 붙인 현대 C 파일을 C++ 로 넘겨 보았다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>파일에 든 것</strong></th><th><strong>C++ 컴파일러가 하는 말</strong></th></tr><tr><td><code>(struct pt *)malloc(n * sizeof *p)</code></td><td>통과 — 캐스트 덕에</td></tr><tr><td><code>struct pt a = { .z = 3, .x = 1 };</code></td><td><strong>오류</strong> — <code>designator order for field 'pt::x' does not match declaration</code></td></tr><tr><td><code>_Generic(n, int: 1, default: 0)</code></td><td><strong>오류</strong> — <code>'_Generic' was not declared in this scope</code></td></tr><tr><td><code>int vla[n];</code></td><td>표준 C++ 에는 없다(GNU 확장으로만 통과)</td></tr></table></div><span id="doc-float-212"></span><p class="float-caption">표 46.6 — C++ 컴파일러가 같은 코드에 하는 말</p></figure><p>즉 <strong>캐스트를 붙여도 그 파일은 C++ 로 넘어가지 않는다.</strong> 지정 초기화의 순서 제약, <code>_Generic</code>, 가변 길이 배열, <code>restrict</code>, 복합 리터럴, 유연 배열 멤버 — 두 언어는 1989년 이후 꾸준히 갈라졌고, C23 과 C++23 의 거리는 그 어느 때보다 멀다(117장). <strong>캐스트 하나로 사는 것은 호환이 아니라 호환의 착각이다.</strong></p><p><strong>셋째, 진짜로 공유되는 것은 헤더이지 <code>.c</code> 파일이 아니다.</strong> C 와 C++ 가 만나는 현실적인 자리는 헤더이고(<code>extern "C"</code>, 64장), <strong>헤더는 <code>malloc</code> 을 부르지 않는다.</strong> <code>malloc</code> 호출은 구현 파일에 있고, 구현 파일은 C 컴파일러가 컴파일한다.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 그러면 캐스트가 맞는 자리는 없는가?</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> 있다. 다만 「혹시 모르니」가 아니라 <strong>실제 사정이 있을 때</strong>다.</p><ul><li><strong><code>.c</code> 파일을 정말로 C++ 로 빌드하는 프로젝트.</strong> 드물지만 있다 — 일부 임베디드 툴체인, 옛 MSVC 관행, C 코드를 C++ 번역 단위에 통째로 끌어다 쓰는 빌드. 이때는 선택이 아니라 요구다.</li><li><strong>CERT 를 따르는 규약 아래.</strong> 117장에서 다시 보겠지만, 규약이 있는 자리에서는 규약이 이긴다.</li></ul><p>그런 자리라면 ③ <code>(T *)malloc(n * sizeof *p)</code> 을 권한다 — 캐스트로 C++ 를 만족시키되 크기는 대상에서 가져와 ①의 안전을 잃지 않는다. 실측에서 이 형태는 C 와 C++ 양쪽에서 다 통과했다. <strong>둘 중 하나를 버려야 한다면 「타입 이름을 두 번 적는 것」을 버리는 것이 낫다.</strong></p></p></div></div><div class="dev antipattern"><p class="dev-label">반례.<span style="white-space: pre-wrap">&#x20;&#x20;</span>캐스트를 붙인 표기와 붙이지 않은 표기가 함께 지는 진짜 위험 — 곱셈의 넘침</p><div class="dev-body"><p>캐스트 논쟁에 가려 잘 이야기되지 않는 것이 있다. <code>n * sizeof *p</code> 의 <strong>곱셈이 넘칠 수 있다.</strong></p><pre><code data-lang="c">p <strong><span class="tok-x">=</span></strong> <strong>malloc</strong><strong><span class="tok-x">(</span></strong><strong>n </strong><strong><span class="tok-x">*</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong>p</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> n 이 크면 곱이 감아 돈다 </span></em><em><span class="tok-c">*/</span></em></code></pre><p>시연이 보인 대로, 감아 돈 결과가 아주 작은 수가 되면 <strong><code>malloc</code> 은 성공한다.</strong> 그리고 그 작은 그릇에 <code>n</code> 개를 쓰는 순간 힙이 무너진다. 캐스트를 붙이든 안 붙이든 똑같이 열려 있는 구멍이고, 실제 취약점으로 여러 번 이어졌다. 2026년 11월 18일 Ruby 보안 공지에서도 문자열 대소문자 변환의 출력 크기 계산(<code>GHSA-87fm-7w84-j2px</code>)과 정규식 컴파일 크기 계산(<code>GHSA-3p8q-wmhx-vm2w</code>) 둘 다 정수 넘침으로 작은 버퍼를 할당해 힙 버퍼 오버플로로 이어졌다.<sup class="fnref" id="ch46-fnref-2"><a href="#ch46-fn-2" aria-label="주 2">2</a></sup></p><p>막는 길은 셋이다.</p><ul><li><strong>개수를 먼저 검사한다</strong> — <code>if (n > SIZE_MAX / sizeof *p) return NULL;</code></li><li><strong><code>calloc(n, sizeof *p)</code> 를 쓴다</strong> — 표준이 곱셈을 검사하도록 요구한다. 실측에서 <code>calloc</code> 은 넘치는 요청을 실패로 돌려주었다(0으로 채우는 일은 덤이자 대가다).</li><li><strong>검사 산술을 쓴다</strong> — C23 의 <code>&lt;stdckdint.h></code>(96장).</li></ul><p>캐스트를 붙일지 말지보다 이쪽이 훨씬 가치 있는 논쟁이다.</p></div></div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 그래서 이 책은 어느 쪽인가?</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> <strong>①이다.</strong> <code>p = malloc(n * sizeof *p);</code></p><p>이유를 한 줄로 줄이면 — <strong>틀릴 방법이 없는 표기가, 틀리면 잡아 주는 표기보다 낫다.</strong> 캐스트는 「어긋남을 진단으로 바꿔 주는」 장치인데, ①은 어긋남 자체를 없앤다. 13장의 사다리로 말하면 <strong>3단(빌드가 알리게)보다 좋은 것은 애초에 그 상태가 되지 않는 설계</strong>다.</p><p>다만 이것을 규칙으로 강요할 생각은 없다. <code>.c</code> 를 C++ 로 빌드해야 하는 사정이 있는 코드베이스, CERT 를 따르는 규약 아래의 코드에서 ②나 ③은 옳은 선택이다. <strong>알고 고르는 것과 관행을 물려받는 것은 다르다</strong> — 이 논쟁에서 가장 흔한 잘못은 어느 표기를 고르느냐가 아니라, 「예전에 그렇게 배워서」 이유를 모른 채 캐스트를 붙이는 것이다.</p></p></div></div><h3 id="s46-4">46.4 돌려받은 주소의 정렬 — 무엇을 담을지 모르므로<a class="plink" href="#s46-4" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><div class="demo demo-src"><p class="demo-head"><code>examples/dynamic-memory/alloc_cost.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> malloc 이 돌려주는 주소의 정렬, 그리고 빌리고 돌려주는 값 </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdint.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stddef.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdlib.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">time.h</span><span class="tok-s">></span>
+
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><span class="tok-p">N</span><span class="tok-p"> </span><span class="tok-n">300000</span>
+
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">double</span></strong> <strong>seconds_since</strong><span class="tok-x">(</span><strong><span class="tok-t">struct</span></strong> timespec t0<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">struct</span></strong> timespec t1<span class="tok-x">;</span>
+    <strong>timespec_get</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>t1</strong><strong><span class="tok-x">,</span></strong><strong> TIME_UTC</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">double</span></strong><span class="tok-x">)</span><span class="tok-x">(</span>t1<span class="tok-x">.</span>tv_sec <strong><span class="tok-x">-</span></strong> t0<span class="tok-x">.</span>tv_sec<span class="tok-x">)</span> <strong><span class="tok-x">+</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">double</span></strong><span class="tok-x">)</span><span class="tok-x">(</span>t1<span class="tok-x">.</span>tv_nsec <strong><span class="tok-x">-</span></strong> t0<span class="tok-x">.</span>tv_nsec<span class="tok-x">)</span> <strong><span class="tok-x">/</span></strong> <span class="tok-n">1e9</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong><span class="tok-x">*</span></strong><strong><span class="tok-k">volatile</span></strong> sink<span class="tok-x">;</span>      <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 최적화가 할당을 지우지 못하게 붙잡는다 </span></em><em><span class="tok-c">*/</span></em>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── ① 정렬: 무엇을 담을지 모르므로 가장 엄격한 정렬로 준다 ── </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">alignment of max_align_t = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> bytes</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>alignof</strong><strong><span class="tok-x">(</span></strong><strong>max_align_t</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong><span class="tok-t">size_t</span></strong> misaligned <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">void</span></strong> <strong><span class="tok-x">*</span></strong>p<span class="tok-x">[</span><span class="tok-n">8</span><span class="tok-x">]</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> <span class="tok-n">8</span><span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+        p<span class="tok-x">[</span>i<span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <strong>malloc</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>                    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 1바이트만 요청해도 </span></em><em><span class="tok-c">*/</span></em>
+        <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><span class="tok-x">(</span><strong><span class="tok-t">uintptr_t</span></strong><span class="tok-x">)</span>p<span class="tok-x">[</span>i<span class="tok-x">]</span> <strong><span class="tok-x">%</span></strong> <strong>alignof</strong><strong><span class="tok-x">(</span></strong><strong>max_align_t</strong><strong><span class="tok-x">)</span></strong> <strong><span class="tok-x">!=</span></strong> <span class="tok-n">0</span><span class="tok-x">)</span> misaligned<strong><span class="tok-x">++</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">of 8 one-byte requests, ones breaking the default alignment: </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> misaligned</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">address gap between two neighbouring blocks: </span></strong><strong><span class="tok-s">%td</span></strong><strong><span class="tok-s"> bytes (though 1 was asked for)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">char</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">)</span></strong><strong>p</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">]</span></strong><strong> </strong><strong><span class="tok-x">-</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">char</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">)</span></strong><strong>p</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> <span class="tok-n">8</span><span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> <strong>free</strong><strong><span class="tok-x">(</span></strong><strong>p</strong><strong><span class="tok-x">[</span></strong><strong>i</strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── ② 값: 같은 일을 세 방식으로 ── </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">struct</span></strong> timespec t0<span class="tok-x">;</span>
+    <strong><span class="tok-t">unsigned</span></strong> <strong><span class="tok-t">long</span></strong> <strong><span class="tok-t">long</span></strong> acc <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+
+    <strong>timespec_get</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>t0</strong><strong><span class="tok-x">,</span></strong><strong> TIME_UTC</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> N<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>           <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 매번 빌리고 돌려준다 </span></em><em><span class="tok-c">*/</span></em>
+        <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>b <strong><span class="tok-x">=</span></strong> <strong>malloc</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">64</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong>b<span class="tok-x">)</span> <strong><span class="tok-k">return</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+        b<span class="tok-x">[</span><span class="tok-n">0</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">char</span></strong><span class="tok-x">)</span>i<span class="tok-x">;</span>
+        acc <strong><span class="tok-x">+=</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">unsigned</span></strong> <strong><span class="tok-t">char</span></strong><span class="tok-x">)</span>b<span class="tok-x">[</span><span class="tok-n">0</span><span class="tok-x">]</span><span class="tok-x">;</span>
+        sink <strong><span class="tok-x">=</span></strong> b<span class="tok-x">;</span>
+        <strong>free</strong><strong><span class="tok-x">(</span></strong><strong>b</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+    <strong><span class="tok-t">double</span></strong> t_alloc <strong><span class="tok-x">=</span></strong> <strong>seconds_since</strong><strong><span class="tok-x">(</span></strong><strong>t0</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>reused <strong><span class="tok-x">=</span></strong> <strong>malloc</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">64</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong>reused<span class="tok-x">)</span> <strong><span class="tok-k">return</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+    <strong>timespec_get</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>t0</strong><strong><span class="tok-x">,</span></strong><strong> TIME_UTC</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> N<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>           <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 한 번 빌려 계속 쓴다 </span></em><em><span class="tok-c">*/</span></em>
+        reused<span class="tok-x">[</span><span class="tok-n">0</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">char</span></strong><span class="tok-x">)</span>i<span class="tok-x">;</span>
+        acc <strong><span class="tok-x">+=</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">unsigned</span></strong> <strong><span class="tok-t">char</span></strong><span class="tok-x">)</span>reused<span class="tok-x">[</span><span class="tok-n">0</span><span class="tok-x">]</span><span class="tok-x">;</span>
+        sink <strong><span class="tok-x">=</span></strong> reused<span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+    <strong><span class="tok-t">double</span></strong> t_reuse <strong><span class="tok-x">=</span></strong> <strong>seconds_since</strong><strong><span class="tok-x">(</span></strong><strong>t0</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>free</strong><strong><span class="tok-x">(</span></strong><strong>reused</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>timespec_get</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>t0</strong><strong><span class="tok-x">,</span></strong><strong> TIME_UTC</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> N<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>           <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 아예 스택에 둔다 </span></em><em><span class="tok-c">*/</span></em>
+        <strong><span class="tok-t">char</span></strong> b<span class="tok-x">[</span><span class="tok-n">64</span><span class="tok-x">]</span><span class="tok-x">;</span>
+        b<span class="tok-x">[</span><span class="tok-n">0</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">char</span></strong><span class="tok-x">)</span>i<span class="tok-x">;</span>
+        acc <strong><span class="tok-x">+=</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">unsigned</span></strong> <strong><span class="tok-t">char</span></strong><span class="tok-x">)</span>b<span class="tok-x">[</span><span class="tok-n">0</span><span class="tok-x">]</span><span class="tok-x">;</span>
+        sink <strong><span class="tok-x">=</span></strong> b<span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+    <strong><span class="tok-t">double</span></strong> t_stack <strong><span class="tok-x">=</span></strong> <strong>seconds_since</strong><strong><span class="tok-x">(</span></strong><strong>t0</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s"> iterations</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> N</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  malloc + free every time : </span></strong><strong><span class="tok-s">%7.4f</span></strong><strong><span class="tok-s"> s  (</span></strong><strong><span class="tok-s">%5.1f</span></strong><strong><span class="tok-s"> ns each)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> t_alloc</strong><strong><span class="tok-x">,</span></strong><strong> t_alloc </strong><strong><span class="tok-x">/</span></strong><strong> N </strong><strong><span class="tok-x">*</span></strong><strong> </strong><strong><span class="tok-n">1e9</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  borrow once and reuse    : </span></strong><strong><span class="tok-s">%7.4f</span></strong><strong><span class="tok-s"> s  (</span></strong><strong><span class="tok-s">%5.1f</span></strong><strong><span class="tok-s"> ns each)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> t_reuse</strong><strong><span class="tok-x">,</span></strong><strong> t_reuse </strong><strong><span class="tok-x">/</span></strong><strong> N </strong><strong><span class="tok-x">*</span></strong><strong> </strong><strong><span class="tok-n">1e9</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  a stack array            : </span></strong><strong><span class="tok-s">%7.4f</span></strong><strong><span class="tok-s"> s  (</span></strong><strong><span class="tok-s">%5.1f</span></strong><strong><span class="tok-s"> ns each)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> t_stack</strong><strong><span class="tok-x">,</span></strong><strong> t_stack </strong><strong><span class="tok-x">/</span></strong><strong> N </strong><strong><span class="tok-x">*</span></strong><strong> </strong><strong><span class="tok-n">1e9</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">(total </span></strong><strong><span class="tok-s">%llu</span></strong><strong><span class="tok-s"> - a value we use so the work is not optimized away)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> acc</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>alignment of max_align_t = 16 bytes
+of 8 one-byte requests, ones breaking the default alignment: 0
+address gap between two neighbouring blocks: 32 bytes (though 1 was asked for)
+
+300000 iterations
+  malloc + free every time :  0.0087 s  ( 29.1 ns each)
+  borrow once and reuse    :  0.0008 s  (  2.6 ns each)
+  a stack array            :  0.0009 s  (  3.0 ns each)
+
+(total 114739248 - a value we use so the work is not optimized away)
+</code></pre></div></div><p>예제의 첫 부분이 답하는 질문은 이것이다. <code>malloc(1)</code>이라고 겨우 1바이트를 빌렸는데, 그 주소는 아무 데나 놓여도 되는가?</p><p>안 된다. <code>malloc</code>은 <strong>무엇을 담을지 모른 채</strong> 자리를 내주기 때문이다. 돌려준 자리에 <code>double</code>을 놓을 수도, 포인터를 놓을 수도, 큰 구조체를 놓을 수도 있다. 그래서 표준은 이렇게 약속한다 — <strong><code>malloc</code> 계열이 돌려주는 주소는 어떤 기본 타입에도 맞는 정렬을 만족한다.</strong> 그 “가장 엄격한 기본 정렬”에 붙은 이름이 <code>max_align_t</code>이고, 이 기계에서는 16바이트다(4장의 정렬 규칙이 여기서 실물이 된다).</p><p>두 가지가 따라 나온다.</p><p><strong>첫째, 작게 빌려도 자리는 그만큼 작지 않다.</strong> 예제에서 1바이트씩 여덟 번 빌렸는데 이웃 블록의 주소 간격이 32바이트였다. 정렬을 맞추느라 남는 자리와, <span id="idx-entry-142"></span>할당자가 블록마다 붙이는 관리 정보(크기·상태) 때문이다. <strong>작은 조각을 수없이 많이 빌리는 프로그램은 요청한 것보다 훨씬 많은 기억을 쓴다</strong>는 뜻이고, 이것이 뒤에서 볼 아레나·풀 같은 방식이 태어난 이유다(99장).</p><p><strong>둘째, 더 엄격한 정렬이 필요하면 따로 요청해야 한다.</strong> SIMD(single instruction, multiple data) 명령이나 하드웨어 DMA(CPU 를 거치지 않고 장치가 기억을 직접 읽고 쓰는 방식)가 64바이트·4096바이트 정렬을 요구하는 경우가 있는데, 이때 쓰는 것이 C11의 <code>aligned_alloc(정렬, 크기)</code>이다. 규칙 두 가지를 지켜야 한다 — 정렬은 2의 거듭제곱이어야 하고, C11에서는 <strong>크기가 정렬의 배수</strong>여야 했다(뒤의 판에서 이 제약이 풀렸다 — C23 본문에는 이 요구가 없다). 돌려주는 것은 여전히 <code>free</code>로 반납한다.</p><div class="dev platform"><p class="dev-label">플랫폼 노트.<span style="white-space: pre-wrap">&#x20;&#x20;</span>정렬 할당의 이름은 플랫폼마다 다르다</p><div class="dev-body">표준의 <code>aligned_alloc</code>은 비교적 최근(C11)에 들어왔고, 그 전에는 플랫폼마다 다른 함수를 썼다 — POSIX의 <code>posix_memalign</code>, 윈도우의 <code>_aligned_malloc</code> (그리고 짝이 되는 <code>_aligned_free</code>. 윈도우에서는 이것을 <code>free</code>로 반납하면 안 된다). 옛 코드에서 이 이름들을 만나면 “정렬을 지정한 할당이구나”로 읽으면 된다.</div></div><h3 id="s46-5">46.5 값싸 보이는 <code>malloc</code>·<code>free</code> 두 줄의 비용 — 할당은 왜 비싼가<a class="plink" href="#s46-5" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>예제의 뒷부분은 같은 일을 세 방식으로 30만 번 반복해 시간을 잰다. 매번 빌리고 돌려주는 쪽이 재사용이나 스택보다 눈에 띄게 느리다 — 이 기계에서 회당 열 나노초 남짓이다. 값 자체는 기계와 할당자에 따라 다르지만, <strong>몇 배에서 수십 배</strong>가 나는 것이 보통이다(최적화를 켜면 재사용 쪽이 더 빨라져 차이가 더 벌어진다 — 위 출력은 이 책의 예제 빌드, 곧 최적화를 켜지 않은 것이다).</p><p>왜 비싼가. <code>malloc</code>은 “칸을 준다”는 한 줄로 보이지만 실제로는 <strong>창고 관리 사무소</strong>를 한 번 다녀오는 일이다.</p><ol><li><strong>맞는 크기의 빈 조각을 찾는다.</strong> 할당자는 반납된 조각들을 크기별 목록으로 관리하고, 요청이 오면 그중 맞는 것을 고른다. 목록을 뒤지고, 필요하면 큰 조각을 잘라 쓰고, 남은 조각을 다시 목록에 넣는다 — 전부 자료구조 조작이다.</li><li><strong>관리 정보를 쓴다.</strong> 블록마다 크기와 상태를 적어 두어야 나중에 <code>free</code>가 “이게 몇 바이트였는지” 알 수 있다. 그래서 할당은 <strong>쓰기</strong>를 동반한다.</li><li><strong>모자라면 운영체제에 손을 벌린다.</strong> 창고가 비면 시스템 호출(<code>brk</code>나 <code>mmap</code>)로 주소 공간을 더 받아 온다. 이것은 커널로 들어갔다 나오는 일이라 훨씬 비싸다. 다행히 자주 일어나지는 않는다 — 할당자가 넉넉히 받아 두고 잘라 쓰기 때문이다.</li><li><strong>여러 갈래(스레드)가 있으면 잠금이 걸린다.</strong> 창고 장부는 공유 자원이라 갈래마다 다투면 느려진다(95장의 경쟁 이야기다). 현대 할당자들이 갈래마다 작은 캐시를 따로 두는 이유가 이것이다.</li><li><strong>캐시가 식는다.</strong> 갓 받은 주소는 대개 캐시에 없어서 첫 접근이 느리다 (12장의 사다리). 반대로 재사용한 버퍼는 이미 캐시에 올라와 있다 — 예제에서 재사용 쪽이 빠른 이유 하나가 여기에 있다.</li></ol><p>그래서 실무 규칙이 나온다. <strong>뜨거운 루프 안에서 할당하지 않는다.</strong> 미리 한 번 빌려 재사용하거나, 크기를 아는 것은 스택에 두거나, 여러 개를 한꺼번에 빌려 잘라 쓴다. 마지막 방식이 아레나이고, 99장과 제14부가 그 이야기다.</p><div class="dev misconception"><p class="dev-label">흔한 오해. <strong>“<code>free</code>는 운영체제에 메모리를 돌려주는 것이다”</strong></p><div class="dev-body"><p>대개 아니다. <code>free</code>는 <strong>할당자의 장부에 “이 조각은 다시 쓸 수 있다”고 적는 것</strong>이지, 운영체제에 반납하는 것이 아니다. 그래서 큰 데이터를 해제한 뒤에도 작업 관리자에서 프로그램의 메모리 사용량이 그대로인 것이 정상이다 — 할당자가 다음 요청에 쓰려고 들고 있는 것이다(큰 블록은 반납되기도 한다).</p><p>이 사실이 두 가지를 설명한다. 첫째, “메모리를 해제했는데 왜 안 줄어드느냐” 는 흔한 오해. 둘째, 오래 도는 서버가 <strong>누수가 없는데도</strong> 메모리를 계속 붙들고 있는 현상 — 조각들이 흩어져 큰 덩어리를 만들지 못하는 <strong>단편화</strong> (fragmentation)다. 99장에서 정면으로 다룬다.</p></div></div><h3 id="s46-6">46.6 1차원으로 빌려 2차원으로 쓰기<a class="plink" href="#s46-6" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>39장에서 <code>int m[3][4]</code> 같은 진짜 다차원 배열을 보았다. 그런데 크기가 실행 중에 정해지면 그 문법을 그대로 쓸 수 없다 — 그래서 실무에서 가장 흔한 형태는 <strong>한 줄로 빌린 뒤 두 축으로 읽는 것</strong>이다.</p><p>핵심은 한 줄짜리 산수다. <code>rows × cols</code>개의 칸을 한 번에 빌리고, <code>(i, j)</code>번째 칸을 <code>i * cols + j</code>로 찾는다. 40장에서 본 진짜 2차원 배열의 배치(행 우선)와 정확히 같은 순서다 — 그래서 성능도 같고, 캐시도 같은 방식으로 작동한다(12장).</p><div class="demo demo-src"><p class="demo-head"><code>examples/dynamic-memory/flat2d.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> 1차원으로 할당해 2차원으로 쓰기 — 실무에서 가장 흔한 형태.</span></em>
+<em><span class="tok-c">   첨자 계산을 손으로 하지 않고 매크로 한 줄에 가둔다. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdckdint.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdlib.h</span><span class="tok-s">></span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> 첨자 매크로: 인자를 모두 괄호로 감싸고(65장), 곱을 size_t 로 올린다.</span></em>
+<em><span class="tok-c">   i 와 j 를 두 번 평가하지 않으므로 부수효과가 있는 인자도 안전하다. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><strong><span class="tok-p">AT</span></strong><span class="tok-x">(</span>p<span class="tok-x">,</span><span class="tok-p"> </span>cols<span class="tok-x">,</span><span class="tok-p"> </span>i<span class="tok-x">,</span><span class="tok-p"> </span>j<span class="tok-x">)</span><span class="tok-p">  </span><span class="tok-x">(</span><span class="tok-x">(</span><span class="tok-p">p</span><span class="tok-x">)</span><span class="tok-x">[</span><span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong><span class="tok-x">)</span><span class="tok-x">(</span><span class="tok-p">i</span><span class="tok-x">)</span><span class="tok-p"> </span><strong><span class="tok-x">*</span></strong><span class="tok-p"> </span><span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong><span class="tok-x">)</span><span class="tok-x">(</span><span class="tok-p">cols</span><span class="tok-x">)</span><span class="tok-p"> </span><strong><span class="tok-x">+</span></strong><span class="tok-p"> </span><span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong><span class="tok-x">)</span><span class="tok-x">(</span><span class="tok-p">j</span><span class="tok-x">)</span><span class="tok-x">]</span><span class="tok-x">)</span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> 크기 계산은 넘칠 수 있다 — 넘치면 할당을 시도하지 않는다(96장). </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong><strong>alloc_grid</strong><span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong> rows<span class="tok-x">,</span> <strong><span class="tok-t">size_t</span></strong> cols<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">size_t</span></strong> cells<span class="tok-x">,</span> bytes<span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong>ckd_mul</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>cells</strong><strong><span class="tok-x">,</span></strong><strong> rows</strong><strong><span class="tok-x">,</span></strong><strong> cols</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span>          <strong><span class="tok-k">return</span></strong> <span class="tok-n">NULL</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong>ckd_mul</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>bytes</strong><strong><span class="tok-x">,</span></strong><strong> cells</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span>  <strong><span class="tok-k">return</span></strong> <span class="tok-n">NULL</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <strong>malloc</strong><strong><span class="tok-x">(</span></strong><strong>bytes</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">size_t</span></strong> rows <strong><span class="tok-x">=</span></strong> <span class="tok-n">3</span><span class="tok-x">,</span> cols <strong><span class="tok-x">=</span></strong> <span class="tok-n">4</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>g <strong><span class="tok-x">=</span></strong> <strong>alloc_grid</strong><strong><span class="tok-x">(</span></strong><strong>rows</strong><strong><span class="tok-x">,</span></strong><strong> cols</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong>g<span class="tok-x">)</span> <span class="tok-x">{</span> <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">allocation failed</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <strong><span class="tok-k">return</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span> <span class="tok-x">}</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── ① 채우기와 읽기 — 첨자는 매크로 하나로 ─────────────── </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> rows<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span>
+        <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong> j <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> j <strong><span class="tok-x">&lt;</span></strong> cols<span class="tok-x">;</span> j<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span>
+            <strong>AT</strong><strong><span class="tok-x">(</span></strong><strong>g</strong><strong><span class="tok-x">,</span></strong><strong> cols</strong><strong><span class="tok-x">,</span></strong><strong> i</strong><strong><span class="tok-x">,</span></strong><strong> j</strong><strong><span class="tok-x">)</span></strong> <strong><span class="tok-x">=</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong><span class="tok-x">)</span><span class="tok-x">(</span>i <strong><span class="tok-x">*</span></strong> <span class="tok-n">10</span> <strong><span class="tok-x">+</span></strong> j<span class="tok-x">)</span><span class="tok-x">;</span>
+
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">a 3x4 stored row-major:</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> rows<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  </span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong> j <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> j <strong><span class="tok-x">&lt;</span></strong> cols<span class="tok-x">;</span> j<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span>
+            <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%3d</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>AT</strong><strong><span class="tok-x">(</span></strong><strong>g</strong><strong><span class="tok-x">,</span></strong><strong> cols</strong><strong><span class="tok-x">,</span></strong><strong> i</strong><strong><span class="tok-x">,</span></strong><strong> j</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── ② 기억은 한 줄로 이어져 있다 ───────────────────────── </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">walking the same memory as one dimension: </span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong> k <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> k <strong><span class="tok-x">&lt;</span></strong> rows <strong><span class="tok-x">*</span></strong> cols<span class="tok-x">;</span> k<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong>k </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> g</strong><strong><span class="tok-x">[</span></strong><strong>k</strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">(the same layout as a real 2-D array int m[3][4] - row-major)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── ③ 흔한 사고: 행과 열을 바꿔 쓰기 ───────────────────── </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">AT(g, cols, 1, 2) = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">   (row 2, third element)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>AT</strong><strong><span class="tok-x">(</span></strong><strong>g</strong><strong><span class="tok-x">,</span></strong><strong> cols</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">2</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">AT(g, cols, 2, 1) = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">   (row 3, second element - a different cell)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>AT</strong><strong><span class="tok-x">(</span></strong><strong>g</strong><strong><span class="tok-x">,</span></strong><strong> cols</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">2</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── ④ 넘치는 크기 요청은 거절된다 ──────────────────────── </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>huge <strong><span class="tok-x">=</span></strong> <strong>alloc_grid</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">size_t</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">-</span></strong><strong><span class="tok-n">1</span></strong><strong> </strong><strong><span class="tok-x">/</span></strong><strong> </strong><strong><span class="tok-n">2</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">8</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">an absurd size request: </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> huge </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">allocated</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">the multiplication overflowed, refused</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>free</strong><strong><span class="tok-x">(</span></strong><strong>huge</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>free</strong><strong><span class="tok-x">(</span></strong><strong>g</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>a 3x4 stored row-major:
+    0  1  2  3
+   10 11 12 13
+   20 21 22 23
+
+walking the same memory as one dimension: 0 1 2 3 10 11 12 13 20 21 22 23
+(the same layout as a real 2-D array int m[3][4] - row-major)
+
+AT(g, cols, 1, 2) = 12   (row 2, third element)
+AT(g, cols, 2, 1) = 21   (row 3, second element - a different cell)
+
+an absurd size request: the multiplication overflowed, refused
+</code></pre></div></div><p>여기서 조심할 것이 셋이다.</p><p><strong>첫째, 첨자 계산을 손으로 흩어 놓지 않는다.</strong> <code>p[i * cols + j]</code>를 코드 곳곳에 적으면 <code>cols</code>를 한 군데서 빠뜨리는 순간 조용히 다른 칸을 읽는다. 예제처럼 매크로 하나에 가두면 고칠 자리가 하나가 된다. 매크로를 쓸 때는 65장의 규칙을 지킨다 — <strong>인자를 모두 괄호로 감싸고</strong>, 곱은 <code>size_t</code>로 올려 넘침을 피한다.</p><pre><code data-lang="c"><strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><strong><span class="tok-p">AT</span></strong><span class="tok-x">(</span>p<span class="tok-x">,</span><span class="tok-p"> </span>cols<span class="tok-x">,</span><span class="tok-p"> </span>i<span class="tok-x">,</span><span class="tok-p"> </span>j<span class="tok-x">)</span><span class="tok-p">  </span><span class="tok-x">(</span><span class="tok-x">(</span><span class="tok-p">p</span><span class="tok-x">)</span><span class="tok-x">[</span><span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong><span class="tok-x">)</span><span class="tok-x">(</span><span class="tok-p">i</span><span class="tok-x">)</span><span class="tok-p"> </span><strong><span class="tok-x">*</span></strong><span class="tok-p"> </span><span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong><span class="tok-x">)</span><span class="tok-x">(</span><span class="tok-p">cols</span><span class="tok-x">)</span><span class="tok-p"> </span><strong><span class="tok-x">+</span></strong><span class="tok-p"> </span><span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong><span class="tok-x">)</span><span class="tok-x">(</span><span class="tok-p">j</span><span class="tok-x">)</span><span class="tok-x">]</span><span class="tok-x">)</span></code></pre><p><strong>둘째, 크기 계산 자체가 넘칠 수 있다.</strong> <code>rows * cols * sizeof(int)</code>는 세 수의 곱이라 넘치기 쉽고, 넘치면 <strong>작은 그릇을 빌려 놓고 큰 배열로 쓰는</strong> 최악의 사고가 된다. 예제는 <code>ckd_mul</code>(56·96장)로 먼저 검사하고, 넘치면 할당을 아예 시도하지 않는다.</p><p><strong>셋째, 행과 열의 순서를 문서로 못박는다.</strong> <code>AT(g, cols, 1, 2)</code>와 <code>AT(g, cols, 2, 1)</code>은 다른 칸이다. 실수의 절반은 여기서 나오므로, 함수의 매개변수 이름을 <code>rows</code>·<code>cols</code>로 분명히 하고 순서를 문서에 적는다.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 포인터의 배열(<code>int **</code>)로 만들면 <code>m[i][j]</code> 문법을 그대로 쓸 수 있지 않은가?</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> 쓸 수 있고, 실제로 흔한 방법이다 — 행마다 따로 할당하고 그 주소들을 배열에 담는 것이다. 그러나 대가가 크다.</p><p><strong>기억이 흩어진다.</strong> 행들이 서로 멀리 떨어져 있으면 12장의 지역성이 깨져 캐시 적중률이 떨어진다. <strong>할당이 여러 번 일어난다.</strong> 행 수만큼 <code>malloc</code>을 부르고 그만큼 실패 경로가 생기며, 해제도 역순으로 여러 번 해야 한다. <strong>간접 참조가 한 겹 더 있다.</strong> <code>m[i][j]</code>는 주소를 두 번 따라간다.</p><p>그리고 결정적으로, <strong><code>int[3][4]</code>와 <code>int **</code>는 서로 다른 타입이다.</strong> 진짜 2차원 배열의 이름을 <code>int **</code>를 받는 함수에 넘기면 컴파일 오류이고, 강제로 캐스트해 넘기면 계약 밖이다 — 39장에서 본 대로 <code>int m[3][4]</code>가 무너지면 <code>int (*)[4]</code>이지 <code>int **</code>가 아니기 때문이다. 이 오해가 다차원 배열에서 가장 자주 나는 사고다.</p><p>정리하면 — <strong>크기가 고정이면 진짜 2차원 배열, 실행 중에 정해지면 1차원 할당 + 첨자 매크로(또는 VLA(variable-length array) 매개변수, 39장)</strong>가 기본이고, <code>int **</code>는 행마다 길이가 다른 자료(들쭉날쭉한 배열)일 때 고른다.</p></p></div></div><h3 id="s46-7">46.7 소유 — 누가 돌려줄 책임을 지는가<a class="plink" href="#s46-7" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p><code>malloc</code>이 준 주소는 여러 변수에 복사될 수 있고, 함수 사이를 오갈 수도 있다. 그런데 <code>free</code>는 <strong>정확히 한 번</strong> 불려야 한다 — 여기서 C 프로그래밍의 핵심 규율이 나온다: 어느 시점에든 그 기억을 해제할 책임을 지는 주체 하나를 정해 두는 것, <strong>소유</strong>(ownership)라는 관념이다. C에는 소유를 강제하는 문법이 없다 — 그래서 소유는 <strong>주석과 이름과 규약</strong>으로 표현된다(“이 함수는 반환한 포인터의 소유권을 넘긴다”처럼). 현대 언어들이 소유를 타입 체계로 끌어올린 것(Rust의 소유권, C++의 스마트 포인터)은 이 규율을 기계가 강제하게 만든 결과다 — 1장에서 본 이웃 언어들의 문제의식이 바로 이 자리에서 나왔다.</p><div class="dev realcase"><p class="dev-label">실제 사례.<span style="white-space: pre-wrap">&#x20;&#x20;</span>세 가지 대표 사고 — 누수, 이중 해제, 해제 후 사용</p><div class="dev-body"><p>동적 메모리의 사고는 세 얼굴로 온다. <strong>누수</strong>는 돌려주기를 잊는 것 — 느리게 죽는 병이다. <strong>이중 해제</strong>(double free)는 같은 주소를 두 번 <code>free</code>하는 것으로, 창고 관리 장부를 망가뜨려 그 뒤의 모든 할당이 오염된다. 가장 위험한 것은 <strong>해제 후 사용</strong>(use-after-free) — 돌려준 칸의 주소를 계속 쓰는 것이다. 45장의 댕글링 포인터가 힙에서 재현되는 것인데, 창고는 그 칸을 곧 다른 요청에 내주므로 <strong>공격자가 그 자리에 자기 데이터를 놓을</strong> 수 있다. 브라우저와 커널의 심각한 취약점 목록에서 use-after-free는 오늘도 최상위 단골이고, 그래서 현대 시스템 프로그래밍 전체가 “소유를 언어가 강제하게 하자”는 방향으로 움직여 왔다. C에서의 방어는 규율 + 도구다 — <code>free</code> 직후 포인터에 <code>nullptr</code>를 대입하는 관행, 그리고 18장의 새니타이저.</p><p>다만 둘 다 만능은 아니다. <code>nullptr</code> 대입은 <strong>그 변수 하나를 통한</strong> 재사용과 이중 해제를 막을 뿐, 같은 주소를 들고 있는 다른 별칭 포인터는 그대로 남는다 — 별칭이 없을 때의 국소 방어라고 이해해야 한다. ASan 은 해제 후 사용과 이중 해제를 아주 잘 잡지만, 누수 검출은 LeakSanitizer 가 함께 켜져 있어야 하고 플랫폼과 설정에 따라 달라진다(리눅스 x86-64 의 기본 빌드에서는 대개 함께 켜진다).</p></div></div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 그러면 동적 메모리를 되도록 피하는 것이 상책인가?</p></div><div class="dev qa-a"><p><span class="dev-label">답.</span> 실제로 그것이 첫 번째 전략이고, 이 책이 여기까지 <code>malloc</code> 없이 온 이유이기도 하다 — 크기를 아는 데이터는 자동 변수(스택)로 두는 것이 가장 빠르고 가장 안전하다(해제할 것이 없으니 세 사고가 원천 봉쇄된다). 임베디드나 안전 필수 분야에서는 아예 동적 할당을 금지하는 규약도 흔하다. 그러나 실행 중에 크기가 정해지는 데이터(사용자가 준 목록, 파일 내용)는 결국 창고가 필요하고 — 그때는 소유를 명확히 하고, 도구로 검사하고, 잘 만들어진 부품(44장의 proven처럼 할당과 경계를 함께 관리하는 계열)을 쓰는 것이 실무의 답이다.</p></div></div><h3 id="s46-8">46.8 제7부를 닫으며<a class="plink" href="#s46-8" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>기억의 배치가 완성됐다 — 레지스터와 캐시라는 사다리(12장) 위에, C의 저장 기간 가운데 이 부에서 다룬 셋(자동·정적·동적)이 놓이고, 그 위를 포인터가 다닌다. 36장에서 개념을 얻고, 37–38장에서 규칙을, 39–43장에서 연속된 기억과 문자열을, 44장에서 안전한 부품을, 45–46장에서 수명과 창고를 배웠다. C 의 강점과 위험이 함께 사는 자리를 한 바퀴 돈 것이다.</p><p>동적 메모리의 문법과 규율, 그리고 비용까지 보았다. 할당자가 창고를 실제로 어떻게 관리하는지, 요즘 널리 쓰이는 대안 할당자와 대안 표준 라이브러리는 무엇인지, 그리고 프로그램의 기억이 운영체제와 임베디드 칩에서 각각 어떤 배치로 놓이는지는 제12부의 끝에서 두 장을 들여 다룬다(98–99장).</p><p>다음 부는 짧지만 오래 미뤄 온 곳이다 — 구조체와 공용체. 멤버가 기억에 어떻게 놓이는지 읽으려면 이 부의 메모리 모델이 먼저 있어야 했고, 이제 그 조건이 갖춰졌다.</p><section class="chapter-notes" role="doc-endnotes"><h2>주</h2><ol><li id="ch46-fn-1">ISO/IEC 9899 (C23) 7.24.3, 문단 1. <a class="fnback" href="#ch46-fnref-1" aria-label="본문으로 돌아가기" title="본문으로 돌아가기">&#8617;</a></li><li id="ch46-fn-2">Ruby 보안 공지 「Multiple vulnerabilities in Regexp and String」(2026-11-18). 3.3.14 · 3.4.13 · 4.0.10 에서 고쳤다. <a class="fnback" href="#ch46-fnref-2" aria-label="본문으로 돌아가기" title="본문으로 돌아가기">&#8617;</a></li></ol></section>
+<div class="nav"><a href="ch45.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ex07.html">다음 →</a></div>
+</div></main>
+<script>(function(){var b=document.querySelector('.menu-btn'),p=document.getElementById('here-panel');function open(o){if(!p)return;p.hidden=!o;if(b)b.setAttribute('aria-expanded',o);}if(b)b.addEventListener('click',function(){open(p.hidden);});if(p)p.addEventListener('click',function(e){if(e.target.tagName==='A'&&e.target.getAttribute('href').charAt(0)==='#')open(false);});document.addEventListener('keydown',function(e){if(e.key==='Escape'&&p&&!p.hidden){open(false);if(b)b.focus();}});document.addEventListener('click',function(e){if(p&&!p.hidden&&!p.contains(e.target)&&!(b&&b.contains(e.target)))open(false);});var bk=document.querySelector('.bar .back');if(bk)bk.addEventListener('click',function(e){if(history.length>1&&document.referrer){e.preventDefault();history.back();}});var box=document.getElementById('setbox');if(!box)return;var r=document.documentElement;function load(){try{return JSON.parse(localStorage.getItem('doc-read')||'{}');}catch(e){return {};}}function save(s){try{localStorage.setItem('doc-read',JSON.stringify(s));}catch(e){}}function css(n){return getComputedStyle(r).getPropertyValue(n).trim();}function paint(){var s=load();var t=s.theme||'auto',w=s.width==='fit'?'fit':'960';[].forEach.call(box.querySelectorAll('.segb[data-theme]'),function(x){x.setAttribute('aria-pressed',x.dataset.theme===t);});[].forEach.call(box.querySelectorAll('.segb[data-width]'),function(x){x.setAttribute('aria-pressed',x.dataset.width===w);});var ly=s.layout||'auto';[].forEach.call(box.querySelectorAll('.segb[data-layout]'),function(x){x.setAttribute('aria-pressed',x.dataset.layout===ly);});document.getElementById('s-fg').value=s.fg||hex(css('--fg'));document.getElementById('s-bg').value=s.bg||hex(css('--bg'));document.getElementById('s-link').value=s.link||hex(css('--link'));}function hex(v){var m=v.match(/^rgba?\((\d+)[ ,]+(\d+)[ ,]+(\d+)/);if(!m)return v.charAt(0)==='#'?v:'#000000';return '#'+[1,2,3].map(function(i){return ('0'+parseInt(m[i],10).toString(16)).slice(-2);}).join('');}paint();[].forEach.call(box.querySelectorAll('.segb[data-width]'),function(x){x.addEventListener('click',function(){var s=load();if(x.dataset.width==='fit'){s.width='fit';r.setAttribute('data-measure','fit');}else{delete s.width;r.removeAttribute('data-measure');}save(s);setTimeout(paint,0);});});[].forEach.call(box.querySelectorAll('.segb[data-layout]'),function(x){x.addEventListener('click',function(){var s=load(),v=x.dataset.layout;if(v==='auto'){delete s.layout;r.removeAttribute('data-layout');}else{s.layout=v;r.setAttribute('data-layout',v);}save(s);var m=document.querySelector('meta[name=viewport]');var want=v==='desktop'?'width=1100':'width=device-width, initial-scale=1';if(m&&m.getAttribute('content')!==want)location.reload();else setTimeout(paint,0);});});[].forEach.call(box.querySelectorAll('.segb[data-theme]'),function(x){x.addEventListener('click',function(){var s=load();s.theme=x.dataset.theme;delete s.fg;delete s.bg;delete s.link;save(s);['--fg','--bg','--link'].forEach(function(n){r.style.removeProperty(n);});if(s.theme==='auto')r.removeAttribute('data-theme');else r.setAttribute('data-theme',s.theme);setTimeout(paint,0);});});[['s-fg','--fg','fg'],['s-bg','--bg','bg'],['s-link','--link','link']].forEach(function(a){document.getElementById(a[0]).addEventListener('input',function(){var s=load();s[a[2]]=this.value;save(s);r.style.setProperty(a[1],this.value);});});})();</script><script>
+(function(){
+  var q=document.getElementById('q'), out=document.getElementById('qr');
+  if(!q||!out) return;
+  var data=null, NONE="\ucc3e\uc740 \uac83\uc774 \uc5c6\ub2e4";
+  function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+  function run(){
+    var v=q.value.trim().toLowerCase();
+    out.innerHTML='';
+    if(!v||!data) return;
+    var hits=[];
+    for(var i=0;i<data.length && hits.length<40;i++){
+      if(data[i][0].toLowerCase().indexOf(v)>=0) hits.push(data[i]);
+    }
+    if(!hits.length){ out.innerHTML='<li>'+NONE+'</li>'; return; }
+    out.innerHTML=hits.map(function(h){
+      return '<li><a href="'+h[1]+'">'+esc(h[0])+'</a>'+
+             (h[2]?'<span class="where">'+esc(h[2])+'</span>':'')+'</li>';
+    }).join('');
+  }
+  q.addEventListener('input',function(){
+    if(data){ run(); return; }
+    fetch('search-index.json').then(function(r){return r.json();})
+      .then(function(j){ data=j; run(); })
+      .catch(function(){ out.innerHTML='<li>'+NONE+'</li>'; });
+  });
+})();
+</script></body></html>

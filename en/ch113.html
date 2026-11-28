@@ -1,0 +1,735 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>113 Containers and algorithms — Proven C Book</title><style>@font-face { font-family:"Doc Serif"; src:url("../fonts/serif.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-italic.woff2") format("woff2");
+  font-weight:400; font-style:italic; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-kr.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-kr-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans-kr.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans-kr-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Mono"; src:url("../fonts/mono.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Mono"; src:url("../fonts/mono-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+:root { color-scheme: light dark; --bg:#fafaf8; --bg2:#f2f2f0; --bg3:#e6e6e3; --fg:#141414; --muted:#555555; --line:#c9c9c9; --line-strong:#8a8a8a; --accent:#1a4f8a; --accent-fg:#ffffff; --accent2:#96530f; --honey:#f2b04a; --honey-fg:#2b1d00; --honey-text:#855400; --honey-soft:#fbebc6; --danger:#9b1b30; --ok:#1d6e37; --warn:#855400; --select:#d4dde8;
+  --rule:var(--line); --box-bg:var(--bg2); --code-bg:var(--bg2); --box-rule:var(--line); --link:var(--accent);
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg:#121314; --bg2:#1c1e20; --bg3:#2a2c2f; --fg:#e8e8e8; --muted:#a6a6a6; --line:#3a3d40; --line-strong:#75787c; --accent:#8ab4e8; --accent-fg:#121314; --accent2:#d4883b; --honey:#f2b04a; --honey-fg:#121314; --honey-text:#f2b04a; --honey-soft:#3b311e; --danger:#f07a8c; --ok:#7bcb95; --warn:#f2b04a; --select:#2f3d52;
+    --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+:root[data-theme="dark"] { color-scheme: dark; --bg:#121314; --bg2:#1c1e20; --bg3:#2a2c2f; --fg:#e8e8e8; --muted:#a6a6a6; --line:#3a3d40; --line-strong:#75787c; --accent:#8ab4e8; --accent-fg:#121314; --accent2:#d4883b; --honey:#f2b04a; --honey-fg:#121314; --honey-text:#f2b04a; --honey-soft:#3b311e; --danger:#f07a8c; --ok:#7bcb95; --warn:#f2b04a; --select:#2f3d52;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; }
+:root[data-theme="light"] { color-scheme: light; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Doc Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.here-head { display:flex; align-items:center; gap:.8rem; padding:.2rem 0 .5rem;
+  border-bottom:1px solid var(--rule,#ddd); margin-bottom:.5rem; }
+.here-head .sp { flex:1; }
+.here-all { margin-left:auto; font-size:.9rem; }
+.here-x { font:inherit; font-size:.9rem; cursor:pointer; background:none;
+  border:1px solid var(--line-strong); padding:.05rem .45rem;
+  color:inherit; }
+.here-body a, .tf-secs a { display:block; text-decoration:none; padding:.12rem 0;
+  line-height:1.45; }
+.here-body a:hover, .tf-secs a:hover { text-decoration:underline; }
+.here-body a.lv4, .tf-secs a.lv4 { padding-left:1.6rem; font-size:.94rem;
+  color:var(--muted,#555); }
+.tf-no { display:inline-block; min-width:3.2rem; color:var(--muted,#666);
+  font-variant-numeric:tabular-nums; }
+.toc-full .tf-ch { margin:.9rem 0 .15rem; font-weight:700; }
+.toc-full .tf-secs { margin:0 0 .5rem .2rem; border-left:2px solid var(--rule,#e2e2e2);
+  padding-left:.7rem; }
+.toc-full h4.toc-part { margin-top:1.8rem; }
+.toc a.toc-detail { font-weight:700; }
+@media print { .here-btn, .here-panel { display:none; } }
+.bar { position:sticky; top:0; z-index:20; display:flex; flex-wrap:nowrap; gap:.25rem; align-items:center;
+       min-height:44px; padding:0 clamp(.4rem,2vw,1.6rem); background:var(--bg2);
+       border-bottom:1px solid var(--line); font-size:.9rem;
+       font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--fg); text-decoration:none; } .bar a:hover { text-decoration:none; }
+.bar .sp { display:none; }
+main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
+.wrap { width:100%; }
+main .wrap { max-width:960px; margin-inline:auto; }
+:root[data-measure="fit"] main .wrap { max-width:none; margin:0; }
+h1,h2,h3,h4 { font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35;
+  padding-bottom:.18rem; border-bottom:1px solid var(--rule); }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem;
+     padding-bottom:.22rem; border-bottom:1.5px solid var(--fg); }
+p { margin:.9rem 0; } a { color:var(--link); }
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+.src-note { font-size: .86em; color: var(--muted, #666); }
+.src-note code { font-size: .95em; }
+sup.fnref { font-size: .72em; line-height: 0; vertical-align: super; }
+sup.fnref a { text-decoration: none; padding: 0 .1em; }
+sup.fnref a::before { content: "["; }
+sup.fnref a::after  { content: "]"; }
+.chapter-notes { margin: 3rem 0 1rem; padding-top: .9rem;
+                 border-top: 2px solid var(--rule, #333); }
+.chapter-notes h2 { font-size: 1.05rem; margin: 0 0 .6rem; }
+.chapter-notes ol { margin: 0; padding-left: 1.6em; }
+.chapter-notes li { font-size: .92em; margin: .35em 0; text-indent: 0; }
+.chapter-notes a.fnback { text-decoration: none; }
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
+pre,code,kbd { font-family:"Doc Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
+pre code { background:none; padding:0; }
+.tblwrap { overflow-x:auto; text-align:center; }
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.float-list { list-style:none; padding-left:0; }
+.float-list li { margin:.12rem 0; }
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"Doc Mono","D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"Doc Mono","D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"Doc Mono","D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+.dev { margin:1.15rem 0; padding:0; background:none; border:none; border-radius:0; }
+.dev > .dev-label { border-left:4px solid var(--fg);
+  padding:.1rem .8rem .25rem .8rem; margin:0 0 .34rem; }
+.dev > .dev-body { border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem .35rem .8rem; margin:0; }
+.dev > .dev-body > *:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child { margin-bottom:0; }
+.float-caption { text-align:center; font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+.dev.open { border:none; border-radius:0; background:none;
+  padding:0; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
+  text-indent:0; border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+.dev.open > .open-body { margin:0; padding:.35rem .8rem;
+  border-left:2px solid var(--box-rule); }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+.dev.open .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.06rem 0 .06rem .7rem; margin:.32rem 0 0; }
+.prereq .dev-label, .deepqa .dev-label, .why .dev-label,
+.organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+.qa-box { border:none; margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:0; background:none; }
+.qa-box .qa-q { border-left:4px solid var(--fg);
+  padding:.1rem .8rem .25rem .8rem; margin:0; }
+.qa-box .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem; margin:.34rem 0 0; }
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:0; }
+.dev.recap { border:none; background:none; padding:0; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
+  text-indent:0; border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > .dev-body > p, .dev.recap > .dev-body > div:not(.demo),
+.dev.recap > .dev-body > figure { margin:.3rem 0; padding:0; }
+.dev > .dev-body > .demo { margin:.7rem 0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:none; border-radius:0; background:none; padding:0; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem; text-indent:0;
+  border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
+.dev > .dev-body > figure, .dev > .open-body > p {
+  margin:.35rem 0; padding:0; }
+.bar .menu-btn { flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center;
+  min-width:38px; min-height:38px; padding:0; font:inherit; font-size:1.25rem; line-height:1;
+  color:var(--fg); background:none; border:0; cursor:pointer; text-decoration:none; }
+.bar .back, .bar .bar-nav .nb { flex:0 0 auto; display:inline-flex; align-items:center; gap:.3em;
+  min-height:32px; padding:0 .65rem; border:1px solid var(--line); background:var(--bg);
+  color:var(--fg); font-weight:600; white-space:nowrap; text-decoration:none; }
+.bar .menu-btn[aria-expanded="true"] { background:var(--bg3); }
+.bar .place { flex:1 1 auto; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
+  padding:0 .35rem; }
+.bar .place strong a { color:var(--honey-text); }
+.bar .place .cur { color:var(--fg); }
+.bar .bar-nav { flex:0 0 auto; display:flex; gap:.3rem; align-items:center; white-space:nowrap; }
+.bar .bar-nav .off { color:var(--muted); border-color:var(--line); opacity:.45; }
+.bar .back:hover, .bar .menu-btn:hover, .bar .bar-nav a.nb:hover, .bar .place a:hover { background:var(--bg3); }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+.dev.antipattern > .dev-label { border-left-style:solid; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.2rem; }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em;
+            padding-bottom:0; border-bottom:none; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
+.toc { columns:24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.toc > .toc-part:first-child, .toc > .toc-keep:first-child > .toc-part, .toc-full > .toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
+.toc-group { padding-left:.85rem; }
+.toc-keep, .toc a { break-inside:avoid; }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+code.style-name { font-family:"Doc Mono","D2Coding",ui-monospace,monospace;
+  font-size:.72em; color:var(--muted); background:var(--rule);
+  padding:.05em .35em; border-radius:3px; white-space:nowrap;
+  font-weight:400; letter-spacing:0; }
+.dev.open > .dev-label { padding-top:.42rem; padding-bottom:.42rem; }
+.dev.open > .open-body { padding-top:.4rem; padding-bottom:.4rem; }
+.dev.open > .open-body > p { margin:.6rem 0; }
+.dev > .dev-body { padding-top:.5rem; padding-bottom:.5rem; }
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
+.dev > .dev-body > figure { margin:.55rem 0; }
+main { line-height:1.85; }
+p { margin:1.15rem 0; }
+h2 { margin-top:2.4rem; }
+h3 { margin-top:2rem; }
+li { margin:.3rem 0; }
+h1, h2, h3, h4 { border-bottom-color:var(--box-rule) !important; }
+.toc { line-height:1.45; }
+.toc a { padding:.16rem 0; }
+.toc-part { margin:.85rem 0 .2rem; }
+.metalist { line-height:1.45; gap:.2rem 1.2rem; }
+.metalist dt, .metalist dd { margin:0; }
+.demo { border-color:var(--box-rule); }
+.demo > .demo-head { border-bottom-color:var(--box-rule); }
+.dev > .dev-label,
+.dev.open > .dev-label,
+.qa-box .qa-q,
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  border-left-color:var(--box-rule); }
+.dev > .dev-body,
+.dev > .open-body,
+.dev.open .qa-a,
+.qa-box .qa-a,
+.deepqa .qa-a { border-left-color:var(--box-rule); }
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div {
+  border-color:var(--box-rule); }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+.dev.open > .open-body,
+.dev.open > .qa-a,
+.dev.open .qa-a,
+.dev.deepqa .qa-a,
+.qa-box > .qa-a,
+.qa-box > .qa-q { border-left-color:var(--box-rule); }
+.bar .bar-toc { font-size:1.15em; line-height:1; text-decoration:none; }
+.dev, .dev-body, .open-body, .qa-box, .qa-q, .qa-a, .dev-label,
+.toc-full, .toc-full .tf-secs { line-height:inherit; font-size:1rem; }
+.dev > .dev-body > p, .dev > .open-body > p,
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:1.15rem 0; }
+.dev > .dev-body > *:first-child, .dev > .open-body > *:first-child,
+.qa-box .qa-q > p:first-child, .qa-box .qa-a > p:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child, .dev > .open-body > *:last-child,
+.qa-box .qa-q > p:last-child, .qa-box .qa-a > p:last-child { margin-bottom:0; }
+.dev > .dev-label, .dev.open > .dev-label { font-size:.98rem; line-height:1.4; }
+h1,h2,h3,h4 { padding-bottom:.34rem; }
+h1 { margin:.2rem 0 1.3rem; }
+h2 { padding-bottom:.42rem; margin-bottom:1.15rem; }
+h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
+.dev.open > .open-body > * { margin:.3rem 0; }
+.dev.open > .open-body > p { margin:.5rem 0; }
+.dev.open > .open-body > div { margin:.15rem 0; }
+.dev.open ul, .dev.open ol { margin:.3rem 0; }
+.dev.open li, .dev.open ol.qlist li { margin:0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open .qa-a > p { margin:.35rem 0; }
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div { border-color:var(--box-rule); }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+a:focus-visible, button:focus-visible, summary:focus-visible, input:focus-visible {
+  outline:2px solid var(--accent2); outline-offset:2px; }
+:target, h1, h2, h3, h4, [id] { scroll-margin-top:4.2rem; }
+.skip { position:absolute; left:-9999px; top:0; z-index:30;
+        background:var(--bg); color:var(--fg); border:1px solid var(--fg);
+        padding:.5rem .8rem; font-size:.9rem; text-decoration:none; }
+.skip:focus { left:.5rem; top:.5rem; }
+.here-panel { position:fixed; top:46px; left:clamp(.2rem,1vw,1rem); z-index:19;
+  width:min(32rem, calc(100vw - .4rem)); max-height:calc(100vh - 54px); overflow:auto;
+  padding:.7rem .9rem .9rem; border:1px solid var(--line); --k:var(--line-strong);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-size:.9rem; line-height:1.4;
+  background:
+    linear-gradient(var(--k),var(--k)) left top / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) left top / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) right top / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) right top / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) left bottom / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) left bottom / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) right bottom / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) right bottom / 3px 8px no-repeat,
+    color-mix(in srgb, var(--bg) 97%, transparent); }
+.here-panel .tools { display:flex; flex-wrap:wrap; gap:.3rem .4rem; align-items:center;
+  margin-bottom:.6rem; }
+.tool, .segb { font:inherit; font-size:.88rem; color:var(--fg); background:none;
+  border:1px solid var(--line-strong); padding:0 .6rem; min-height:30px;
+  display:inline-flex; align-items:center; text-decoration:none; cursor:pointer; white-space:nowrap; }
+.tool:hover, .segb:hover, .nav a:hover, .here-panel .here-body a:hover { background:var(--bg3); }
+.segb[aria-pressed="true"] { background:var(--select); border-color:var(--accent); font-weight:700; }
+.tool, .segb, .bar a, .bar button, .nav a, .here-panel a { transition:background-color .08s; }
+@media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
+main a { text-decoration:underline; text-decoration-color:var(--box-rule);
+  text-underline-offset:2px; }
+main a:hover { background:var(--box-bg); text-decoration-color:var(--link); }
+main .toc a, main .toc-full a, main .here-body a { text-decoration:none; }
+main .toc a:hover, main .toc-full a:hover { background:var(--box-bg); text-decoration:underline; }
+.setbox { margin:0 0 .6rem; }
+.setrow { display:flex; flex-wrap:wrap; gap:.4rem .5rem; align-items:center; margin:.35rem 0; }
+.setlbl { min-width:4.2rem; font-size:.82rem; font-weight:700; }
+.seg { display:inline-flex; flex-wrap:wrap; gap:.25rem; }
+.col { display:inline-flex; align-items:center; gap:.3rem; }
+.col input[type=color] { width:2rem; height:1.4rem; padding:0; border:1px solid var(--line-strong);
+  background:none; cursor:pointer; }
+.setnote { margin:.5rem 0 0; font-size:.82rem; }
+.here-panel .ver { font-size:.82rem; color:var(--muted); padding:.2rem .45rem .2rem 0;
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; white-space:nowrap; }
+.demo pre, .demo pre code {
+  white-space:pre-wrap; overflow-wrap:anywhere; word-break:break-word; }
+.demo > .demo-body { overflow-x:visible; }
+.plink {
+  margin-left: .4em; font-weight: 400; text-decoration: none;
+  color: var(--muted, #888); opacity: 0;
+}
+h3:hover > .plink, h4:hover > .plink,
+h3 > .plink:focus, h4 > .plink:focus { opacity: 1; }
+@media (hover: none) { .plink { opacity: .45; } }
+.searchbox { margin:.6em 0 0; }
+.searchbox input[type=search] {
+  width: 100%; padding: .45em .6em; font: inherit;
+  border: 1px solid var(--line-strong);
+  background: var(--bg); color: var(--fg);
+}
+.search-hint { color: var(--muted, #777); font-size: .85em; margin:.3em 0 0; }
+.search-results { list-style: none; padding: 0; margin: .5em 0 0; }
+.search-results li { margin: .15em 0; }
+.search-results .where { color: var(--muted, #777); font-size: .85em; margin-left: .4em; }
+@media (max-width: 900px), (orientation: portrait) {
+  :root:not([data-layout="desktop"]) .bar .place .cur { display:none; }
+  :root:not([data-layout="desktop"]) .bar .back,
+  :root:not([data-layout="desktop"]) .bar .bar-nav .nb { min-height:40px; padding:0 .5rem; }
+}
+@media (max-width: 480px) {
+  :root:not([data-layout="desktop"]) .bar .bar-nav .prev .lbl,
+  :root:not([data-layout="desktop"]) .bar .bar-nav .next .lbl { display:none; }
+  :root:not([data-layout="desktop"]) .bar .bar-nav .nb { min-width:44px; justify-content:center; }
+  :root:not([data-layout="desktop"]) .bar { gap:.2rem; }
+}
+:root[data-layout="mobile"] .bar .place .cur { display:none; }
+:root[data-layout="mobile"] .bar .back, :root[data-layout="mobile"] .bar .bar-nav .nb { min-height:40px; padding:0 .5rem; }
+:root[data-layout="mobile"] main .wrap { max-width:34rem; }
+@media (pointer: coarse), (max-width: 900px) {
+  .bar .menu-btn { min-width:44px; min-height:44px; }
+  .tool, .segb { min-height:38px; }
+}
+@media print { .bar, .here-panel { display:none; } }
+
+body { font-family:"Doc Serif","Noto Serif",Georgia,"Noto Serif CJK KR",serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans",system-ui,"Noto Sans CJK KR",sans-serif; }
+pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
+</style>
+<script>(function(){try{var L=localStorage,o='pcb-read';if(o&&o!=='doc-read'&&L.getItem(o)!==null&&L.getItem('doc-read')===null){var v=JSON.parse(L.getItem(o)||'{}');delete v.width;L.setItem('doc-read',JSON.stringify(v));L.removeItem(o);}var s=JSON.parse(L.getItem('doc-read')||'{}');var r=document.documentElement;if(s.theme&&s.theme!=='auto')r.setAttribute('data-theme',s.theme);if(s.fg)r.style.setProperty('--fg',s.fg);if(s.bg)r.style.setProperty('--bg',s.bg);if(s.link)r.style.setProperty('--link',s.link);if(s.width==='fit')r.setAttribute('data-measure','fit');if(s.layout==='desktop'||s.layout==='mobile')r.setAttribute('data-layout',s.layout);if(s.layout==='desktop'){var m=document.querySelector('meta[name=viewport]');if(m)m.setAttribute('content','width=1100');}}catch(e){}})();</script></head>
+<body>
+<a class="skip" href="#content">Skip to content</a>
+<div class="bar"><button class="menu-btn" id="set-open" type="button" aria-expanded="false" aria-controls="here-panel" aria-label="Menu" title="Menu">☰</button><a class="back" href="index.html" title="Back">← <span class="lbl">Back</span></a><span class="place"><strong><a href="index.html">Proven C Book</a></strong><span class="cur"> › ch. 113</span></span><span class="bar-nav"><a class="nb prev" href="ch112.html">‹ <span class="lbl">Prev</span></a><a class="nb toc" href="index.html"><span class="lbl">TOC</span></a><a class="nb next" href="ch114.html"><span class="lbl">Next</span> ›</a></span></div><div id="here-panel" class="here-panel" hidden><div class="setbox" id="setbox"><div class="setrow"><span class="setlbl">Language</span><span class="seg"><a class="segb" href="../ko/ch113.html">한국어</a></span></div><div class="setrow"><span class="setlbl">Text width</span><span class="seg" id="s-width"><button type="button" class="segb" data-width="960">960</button><button type="button" class="segb" data-width="fit">Fit the window</button></span></div><div class="setrow"><span class="setlbl">Layout</span><span class="seg" id="s-layout"><button type="button" class="segb" data-layout="auto">Auto</button><button type="button" class="segb" data-layout="desktop">PC</button><button type="button" class="segb" data-layout="mobile">Mobile</button></span></div><div class="setrow"><span class="setlbl">Theme</span><span class="seg"><button type="button" class="segb" data-theme="auto">System</button><button type="button" class="segb" data-theme="light">Light</button><button type="button" class="segb" data-theme="dark">Dark</button></span></div><div class="setrow"><span class="setlbl">Colours</span><label class="col"><span>Text</span><input type="color" id="s-fg"></label><label class="col"><span>Background</span><input type="color" id="s-bg"></label><label class="col"><span>Link</span><input type="color" id="s-link"></label></div><p class="setnote">Settings are kept in this browser only.</p></div><div class="tools"><span class="ver">v0.110.2</span><a class="tool" href="toc.html">▤ Detailed contents</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book/releases/download/v0.110.2/proven_c_book-v0.110.2-en.pdf">⤓ PDF</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book" title="This book on GitHub">Git</a><a class="tool" href="https://rubidus-api.github.io/" title="rubidus-api.github.io --- every published project">⌂ All projects</a><a class="tool" href="https://github.com/rubidus-api" title="github.com/rubidus-api --- every repository">≡ All repos</a></div><div class="here-head"><strong>Contents of this chapter</strong></div><div class="here-body"><a class="lv3" href="#s113-1"><span class="tf-no">113.1</span>The life cycle of the four containers</a><a class="lv3" href="#s113-2"><span class="tf-no">113.2</span>The growing array</a><a class="lv3" href="#s113-3"><span class="tf-no">113.3</span>The intrusive list — linking without allocation</a><a class="lv3" href="#s113-4"><span class="tf-no">113.4</span>The ring buffer — a stream of fixed size</a><a class="lv3" href="#s113-5"><span class="tf-no">113.5</span>The hash map, and data structures under attack</a><a class="lv3" href="#s113-6"><span class="tf-no">113.6</span>Sorting with a worst-case guarantee</a><a class="lv3" href="#s113-7"><span class="tf-no">113.7</span>Bytes into text — hashes and encodings</a></div></div>
+<main id="content"><div class="wrap">
+<h2>113 Containers and algorithms</h2><div></div><div class="dev open prereq"><p class="dev-label">What to know first</p><div class="open-body"><div>chapter 47, Structs · structs</div><div>chapter 46, Dynamic memory · a growing array</div><div>chapter 109, The foundation · views and bounds</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 38 taught that a C array’s size is settled at compile time, and chapter 46 that it can be grown with <code>realloc</code>. Then where is it easiest to go wrong when making a “growing array” yourself?</p><div class="qa-a"><p><span class="dev-label">A.</span> In three places. First, <strong>calculating the size to grow to</strong> — the multiplication wrap-round seen in chapter 109 happens here. Second, <strong>the state on failure</strong> — when <code>realloc</code> fails the original pointer is still valid, and the common code that assigns the return value straight into the original variable loses that original (a leak). Third, <strong>pointers after the growth</strong> — a pointer that pointed at an element becomes invalid after reallocation. Rather than getting these three right afresh every time you make a container, it is better to use one made properly once.</p></div></div></div><div class="dev open why"><p class="dev-label">The need for this chapter, and its context</p><div class="open-body">By now the materials are all in hand — errors (chapter 108), views (chapter 109), allocators (chapter 110). Containers are the first place that uses all three at once, so they cannot be pulled earlier. And the answer to chapter 106’s fifth bug (unchecked callbacks) is here too: sorting and searching are exactly where callbacks are taken.</div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body"><span id="idx-entry-303"></span>This chapter covers the tools that hold many — the growing array, the intrusive list, the ring buffer, the hash map. And as the answer to chapter 106’s fifth bug (unchecked callbacks) and the performance trap attached to that place, we see sorting <strong>guaranteed even in the worst case</strong> and hashing that <strong>withstands attack</strong>. Chapter 38’s arrays and chapter 47’s structs become practical components here.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>How much slower is a keyed hash? And where does the random secret come from if there is no OS?</li></ol></div></div><div></div><h3 id="s113-1">113.1 The life cycle of the four containers<a class="plink" href="#s113-1" aria-label="Link to this section" title="Link to this section">#</a></h3><div></div><p>First we see the four on one screen. How making, putting in, traversing and giving back differ between them is all in this example.</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/proven-containers/tour.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> The life of four containers — made, filled, walked and given back.</span></em>
+<em><span class="tok-c">   array, list, ring and map compared on one screen. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">proven.h</span><span class="tok-s">></span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> an intrusive list: the node lives inside the data </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">typedef</span></strong> <strong><span class="tok-t">struct</span></strong> <span class="tok-x">{</span>
+    <strong><span class="tok-t">int</span></strong>                id<span class="tok-x">;</span>
+    proven_list_node_t link<span class="tok-x">;</span>      <em><span class="tok-c">/*</span></em><em><span class="tok-c"> &lt;- this one slot is the hook it hangs on the list by </span></em><em><span class="tok-c">*/</span></em>
+<span class="tok-x">}</span> <strong><span class="tok-t">task_t</span></strong><span class="tok-x">;</span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    proven_allocator_t alloc <strong><span class="tok-x">=</span></strong> <strong>proven_heap_allocator</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── (1) a growing array ─────────────────────────────────────── </span></em><em><span class="tok-c">*/</span></em>
+    proven_result_array_t ar <strong><span class="tok-x">=</span></strong> <strong>PROVEN_ARRAY_INIT</strong><strong><span class="tok-x">(</span></strong><strong>alloc</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">2</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong><strong>proven_is_ok</strong><strong><span class="tok-x">(</span></strong><strong>ar</strong><strong><span class="tok-x">.</span></strong><strong>err</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <strong><span class="tok-k">return</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+    proven_array_t arr <strong><span class="tok-x">=</span></strong> ar<span class="tok-x">.</span>value<span class="tok-x">;</span>
+
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;=</span></strong> <span class="tok-n">5</span><span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span>
+        <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span><strong>PROVEN_ARRAY_PUSH</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>arr</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">,</span></strong><strong> i </strong><strong><span class="tok-x">*</span></strong><strong> i</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">array  len={} cap={} elem_size={}</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                   </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>arr</strong><strong><span class="tok-x">.</span></strong><strong>len</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>arr</strong><strong><span class="tok-x">.</span></strong><strong>cap</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>arr</strong><strong><span class="tok-x">.</span></strong><strong>elem_size</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> walked by index — no pointer is carried around </span></em><em><span class="tok-c">*/</span></em>
+    <strong>proven_print</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">       content:</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span>proven_size_t i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> arr<span class="tok-x">.</span>len<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span>
+        <strong>proven_print</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s"> {}</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">*</span></strong><strong>PROVEN_ARRAY_GET</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>arr</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">,</span></strong><strong> i</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong><span class="tok-t">int</span></strong> last <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+    <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span><strong>PROVEN_ARRAY_POP</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>arr</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>last</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">       pop -> {} (len {})</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>last</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>arr</strong><strong><span class="tok-x">.</span></strong><strong>len</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>PROVEN_ARRAY_DESTROY</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>arr</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── (2) an intrusive list — not one allocation ──────────────── </span></em><em><span class="tok-c">*/</span></em>
+    task_t     items<span class="tok-x">[</span><span class="tok-n">3</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-x">{</span> <span class="tok-x">.</span>id <strong><span class="tok-x">=</span></strong> <span class="tok-n">10</span> <span class="tok-x">}</span><span class="tok-x">,</span> <span class="tok-x">{</span> <span class="tok-x">.</span>id <strong><span class="tok-x">=</span></strong> <span class="tok-n">20</span> <span class="tok-x">}</span><span class="tok-x">,</span> <span class="tok-x">{</span> <span class="tok-x">.</span>id <strong><span class="tok-x">=</span></strong> <span class="tok-n">30</span> <span class="tok-x">}</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+    proven_list_t list<span class="tok-x">;</span>
+    <strong>proven_list_init</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>list</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> <span class="tok-n">3</span><span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span>
+        <strong>proven_list_push_back</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>list</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>items</strong><strong><span class="tok-x">[</span></strong><strong>i</strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">.</span></strong><strong>link</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    proven_list_node_t <strong><span class="tok-x">*</span></strong>node<span class="tok-x">,</span> <strong><span class="tok-x">*</span></strong>tmp<span class="tok-x">;</span>
+    <strong>proven_print</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">list   from the front:</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>PROVEN_LIST_FOR_EACH</strong><strong><span class="tok-x">(</span></strong><strong>node</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>list</strong><strong><span class="tok-x">)</span></strong> <span class="tok-x">{</span>
+        task_t <strong><span class="tok-x">*</span></strong>t <strong><span class="tok-x">=</span></strong> <strong>PROVEN_LIST_ENTRY</strong><strong><span class="tok-x">(</span></strong><strong>node</strong><strong><span class="tok-x">,</span></strong><strong> task_t</strong><strong><span class="tok-x">,</span></strong><strong> link</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong>proven_print</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s"> {}</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>t</strong><strong><span class="tok-x">-></span></strong><strong>id</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+    <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  (the node is inside the data, so no allocation is needed)</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> to unhook while walking, the SAFE version is used </span></em><em><span class="tok-c">*/</span></em>
+    <strong>PROVEN_LIST_FOR_EACH_SAFE</strong><strong><span class="tok-x">(</span></strong><strong>node</strong><strong><span class="tok-x">,</span></strong><strong> tmp</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>list</strong><strong><span class="tok-x">)</span></strong> <span class="tok-x">{</span>
+        task_t <strong><span class="tok-x">*</span></strong>t <strong><span class="tok-x">=</span></strong> <strong>PROVEN_LIST_ENTRY</strong><strong><span class="tok-x">(</span></strong><strong>node</strong><strong><span class="tok-x">,</span></strong><strong> task_t</strong><strong><span class="tok-x">,</span></strong><strong> link</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>t<span class="tok-x">-></span>id <strong><span class="tok-x">==</span></strong> <span class="tok-n">20</span><span class="tok-x">)</span> <strong>proven_list_remove</strong><strong><span class="tok-x">(</span></strong><strong>node</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+    <strong>proven_print</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">       after removing 20:</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>PROVEN_LIST_FOR_EACH</strong><strong><span class="tok-x">(</span></strong><strong>node</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>list</strong><strong><span class="tok-x">)</span></strong> <span class="tok-x">{</span>
+        <strong>proven_print</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s"> {}</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>PROVEN_LIST_ENTRY</strong><strong><span class="tok-x">(</span></strong><strong>node</strong><strong><span class="tok-x">,</span></strong><strong> task_t</strong><strong><span class="tok-x">,</span></strong><strong> link</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">-></span></strong><strong>id</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+    <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── (3) a ring buffer — fixed size, the past is dropped ─────── </span></em><em><span class="tok-c">*/</span></em>
+    proven_result_ring_t rr <strong><span class="tok-x">=</span></strong> <strong>PROVEN_RING_INIT</strong><strong><span class="tok-x">(</span></strong><strong>alloc</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">4</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong>proven_is_ok</strong><strong><span class="tok-x">(</span></strong><strong>rr</strong><strong><span class="tok-x">.</span></strong><strong>err</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+        proven_ring_t ring <strong><span class="tok-x">=</span></strong> rr<span class="tok-x">.</span>value<span class="tok-x">;</span>
+        <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;=</span></strong> <span class="tok-n">4</span><span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span><strong>proven_ring_push</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>ring</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>i</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+        <strong><span class="tok-t">int</span></strong> five <strong><span class="tok-x">=</span></strong> <span class="tok-n">5</span><span class="tok-x">;</span>
+        proven_err_t full <strong><span class="tok-x">=</span></strong> <strong>proven_ring_push</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>ring</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>five</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">ring   push when full -> err={} (it reports rather than overwrites)</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                       </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong>full</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+        <strong><span class="tok-t">int</span></strong> v <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+        <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span><strong>proven_ring_pop</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>ring</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>v</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">       pop -> {} (the one put in first)</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>v</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong>proven_ring_destroy</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>ring</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── (4) a hash map — the key is owned or borrowed, as chosen ── </span></em><em><span class="tok-c">*/</span></em>
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the map copies and owns the key (U8_OWNED) — a borrowing version exists too </span></em><em><span class="tok-c">*/</span></em>
+    proven_result_map_t mr <strong><span class="tok-x">=</span></strong> <strong>PROVEN_MAP_INIT_U8_OWNED</strong><strong><span class="tok-x">(</span></strong><strong>alloc</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">8</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong>proven_is_ok</strong><strong><span class="tok-x">(</span></strong><strong>mr</strong><strong><span class="tok-x">.</span></strong><strong>err</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+        proven_map_t map <strong><span class="tok-x">=</span></strong> mr<span class="tok-x">.</span>value<span class="tok-x">;</span>
+        <strong><span class="tok-t">int</span></strong> a <strong><span class="tok-x">=</span></strong> <span class="tok-n">1</span><span class="tok-x">,</span> b <strong><span class="tok-x">=</span></strong> <span class="tok-n">2</span><span class="tok-x">;</span>
+        <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span><strong>proven_map_set_u8_owned</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>map</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_LIT</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">alpha</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>a</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span><strong>proven_map_set_u8_owned</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>map</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_LIT</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">beta</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>b</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+        <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>found <strong><span class="tok-x">=</span></strong> <strong>proven_map_get</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>map</strong><strong><span class="tok-x">,</span></strong>
+<strong>                        </strong><strong><span class="tok-x">(</span></strong><strong>proven_map_key_t</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">{</span></strong><strong> </strong><strong><span class="tok-x">.</span></strong><strong>str</strong><strong> </strong><strong><span class="tok-x">=</span></strong><strong> </strong><strong>PROVEN_LIT</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">beta</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">}</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">map    get(</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">beta</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">) -> {}</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                       </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>found </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong>found </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-x">-</span></strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">       get(</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">absent</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">) -> {} (null when there is none)</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                       </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">bool</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">(</span></strong><strong>proven_map_get</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>map</strong><strong><span class="tok-x">,</span></strong>
+<strong>                            </strong><strong><span class="tok-x">(</span></strong><strong>proven_map_key_t</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">{</span></strong><strong> </strong><strong><span class="tok-x">.</span></strong><strong>str</strong><strong> </strong><strong><span class="tok-x">=</span></strong><strong> </strong><strong>PROVEN_LIT</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">absent</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">}</span></strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">==</span></strong><strong> nullptr</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong>proven_map_destroy</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>map</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>array  len=5 cap=8 elem_size=4
+       content: 1 4 9 16 25
+       pop -> 25 (len 4)
+list   from the front: 10 20 30  (the node is inside the data, so no allocation is needed)
+       after removing 20: 10 30
+ring   push when full -> err=2 (it reports rather than overwrites)
+       pop -> 1 (the one put in first)
+map    get("beta") -> 2
+       get("absent") -> true (null when there is none)
+</code></pre></div></div><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>container</strong></th><th><strong>making</strong></th><th><strong>allocation</strong></th><th><strong>traversal</strong></th><th><strong>giving back</strong></th></tr><tr><td><code>array</code></td><td><code>PROVEN_ARRAY_INIT(alloc, T, n)</code></td><td>grows</td><td>by index</td><td><code>PROVEN_ARRAY_DESTROY</code></td></tr><tr><td><code>list</code></td><td><code>proven_list_init(&amp;l)</code></td><td><strong>none</strong></td><td><code>PROVEN_LIST_FOR_EACH</code></td><td>unnecessary</td></tr><tr><td><code>ring</code></td><td><code>PROVEN_RING_INIT(alloc, T, n)</code></td><td>once, fixed</td><td>by popping</td><td><code>proven_ring_destroy</code></td></tr><tr><td><code>map</code></td><td><code>PROVEN_MAP_INIT_U8_OWNED(alloc, T, n)</code></td><td>grows (rehashing)</td><td>by key lookup</td><td><code>proven_map_destroy</code></td></tr></table></div><span id="doc-float-557"></span><p class="float-caption">Table 113.1 — Containers — making, allocation, traversal, giving back</p></figure><p>That only the list has no allocation stands out — because the node lives inside the data. So a list is the only container that <strong>cannot fail for lack of memory</strong>, and it is especially loved in embedded work (chapter 115).</p><h3 id="s113-2">113.2 The growing array<a class="plink" href="#s113-2" aria-label="Link to this section" title="Link to this section">#</a></h3><div></div><p><code>proven_array_t</code> is a byte buffer that knows the element size and alignment. Open it up and why the type is filled in by macros becomes clear.</p><pre><code data-lang="c"><strong><span class="tok-t">typedef</span></strong> <strong><span class="tok-t">struct</span></strong> <span class="tok-x">{</span>
+    proven_allocator_t alloc<span class="tok-x">;</span>       <em><span class="tok-c">/*</span></em><em><span class="tok-c"> it remembers the allocator given at creation </span></em><em><span class="tok-c">*/</span></em>
+    proven_byte_t     <strong><span class="tok-x">*</span></strong>data<span class="tok-x">;</span>        <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the byte buffer </span></em><em><span class="tok-c">*/</span></em>
+    proven_size_t      len<span class="tok-x">;</span>         <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the number of elements held now </span></em><em><span class="tok-c">*/</span></em>
+    proven_size_t      cap<span class="tok-x">;</span>         <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the number of elements it can hold </span></em><em><span class="tok-c">*/</span></em>
+    proven_size_t      elem_size<span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the size of one element </span></em><em><span class="tok-c">*/</span></em>
+    proven_size_t      align<span class="tok-x">;</span>       <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the element's alignment requirement </span></em><em><span class="tok-c">*/</span></em>
+<span class="tok-x">}</span> <strong><span class="tok-t">proven_array_t</span></strong><span class="tok-x">;</span></code></pre><p><strong>That the array remembers the allocator</strong> differs from strings. A string takes an allocator per operation (chapter 111), while an array takes one at creation and keeps it inside — requiring an allocator on every <code>push</code> that may grow the array would make the code noisy. So the allocator is not given again at destruction either (<code>PROVEN_ARRAY_DESTROY(&amp;arr)</code>).</p><p>C having no generics, the type is filled in by macros.</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/proven-containers/arr.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">proven.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    proven_allocator_t alloc <strong><span class="tok-x">=</span></strong> <strong>proven_heap_allocator</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    proven_result_array_t made <strong><span class="tok-x">=</span></strong> <strong>PROVEN_ARRAY_INIT</strong><strong><span class="tok-x">(</span></strong><strong>alloc</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">4</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong><strong>proven_is_ok</strong><strong><span class="tok-x">(</span></strong><strong>made</strong><strong><span class="tok-x">.</span></strong><strong>err</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">array creation failed</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong><span class="tok-k">return</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+    proven_array_t arr <strong><span class="tok-x">=</span></strong> made<span class="tok-x">.</span>value<span class="tok-x">;</span>
+
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;=</span></strong> <span class="tok-n">6</span><span class="tok-x">;</span> i <strong><span class="tok-x">+=</span></strong> <span class="tok-n">1</span><span class="tok-x">)</span> <span class="tok-x">{</span>          <em><span class="tok-c">/*</span></em><em><span class="tok-c"> past a capacity of 4 it grows by itself </span></em><em><span class="tok-c">*/</span></em>
+        <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong><strong>proven_is_ok</strong><strong><span class="tok-x">(</span></strong><strong>PROVEN_ARRAY_PUSH</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>arr</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">,</span></strong><strong> i </strong><strong><span class="tok-x">*</span></strong><strong> i</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+            <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">push failed</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+            <strong>PROVEN_ARRAY_DESTROY</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>arr</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+            <strong><span class="tok-k">return</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+        <span class="tok-x">}</span>
+    <span class="tok-x">}</span>
+
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">count: </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> arr</strong><strong><span class="tok-x">.</span></strong><strong>len</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> arr<span class="tok-x">.</span>len<span class="tok-x">;</span> i <strong><span class="tok-x">+=</span></strong> <span class="tok-n">1</span><span class="tok-x">)</span> <span class="tok-x">{</span>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong>PROVEN_ARRAY_GET</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>arr</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">,</span></strong><strong> i</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>PROVEN_ARRAY_DESTROY</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>arr</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>count: 6
+1 4 9 16 25 36 
+</code></pre></div></div><p><code>PROVEN_ARRAY_INIT(alloc, int, 4)</code> means “an array to hold ints, initial capacity 4”, and <code>PROVEN_ARRAY_PUSH</code> writes the type again to <strong>check at compile time that it matches</strong>. At the fifth element, which exceeded the capacity of 4, the array grew by itself — and that growth happens through the allocator (exactly chapter 110’s rule; the array remembers the allocator it was given at creation).</p><p>Besides appending at the end, there are functions that <strong>edit the middle</strong>. <code>proven_array_insert</code> puts an element in at one position, and <code>proven_array_remove_at</code> takes one out and pulls the rest forward. <code>proven_array_swap_remove</code> fills the hole with the last element — the order is disturbed, but only one element moves. <code>proven_array_extend</code> appends several at once, and <code>proven_array_truncate</code> and <code>proven_array_clear</code> shorten the array. When one of them fails, the array is unchanged (failure atomicity, chapter 108).</p><div class="dev antipattern"><p class="dev-label">Counter-example.<span style="white-space: pre-wrap">&#x20;&#x20;</span>Holding an element pointer and then pushing</p><div class="dev-body"><pre><code data-lang="c"><strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>first <strong><span class="tok-x">=</span></strong> <strong>PROVEN_ARRAY_GET_MUT</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>arr</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span><strong>PROVEN_ARRAY_PUSH</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>arr</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">42</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the buffer may move here </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-x">*</span></strong>first <strong><span class="tok-x">=</span></strong> <span class="tok-n">7</span><span class="tok-x">;</span>                               <em><span class="tok-c">/*</span></em><em><span class="tok-c"> writes at the old address — use after free </span></em><em><span class="tok-c">*/</span></em></code></pre><p>When the array grows the contents move to a new buffer and a pointer to the old address becomes invalid. It is the form in which the use after free learned in chapter 46 appears on a container. There is one rule — <strong>after changing a container, obtain the element again by index.</strong> The habit of carrying an index rather than a pointer becomes the defence here.</p></div></div><h3 id="s113-3">113.3 The intrusive list — linking without allocation<a class="plink" href="#s113-3" aria-label="Link to this section" title="Link to this section">#</a></h3><div></div><p><code>proven_list_t</code> is an <strong>intrusive</strong> linked list — the node does not hold the data; rather a link field is planted inside the data struct. It amounts to putting one <code>proven_list_node_t link;</code> slot inside a <code>struct</code> made in chapter 47.</p><pre><code data-lang="c"><strong><span class="tok-t">typedef</span></strong> <strong><span class="tok-t">struct</span></strong> proven_list_node_t <span class="tok-x">{</span>
+    <strong><span class="tok-t">struct</span></strong> proven_list_node_t <strong><span class="tok-x">*</span></strong>next<span class="tok-x">;</span>
+    <strong><span class="tok-t">struct</span></strong> proven_list_node_t <strong><span class="tok-x">*</span></strong>prev<span class="tok-x">;</span>
+<span class="tok-x">}</span> <strong><span class="tok-t">proven_list_node_t</span></strong><span class="tok-x">;</span>
+
+<strong><span class="tok-t">typedef</span></strong> <strong><span class="tok-t">struct</span></strong> <span class="tok-x">{</span>
+    proven_list_node_t head<span class="tok-x">;</span>      <em><span class="tok-c">/*</span></em><em><span class="tok-c"> a sentinel pointing at itself </span></em><em><span class="tok-c">*/</span></em>
+<span class="tok-x">}</span> <strong><span class="tok-t">proven_list_t</span></strong><span class="tok-x">;</span></code></pre><p>That <code>head</code> is a <strong>sentinel</strong> is this implementation’s knack. In an empty list <code>head.next</code> and <code>head.prev</code> point at head itself, and so not one “is it null” check appears in the insertion and deletion code — a pattern the Linux kernel long used.</p><p>What is good about it? <strong>There is nothing to allocate separately</strong> to put something in the list — because the node is the data. A list can be used even in an environment with no heap (chapter 115), and hanging the same object on two lists at once is a matter of keeping two link fields. The price is that the data struct must know about the list.</p><p>Getting back from a node to the data that holds it is the problem, and one macro solves it.</p><pre><code data-lang="c">task_t <strong><span class="tok-x">*</span></strong>t <strong><span class="tok-x">=</span></strong> <strong>PROVEN_LIST_ENTRY</strong><strong><span class="tok-x">(</span></strong><strong>node</strong><strong><span class="tok-x">,</span></strong><strong> task_t</strong><strong><span class="tok-x">,</span></strong><strong> link</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span></code></pre><p>It is the macro that <strong>works the struct’s starting address back</strong> from the address of the <code>link</code> member — the <code>offsetof</code> seen in chapter 47 used here in the flesh. This one line returning from node to data is nearly the whole of the intrusive list.</p><p>There are two traversal macros.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>macro</strong></th><th><strong>what it does</strong></th><th><strong>when</strong></th></tr><tr><td><code>PROVEN_LIST_FOR_EACH(it, &amp;l)</code></td><td>traverses from the front</td><td>when only reading</td></tr><tr><td><code>PROVEN_LIST_FOR_EACH_SAFE(it, tmp, &amp;l)</code></td><td>holds the next node in advance</td><td>★ when removing while traversing</td></tr></table></div><span id="doc-float-558"></span><p class="float-caption">Table 113.2 — The list traversal macros</p></figure><p>The star matters. Remove a node during traversal and its <code>next</code> becomes meaningless, so the loop loses its way. The <code>_SAFE</code> variant loops with <strong>the next node already in hand</strong>, so removing the present node is safe. It is why the example used it when detaching item</p><ol><li value="20"></li></ol><p>It is worth knowing too that both macros require the iteration variables to be <strong>declared in advance</strong> (<code>proven_list_node_t *node, *tmp;</code>). The macro does not put a declaration in the <code>for</code>’s initialiser — a kernel practice carried on from the C89 days.</p><h3 id="s113-4">113.4 The ring buffer — a stream of fixed size<a class="plink" href="#s113-4" aria-label="Link to this section" title="Link to this section">#</a></h3><div></div><p><code>proven_ring_t</code> is a fixed-size circular buffer. It is used where a producer and a consumer come and go, for the most recent N of a log, and for streams such as audio and sensor samples where <strong>what has passed may be thrown away</strong>. The size being fixed, what to do when it is full is part of the contract — and here too the default is to report rather than quietly overwrite (the <code>err=2</code> in <code>tour.c</code>’s output confirms it).</p><p>There are only <code>push</code> and <code>pop</code>, and both <strong>copy the element</strong>. Putting in gives an address, and taking out gives the address of the place to receive it.</p><pre><code data-lang="c"><strong><span class="tok-t">int</span></strong> v <strong><span class="tok-x">=</span></strong> <span class="tok-n">42</span><span class="tok-x">;</span>
+proven_err_t e <strong><span class="tok-x">=</span></strong> <strong>proven_ring_push</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>ring</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>v</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>     <em><span class="tok-c">/*</span></em><em><span class="tok-c"> copies the value in </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">int</span></strong> out<span class="tok-x">;</span>
+e <strong><span class="tok-x">=</span></strong> <strong>proven_ring_pop</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>ring</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>out</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>                 <em><span class="tok-c">/*</span></em><em><span class="tok-c"> copies the value out </span></em><em><span class="tok-c">*/</span></em></code></pre><p>Thanks to this design no pointer into an element inside the ring leaks outward — holding a pointer in a circular buffer and having that place overwritten is a classic accident, and it was blocked by the interface.</p><h3 id="s113-5">113.5 The hash map, and data structures under attack<a class="plink" href="#s113-5" aria-label="Link to this section" title="Link to this section">#</a></h3><div></div><p><code>proven_map_t</code> is an open-addressing hash map. Keys are integers or byte sequences, and string keys have two modes — <strong>a borrowed key</strong> (the caller keeps the bytes alive) and <strong>an owned key</strong> (the map copies and holds it). Chapter 110’s owning-borrowing distinction appears here as it is too.</p><p>The kind of key is settled at creation.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>creation macro</strong></th><th><strong>key</strong></th><th><strong>caution</strong></th></tr><tr><td><code>PROVEN_MAP_INIT_INT(alloc, T, n)</code></td><td>an integer (<code>key.id</code>)</td><td>the fastest</td></tr><tr><td><code>PROVEN_MAP_INIT_U8_BORROWED(alloc, T, n)</code></td><td>a string (borrowed)</td><td>★ the key bytes must outlive the map</td></tr><tr><td><code>PROVEN_MAP_INIT_U8_OWNED(alloc, T, n)</code></td><td>a string (copied)</td><td>a copy cost on insertion. safe in exchange</td></tr></table></div><span id="doc-float-559"></span><p class="float-caption">Table 113.3 — Keys for a hash map, and what to watch</p></figure><p>The key is passed as one union — <code>.id</code> for an integer, <code>.str</code> for a string.</p><pre><code data-lang="c">proven_map_key_t k <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-x">.</span>str <strong><span class="tok-x">=</span></strong> <strong>PROVEN_LIT</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">beta</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong> <span class="tok-x">}</span><span class="tok-x">;</span>
+<strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>v <strong><span class="tok-x">=</span></strong> <strong>proven_map_get</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>map</strong><strong><span class="tok-x">,</span></strong><strong> k</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>      <em><span class="tok-c">/*</span></em><em><span class="tok-c"> null if absent </span></em><em><span class="tok-c">*/</span></em></code></pre><p><strong>Lookup answers with null.</strong> The reason it returns a pointer rather than a bundle is that “absent” is not a failure but a normal answer (distinct from chapter 108’s error branches). And that pointer <strong>points inside the map</strong>, so it becomes invalid the next time the map grows — the same rule as with arrays.</p><p>There are three functions for putting in. <code>proven_map_set</code> (general), <code>proven_map_set_u8_owned</code> (copying a string key in), and <code>proven_map_set_with_scratch</code> (giving the temporary memory separately). The last is used when the temporary buffers of internal work such as rehashing are to be obtained from another allocator — a device for keeping dead memory from piling up when running a map on an arena.</p><p>What is inside can also be <strong>walked in full</strong>. <code>proven_map_len</code> gives the count, and a walk starts with <code>proven_map_iter_init</code> and calls <code>proven_map_iter_next</code> until <code>PROVEN_ERR_EOF</code> comes.</p><pre><code data-lang="c">proven_map_iter_t it <strong><span class="tok-x">=</span></strong> <strong>proven_map_iter_init</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>map</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+proven_map_key_t key<span class="tok-x">;</span>
+<strong><span class="tok-t">void</span></strong> <strong><span class="tok-x">*</span></strong>value<span class="tok-x">;</span>
+<strong><span class="tok-k">while</span></strong> <span class="tok-x">(</span><strong>proven_is_ok</strong><strong><span class="tok-x">(</span></strong><strong>proven_map_iter_next</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>it</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>key</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>value</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> use key.str and *(int *)value </span></em><em><span class="tok-c">*/</span></em>
+<span class="tok-x">}</span></code></pre><p>The walk is in bucket order. That is not insertion order, and in a default map it differs from one run to the next — when order is needed, gather into an array and sort, as the example does. Removing an entry or changing a value during a walk is allowed. Adding a new key is not. Entries move when the map grows, and the next <code>iter_next</code> then returns <code>PROVEN_ERR_INVALID_STATE</code> — it stops instead of skipping or repeating entries.</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/proven-containers/wordcount.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">proven.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> Words counted, sorted and printed — a map, an array and a sort at once </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">typedef</span></strong> <strong><span class="tok-t">struct</span></strong> <span class="tok-x">{</span> proven_u8str_view_t word<span class="tok-x">;</span> <strong><span class="tok-t">int</span></strong> count<span class="tok-x">;</span> <span class="tok-x">}</span> <strong><span class="tok-t">entry_t</span></strong><span class="tok-x">;</span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> a comparator must be a total order: ties are broken consistently too (avoiding chapter 100's counterexample) </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">int</span></strong> <strong>by_count_desc</strong><span class="tok-x">(</span><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">void</span></strong> <strong><span class="tok-x">*</span></strong>a<span class="tok-x">,</span> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">void</span></strong> <strong><span class="tok-x">*</span></strong>b<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-k">const</span></strong> entry_t <strong><span class="tok-x">*</span></strong>x <strong><span class="tok-x">=</span></strong> a<span class="tok-x">,</span> <strong><span class="tok-x">*</span></strong>y <strong><span class="tok-x">=</span></strong> b<span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>x<span class="tok-x">-></span>count <strong><span class="tok-x">!=</span></strong> y<span class="tok-x">-></span>count<span class="tok-x">)</span> <strong><span class="tok-k">return</span></strong> <span class="tok-x">(</span>x<span class="tok-x">-></span>count <strong><span class="tok-x">&lt;</span></strong> y<span class="tok-x">-></span>count<span class="tok-x">)</span> <strong><span class="tok-x">-</span></strong> <span class="tok-x">(</span>x<span class="tok-x">-></span>count <strong><span class="tok-x">></span></strong> y<span class="tok-x">-></span>count<span class="tok-x">)</span><span class="tok-x">;</span>
+
+    proven_size_t n <strong><span class="tok-x">=</span></strong> x<span class="tok-x">-></span>word<span class="tok-x">.</span>size <strong><span class="tok-x">&lt;</span></strong> y<span class="tok-x">-></span>word<span class="tok-x">.</span>size <strong><span class="tok-x">?</span></strong> x<span class="tok-x">-></span>word<span class="tok-x">.</span>size <strong><span class="tok-x">:</span></strong> y<span class="tok-x">-></span>word<span class="tok-x">.</span>size<span class="tok-x">;</span>
+    <strong><span class="tok-t">int</span></strong> c <strong><span class="tok-x">=</span></strong> <strong>proven_memcmp</strong><strong><span class="tok-x">(</span></strong><strong>x</strong><strong><span class="tok-x">-></span></strong><strong>word</strong><strong><span class="tok-x">.</span></strong><strong>ptr</strong><strong><span class="tok-x">,</span></strong><strong> y</strong><strong><span class="tok-x">-></span></strong><strong>word</strong><strong><span class="tok-x">.</span></strong><strong>ptr</strong><strong><span class="tok-x">,</span></strong><strong> n</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>c <strong><span class="tok-x">!=</span></strong> <span class="tok-n">0</span><span class="tok-x">)</span> <strong><span class="tok-k">return</span></strong> c<span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-x">(</span>x<span class="tok-x">-></span>word<span class="tok-x">.</span>size <strong><span class="tok-x">></span></strong> y<span class="tok-x">-></span>word<span class="tok-x">.</span>size<span class="tok-x">)</span> <strong><span class="tok-x">-</span></strong> <span class="tok-x">(</span>x<span class="tok-x">-></span>word<span class="tok-x">.</span>size <strong><span class="tok-x">&lt;</span></strong> y<span class="tok-x">-></span>word<span class="tok-x">.</span>size<span class="tok-x">)</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    proven_allocator_t alloc <strong><span class="tok-x">=</span></strong> <strong>proven_heap_allocator</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>text <strong><span class="tok-x">=</span></strong> <span class="tok-s">"</span><span class="tok-s">the quick fox the lazy dog the fox</span><span class="tok-s">"</span><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> a map with string keys: by default a keyed hash that stands up to HashDoS </span></em><em><span class="tok-c">*/</span></em>
+    proven_result_map_t made_map <strong><span class="tok-x">=</span></strong>
+        <strong>proven_map_create</strong><strong><span class="tok-x">(</span></strong><strong>alloc</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">16</span></strong><strong><span class="tok-x">,</span></strong><strong> PROVEN_KEY_TYPE_U8_OWNED</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>alignof</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong><strong>proven_is_ok</strong><strong><span class="tok-x">(</span></strong><strong>made_map</strong><strong><span class="tok-x">.</span></strong><strong>err</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <strong><span class="tok-k">return</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+    proven_map_t counts <strong><span class="tok-x">=</span></strong> made_map<span class="tok-x">.</span>value<span class="tok-x">;</span>
+
+    proven_u8str_view_t all <strong><span class="tok-x">=</span></strong> <strong>proven_u8str_view_from_cstr</strong><strong><span class="tok-x">(</span></strong><strong>text</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    proven_u8str_view_t space <strong><span class="tok-x">=</span></strong> <strong>proven_u8str_view_from_cstr</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    proven_size_t start <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><span class="tok-x">;</span><span class="tok-x">;</span><span class="tok-x">)</span> <span class="tok-x">{</span>
+        proven_size_t hit <strong><span class="tok-x">=</span></strong> <strong>proven_u8str_view_find</strong><strong><span class="tok-x">(</span></strong><strong>all</strong><strong><span class="tok-x">,</span></strong><strong> start</strong><strong><span class="tok-x">,</span></strong><strong> space</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        proven_size_t end <strong><span class="tok-x">=</span></strong> <span class="tok-x">(</span>hit <strong><span class="tok-x">==</span></strong> PROVEN_INDEX_NOT_FOUND<span class="tok-x">)</span> <strong><span class="tok-x">?</span></strong> all<span class="tok-x">.</span>size <strong><span class="tok-x">:</span></strong> hit<span class="tok-x">;</span>
+        proven_u8str_view_t w <strong><span class="tok-x">=</span></strong> <strong>proven_u8str_view_slice</strong><strong><span class="tok-x">(</span></strong><strong>all</strong><strong><span class="tok-x">,</span></strong><strong> start</strong><strong><span class="tok-x">,</span></strong><strong> end </strong><strong><span class="tok-x">-</span></strong><strong> start</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+        <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>seen <strong><span class="tok-x">=</span></strong> <strong>proven_map_get</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>counts</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong>proven_map_key_t</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">{</span></strong><strong> </strong><strong><span class="tok-x">.</span></strong><strong>str</strong><strong> </strong><strong><span class="tok-x">=</span></strong><strong> w </strong><strong><span class="tok-x">}</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong><span class="tok-t">int</span></strong> next <strong><span class="tok-x">=</span></strong> seen <strong><span class="tok-x">?</span></strong> <strong><span class="tok-x">*</span></strong>seen <strong><span class="tok-x">+</span></strong> <span class="tok-n">1</span> <strong><span class="tok-x">:</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+        <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong><strong>proven_is_ok</strong><strong><span class="tok-x">(</span></strong><strong>proven_map_set</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>counts</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong>proven_map_key_t</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">{</span></strong><strong> </strong><strong><span class="tok-x">.</span></strong><strong>str</strong><strong> </strong><strong><span class="tok-x">=</span></strong><strong> w </strong><strong><span class="tok-x">}</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>next</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span>
+            <strong><span class="tok-k">break</span></strong><span class="tok-x">;</span>
+
+        <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>hit <strong><span class="tok-x">==</span></strong> PROVEN_INDEX_NOT_FOUND<span class="tok-x">)</span> <strong><span class="tok-k">break</span></strong><span class="tok-x">;</span>
+        start <strong><span class="tok-x">=</span></strong> hit <strong><span class="tok-x">+</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">distinct words: </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> counts</strong><strong><span class="tok-x">.</span></strong><strong>len</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the counts gathered into an array and sorted </span></em><em><span class="tok-c">*/</span></em>
+    proven_result_array_t made_arr <strong><span class="tok-x">=</span></strong> <strong>PROVEN_ARRAY_INIT</strong><strong><span class="tok-x">(</span></strong><strong>alloc</strong><strong><span class="tok-x">,</span></strong><strong> entry_t</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">8</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong><strong>proven_is_ok</strong><strong><span class="tok-x">(</span></strong><strong>made_arr</strong><strong><span class="tok-x">.</span></strong><strong>err</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <strong><span class="tok-k">return</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+    proven_array_t list <strong><span class="tok-x">=</span></strong> made_arr<span class="tok-x">.</span>value<span class="tok-x">;</span>
+
+    <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>words<span class="tok-x">[</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span><span class="tok-s">"</span><span class="tok-s">the</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-s">"</span><span class="tok-s">quick</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-s">"</span><span class="tok-s">fox</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-s">"</span><span class="tok-s">lazy</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-s">"</span><span class="tok-s">dog</span><span class="tok-s">"</span><span class="tok-x">}</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> <strong><span class="tok-k">sizeof</span></strong> words <strong><span class="tok-x">/</span></strong> <strong><span class="tok-k">sizeof</span></strong> words<span class="tok-x">[</span><span class="tok-n">0</span><span class="tok-x">]</span><span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+        proven_u8str_view_t w <strong><span class="tok-x">=</span></strong> <strong>proven_u8str_view_from_cstr</strong><strong><span class="tok-x">(</span></strong><strong>words</strong><strong><span class="tok-x">[</span></strong><strong>i</strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>c <strong><span class="tok-x">=</span></strong> <strong>proven_map_get</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>counts</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong>proven_map_key_t</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">{</span></strong><strong> </strong><strong><span class="tok-x">.</span></strong><strong>str</strong><strong> </strong><strong><span class="tok-x">=</span></strong><strong> w </strong><strong><span class="tok-x">}</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        entry_t e <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-x">.</span>word <strong><span class="tok-x">=</span></strong> w<span class="tok-x">,</span> <span class="tok-x">.</span>count <strong><span class="tok-x">=</span></strong> c <strong><span class="tok-x">?</span></strong> <strong><span class="tok-x">*</span></strong>c <strong><span class="tok-x">:</span></strong> <span class="tok-n">0</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+        <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong><strong>proven_is_ok</strong><strong><span class="tok-x">(</span></strong><strong>PROVEN_ARRAY_PUSH</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>list</strong><strong><span class="tok-x">,</span></strong><strong> entry_t</strong><strong><span class="tok-x">,</span></strong><strong> e</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <strong><span class="tok-k">break</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+
+    <strong>proven_array_sort</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>list</strong><strong><span class="tok-x">,</span></strong><strong> by_count_desc</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> O(n log n) guaranteed even in the worst case </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> list<span class="tok-x">.</span>len<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+        <strong><span class="tok-k">const</span></strong> entry_t <strong><span class="tok-x">*</span></strong>e <strong><span class="tok-x">=</span></strong> <strong>PROVEN_ARRAY_GET</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>list</strong><strong><span class="tok-x">,</span></strong><strong> entry_t</strong><strong><span class="tok-x">,</span></strong><strong> i</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  </span></strong><strong><span class="tok-s">%.*s</span></strong><strong><span class="tok-s"> = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong>e</strong><strong><span class="tok-x">-></span></strong><strong>word</strong><strong><span class="tok-x">.</span></strong><strong>size</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-k">const</span></strong><strong> </strong><strong><span class="tok-t">char</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">)</span></strong><strong>e</strong><strong><span class="tok-x">-></span></strong><strong>word</strong><strong><span class="tok-x">.</span></strong><strong>ptr</strong><strong><span class="tok-x">,</span></strong><strong> e</strong><strong><span class="tok-x">-></span></strong><strong>count</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+
+    <strong>PROVEN_ARRAY_DESTROY</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>list</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>proven_map_destroy</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>counts</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>distinct words: 5
+  the = 3
+  fox = 2
+  dog = 1
+  lazy = 1
+  quick = 1
+</code></pre></div></div><p>This one example brings several of this chapter’s tools together — it counts with a map, gathers into an array, sorts and prints. Chapter 111’s views were used to cut the words, so string copying happens only once, when the map owns the key.</p><div class="dev realcase"><p class="dev-label">In practice.<span style="white-space: pre-wrap">&#x20;&#x20;</span>HashDoS — when hash maps became a target of attack</p><div class="dev-body"><p>In 2011 several web frameworks collapsed at once through the same vulnerability. If an attacker chose <strong>keys that crowd into the same bucket</strong> and sent thousands of them as parameters in one request, insertion that had been <math><mi>𝑂</mi><mrow><mo>(</mo><mn>1</mn><mo>)</mo></mrow></math> on average became <math><mi>𝑂</mi><mrow><mo>(</mo><mi>𝑛</mi><mo>)</mo></mrow></math> and the whole degenerated to <math><mi>𝑂</mi><mrow><mo>(</mo><msup><mi>𝑛</mi><mn>2</mn></msup><mo>)</mo></mrow></math>, so a few requests stopped a server. The cause was that the hash function was public and collisions <strong>could be calculated</strong>.</p><p>Today’s prescription is a <strong>keyed hash</strong> — draw a random secret per process and mix it into the hash, and the attacker cannot precompute collisions. It is why proven’s <code>proven_map_create</code> uses SipHash-2-4 and a random seed by default for string keys (integer keys go through SipHash-1-3 under the same secret — a number carried in a request is as attacker-chosen as a string), and conversely why there is a separate <code>proven_map_create_trusted</code> using the faster FNV-1a for cases where the keys all come from your own code. <strong>The default is the safe side, and the fast side states itself in the name</strong> — the principle met repeatedly in this part.</p></div></div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> How much slower is a keyed hash? And where does the random secret come from if there is no OS?</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> SipHash is slower than FNV-1a, but by an amount proportional to the string length, and the share hash computation takes in the whole of a map operation is mostly not large. The random secret is drawn once from the operating system’s source of randomness — and in an environment with no OS (chapter 115) there is nowhere to draw it from, so it falls back to FNV-1a. The library does not hide this fact but writes it in the documentation, and the grounds are clear: <strong>where there is no attacker there is no need for an attacker model either.</strong> There exists no outsider choosing keys inside your firmware.</p></div></div><h3 id="s113-6">113.6 Sorting with a worst-case guarantee<a class="plink" href="#s113-6" aria-label="Link to this section" title="Link to this section">#</a></h3><div></div><p>The two problems seen in chapter 106 — the unchecked comparator, and the algorithm that collapses in the worst case — are treated together here.</p><span id="idx-entry-304"></span><p><code>proven_array_sort</code> is <strong>introsort</strong>. It begins as a fast quicksort and, if the recursion becomes too deep, switches to heapsort. So the average is as fast as quicksort and <math><mi>𝑂</mi><mrow><mo>(</mo><mrow><mi>𝑛</mi><mo form="prefix" lspace="0.16666666666666666em" rspace="0.16666666666666666em">log</mo><mi>𝑛</mi></mrow><mo>)</mo></mrow></math> is <strong>guaranteed</strong> even in the worst case — the complexity attack seen in chapter 106 does not work. To carry the header’s wording over as it is: “<math><mi>𝑂</mi><mrow><mo>(</mo><mrow><mi>𝑛</mi><mo form="prefix" lspace="0.16666666666666666em" rspace="0.16666666666666666em">log</mo><mi>𝑛</mi></mrow><mo>)</mo></mrow></math> is not an average but a guarantee.”</p><p>On the comparator side the language cannot help, so the contract is stated in the documentation and in examples. The example’s <code>by_count_desc</code> is the model — descending by count, and <strong>ties broken by the word</strong>. It contrasts exactly with chapter 106’s counterexample (the comparator that sees only the first letter).</p><div class="dev misconception"><p class="dev-label">A common misconception. <strong>“Ties may be handled however you like”</strong></p><div class="dev-body">They may not. A comparator must form a <strong>total order</strong> — 0 if equal, consistently greater and less, and the signs of <code>cmp(a,b)</code> and <code>cmp(b,a)</code> must be opposite. Break this and the result is not merely jumbled; depending on the implementation it may even <strong>trespass outside the array</strong> (because the partitioning algorithm judges its boundaries from the comparison results). A comparator that returns anything at all for ties is therefore a bug, not a matter of taste.</div></div><h3 id="s113-7">113.7 Bytes into text — hashes and encodings<a class="plink" href="#s113-7" aria-label="Link to this section" title="Link to this section">#</a></h3><div></div><p>We also note the other tools that come with the containers: hashes, and the hex and Base64 encodings.</p><ul><li><strong>Hashes by purpose</strong> — for the map’s internals (fast mixing), for integrity checking (CRC-32), for cryptographic use (SHA-256 — from v0.113.0 in the separate proven_crypto’s <code>sha2.h</code>, and not in this book’s snapshot), and the keyed hash seen above (SipHash). The library distinguishes them because <strong>the same word “hash” means entirely different demands</strong> — using SHA-256 where only speed is needed is waste, and using FNV-1a where adversarial input comes is dangerous.</li><li><strong>hex and Base64</strong> — two standards for moving bytes into text. The principle here is the same. Wrong input (hex of odd length, wrong padding) is <strong>not guessed at and mended</strong> but refused with <code>PROVEN_ERR_INVALID_ENCODING</code> (that norm from chapter 111).</li></ul><div class="dev recap"><p class="dev-label">Recap</p><div class="dev-body"><p>Containers in summary.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>tool</strong></th><th><strong>shape</strong></th><th><strong>where it fits</strong></th><th><strong>caution</strong></th></tr><tr><td><code>array</code></td><td>a growing contiguous array</td><td>an ordered list</td><td>pointers invalid after growth</td></tr><tr><td><code>list</code></td><td>an intrusive linked list</td><td>joining without allocation</td><td>the data holds the link</td></tr><tr><td><code>ring</code></td><td>fixed-size circular</td><td>streams, the most recent N</td><td>the contract when full</td></tr><tr><td><code>map</code></td><td>open-addressing hash</td><td>finding by key</td><td>choose whether the key is owned</td></tr><tr><td><code>array_sort</code></td><td>introsort</td><td>sorting anything</td><td>the comparator must be a total order</td></tr><tr><td>four hashes</td><td>by purpose</td><td>map, integrity, cryptography, anti-attack</td><td>do not mix the purposes</td></tr></table></div><span id="doc-float-560"></span><p class="float-caption">Table 113.4 — The container and algorithm tools and where each fits</p></figure></div></div><p>This is where the world of pure computation ends — it all runs even with no operating system. In the next chapter we go outside. Files, streams, time, random numbers — the places that touch the OS.</p>
+<div class="nav"><a href="ch112.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch114.html">Next →</a></div>
+</div></main>
+<script>(function(){var b=document.querySelector('.menu-btn'),p=document.getElementById('here-panel');function open(o){if(!p)return;p.hidden=!o;if(b)b.setAttribute('aria-expanded',o);}if(b)b.addEventListener('click',function(){open(p.hidden);});if(p)p.addEventListener('click',function(e){if(e.target.tagName==='A'&&e.target.getAttribute('href').charAt(0)==='#')open(false);});document.addEventListener('keydown',function(e){if(e.key==='Escape'&&p&&!p.hidden){open(false);if(b)b.focus();}});document.addEventListener('click',function(e){if(p&&!p.hidden&&!p.contains(e.target)&&!(b&&b.contains(e.target)))open(false);});var bk=document.querySelector('.bar .back');if(bk)bk.addEventListener('click',function(e){if(history.length>1&&document.referrer){e.preventDefault();history.back();}});var box=document.getElementById('setbox');if(!box)return;var r=document.documentElement;function load(){try{return JSON.parse(localStorage.getItem('doc-read')||'{}');}catch(e){return {};}}function save(s){try{localStorage.setItem('doc-read',JSON.stringify(s));}catch(e){}}function css(n){return getComputedStyle(r).getPropertyValue(n).trim();}function paint(){var s=load();var t=s.theme||'auto',w=s.width==='fit'?'fit':'960';[].forEach.call(box.querySelectorAll('.segb[data-theme]'),function(x){x.setAttribute('aria-pressed',x.dataset.theme===t);});[].forEach.call(box.querySelectorAll('.segb[data-width]'),function(x){x.setAttribute('aria-pressed',x.dataset.width===w);});var ly=s.layout||'auto';[].forEach.call(box.querySelectorAll('.segb[data-layout]'),function(x){x.setAttribute('aria-pressed',x.dataset.layout===ly);});document.getElementById('s-fg').value=s.fg||hex(css('--fg'));document.getElementById('s-bg').value=s.bg||hex(css('--bg'));document.getElementById('s-link').value=s.link||hex(css('--link'));}function hex(v){var m=v.match(/^rgba?\((\d+)[ ,]+(\d+)[ ,]+(\d+)/);if(!m)return v.charAt(0)==='#'?v:'#000000';return '#'+[1,2,3].map(function(i){return ('0'+parseInt(m[i],10).toString(16)).slice(-2);}).join('');}paint();[].forEach.call(box.querySelectorAll('.segb[data-width]'),function(x){x.addEventListener('click',function(){var s=load();if(x.dataset.width==='fit'){s.width='fit';r.setAttribute('data-measure','fit');}else{delete s.width;r.removeAttribute('data-measure');}save(s);setTimeout(paint,0);});});[].forEach.call(box.querySelectorAll('.segb[data-layout]'),function(x){x.addEventListener('click',function(){var s=load(),v=x.dataset.layout;if(v==='auto'){delete s.layout;r.removeAttribute('data-layout');}else{s.layout=v;r.setAttribute('data-layout',v);}save(s);var m=document.querySelector('meta[name=viewport]');var want=v==='desktop'?'width=1100':'width=device-width, initial-scale=1';if(m&&m.getAttribute('content')!==want)location.reload();else setTimeout(paint,0);});});[].forEach.call(box.querySelectorAll('.segb[data-theme]'),function(x){x.addEventListener('click',function(){var s=load();s.theme=x.dataset.theme;delete s.fg;delete s.bg;delete s.link;save(s);['--fg','--bg','--link'].forEach(function(n){r.style.removeProperty(n);});if(s.theme==='auto')r.removeAttribute('data-theme');else r.setAttribute('data-theme',s.theme);setTimeout(paint,0);});});[['s-fg','--fg','fg'],['s-bg','--bg','bg'],['s-link','--link','link']].forEach(function(a){document.getElementById(a[0]).addEventListener('input',function(){var s=load();s[a[2]]=this.value;save(s);r.style.setProperty(a[1],this.value);});});})();</script><script>
+(function(){
+  var q=document.getElementById('q'), out=document.getElementById('qr');
+  if(!q||!out) return;
+  var data=null, NONE="Nothing found";
+  function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+  function run(){
+    var v=q.value.trim().toLowerCase();
+    out.innerHTML='';
+    if(!v||!data) return;
+    var hits=[];
+    for(var i=0;i<data.length && hits.length<40;i++){
+      if(data[i][0].toLowerCase().indexOf(v)>=0) hits.push(data[i]);
+    }
+    if(!hits.length){ out.innerHTML='<li>'+NONE+'</li>'; return; }
+    out.innerHTML=hits.map(function(h){
+      return '<li><a href="'+h[1]+'">'+esc(h[0])+'</a>'+
+             (h[2]?'<span class="where">'+esc(h[2])+'</span>':'')+'</li>';
+    }).join('');
+  }
+  q.addEventListener('input',function(){
+    if(data){ run(); return; }
+    fetch('search-index.json').then(function(r){return r.json();})
+      .then(function(j){ data=j; run(); })
+      .catch(function(){ out.innerHTML='<li>'+NONE+'</li>'; });
+  });
+})();
+</script></body></html>

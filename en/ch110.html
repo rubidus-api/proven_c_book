@@ -1,0 +1,640 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>110 Allocation is a parameter — Proven C Book</title><style>@font-face { font-family:"Doc Serif"; src:url("../fonts/serif.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-italic.woff2") format("woff2");
+  font-weight:400; font-style:italic; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-kr.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-kr-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans-kr.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans-kr-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Mono"; src:url("../fonts/mono.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Mono"; src:url("../fonts/mono-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+:root { color-scheme: light dark; --bg:#fafaf8; --bg2:#f2f2f0; --bg3:#e6e6e3; --fg:#141414; --muted:#555555; --line:#c9c9c9; --line-strong:#8a8a8a; --accent:#1a4f8a; --accent-fg:#ffffff; --accent2:#96530f; --honey:#f2b04a; --honey-fg:#2b1d00; --honey-text:#855400; --honey-soft:#fbebc6; --danger:#9b1b30; --ok:#1d6e37; --warn:#855400; --select:#d4dde8;
+  --rule:var(--line); --box-bg:var(--bg2); --code-bg:var(--bg2); --box-rule:var(--line); --link:var(--accent);
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg:#121314; --bg2:#1c1e20; --bg3:#2a2c2f; --fg:#e8e8e8; --muted:#a6a6a6; --line:#3a3d40; --line-strong:#75787c; --accent:#8ab4e8; --accent-fg:#121314; --accent2:#d4883b; --honey:#f2b04a; --honey-fg:#121314; --honey-text:#f2b04a; --honey-soft:#3b311e; --danger:#f07a8c; --ok:#7bcb95; --warn:#f2b04a; --select:#2f3d52;
+    --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+:root[data-theme="dark"] { color-scheme: dark; --bg:#121314; --bg2:#1c1e20; --bg3:#2a2c2f; --fg:#e8e8e8; --muted:#a6a6a6; --line:#3a3d40; --line-strong:#75787c; --accent:#8ab4e8; --accent-fg:#121314; --accent2:#d4883b; --honey:#f2b04a; --honey-fg:#121314; --honey-text:#f2b04a; --honey-soft:#3b311e; --danger:#f07a8c; --ok:#7bcb95; --warn:#f2b04a; --select:#2f3d52;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; }
+:root[data-theme="light"] { color-scheme: light; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Doc Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.here-head { display:flex; align-items:center; gap:.8rem; padding:.2rem 0 .5rem;
+  border-bottom:1px solid var(--rule,#ddd); margin-bottom:.5rem; }
+.here-head .sp { flex:1; }
+.here-all { margin-left:auto; font-size:.9rem; }
+.here-x { font:inherit; font-size:.9rem; cursor:pointer; background:none;
+  border:1px solid var(--line-strong); padding:.05rem .45rem;
+  color:inherit; }
+.here-body a, .tf-secs a { display:block; text-decoration:none; padding:.12rem 0;
+  line-height:1.45; }
+.here-body a:hover, .tf-secs a:hover { text-decoration:underline; }
+.here-body a.lv4, .tf-secs a.lv4 { padding-left:1.6rem; font-size:.94rem;
+  color:var(--muted,#555); }
+.tf-no { display:inline-block; min-width:3.2rem; color:var(--muted,#666);
+  font-variant-numeric:tabular-nums; }
+.toc-full .tf-ch { margin:.9rem 0 .15rem; font-weight:700; }
+.toc-full .tf-secs { margin:0 0 .5rem .2rem; border-left:2px solid var(--rule,#e2e2e2);
+  padding-left:.7rem; }
+.toc-full h4.toc-part { margin-top:1.8rem; }
+.toc a.toc-detail { font-weight:700; }
+@media print { .here-btn, .here-panel { display:none; } }
+.bar { position:sticky; top:0; z-index:20; display:flex; flex-wrap:nowrap; gap:.25rem; align-items:center;
+       min-height:44px; padding:0 clamp(.4rem,2vw,1.6rem); background:var(--bg2);
+       border-bottom:1px solid var(--line); font-size:.9rem;
+       font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--fg); text-decoration:none; } .bar a:hover { text-decoration:none; }
+.bar .sp { display:none; }
+main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
+.wrap { width:100%; }
+main .wrap { max-width:960px; margin-inline:auto; }
+:root[data-measure="fit"] main .wrap { max-width:none; margin:0; }
+h1,h2,h3,h4 { font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35;
+  padding-bottom:.18rem; border-bottom:1px solid var(--rule); }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem;
+     padding-bottom:.22rem; border-bottom:1.5px solid var(--fg); }
+p { margin:.9rem 0; } a { color:var(--link); }
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+.src-note { font-size: .86em; color: var(--muted, #666); }
+.src-note code { font-size: .95em; }
+sup.fnref { font-size: .72em; line-height: 0; vertical-align: super; }
+sup.fnref a { text-decoration: none; padding: 0 .1em; }
+sup.fnref a::before { content: "["; }
+sup.fnref a::after  { content: "]"; }
+.chapter-notes { margin: 3rem 0 1rem; padding-top: .9rem;
+                 border-top: 2px solid var(--rule, #333); }
+.chapter-notes h2 { font-size: 1.05rem; margin: 0 0 .6rem; }
+.chapter-notes ol { margin: 0; padding-left: 1.6em; }
+.chapter-notes li { font-size: .92em; margin: .35em 0; text-indent: 0; }
+.chapter-notes a.fnback { text-decoration: none; }
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
+pre,code,kbd { font-family:"Doc Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
+pre code { background:none; padding:0; }
+.tblwrap { overflow-x:auto; text-align:center; }
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.float-list { list-style:none; padding-left:0; }
+.float-list li { margin:.12rem 0; }
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"Doc Mono","D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"Doc Mono","D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"Doc Mono","D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+.dev { margin:1.15rem 0; padding:0; background:none; border:none; border-radius:0; }
+.dev > .dev-label { border-left:4px solid var(--fg);
+  padding:.1rem .8rem .25rem .8rem; margin:0 0 .34rem; }
+.dev > .dev-body { border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem .35rem .8rem; margin:0; }
+.dev > .dev-body > *:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child { margin-bottom:0; }
+.float-caption { text-align:center; font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+.dev.open { border:none; border-radius:0; background:none;
+  padding:0; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
+  text-indent:0; border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+.dev.open > .open-body { margin:0; padding:.35rem .8rem;
+  border-left:2px solid var(--box-rule); }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+.dev.open .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.06rem 0 .06rem .7rem; margin:.32rem 0 0; }
+.prereq .dev-label, .deepqa .dev-label, .why .dev-label,
+.organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+.qa-box { border:none; margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:0; background:none; }
+.qa-box .qa-q { border-left:4px solid var(--fg);
+  padding:.1rem .8rem .25rem .8rem; margin:0; }
+.qa-box .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem; margin:.34rem 0 0; }
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:0; }
+.dev.recap { border:none; background:none; padding:0; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
+  text-indent:0; border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > .dev-body > p, .dev.recap > .dev-body > div:not(.demo),
+.dev.recap > .dev-body > figure { margin:.3rem 0; padding:0; }
+.dev > .dev-body > .demo { margin:.7rem 0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:none; border-radius:0; background:none; padding:0; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem; text-indent:0;
+  border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
+.dev > .dev-body > figure, .dev > .open-body > p {
+  margin:.35rem 0; padding:0; }
+.bar .menu-btn { flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center;
+  min-width:38px; min-height:38px; padding:0; font:inherit; font-size:1.25rem; line-height:1;
+  color:var(--fg); background:none; border:0; cursor:pointer; text-decoration:none; }
+.bar .back, .bar .bar-nav .nb { flex:0 0 auto; display:inline-flex; align-items:center; gap:.3em;
+  min-height:32px; padding:0 .65rem; border:1px solid var(--line); background:var(--bg);
+  color:var(--fg); font-weight:600; white-space:nowrap; text-decoration:none; }
+.bar .menu-btn[aria-expanded="true"] { background:var(--bg3); }
+.bar .place { flex:1 1 auto; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
+  padding:0 .35rem; }
+.bar .place strong a { color:var(--honey-text); }
+.bar .place .cur { color:var(--fg); }
+.bar .bar-nav { flex:0 0 auto; display:flex; gap:.3rem; align-items:center; white-space:nowrap; }
+.bar .bar-nav .off { color:var(--muted); border-color:var(--line); opacity:.45; }
+.bar .back:hover, .bar .menu-btn:hover, .bar .bar-nav a.nb:hover, .bar .place a:hover { background:var(--bg3); }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+.dev.antipattern > .dev-label { border-left-style:solid; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.2rem; }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em;
+            padding-bottom:0; border-bottom:none; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
+.toc { columns:24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.toc > .toc-part:first-child, .toc > .toc-keep:first-child > .toc-part, .toc-full > .toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
+.toc-group { padding-left:.85rem; }
+.toc-keep, .toc a { break-inside:avoid; }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+code.style-name { font-family:"Doc Mono","D2Coding",ui-monospace,monospace;
+  font-size:.72em; color:var(--muted); background:var(--rule);
+  padding:.05em .35em; border-radius:3px; white-space:nowrap;
+  font-weight:400; letter-spacing:0; }
+.dev.open > .dev-label { padding-top:.42rem; padding-bottom:.42rem; }
+.dev.open > .open-body { padding-top:.4rem; padding-bottom:.4rem; }
+.dev.open > .open-body > p { margin:.6rem 0; }
+.dev > .dev-body { padding-top:.5rem; padding-bottom:.5rem; }
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
+.dev > .dev-body > figure { margin:.55rem 0; }
+main { line-height:1.85; }
+p { margin:1.15rem 0; }
+h2 { margin-top:2.4rem; }
+h3 { margin-top:2rem; }
+li { margin:.3rem 0; }
+h1, h2, h3, h4 { border-bottom-color:var(--box-rule) !important; }
+.toc { line-height:1.45; }
+.toc a { padding:.16rem 0; }
+.toc-part { margin:.85rem 0 .2rem; }
+.metalist { line-height:1.45; gap:.2rem 1.2rem; }
+.metalist dt, .metalist dd { margin:0; }
+.demo { border-color:var(--box-rule); }
+.demo > .demo-head { border-bottom-color:var(--box-rule); }
+.dev > .dev-label,
+.dev.open > .dev-label,
+.qa-box .qa-q,
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  border-left-color:var(--box-rule); }
+.dev > .dev-body,
+.dev > .open-body,
+.dev.open .qa-a,
+.qa-box .qa-a,
+.deepqa .qa-a { border-left-color:var(--box-rule); }
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div {
+  border-color:var(--box-rule); }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+.dev.open > .open-body,
+.dev.open > .qa-a,
+.dev.open .qa-a,
+.dev.deepqa .qa-a,
+.qa-box > .qa-a,
+.qa-box > .qa-q { border-left-color:var(--box-rule); }
+.bar .bar-toc { font-size:1.15em; line-height:1; text-decoration:none; }
+.dev, .dev-body, .open-body, .qa-box, .qa-q, .qa-a, .dev-label,
+.toc-full, .toc-full .tf-secs { line-height:inherit; font-size:1rem; }
+.dev > .dev-body > p, .dev > .open-body > p,
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:1.15rem 0; }
+.dev > .dev-body > *:first-child, .dev > .open-body > *:first-child,
+.qa-box .qa-q > p:first-child, .qa-box .qa-a > p:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child, .dev > .open-body > *:last-child,
+.qa-box .qa-q > p:last-child, .qa-box .qa-a > p:last-child { margin-bottom:0; }
+.dev > .dev-label, .dev.open > .dev-label { font-size:.98rem; line-height:1.4; }
+h1,h2,h3,h4 { padding-bottom:.34rem; }
+h1 { margin:.2rem 0 1.3rem; }
+h2 { padding-bottom:.42rem; margin-bottom:1.15rem; }
+h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
+.dev.open > .open-body > * { margin:.3rem 0; }
+.dev.open > .open-body > p { margin:.5rem 0; }
+.dev.open > .open-body > div { margin:.15rem 0; }
+.dev.open ul, .dev.open ol { margin:.3rem 0; }
+.dev.open li, .dev.open ol.qlist li { margin:0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open .qa-a > p { margin:.35rem 0; }
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div { border-color:var(--box-rule); }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+a:focus-visible, button:focus-visible, summary:focus-visible, input:focus-visible {
+  outline:2px solid var(--accent2); outline-offset:2px; }
+:target, h1, h2, h3, h4, [id] { scroll-margin-top:4.2rem; }
+.skip { position:absolute; left:-9999px; top:0; z-index:30;
+        background:var(--bg); color:var(--fg); border:1px solid var(--fg);
+        padding:.5rem .8rem; font-size:.9rem; text-decoration:none; }
+.skip:focus { left:.5rem; top:.5rem; }
+.here-panel { position:fixed; top:46px; left:clamp(.2rem,1vw,1rem); z-index:19;
+  width:min(32rem, calc(100vw - .4rem)); max-height:calc(100vh - 54px); overflow:auto;
+  padding:.7rem .9rem .9rem; border:1px solid var(--line); --k:var(--line-strong);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-size:.9rem; line-height:1.4;
+  background:
+    linear-gradient(var(--k),var(--k)) left top / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) left top / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) right top / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) right top / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) left bottom / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) left bottom / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) right bottom / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) right bottom / 3px 8px no-repeat,
+    color-mix(in srgb, var(--bg) 97%, transparent); }
+.here-panel .tools { display:flex; flex-wrap:wrap; gap:.3rem .4rem; align-items:center;
+  margin-bottom:.6rem; }
+.tool, .segb { font:inherit; font-size:.88rem; color:var(--fg); background:none;
+  border:1px solid var(--line-strong); padding:0 .6rem; min-height:30px;
+  display:inline-flex; align-items:center; text-decoration:none; cursor:pointer; white-space:nowrap; }
+.tool:hover, .segb:hover, .nav a:hover, .here-panel .here-body a:hover { background:var(--bg3); }
+.segb[aria-pressed="true"] { background:var(--select); border-color:var(--accent); font-weight:700; }
+.tool, .segb, .bar a, .bar button, .nav a, .here-panel a { transition:background-color .08s; }
+@media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
+main a { text-decoration:underline; text-decoration-color:var(--box-rule);
+  text-underline-offset:2px; }
+main a:hover { background:var(--box-bg); text-decoration-color:var(--link); }
+main .toc a, main .toc-full a, main .here-body a { text-decoration:none; }
+main .toc a:hover, main .toc-full a:hover { background:var(--box-bg); text-decoration:underline; }
+.setbox { margin:0 0 .6rem; }
+.setrow { display:flex; flex-wrap:wrap; gap:.4rem .5rem; align-items:center; margin:.35rem 0; }
+.setlbl { min-width:4.2rem; font-size:.82rem; font-weight:700; }
+.seg { display:inline-flex; flex-wrap:wrap; gap:.25rem; }
+.col { display:inline-flex; align-items:center; gap:.3rem; }
+.col input[type=color] { width:2rem; height:1.4rem; padding:0; border:1px solid var(--line-strong);
+  background:none; cursor:pointer; }
+.setnote { margin:.5rem 0 0; font-size:.82rem; }
+.here-panel .ver { font-size:.82rem; color:var(--muted); padding:.2rem .45rem .2rem 0;
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; white-space:nowrap; }
+.demo pre, .demo pre code {
+  white-space:pre-wrap; overflow-wrap:anywhere; word-break:break-word; }
+.demo > .demo-body { overflow-x:visible; }
+.plink {
+  margin-left: .4em; font-weight: 400; text-decoration: none;
+  color: var(--muted, #888); opacity: 0;
+}
+h3:hover > .plink, h4:hover > .plink,
+h3 > .plink:focus, h4 > .plink:focus { opacity: 1; }
+@media (hover: none) { .plink { opacity: .45; } }
+.searchbox { margin:.6em 0 0; }
+.searchbox input[type=search] {
+  width: 100%; padding: .45em .6em; font: inherit;
+  border: 1px solid var(--line-strong);
+  background: var(--bg); color: var(--fg);
+}
+.search-hint { color: var(--muted, #777); font-size: .85em; margin:.3em 0 0; }
+.search-results { list-style: none; padding: 0; margin: .5em 0 0; }
+.search-results li { margin: .15em 0; }
+.search-results .where { color: var(--muted, #777); font-size: .85em; margin-left: .4em; }
+@media (max-width: 900px), (orientation: portrait) {
+  :root:not([data-layout="desktop"]) .bar .place .cur { display:none; }
+  :root:not([data-layout="desktop"]) .bar .back,
+  :root:not([data-layout="desktop"]) .bar .bar-nav .nb { min-height:40px; padding:0 .5rem; }
+}
+@media (max-width: 480px) {
+  :root:not([data-layout="desktop"]) .bar .bar-nav .prev .lbl,
+  :root:not([data-layout="desktop"]) .bar .bar-nav .next .lbl { display:none; }
+  :root:not([data-layout="desktop"]) .bar .bar-nav .nb { min-width:44px; justify-content:center; }
+  :root:not([data-layout="desktop"]) .bar { gap:.2rem; }
+}
+:root[data-layout="mobile"] .bar .place .cur { display:none; }
+:root[data-layout="mobile"] .bar .back, :root[data-layout="mobile"] .bar .bar-nav .nb { min-height:40px; padding:0 .5rem; }
+:root[data-layout="mobile"] main .wrap { max-width:34rem; }
+@media (pointer: coarse), (max-width: 900px) {
+  .bar .menu-btn { min-width:44px; min-height:44px; }
+  .tool, .segb { min-height:38px; }
+}
+@media print { .bar, .here-panel { display:none; } }
+
+body { font-family:"Doc Serif","Noto Serif",Georgia,"Noto Serif CJK KR",serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans",system-ui,"Noto Sans CJK KR",sans-serif; }
+pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
+</style>
+<script>(function(){try{var L=localStorage,o='pcb-read';if(o&&o!=='doc-read'&&L.getItem(o)!==null&&L.getItem('doc-read')===null){var v=JSON.parse(L.getItem(o)||'{}');delete v.width;L.setItem('doc-read',JSON.stringify(v));L.removeItem(o);}var s=JSON.parse(L.getItem('doc-read')||'{}');var r=document.documentElement;if(s.theme&&s.theme!=='auto')r.setAttribute('data-theme',s.theme);if(s.fg)r.style.setProperty('--fg',s.fg);if(s.bg)r.style.setProperty('--bg',s.bg);if(s.link)r.style.setProperty('--link',s.link);if(s.width==='fit')r.setAttribute('data-measure','fit');if(s.layout==='desktop'||s.layout==='mobile')r.setAttribute('data-layout',s.layout);if(s.layout==='desktop'){var m=document.querySelector('meta[name=viewport]');if(m)m.setAttribute('content','width=1100');}}catch(e){}})();</script></head>
+<body>
+<a class="skip" href="#content">Skip to content</a>
+<div class="bar"><button class="menu-btn" id="set-open" type="button" aria-expanded="false" aria-controls="here-panel" aria-label="Menu" title="Menu">☰</button><a class="back" href="index.html" title="Back">← <span class="lbl">Back</span></a><span class="place"><strong><a href="index.html">Proven C Book</a></strong><span class="cur"> › ch. 110</span></span><span class="bar-nav"><a class="nb prev" href="ch109.html">‹ <span class="lbl">Prev</span></a><a class="nb toc" href="index.html"><span class="lbl">TOC</span></a><a class="nb next" href="ch111.html"><span class="lbl">Next</span> ›</a></span></div><div id="here-panel" class="here-panel" hidden><div class="setbox" id="setbox"><div class="setrow"><span class="setlbl">Language</span><span class="seg"><a class="segb" href="../ko/ch110.html">한국어</a></span></div><div class="setrow"><span class="setlbl">Text width</span><span class="seg" id="s-width"><button type="button" class="segb" data-width="960">960</button><button type="button" class="segb" data-width="fit">Fit the window</button></span></div><div class="setrow"><span class="setlbl">Layout</span><span class="seg" id="s-layout"><button type="button" class="segb" data-layout="auto">Auto</button><button type="button" class="segb" data-layout="desktop">PC</button><button type="button" class="segb" data-layout="mobile">Mobile</button></span></div><div class="setrow"><span class="setlbl">Theme</span><span class="seg"><button type="button" class="segb" data-theme="auto">System</button><button type="button" class="segb" data-theme="light">Light</button><button type="button" class="segb" data-theme="dark">Dark</button></span></div><div class="setrow"><span class="setlbl">Colours</span><label class="col"><span>Text</span><input type="color" id="s-fg"></label><label class="col"><span>Background</span><input type="color" id="s-bg"></label><label class="col"><span>Link</span><input type="color" id="s-link"></label></div><p class="setnote">Settings are kept in this browser only.</p></div><div class="tools"><span class="ver">v0.110.2</span><a class="tool" href="toc.html">▤ Detailed contents</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book/releases/download/v0.110.2/proven_c_book-v0.110.2-en.pdf">⤓ PDF</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book" title="This book on GitHub">Git</a><a class="tool" href="https://rubidus-api.github.io/" title="rubidus-api.github.io --- every published project">⌂ All projects</a><a class="tool" href="https://github.com/rubidus-api" title="github.com/rubidus-api --- every repository">≡ All repos</a></div><div class="here-head"><strong>Contents of this chapter</strong></div><div class="here-body"><a class="lv3" href="#s110-1"><span class="tf-no">110.1</span>An allocator is a value</a><a class="lv3" href="#s110-2"><span class="tf-no">110.2</span>Swapping the three sources</a><a class="lv3" href="#s110-3"><span class="tf-no">110.3</span>The arena — things of the same lifetime, all at once</a><a class="lv3" href="#s110-4"><span class="tf-no">110.4</span>Which allocator to choose</a><a class="lv3" href="#s110-5"><span class="tf-no">110.5</span>Owning and borrowing, and state that points at itself</a></div></div>
+<main id="content"><div class="wrap">
+<h2>110 Allocation is a parameter</h2><div></div><div class="dev open prereq"><p class="dev-label">What to know first</p><div class="open-body"><div>chapter 46, Dynamic memory · dynamic memory</div><div>chapter 99, Inside the allocator · inside the allocator</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 46 said memory obtained with <code>malloc</code> must be <code>free</code>d by somebody exactly once, and that settling that “somebody” is the program’s design. Then is there a way to know from a function alone whether “this function allocates memory”?</p><div class="qa-a"><p><span class="dev-label">A.</span> In standard C there is not. <code>malloc</code> can be called anywhere, so any function can allocate in secret, and the signature does not say so. proven’s answer is to return that information to the signature with one rule — <strong>a function that does not take an allocator as an argument does not allocate.</strong> If this rule is kept, reading the signature alone tells you “this function may take memory”.</p></div></div></div><div class="dev open why"><p class="dev-label">The need for this chapter, and its context</p><div class="open-body">After the previous chapter’s basic vocabulary (views, bytes, checked arithmetic, alignment) comes the source of memory. The reason for this order is that every data structure that follows takes “where does memory come from” as a parameter — explain allocators later and from chapter 111 on, every signature carries an unexplained parameter. What chapters 46 and 99 showed about the heap turns here into a design decision.</div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body">This chapter answers chapter 106’s fourth bug — unclear ownership — with the <strong>allocator</strong> that handles the source of memory as a value, the <strong>arena</strong> that returns <span id="idx-entry-298"></span>things of the same lifetime all at once, and the rule that divides owning from borrowing by type. The dangers of the heap learned in chapter 46 are organized here into design.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>Besides <code>heap</code>, <code>arena</code> and <code>pool</code>, can I make an allocator myself?</li><li>Why is it such an important property that the caller can choose the allocator? Most of the time the heap will be used anyway.</li><li>Then what does the allocator-as-argument design cost?</li></ol></div></div><div></div><h3 id="s110-1">110.1 An allocator is a value<a class="plink" href="#s110-1" aria-label="Link to this section" title="Link to this section">#</a></h3><div></div><p><code>proven_allocator_t</code> is one struct — a context pointer and three function pointers (allocate, reallocate, free). There is no special global and no registration procedure. Being simply a value, it can be passed as an argument, held in a struct, and returned from a function. The <strong>virtual function table</strong> seen in chapter 68 is here as it stands.</p><pre><code data-lang="c"><strong><span class="tok-t">typedef</span></strong> <strong><span class="tok-t">struct</span></strong> <span class="tok-x">{</span>
+    <strong><span class="tok-t">void</span></strong> <strong><span class="tok-x">*</span></strong>ctx<span class="tok-x">;</span>                        <em><span class="tok-c">/*</span></em><em><span class="tok-c"> this allocator's state (for an arena, the arena) </span></em><em><span class="tok-c">*/</span></em>
+    proven_alloc_fn_t   alloc_fn<span class="tok-x">;</span>
+    proven_realloc_fn_t realloc_fn<span class="tok-x">;</span>
+    proven_free_fn_t    free_fn<span class="tok-x">;</span>
+<span class="tok-x">}</span> <strong><span class="tok-t">proven_allocator_t</span></strong><span class="tok-x">;</span></code></pre><p>The three functions’ signatures write down, as they stand, the contract every allocator keeps.</p><pre><code data-lang="c"><strong>proven_result_mem_mut_t</strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">*</span></strong><strong>alloc_fn</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong> <strong><span class="tok-x">*</span></strong>ctx<span class="tok-x">,</span> proven_size_t size<span class="tok-x">,</span>
+                                    proven_size_t align<span class="tok-x">)</span><span class="tok-x">;</span>
+<strong>proven_result_mem_mut_t</strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">*</span></strong><strong>realloc_fn</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong> <strong><span class="tok-x">*</span></strong>ctx<span class="tok-x">,</span> <strong><span class="tok-t">void</span></strong> <strong><span class="tok-x">*</span></strong>old_ptr<span class="tok-x">,</span>
+                                      proven_size_t old_size<span class="tok-x">,</span>
+                                      proven_size_t new_size<span class="tok-x">,</span>
+                                      proven_size_t align<span class="tok-x">)</span><span class="tok-x">;</span>
+<strong>void</strong><strong>                    </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">*</span></strong><strong>free_fn</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong> <strong><span class="tok-x">*</span></strong>ctx<span class="tok-x">,</span> <strong><span class="tok-t">void</span></strong> <strong><span class="tok-x">*</span></strong>ptr<span class="tok-x">)</span><span class="tok-x">;</span></code></pre><p><strong>Why pass <code>old_size</code> and <code>align</code> too.</strong> The standard <code>realloc</code> does not ask for the old size — because the allocator wrote it into the block’s header (chapter 99). But an arena has no header. Not making a place to write the size is why an arena is fast, so the choice was for <strong>the caller to tell it</strong> instead. This decision is what lets a “headerless allocator” fit the same interface.</p><p>Four things from the contract must be remembered.</p><ol><li><strong><code>align</code> must be a power of two.</strong> And <strong>a block must be reallocated and freed with the same alignment it was allocated with.</strong> This is because the heap allocator handles requests at or below the default alignment differently from stricter ones (chapter 109) — handing a block back in a different alignment class is outside the contract.</li><li><strong><code>size == 0</code> is <code>INVALID_ARG</code>.</strong> A zero-byte allocation is treated as a caller’s bug. Before this rule the heap said <code>NOMEM</code> (a lie — nothing was out of memory) and the arena returned a valid pointer, so <strong>the answer differed per allocator</strong>. Generic code cannot be written when each allocator answers differently.</li><li><strong>A reallocation with <code>new_size == 0</code> acts as a free</strong> — it gives a null pointer and <code>PROVEN_OK</code>.</li><li><strong>Reallocation is failure-atomic.</strong> On failure <code>old_ptr</code> is still valid and its contents untouched — this blocks chapter 81’s <code>realloc</code> leak counterexample at the level of the interface.</li></ol><p>And every function that allocates has this shape.</p><pre><code data-lang="c">proven_result_u8str_t <strong>proven_u8str_create</strong><span class="tok-x">(</span>proven_allocator_t alloc<span class="tok-x">,</span>
+                                          proven_size_t limit<span class="tok-x">)</span><span class="tok-x">;</span>
+<strong><span class="tok-t">void</span></strong>                  <strong>proven_u8str_destroy</strong><span class="tok-x">(</span>proven_allocator_t alloc<span class="tok-x">,</span>
+                                           proven_u8str_t <strong><span class="tok-x">*</span></strong>str<span class="tok-x">)</span><span class="tok-x">;</span></code></pre><p><strong>Destroy with the allocator given at creation</strong> — that is the whole of the ownership rule.</p><h3 id="s110-2">110.2 Swapping the three sources<a class="plink" href="#s110-2" aria-label="Link to this section" title="Link to this section">#</a></h3><div></div><div class="demo demo-src"><p class="demo-head"><code>examples-en/proven-alloc/three.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> The same code, three sources of memory — the heap, an arena, a pool.</span></em>
+<em><span class="tok-c">   What it makes possible that an allocator is simply a value. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">proven.h</span><span class="tok-s">></span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> This function does not know where the memory it uses comes from.</span></em>
+<em><span class="tok-c">   Taking an allocator as a parameter is itself "it may allocate", written in</span></em>
+<em><span class="tok-c">   the signature. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> proven_err_t <strong>make_list</strong><span class="tok-x">(</span>proven_allocator_t alloc<span class="tok-x">,</span> <strong><span class="tok-t">int</span></strong> n<span class="tok-x">,</span> proven_u8str_t <strong><span class="tok-x">*</span></strong>out<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    proven_result_u8str_t made <strong><span class="tok-x">=</span></strong> <strong>proven_u8str_create</strong><strong><span class="tok-x">(</span></strong><strong>alloc</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">128</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong><strong>proven_is_ok</strong><strong><span class="tok-x">(</span></strong><strong>made</strong><strong><span class="tok-x">.</span></strong><strong>err</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <strong><span class="tok-k">return</span></strong> made<span class="tok-x">.</span>err<span class="tok-x">;</span>
+
+    proven_u8str_t s <strong><span class="tok-x">=</span></strong> made<span class="tok-x">.</span>value<span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;=</span></strong> n<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+        proven_fmt_result_t r <strong><span class="tok-x">=</span></strong>
+            <strong>proven_u8str_append_fmt</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>s</strong><strong><span class="tok-x">,</span></strong><strong> i </strong><strong><span class="tok-x">==</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong> </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">{}</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">, {}</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>i</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong><strong>proven_is_ok</strong><strong><span class="tok-x">(</span></strong><strong>r</strong><strong><span class="tok-x">.</span></strong><strong>err</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+            <strong>proven_u8str_destroy</strong><strong><span class="tok-x">(</span></strong><strong>alloc</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>s</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+            <strong><span class="tok-k">return</span></strong> r<span class="tok-x">.</span>err<span class="tok-x">;</span>
+        <span class="tok-x">}</span>
+    <span class="tok-x">}</span>
+    <strong><span class="tok-x">*</span></strong>out <strong><span class="tok-x">=</span></strong> s<span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> PROVEN_OK<span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong>run</strong><span class="tok-x">(</span><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>where<span class="tok-x">,</span> proven_allocator_t alloc<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    proven_u8str_t s<span class="tok-x">;</span>
+    proven_err_t e <strong><span class="tok-x">=</span></strong> <strong>make_list</strong><strong><span class="tok-x">(</span></strong><strong>alloc</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">6</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>s</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong><strong>proven_is_ok</strong><strong><span class="tok-x">(</span></strong><strong>e</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+        <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">{:&lt;8} failed (code {})</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>where</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong>e</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong><span class="tok-k">return</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+    <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">{:&lt;8} {}</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>where</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>proven_u8str_as_view</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>s</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>proven_u8str_destroy</strong><strong><span class="tok-x">(</span></strong><strong>alloc</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>s</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>      <em><span class="tok-c">/*</span></em><em><span class="tok-c"> through the very allocator it was made with </span></em><em><span class="tok-c">*/</span></em>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── (1) the heap — standard malloc wrapped in the interface ──── </span></em><em><span class="tok-c">*/</span></em>
+    <strong>run</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">heap</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>proven_heap_allocator</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── (2) an arena — on a static array. malloc is never called ─── </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">static</span></strong> proven_byte_t backing<span class="tok-x">[</span><span class="tok-n">512</span><span class="tok-x">]</span><span class="tok-x">;</span>
+    proven_arena_t arena <strong><span class="tok-x">=</span></strong> <strong>proven_arena_create</strong><strong><span class="tok-x">(</span></strong>
+<strong>        </strong><strong><span class="tok-x">(</span></strong><strong>proven_mem_mut_t</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">{</span></strong><strong> </strong><strong><span class="tok-x">.</span></strong><strong>ptr</strong><strong> </strong><strong><span class="tok-x">=</span></strong><strong> backing</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">.</span></strong><strong>size</strong><strong> </strong><strong><span class="tok-x">=</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> backing </strong><strong><span class="tok-x">}</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>run</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">arena</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>proven_arena_as_allocator</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>arena</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  arena in use: {} / {} bytes</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                   </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>arena</strong><strong><span class="tok-x">.</span></strong><strong>offset</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>arena</strong><strong><span class="tok-x">.</span></strong><strong>backing</strong><strong><span class="tok-x">.</span></strong><strong>size</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> an arena is released not piece by piece but whole </span></em><em><span class="tok-c">*/</span></em>
+    <strong>proven_arena_reset</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>arena</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  in use after the reset: {} (individual frees did nothing)</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                   </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>arena</strong><strong><span class="tok-x">.</span></strong><strong>offset</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── (3) a pool — pieces of one size, handed round ───────────── </span></em><em><span class="tok-c">*/</span></em>
+    proven_pool_t pool<span class="tok-x">;</span>
+    proven_err_t pe <strong><span class="tok-x">=</span></strong> <strong>proven_pool_init</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>pool</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>proven_heap_allocator</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                                       </strong><em><span class="tok-c">/*</span></em><em><span class="tok-c"> item_size  </span></em><em><span class="tok-c">*/</span></em><strong> </strong><strong><span class="tok-n">129</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                                       </strong><em><span class="tok-c">/*</span></em><em><span class="tok-c"> item_align </span></em><em><span class="tok-c">*/</span></em><strong> PROVEN_MAX_ALIGN</strong><strong><span class="tok-x">,</span></strong>
+<strong>                                       </strong><em><span class="tok-c">/*</span></em><em><span class="tok-c"> bin_cap    </span></em><em><span class="tok-c">*/</span></em><strong> </strong><strong><span class="tok-n">8</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong>proven_is_ok</strong><strong><span class="tok-x">(</span></strong><strong>pe</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+        proven_allocator_t pa <strong><span class="tok-x">=</span></strong> <strong>proven_pool_as_allocator</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>pool</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong>run</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">pool</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> pa</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong>run</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">pool</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> pa</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>          <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the second reuses the piece given back a moment ago </span></em><em><span class="tok-c">*/</span></em>
+        <strong>proven_pool_destroy</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>pool</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── (4) when an arena runs dry — the failure arrives as a value ─ </span></em><em><span class="tok-c">*/</span></em>
+    proven_arena_t tiny <strong><span class="tok-x">=</span></strong> <strong>proven_arena_create</strong><strong><span class="tok-x">(</span></strong>
+<strong>        </strong><strong><span class="tok-x">(</span></strong><strong>proven_mem_mut_t</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">{</span></strong><strong> </strong><strong><span class="tok-x">.</span></strong><strong>ptr</strong><strong> </strong><strong><span class="tok-x">=</span></strong><strong> backing</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">.</span></strong><strong>size</strong><strong> </strong><strong><span class="tok-x">=</span></strong><strong> </strong><strong><span class="tok-n">64</span></strong><strong> </strong><strong><span class="tok-x">}</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    proven_u8str_t s<span class="tok-x">;</span>
+    proven_err_t e <strong><span class="tok-x">=</span></strong> <strong>make_list</strong><strong><span class="tok-x">(</span></strong><strong>proven_arena_as_allocator</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>tiny</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">6</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>s</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">a 64-byte arena -> code {} (a refusal, not a collapse)</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                   </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong>e</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>heap     1, 2, 3, 4, 5, 6
+arena    1, 2, 3, 4, 5, 6
+  arena in use: 129 / 512 bytes
+  in use after the reset: 0 (individual frees did nothing)
+pool     1, 2, 3, 4, 5, 6
+pool     1, 2, 3, 4, 5, 6
+a 64-byte arena -> code 1 (a refusal, not a collapse)
+</code></pre></div></div><p>Look at the <code>make_list</code> function. This function <strong>does not know</strong> whether the memory it uses comes from <code>malloc</code>, from a static array, or from a recycling bin (a pool). The caller settles it, and the same code runs identically over all three.</p><p>Three things can be read in the output.</p><p><strong>① An arena’s usage is visible.</strong> That <code>arena.offset</code> is 129 means exactly 129 bytes (128 of content + 1 NUL) went out for one string. A number that cannot be known on the heap can be counted in an arena — in embedded work this transparency pays when setting a memory budget.</p><p><strong>② Reset makes individual release meaningless.</strong> The usage did not fall although <code>destroy</code> was called (an arena’s <code>free</code> does nothing), and one <code>reset</code> took it to 0. This is what “instead of giving back individually, give the whole back” looks like.</p><p><strong>③ When an arena runs dry it refuses with a returned value.</strong> Requesting 128 bytes from a 64-byte arena gave back <code>NOMEM</code> (1). It neither collapses nor quietly falls back to the heap.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Besides <code>heap</code>, <code>arena</code> and <code>pool</code>, can I make an allocator myself?</p></div><div class="dev qa-a"><p><p><span class="dev-label">A.</span> Of course. Chapter 108’s example already did — a testing allocator that “fails from the nth call”, built from three functions and plugged in. The only rule is keeping the contract above.</p><p>The cases for making one in practice are mostly these. <strong>Instrumentation</strong> — a shell counting allocations and peak usage. <strong>Testing</strong> — failing on purpose, painting freed memory with 0xDD. <strong>Debugging</strong> — recording the place (file and line) of an allocation. <strong>Special resources</strong> — obtaining from shared memory or a DMA (direct memory access) capable region, places <code>malloc</code> cannot give.</p><p>All four take the shape of <strong>wrapping an existing allocator</strong>. They hold a backing allocator inside, do their own work and pass the request on to it. Chapter 108’s example is the model.</p></p></div></div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Why is it such an important property that the caller can choose the allocator? Most of the time the heap will be used anyway.</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> Because three things follow at once. First, <strong>the same code runs in an environment with no heap</strong> — embedded work is one (chapter 115), and the inside of a kernel is another. Second, <strong>testing becomes easy</strong> — insert an allocator that fails on purpose and you can test “does this code recover properly when memory runs short”. Third, <strong>the caller can choose the performance</strong> — for data that lives briefly and dies all at once, an arena is far faster than the heap. The moment the library calls <code>malloc</code> directly, all three of these vanish.</p></div></div><h3 id="s110-3">110.3 The arena — things of the same lifetime, all at once<a class="plink" href="#s110-3" aria-label="Link to this section" title="Link to this section">#</a></h3><div></div><p>Chapter 46 taught the heap’s three dangers (leak, double free, use after free). All three come from <strong>individual release</strong>. Then what if individual release were removed — that is the arena’s idea.</p><p>An arena takes one large lump of memory and, whenever a request comes, cuts from the front. There is a release function but it does nothing. Instead there is <strong>reset</strong> — it returns everything at once.</p><p>That the struct has only two members shows this simplicity as it stands.</p><pre><code data-lang="c"><strong><span class="tok-t">typedef</span></strong> <strong><span class="tok-t">struct</span></strong> <span class="tok-x">{</span>
+    proven_mem_mut_t backing<span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the memory that backs it (borrowed) </span></em><em><span class="tok-c">*/</span></em>
+    proven_size_t    offset<span class="tok-x">;</span>    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> how far it has been handed out </span></em><em><span class="tok-c">*/</span></em>
+<span class="tok-x">}</span> <strong><span class="tok-t">proven_arena_t</span></strong><span class="tok-x">;</span></code></pre><p><strong>An arena does not own its memory.</strong> That <code>backing</code> is a writing window (<code>mem_mut_t</code>) is that declaration — a static array, a stack array, or a lump received once from the heap is prepared by the caller, and the arena only cuts on top of it. So <code>proven_arena_destroy</code> <strong>does nothing</strong> (it owns nothing, so it has nothing to give back). If the lump came from the heap, returning it is still the caller’s part.</p><p>The life cycle is four steps.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>step</strong></th><th><strong>function</strong></th><th><strong>what happens</strong></th></tr><tr><td>making</td><td><code>proven_arena_create(backing)</code></td><td><code>offset = 0</code>. no allocation</td></tr><tr><td>handing out</td><td><code>proven_arena_alloc(&amp;a, n)</code></td><td>aligns and pushes <code>offset</code></td></tr><tr><td>taking back</td><td><code>proven_arena_reset(&amp;a)</code></td><td><code>offset = 0</code> — everything becomes invalid</td></tr><tr><td>ending</td><td><code>proven_arena_destroy(&amp;a)</code></td><td>the formal partner. it does nothing</td></tr></table></div><span id="doc-float-545"></span><p class="float-caption">Table 110.1 — The life cycle of an arena — four steps</p></figure><p>The allocation function comes in four variants. Choose the one that fits.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>function</strong></th><th><strong>when to use it</strong></th></tr><tr><td><code>proven_arena_alloc(&amp;a, size)</code></td><td>the default. cuts at the default alignment</td></tr><tr><td><code>proven_arena_alloc_aligned(&amp;a, size, align)</code></td><td>data where alignment matters (SIMD (single instruction, multiple data), DMA (direct memory access))</td></tr><tr><td><code>proven_arena_alloc_or_panic(&amp;a, size)</code></td><td>places where failure should stop the program</td></tr><tr><td><code>proven_arena_realloc_aligned(...)</code></td><td>grows in place if it is the last block</td></tr></table></div><span id="doc-float-546"></span><p class="float-caption">Table 110.2 — Where each arena allocation function fits</p></figure><p>The <code>_or_panic</code> family exists for the reason given in chapter 108 — where the memory budget has been calculated in advance (embedded work is representative), “the arena is short” is not a failure to recover from but <strong>a design error</strong>, so demanding a check every time only adds noise.</p><p>The arena’s reallocation (<code>proven_arena_realloc_aligned</code>) has one interesting property. An arena having no header, ordinary reallocation is “cut anew and copy”, but <strong>if the block being grown happens to be the last one handed out</strong> it can grow in place simply by pushing <code>offset</code>. It is why code that appends to a string a little at a time is fast on an arena, and why calling chapter 111’s <code>proven_u8str_reserve</code> in advance pays especially on an arena (an intervening allocation breaks the property).</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/proven-alloc/arena.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">proven.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> An arena: the backing memory is given whole, and pieces are carved out of it </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">unsigned</span></strong> <strong><span class="tok-t">char</span></strong> backing<span class="tok-x">[</span><span class="tok-n">1024</span><span class="tok-x">]</span><span class="tok-x">;</span>
+    proven_arena_t arena <strong><span class="tok-x">=</span></strong> <strong>proven_arena_create</strong><strong><span class="tok-x">(</span></strong>
+<strong>        </strong><strong><span class="tok-x">(</span></strong><strong>proven_mem_mut_t</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">{</span></strong><strong> </strong><strong><span class="tok-x">.</span></strong><strong>ptr</strong><strong> </strong><strong><span class="tok-x">=</span></strong><strong> backing</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">.</span></strong><strong>size</strong><strong> </strong><strong><span class="tok-x">=</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> backing </strong><strong><span class="tok-x">}</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    proven_result_mem_mut_t a <strong><span class="tok-x">=</span></strong> <strong>proven_arena_alloc</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>arena</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">100</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    proven_result_mem_mut_t b <strong><span class="tok-x">=</span></strong> <strong>proven_arena_alloc</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>arena</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">200</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong><strong>proven_is_ok</strong><strong><span class="tok-x">(</span></strong><strong>a</strong><strong><span class="tok-x">.</span></strong><strong>err</strong><strong><span class="tok-x">)</span></strong> <strong><span class="tok-x">||</span></strong> <strong><span class="tok-x">!</span></strong><strong>proven_is_ok</strong><strong><span class="tok-x">(</span></strong><strong>b</strong><strong><span class="tok-x">.</span></strong><strong>err</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">arena allocation failed</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong><span class="tok-k">return</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">carved two blocks: </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s">, </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> bytes</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> a</strong><strong><span class="tok-x">.</span></strong><strong>value</strong><strong><span class="tok-x">.</span></strong><strong>size</strong><strong><span class="tok-x">,</span></strong><strong> b</strong><strong><span class="tok-x">.</span></strong><strong>value</strong><strong><span class="tok-x">.</span></strong><strong>size</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> there is no individual free — things of the same lifetime are given back at once </span></em><em><span class="tok-c">*/</span></em>
+    <strong>proven_arena_reset</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>arena</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">one reset reclaimed everything</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> a request larger than the vessel comes back as a failure value (it does not collapse) </span></em><em><span class="tok-c">*/</span></em>
+    proven_result_mem_mut_t too_big <strong><span class="tok-x">=</span></strong> <strong>proven_arena_alloc</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>arena</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">100000</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">oversized request: </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>proven_is_ok</strong><strong><span class="tok-x">(</span></strong><strong>too_big</strong><strong><span class="tok-x">.</span></strong><strong>err</strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">granted</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">refused</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>carved two blocks: 100, 200 bytes
+one reset reclaimed everything
+oversized request: refused
+</code></pre></div></div><p>There really are many places this model fits. The temporary data made while handling one request, a game’s calculation results used for one frame, the syntax tree made while parsing one file — all data <strong>born at different moments but dying at the same one</strong>. For such data, individual release is only cost and risk.</p><div class="dev recap"><p class="dev-label">Recap</p><div class="dev-body"><p>A comparison of the three sources of memory.</p><figure class="tbl"><div class="tblwrap"><table><tr><th></th><th><strong>heap</strong></th><th><strong>arena</strong></th><th><strong>pool</strong></th></tr><tr><td>how it gives</td><td>arbitrary sizes</td><td>cuts from the front</td><td>fixed-size slots</td></tr><tr><td>individual release</td><td>yes</td><td>no (reset)</td><td>yes (return the slot)</td></tr><tr><td>fragmentation</td><td>can arise</td><td>none</td><td>none</td></tr><tr><td>speed</td><td>ordinary</td><td>very fast</td><td>very fast</td></tr><tr><td>where it fits</td><td>assorted lifetimes</td><td>a group of the same lifetime</td><td>the same size repeatedly</td></tr></table></div><span id="doc-float-547"></span><p class="float-caption">Table 110.3 — Heap, arena and pool compared</p></figure></div></div><span id="idx-entry-299"></span><p>The pool (<code>proven_pool_t</code>) is the third branch. It is used where objects of the same size are repeatedly made and unmade — a game’s bullets, a server’s connection objects, a parser’s nodes. Because the slot size is fixed, there is no fragmentation, and a returned slot is reused at once. A pool too becomes an allocator through <code>proven_pool_as_allocator</code>, so the previous example’s <code>make_list</code> function runs on it as it is.</p><p>Four things are settled when it is made.</p><pre><code data-lang="c">proven_pool_t pool<span class="tok-x">;</span>
+proven_err_t e <strong><span class="tok-x">=</span></strong> <strong>proven_pool_init</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>pool</strong><strong><span class="tok-x">,</span></strong>
+<strong>                                  </strong><strong>proven_heap_allocator</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong>  </strong><em><span class="tok-c">/*</span></em><em><span class="tok-c"> backing allocator   </span></em><em><span class="tok-c">*/</span></em>
+<strong>                                  </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong>node_t</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong>           </strong><em><span class="tok-c">/*</span></em><em><span class="tok-c"> chunk size          </span></em><em><span class="tok-c">*/</span></em>
+<strong>                                  </strong><strong>alignof</strong><strong><span class="tok-x">(</span></strong><strong>node_t</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong>          </strong><em><span class="tok-c">/*</span></em><em><span class="tok-c"> chunk alignment     </span></em><em><span class="tok-c">*/</span></em>
+<strong>                                  </strong><strong><span class="tok-n">64</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>                      <em><span class="tok-c">/*</span></em><em><span class="tok-c"> chunks kept in bin  </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-x">...</span></strong>
+<strong>proven_pool_destroy</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>pool</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>      <em><span class="tok-c">/*</span></em><em><span class="tok-c"> gives the bin's contents and the bin itself back to the backing allocator </span></em><em><span class="tok-c">*/</span></em></code></pre><p>The <strong>backing allocator</strong> supplies the real memory; the pool only does the work of “keeping returned chunks in a bin instead of throwing them away, and handing them out again for the next request”. So <code>bin_cap</code> (how many chunks the bin can hold) settles performance — once the bin is full, the next chunk given back really goes back to the backing allocator.</p><p>Two things in the contract need care. First, <strong>a chunk the pool gave out goes back to that pool only, exactly once.</strong> A double free, or returning somebody else’s pointer, is caught as a panic in debug and hardened builds, but in an ordinary release build the pool quietly hands the same chunk out twice — the double free of chapter 46 as it appears on a pool. Second, <strong>a request whose alignment is stricter than the chunk alignment is refused</strong>, because the pool holds only slots of an already fixed size and alignment.</p><div class="dev antipattern"><p class="dev-label">Counter-example.<span style="white-space: pre-wrap">&#x20;&#x20;</span>Using a pool as a general-purpose allocator</p><div class="dev-body"><pre><code data-lang="c">proven_allocator_t pa <strong><span class="tok-x">=</span></strong> <strong>proven_pool_as_allocator</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>pool</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> chunk size 64 </span></em><em><span class="tok-c">*/</span></em>
+proven_result_u8str_t s <strong><span class="tok-x">=</span></strong> <strong>proven_u8str_create</strong><strong><span class="tok-x">(</span></strong><strong>pa</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">4096</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> a 4 KiB request </span></em><em><span class="tok-c">*/</span></em></code></pre><p>A pool is a tool for <strong>one size</strong>. A request larger than a chunk fails, and a much smaller one eats a whole chunk (internal fragmentation). Use the heap or an arena for data of assorted sizes, and keep the pool for places that “make and unmake thousands of the same struct”.</p></div></div><div class="dev antipattern"><p class="dev-label">Counter-example.<span style="white-space: pre-wrap">&#x20;&#x20;</span>Destroying with a different allocator</p><div class="dev-body"><pre><code data-lang="c">proven_result_u8str_t r <strong><span class="tok-x">=</span></strong> <strong>proven_u8str_create</strong><strong><span class="tok-x">(</span></strong><strong>proven_heap_allocator</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">64</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<strong><span class="tok-x">...</span></strong>
+<strong>proven_u8str_destroy</strong><strong><span class="tok-x">(</span></strong><strong>proven_arena_as_allocator</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>arena</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>r</strong><strong><span class="tok-x">.</span></strong><strong>value</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>  <em><span class="tok-c">/*</span></em><em><span class="tok-c"> wrong </span></em><em><span class="tok-c">*/</span></em></code></pre><p>It amounts to giving back to an arena what was obtained from <code>malloc</code>. The rule “destroy with the allocator given at creation” cannot be enforced by the library — an allocator is simply a value, and which value is passed is settled by the caller. So the practice in the field is <strong>to carry the allocator along with the data structure</strong>, or to narrow the scope so that only one is used within a module.</p></div></div><div class="dev misconception"><p class="dev-label">A common misconception. <strong>“Use an arena and you need not care about releasing”</strong></p><div class="dev-body"><p>Individual release disappears but <strong>the lifetime remains as it was.</strong> The moment the arena is reset, every piece cut on it becomes invalid at once, so data that must still be alive after the reset must not be put in the arena. Chapter 109’s “a view cannot outlive its owner” has grown here to arena scale. What an arena removes is the <strong>number of times</strong> one releases, not the <strong>thinking</strong> about lifetime.</p><pre><code data-lang="c">proven_u8str_t name<span class="tok-x">;</span>
+<strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> n<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+    <strong>proven_arena_reset</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>per_request</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>        <em><span class="tok-c">/*</span></em><em><span class="tok-c"> taken back per request </span></em><em><span class="tok-c">*/</span></em>
+    <strong>handle</strong><strong><span class="tok-x">(</span></strong><strong>proven_arena_as_allocator</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>per_request</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>name</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+<strong>use</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>name</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>        <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ← dangerous. what name pointed at has already gone back </span></em><em><span class="tok-c">*/</span></em></code></pre><p>There is one discipline in the field — <strong>call the arena’s lifetime and the lifetime of the data on it by the same name.</strong> “the request arena”, “the frame arena”, “the file arena”. Then which data must survive the reset shows itself in the name alone, and data that must cross over is copied to <strong>a longer-lived allocator</strong>.</p></div></div><h3 id="s110-4">110.4 Which allocator to choose<a class="plink" href="#s110-4" aria-label="Link to this section" title="Link to this section">#</a></h3><div></div><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>situation</strong></th><th><strong>what to choose</strong></th><th><strong>why</strong></th><th><strong>caution</strong></th></tr><tr><td>data of assorted lifetimes</td><td>the heap</td><td>general-purpose. individual release possible</td><td>cost and fragmentation (chapter 99)</td></tr><tr><td>data born and dying with a unit of work</td><td>an arena</td><td>allocation is one addition, release one reset</td><td>everything invalid after a reset</td></tr><tr><td>the same struct by the thousand</td><td>a pool</td><td>no fragmentation, immediate reuse</td><td>one size only</td></tr><tr><td>an environment with no heap at all</td><td>a static array + an arena</td><td><code>malloc</code> is never called once</td><td>the budget must be calculated in advance</td></tr><tr><td>testing the out-of-memory path</td><td>a failing shell (chapter 108)</td><td>it runs the path that never otherwise runs</td><td>for testing only</td></tr></table></div><span id="doc-float-548"></span><p class="float-caption">Table 110.4 — Choosing the allocator for the situation</p></figure><p>In practice these allocators are <strong>layered</strong>. The program as a whole uses the heap, while handling one request uses a request arena, and a data structure making thousands of nodes inside it lays a pool on top. That all three share the same interface, so that layering needs no special device, is the payoff of this design.</p><h3 id="s110-5">110.5 Owning and borrowing, and state that points at itself<a class="plink" href="#s110-5" aria-label="Link to this section" title="Link to this section">#</a></h3><div></div><p>Now we return to chapter 106’s fourth bug. The problem of <code>char *</code> meaning four things <span id="idx-entry-300"></span>is solved by dividing the type in two.</p><ul><li><strong>Owned</strong> — things such as <code>proven_u8str_t</code> and <code>proven_array_t</code>. Obtained with <code>_create</code> and let go with <code>_destroy</code>.</li><li><strong>Borrowed</strong> — <code>proven_u8str_view_t</code>, <code>proven_mem_view_t</code>. Never destroyed. When the owner vanishes they become invalid with it.</li></ul><p>That “must I release this?” can be answered from the signature alone is the whole of this distinction and its purpose.</p><p>There is one more rule attached. <strong>State that points at itself is not copied.</strong> Chapter 47 taught that struct assignment is a shallow copy. Copy an object that holds a pointer to its own internal buffer that way, and the copy’s pointer still points at the original, so two objects share the same memory and destroying both is a double free. So such objects are not copied by value but passed by pointer.</p><div class="dev realcase"><p class="dev-label">In practice.<span style="white-space: pre-wrap">&#x20;&#x20;</span>The spread of the allocator-as-argument design</p><div class="dev-body">This way is not proven’s invention but is close to the recent consensus of systems programming. In Zig, almost every allocating API of the standard library takes an allocator as an argument and “no hidden allocation” is the language’s motto. In Rust too, attaching an allocator to a container is on its way into the standard, and C++‘s <code>std::pmr</code> arose from the same concern. The reason is the same in every case — in games, embedded work, kernels and high-performance servers, <strong>choosing the source of memory</strong> is the heart of both performance and safety.</div></div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Then what does the allocator-as-argument design cost?</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> One more parameter attaches to the signature. And a new design problem arises of <strong>how far the allocator is to be carried</strong> — whether to pass it to every function or to hold it in a struct. In a small program this can look like nothing but tiresome formality. Its benefit shows itself after the program grows, or when the code must be moved to a place where the heap cannot be used.</p></div></div><p>We have set up the rules for obtaining and letting go of memory. From the next chapter come the real components that rise on top of it — first, the strings this book warned about all through chapter 43.</p>
+<div class="nav"><a href="ch109.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch111.html">Next →</a></div>
+</div></main>
+<script>(function(){var b=document.querySelector('.menu-btn'),p=document.getElementById('here-panel');function open(o){if(!p)return;p.hidden=!o;if(b)b.setAttribute('aria-expanded',o);}if(b)b.addEventListener('click',function(){open(p.hidden);});if(p)p.addEventListener('click',function(e){if(e.target.tagName==='A'&&e.target.getAttribute('href').charAt(0)==='#')open(false);});document.addEventListener('keydown',function(e){if(e.key==='Escape'&&p&&!p.hidden){open(false);if(b)b.focus();}});document.addEventListener('click',function(e){if(p&&!p.hidden&&!p.contains(e.target)&&!(b&&b.contains(e.target)))open(false);});var bk=document.querySelector('.bar .back');if(bk)bk.addEventListener('click',function(e){if(history.length>1&&document.referrer){e.preventDefault();history.back();}});var box=document.getElementById('setbox');if(!box)return;var r=document.documentElement;function load(){try{return JSON.parse(localStorage.getItem('doc-read')||'{}');}catch(e){return {};}}function save(s){try{localStorage.setItem('doc-read',JSON.stringify(s));}catch(e){}}function css(n){return getComputedStyle(r).getPropertyValue(n).trim();}function paint(){var s=load();var t=s.theme||'auto',w=s.width==='fit'?'fit':'960';[].forEach.call(box.querySelectorAll('.segb[data-theme]'),function(x){x.setAttribute('aria-pressed',x.dataset.theme===t);});[].forEach.call(box.querySelectorAll('.segb[data-width]'),function(x){x.setAttribute('aria-pressed',x.dataset.width===w);});var ly=s.layout||'auto';[].forEach.call(box.querySelectorAll('.segb[data-layout]'),function(x){x.setAttribute('aria-pressed',x.dataset.layout===ly);});document.getElementById('s-fg').value=s.fg||hex(css('--fg'));document.getElementById('s-bg').value=s.bg||hex(css('--bg'));document.getElementById('s-link').value=s.link||hex(css('--link'));}function hex(v){var m=v.match(/^rgba?\((\d+)[ ,]+(\d+)[ ,]+(\d+)/);if(!m)return v.charAt(0)==='#'?v:'#000000';return '#'+[1,2,3].map(function(i){return ('0'+parseInt(m[i],10).toString(16)).slice(-2);}).join('');}paint();[].forEach.call(box.querySelectorAll('.segb[data-width]'),function(x){x.addEventListener('click',function(){var s=load();if(x.dataset.width==='fit'){s.width='fit';r.setAttribute('data-measure','fit');}else{delete s.width;r.removeAttribute('data-measure');}save(s);setTimeout(paint,0);});});[].forEach.call(box.querySelectorAll('.segb[data-layout]'),function(x){x.addEventListener('click',function(){var s=load(),v=x.dataset.layout;if(v==='auto'){delete s.layout;r.removeAttribute('data-layout');}else{s.layout=v;r.setAttribute('data-layout',v);}save(s);var m=document.querySelector('meta[name=viewport]');var want=v==='desktop'?'width=1100':'width=device-width, initial-scale=1';if(m&&m.getAttribute('content')!==want)location.reload();else setTimeout(paint,0);});});[].forEach.call(box.querySelectorAll('.segb[data-theme]'),function(x){x.addEventListener('click',function(){var s=load();s.theme=x.dataset.theme;delete s.fg;delete s.bg;delete s.link;save(s);['--fg','--bg','--link'].forEach(function(n){r.style.removeProperty(n);});if(s.theme==='auto')r.removeAttribute('data-theme');else r.setAttribute('data-theme',s.theme);setTimeout(paint,0);});});[['s-fg','--fg','fg'],['s-bg','--bg','bg'],['s-link','--link','link']].forEach(function(a){document.getElementById(a[0]).addEventListener('input',function(){var s=load();s[a[2]]=this.value;save(s);r.style.setProperty(a[1],this.value);});});})();</script><script>
+(function(){
+  var q=document.getElementById('q'), out=document.getElementById('qr');
+  if(!q||!out) return;
+  var data=null, NONE="Nothing found";
+  function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+  function run(){
+    var v=q.value.trim().toLowerCase();
+    out.innerHTML='';
+    if(!v||!data) return;
+    var hits=[];
+    for(var i=0;i<data.length && hits.length<40;i++){
+      if(data[i][0].toLowerCase().indexOf(v)>=0) hits.push(data[i]);
+    }
+    if(!hits.length){ out.innerHTML='<li>'+NONE+'</li>'; return; }
+    out.innerHTML=hits.map(function(h){
+      return '<li><a href="'+h[1]+'">'+esc(h[0])+'</a>'+
+             (h[2]?'<span class="where">'+esc(h[2])+'</span>':'')+'</li>';
+    }).join('');
+  }
+  q.addEventListener('input',function(){
+    if(data){ run(); return; }
+    fetch('search-index.json').then(function(r){return r.json();})
+      .then(function(j){ data=j; run(); })
+      .catch(function(){ out.innerHTML='<li>'+NONE+'</li>'; });
+  });
+})();
+</script></body></html>

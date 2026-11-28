@@ -1,0 +1,570 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>7 Representing numbers — the contract called IEEE 754 — Proven C Book</title><style>@font-face { font-family:"Doc Serif"; src:url("../fonts/serif.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-italic.woff2") format("woff2");
+  font-weight:400; font-style:italic; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-kr.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-kr-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans-kr.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans-kr-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Mono"; src:url("../fonts/mono.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Mono"; src:url("../fonts/mono-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+:root { color-scheme: light dark; --bg:#fafaf8; --bg2:#f2f2f0; --bg3:#e6e6e3; --fg:#141414; --muted:#555555; --line:#c9c9c9; --line-strong:#8a8a8a; --accent:#1a4f8a; --accent-fg:#ffffff; --accent2:#96530f; --honey:#f2b04a; --honey-fg:#2b1d00; --honey-text:#855400; --honey-soft:#fbebc6; --danger:#9b1b30; --ok:#1d6e37; --warn:#855400; --select:#d4dde8;
+  --rule:var(--line); --box-bg:var(--bg2); --code-bg:var(--bg2); --box-rule:var(--line); --link:var(--accent);
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg:#121314; --bg2:#1c1e20; --bg3:#2a2c2f; --fg:#e8e8e8; --muted:#a6a6a6; --line:#3a3d40; --line-strong:#75787c; --accent:#8ab4e8; --accent-fg:#121314; --accent2:#d4883b; --honey:#f2b04a; --honey-fg:#121314; --honey-text:#f2b04a; --honey-soft:#3b311e; --danger:#f07a8c; --ok:#7bcb95; --warn:#f2b04a; --select:#2f3d52;
+    --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+:root[data-theme="dark"] { color-scheme: dark; --bg:#121314; --bg2:#1c1e20; --bg3:#2a2c2f; --fg:#e8e8e8; --muted:#a6a6a6; --line:#3a3d40; --line-strong:#75787c; --accent:#8ab4e8; --accent-fg:#121314; --accent2:#d4883b; --honey:#f2b04a; --honey-fg:#121314; --honey-text:#f2b04a; --honey-soft:#3b311e; --danger:#f07a8c; --ok:#7bcb95; --warn:#f2b04a; --select:#2f3d52;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; }
+:root[data-theme="light"] { color-scheme: light; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Doc Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.here-head { display:flex; align-items:center; gap:.8rem; padding:.2rem 0 .5rem;
+  border-bottom:1px solid var(--rule,#ddd); margin-bottom:.5rem; }
+.here-head .sp { flex:1; }
+.here-all { margin-left:auto; font-size:.9rem; }
+.here-x { font:inherit; font-size:.9rem; cursor:pointer; background:none;
+  border:1px solid var(--line-strong); padding:.05rem .45rem;
+  color:inherit; }
+.here-body a, .tf-secs a { display:block; text-decoration:none; padding:.12rem 0;
+  line-height:1.45; }
+.here-body a:hover, .tf-secs a:hover { text-decoration:underline; }
+.here-body a.lv4, .tf-secs a.lv4 { padding-left:1.6rem; font-size:.94rem;
+  color:var(--muted,#555); }
+.tf-no { display:inline-block; min-width:3.2rem; color:var(--muted,#666);
+  font-variant-numeric:tabular-nums; }
+.toc-full .tf-ch { margin:.9rem 0 .15rem; font-weight:700; }
+.toc-full .tf-secs { margin:0 0 .5rem .2rem; border-left:2px solid var(--rule,#e2e2e2);
+  padding-left:.7rem; }
+.toc-full h4.toc-part { margin-top:1.8rem; }
+.toc a.toc-detail { font-weight:700; }
+@media print { .here-btn, .here-panel { display:none; } }
+.bar { position:sticky; top:0; z-index:20; display:flex; flex-wrap:nowrap; gap:.25rem; align-items:center;
+       min-height:44px; padding:0 clamp(.4rem,2vw,1.6rem); background:var(--bg2);
+       border-bottom:1px solid var(--line); font-size:.9rem;
+       font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--fg); text-decoration:none; } .bar a:hover { text-decoration:none; }
+.bar .sp { display:none; }
+main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
+.wrap { width:100%; }
+main .wrap { max-width:960px; margin-inline:auto; }
+:root[data-measure="fit"] main .wrap { max-width:none; margin:0; }
+h1,h2,h3,h4 { font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35;
+  padding-bottom:.18rem; border-bottom:1px solid var(--rule); }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem;
+     padding-bottom:.22rem; border-bottom:1.5px solid var(--fg); }
+p { margin:.9rem 0; } a { color:var(--link); }
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+.src-note { font-size: .86em; color: var(--muted, #666); }
+.src-note code { font-size: .95em; }
+sup.fnref { font-size: .72em; line-height: 0; vertical-align: super; }
+sup.fnref a { text-decoration: none; padding: 0 .1em; }
+sup.fnref a::before { content: "["; }
+sup.fnref a::after  { content: "]"; }
+.chapter-notes { margin: 3rem 0 1rem; padding-top: .9rem;
+                 border-top: 2px solid var(--rule, #333); }
+.chapter-notes h2 { font-size: 1.05rem; margin: 0 0 .6rem; }
+.chapter-notes ol { margin: 0; padding-left: 1.6em; }
+.chapter-notes li { font-size: .92em; margin: .35em 0; text-indent: 0; }
+.chapter-notes a.fnback { text-decoration: none; }
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
+pre,code,kbd { font-family:"Doc Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
+pre code { background:none; padding:0; }
+.tblwrap { overflow-x:auto; text-align:center; }
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.float-list { list-style:none; padding-left:0; }
+.float-list li { margin:.12rem 0; }
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"Doc Mono","D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"Doc Mono","D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"Doc Mono","D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+.dev { margin:1.15rem 0; padding:0; background:none; border:none; border-radius:0; }
+.dev > .dev-label { border-left:4px solid var(--fg);
+  padding:.1rem .8rem .25rem .8rem; margin:0 0 .34rem; }
+.dev > .dev-body { border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem .35rem .8rem; margin:0; }
+.dev > .dev-body > *:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child { margin-bottom:0; }
+.float-caption { text-align:center; font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+.dev.open { border:none; border-radius:0; background:none;
+  padding:0; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
+  text-indent:0; border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+.dev.open > .open-body { margin:0; padding:.35rem .8rem;
+  border-left:2px solid var(--box-rule); }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+.dev.open .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.06rem 0 .06rem .7rem; margin:.32rem 0 0; }
+.prereq .dev-label, .deepqa .dev-label, .why .dev-label,
+.organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+.qa-box { border:none; margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:0; background:none; }
+.qa-box .qa-q { border-left:4px solid var(--fg);
+  padding:.1rem .8rem .25rem .8rem; margin:0; }
+.qa-box .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem; margin:.34rem 0 0; }
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:0; }
+.dev.recap { border:none; background:none; padding:0; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
+  text-indent:0; border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > .dev-body > p, .dev.recap > .dev-body > div:not(.demo),
+.dev.recap > .dev-body > figure { margin:.3rem 0; padding:0; }
+.dev > .dev-body > .demo { margin:.7rem 0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:none; border-radius:0; background:none; padding:0; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem; text-indent:0;
+  border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
+.dev > .dev-body > figure, .dev > .open-body > p {
+  margin:.35rem 0; padding:0; }
+.bar .menu-btn { flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center;
+  min-width:38px; min-height:38px; padding:0; font:inherit; font-size:1.25rem; line-height:1;
+  color:var(--fg); background:none; border:0; cursor:pointer; text-decoration:none; }
+.bar .back, .bar .bar-nav .nb { flex:0 0 auto; display:inline-flex; align-items:center; gap:.3em;
+  min-height:32px; padding:0 .65rem; border:1px solid var(--line); background:var(--bg);
+  color:var(--fg); font-weight:600; white-space:nowrap; text-decoration:none; }
+.bar .menu-btn[aria-expanded="true"] { background:var(--bg3); }
+.bar .place { flex:1 1 auto; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
+  padding:0 .35rem; }
+.bar .place strong a { color:var(--honey-text); }
+.bar .place .cur { color:var(--fg); }
+.bar .bar-nav { flex:0 0 auto; display:flex; gap:.3rem; align-items:center; white-space:nowrap; }
+.bar .bar-nav .off { color:var(--muted); border-color:var(--line); opacity:.45; }
+.bar .back:hover, .bar .menu-btn:hover, .bar .bar-nav a.nb:hover, .bar .place a:hover { background:var(--bg3); }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+.dev.antipattern > .dev-label { border-left-style:solid; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.2rem; }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em;
+            padding-bottom:0; border-bottom:none; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
+.toc { columns:24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.toc > .toc-part:first-child, .toc > .toc-keep:first-child > .toc-part, .toc-full > .toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
+.toc-group { padding-left:.85rem; }
+.toc-keep, .toc a { break-inside:avoid; }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+code.style-name { font-family:"Doc Mono","D2Coding",ui-monospace,monospace;
+  font-size:.72em; color:var(--muted); background:var(--rule);
+  padding:.05em .35em; border-radius:3px; white-space:nowrap;
+  font-weight:400; letter-spacing:0; }
+.dev.open > .dev-label { padding-top:.42rem; padding-bottom:.42rem; }
+.dev.open > .open-body { padding-top:.4rem; padding-bottom:.4rem; }
+.dev.open > .open-body > p { margin:.6rem 0; }
+.dev > .dev-body { padding-top:.5rem; padding-bottom:.5rem; }
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
+.dev > .dev-body > figure { margin:.55rem 0; }
+main { line-height:1.85; }
+p { margin:1.15rem 0; }
+h2 { margin-top:2.4rem; }
+h3 { margin-top:2rem; }
+li { margin:.3rem 0; }
+h1, h2, h3, h4 { border-bottom-color:var(--box-rule) !important; }
+.toc { line-height:1.45; }
+.toc a { padding:.16rem 0; }
+.toc-part { margin:.85rem 0 .2rem; }
+.metalist { line-height:1.45; gap:.2rem 1.2rem; }
+.metalist dt, .metalist dd { margin:0; }
+.demo { border-color:var(--box-rule); }
+.demo > .demo-head { border-bottom-color:var(--box-rule); }
+.dev > .dev-label,
+.dev.open > .dev-label,
+.qa-box .qa-q,
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  border-left-color:var(--box-rule); }
+.dev > .dev-body,
+.dev > .open-body,
+.dev.open .qa-a,
+.qa-box .qa-a,
+.deepqa .qa-a { border-left-color:var(--box-rule); }
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div {
+  border-color:var(--box-rule); }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+.dev.open > .open-body,
+.dev.open > .qa-a,
+.dev.open .qa-a,
+.dev.deepqa .qa-a,
+.qa-box > .qa-a,
+.qa-box > .qa-q { border-left-color:var(--box-rule); }
+.bar .bar-toc { font-size:1.15em; line-height:1; text-decoration:none; }
+.dev, .dev-body, .open-body, .qa-box, .qa-q, .qa-a, .dev-label,
+.toc-full, .toc-full .tf-secs { line-height:inherit; font-size:1rem; }
+.dev > .dev-body > p, .dev > .open-body > p,
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:1.15rem 0; }
+.dev > .dev-body > *:first-child, .dev > .open-body > *:first-child,
+.qa-box .qa-q > p:first-child, .qa-box .qa-a > p:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child, .dev > .open-body > *:last-child,
+.qa-box .qa-q > p:last-child, .qa-box .qa-a > p:last-child { margin-bottom:0; }
+.dev > .dev-label, .dev.open > .dev-label { font-size:.98rem; line-height:1.4; }
+h1,h2,h3,h4 { padding-bottom:.34rem; }
+h1 { margin:.2rem 0 1.3rem; }
+h2 { padding-bottom:.42rem; margin-bottom:1.15rem; }
+h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
+.dev.open > .open-body > * { margin:.3rem 0; }
+.dev.open > .open-body > p { margin:.5rem 0; }
+.dev.open > .open-body > div { margin:.15rem 0; }
+.dev.open ul, .dev.open ol { margin:.3rem 0; }
+.dev.open li, .dev.open ol.qlist li { margin:0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open .qa-a > p { margin:.35rem 0; }
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div { border-color:var(--box-rule); }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+a:focus-visible, button:focus-visible, summary:focus-visible, input:focus-visible {
+  outline:2px solid var(--accent2); outline-offset:2px; }
+:target, h1, h2, h3, h4, [id] { scroll-margin-top:4.2rem; }
+.skip { position:absolute; left:-9999px; top:0; z-index:30;
+        background:var(--bg); color:var(--fg); border:1px solid var(--fg);
+        padding:.5rem .8rem; font-size:.9rem; text-decoration:none; }
+.skip:focus { left:.5rem; top:.5rem; }
+.here-panel { position:fixed; top:46px; left:clamp(.2rem,1vw,1rem); z-index:19;
+  width:min(32rem, calc(100vw - .4rem)); max-height:calc(100vh - 54px); overflow:auto;
+  padding:.7rem .9rem .9rem; border:1px solid var(--line); --k:var(--line-strong);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-size:.9rem; line-height:1.4;
+  background:
+    linear-gradient(var(--k),var(--k)) left top / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) left top / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) right top / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) right top / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) left bottom / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) left bottom / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) right bottom / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) right bottom / 3px 8px no-repeat,
+    color-mix(in srgb, var(--bg) 97%, transparent); }
+.here-panel .tools { display:flex; flex-wrap:wrap; gap:.3rem .4rem; align-items:center;
+  margin-bottom:.6rem; }
+.tool, .segb { font:inherit; font-size:.88rem; color:var(--fg); background:none;
+  border:1px solid var(--line-strong); padding:0 .6rem; min-height:30px;
+  display:inline-flex; align-items:center; text-decoration:none; cursor:pointer; white-space:nowrap; }
+.tool:hover, .segb:hover, .nav a:hover, .here-panel .here-body a:hover { background:var(--bg3); }
+.segb[aria-pressed="true"] { background:var(--select); border-color:var(--accent); font-weight:700; }
+.tool, .segb, .bar a, .bar button, .nav a, .here-panel a { transition:background-color .08s; }
+@media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
+main a { text-decoration:underline; text-decoration-color:var(--box-rule);
+  text-underline-offset:2px; }
+main a:hover { background:var(--box-bg); text-decoration-color:var(--link); }
+main .toc a, main .toc-full a, main .here-body a { text-decoration:none; }
+main .toc a:hover, main .toc-full a:hover { background:var(--box-bg); text-decoration:underline; }
+.setbox { margin:0 0 .6rem; }
+.setrow { display:flex; flex-wrap:wrap; gap:.4rem .5rem; align-items:center; margin:.35rem 0; }
+.setlbl { min-width:4.2rem; font-size:.82rem; font-weight:700; }
+.seg { display:inline-flex; flex-wrap:wrap; gap:.25rem; }
+.col { display:inline-flex; align-items:center; gap:.3rem; }
+.col input[type=color] { width:2rem; height:1.4rem; padding:0; border:1px solid var(--line-strong);
+  background:none; cursor:pointer; }
+.setnote { margin:.5rem 0 0; font-size:.82rem; }
+.here-panel .ver { font-size:.82rem; color:var(--muted); padding:.2rem .45rem .2rem 0;
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; white-space:nowrap; }
+.demo pre, .demo pre code {
+  white-space:pre-wrap; overflow-wrap:anywhere; word-break:break-word; }
+.demo > .demo-body { overflow-x:visible; }
+.plink {
+  margin-left: .4em; font-weight: 400; text-decoration: none;
+  color: var(--muted, #888); opacity: 0;
+}
+h3:hover > .plink, h4:hover > .plink,
+h3 > .plink:focus, h4 > .plink:focus { opacity: 1; }
+@media (hover: none) { .plink { opacity: .45; } }
+.searchbox { margin:.6em 0 0; }
+.searchbox input[type=search] {
+  width: 100%; padding: .45em .6em; font: inherit;
+  border: 1px solid var(--line-strong);
+  background: var(--bg); color: var(--fg);
+}
+.search-hint { color: var(--muted, #777); font-size: .85em; margin:.3em 0 0; }
+.search-results { list-style: none; padding: 0; margin: .5em 0 0; }
+.search-results li { margin: .15em 0; }
+.search-results .where { color: var(--muted, #777); font-size: .85em; margin-left: .4em; }
+@media (max-width: 900px), (orientation: portrait) {
+  :root:not([data-layout="desktop"]) .bar .place .cur { display:none; }
+  :root:not([data-layout="desktop"]) .bar .back,
+  :root:not([data-layout="desktop"]) .bar .bar-nav .nb { min-height:40px; padding:0 .5rem; }
+}
+@media (max-width: 480px) {
+  :root:not([data-layout="desktop"]) .bar .bar-nav .prev .lbl,
+  :root:not([data-layout="desktop"]) .bar .bar-nav .next .lbl { display:none; }
+  :root:not([data-layout="desktop"]) .bar .bar-nav .nb { min-width:44px; justify-content:center; }
+  :root:not([data-layout="desktop"]) .bar { gap:.2rem; }
+}
+:root[data-layout="mobile"] .bar .place .cur { display:none; }
+:root[data-layout="mobile"] .bar .back, :root[data-layout="mobile"] .bar .bar-nav .nb { min-height:40px; padding:0 .5rem; }
+:root[data-layout="mobile"] main .wrap { max-width:34rem; }
+@media (pointer: coarse), (max-width: 900px) {
+  .bar .menu-btn { min-width:44px; min-height:44px; }
+  .tool, .segb { min-height:38px; }
+}
+@media print { .bar, .here-panel { display:none; } }
+
+body { font-family:"Doc Serif","Noto Serif",Georgia,"Noto Serif CJK KR",serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans",system-ui,"Noto Sans CJK KR",sans-serif; }
+pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
+</style>
+<script>(function(){try{var L=localStorage,o='pcb-read';if(o&&o!=='doc-read'&&L.getItem(o)!==null&&L.getItem('doc-read')===null){var v=JSON.parse(L.getItem(o)||'{}');delete v.width;L.setItem('doc-read',JSON.stringify(v));L.removeItem(o);}var s=JSON.parse(L.getItem('doc-read')||'{}');var r=document.documentElement;if(s.theme&&s.theme!=='auto')r.setAttribute('data-theme',s.theme);if(s.fg)r.style.setProperty('--fg',s.fg);if(s.bg)r.style.setProperty('--bg',s.bg);if(s.link)r.style.setProperty('--link',s.link);if(s.width==='fit')r.setAttribute('data-measure','fit');if(s.layout==='desktop'||s.layout==='mobile')r.setAttribute('data-layout',s.layout);if(s.layout==='desktop'){var m=document.querySelector('meta[name=viewport]');if(m)m.setAttribute('content','width=1100');}}catch(e){}})();</script></head>
+<body>
+<a class="skip" href="#content">Skip to content</a>
+<div class="bar"><button class="menu-btn" id="set-open" type="button" aria-expanded="false" aria-controls="here-panel" aria-label="Menu" title="Menu">☰</button><a class="back" href="index.html" title="Back">← <span class="lbl">Back</span></a><span class="place"><strong><a href="index.html">Proven C Book</a></strong><span class="cur"> › ch. 7</span></span><span class="bar-nav"><a class="nb prev" href="ch06.html">‹ <span class="lbl">Prev</span></a><a class="nb toc" href="index.html"><span class="lbl">TOC</span></a><a class="nb next" href="ch08.html"><span class="lbl">Next</span> ›</a></span></div><div id="here-panel" class="here-panel" hidden><div class="setbox" id="setbox"><div class="setrow"><span class="setlbl">Language</span><span class="seg"><a class="segb" href="../ko/ch07.html">한국어</a></span></div><div class="setrow"><span class="setlbl">Text width</span><span class="seg" id="s-width"><button type="button" class="segb" data-width="960">960</button><button type="button" class="segb" data-width="fit">Fit the window</button></span></div><div class="setrow"><span class="setlbl">Layout</span><span class="seg" id="s-layout"><button type="button" class="segb" data-layout="auto">Auto</button><button type="button" class="segb" data-layout="desktop">PC</button><button type="button" class="segb" data-layout="mobile">Mobile</button></span></div><div class="setrow"><span class="setlbl">Theme</span><span class="seg"><button type="button" class="segb" data-theme="auto">System</button><button type="button" class="segb" data-theme="light">Light</button><button type="button" class="segb" data-theme="dark">Dark</button></span></div><div class="setrow"><span class="setlbl">Colours</span><label class="col"><span>Text</span><input type="color" id="s-fg"></label><label class="col"><span>Background</span><input type="color" id="s-bg"></label><label class="col"><span>Link</span><input type="color" id="s-link"></label></div><p class="setnote">Settings are kept in this browser only.</p></div><div class="tools"><span class="ver">v0.110.2</span><a class="tool" href="toc.html">▤ Detailed contents</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book/releases/download/v0.110.2/proven_c_book-v0.110.2-en.pdf">⤓ PDF</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book" title="This book on GitHub">Git</a><a class="tool" href="https://rubidus-api.github.io/" title="rubidus-api.github.io --- every published project">⌂ All projects</a><a class="tool" href="https://github.com/rubidus-api" title="github.com/rubidus-api --- every repository">≡ All repos</a></div><div class="here-head"><strong>Contents of this chapter</strong></div><div class="here-body"><a class="lv3" href="#s7-1"><span class="tf-no">7.1</span>Fixed point — pinning the decimal point down by agreement</a><a class="lv3" href="#s7-2"><span class="tf-no">7.2</span>Floating point — carrying the point in the data</a><a class="lv3" href="#s7-3"><span class="tf-no">7.3</span>How the bits are really divided</a><a class="lv3" href="#s7-4"><span class="tf-no">7.4</span>Three incidents caused by approximation</a><a class="lv3" href="#s7-5"><span class="tf-no">7.5</span>The chaos, and the contract called IEEE 754</a><a class="lv3" href="#s7-6"><span class="tf-no">7.6</span>Seeing floating-point approximation with your own eyes</a></div></div>
+<main id="content"><div class="wrap">
+<h2>7 Representing numbers — the contract called IEEE 754</h2><div></div><div class="dev open prereq"><p class="dev-label">What to know first</p><div class="open-body"><div>chapter 6, Representing integers · the limits that appear when numbers are held in fixed bits</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 6 got as far as signed integers in bits — including three competing ways of holding negatives, settled on two’s complement. But they are all still integers. A number like 1.5 — how is that held in bits?</p><div class="qa-a"><p><span class="dev-label">A.</span> The bits themselves have no decimal point. So the decimal point too is made by <strong>agreement</strong> — the same principle by which negative numbers were made by an agreement (two’s complement). The way of deciding “where shall we pretend the point is when we read this?” splits into two: pinning the point down (fixed) and carrying the point along in the data (floating). This chapter is the story of those two branches.</p></div></div></div><div class="dev open why"><p class="dev-label">The need for this chapter, and its context</p><div class="open-body">The second rung of the ladder of representation — the chapters that put numbers and characters into bits in turn. <strong>A computer’s numbers are approximations.</strong> This book returns to that fact more often than to any other, so this chapter cannot wait. Chapter 23’s <code>%f</code>, chapter 54’s bit-level inspection and chapter 88’s <code>&lt;math.h></code> all call back to the IEEE 754 contract set up here (IEEE is the Institute of Electrical and Electronics Engineers, the body that publishes it). Learn about approximation late and you have to go back over everything you wrote until then.</div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body">The next rung on the ladder of representation. You will be able to tell apart <span id="idx-entry-18"></span>the two ways of putting a number with a decimal point into the lockers — fixed point and floating point — and you will meet <span id="idx-entry-19"></span>IEEE 754, the contract that unified a chaos of floating-point formats. One of the most important facts in this book — that a computer’s numbers are finite and approximate — takes its place here.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>Why bias the exponent — why not store it in two’s complement?</li><li>How do you choose between the 32-bit <code>float</code> and the 64-bit <code>double</code> in practice?</li><li>Integer overflow in chapter 6 and rounding in this chapter are both problems of “a finite container” — are they the same kind of problem?</li></ol></div></div><div></div><h3 id="s7-1">7.1 Fixed point — pinning the decimal point down by agreement<a class="plink" href="#s7-1" aria-label="Link to this section" title="Link to this section">#</a></h3><div></div><p>The first method is surprisingly simple. <strong>Just use an integer, and change the unit.</strong></p><p>Money is a good example. To store 1,500.25 won, agree that “our ledger is written entirely in units of 0.01 won” and store the integer 150025. The decimal point is stored nowhere — everyone reading and writing merely shares the agreement “pretend there is a point two digits from the end.” This is <strong>fixed point</strong>: the position of the point is fixed by agreement.</p><p>Fixed point <strong>is</strong> an integer. So addition and subtraction are as fast and exact as integer operations, with no approximation. So it is still in active service for money calculations and on small embedded chips with no decimal hardware. But one agreement cannot cover both very large and very small numbers. You cannot write the mass of a galaxy and the mass of an atom in the same ledger of hundredths.</p><h3 id="s7-2">7.2 Floating point — carrying the point in the data<a class="plink" href="#s7-2" aria-label="Link to this section" title="Link to this section">#</a></h3><div></div><p>The second method transfers <strong>scientific notation</strong>, learned in science class, to the machine. That is, writing a number as <math><mn>6.02</mn><mo lspace="0.2222222222222222em" rspace="0.2222222222222222em">×</mo><msup><mn>10</mn><mn>23</mn></msup></math> — split into “the meaningful digits” and “how many times ten is multiplied in.” Store both the meaningful digits (the significand) and the multiplication count (the exponent) as data, and the decimal point <strong>floats</strong> along with the exponent — hence <strong>floating point</strong>. The machine uses 2 instead of 10: it holds numbers in the form <math><mtext>significand</mtext><mo lspace="0.2222222222222222em" rspace="0.2222222222222222em">×</mo><msup><mn>2</mn><mtext>exponent</mtext></msup></math>.</p><p>The power of this method is that it covers <strong>an enormous range with the same number of bits</strong>. A galaxy and an atom fit in one format. The price is precision — the number of meaningful digits is finite, so anything beyond them is <strong>discarded by rounding</strong>.</p><div class="dev misconception"><p class="dev-label">A common misconception. <strong>“Computers are good at maths, so of course decimal arithmetic is exact”</strong></p><div class="dev-body">Plausible — you have never seen a calculator get it wrong. But floating point can hold only <strong>finitely many</strong> numbers, and a number it cannot hold is rounded to its nearest neighbour. Astonishingly, that includes 0.1 — 0.1 is an infinite fraction in binary (see the box below), so the “0.1” inside the machine is really a different number very close to 0.1. Small discrepancies can accumulate through a calculation. These discrepancies are not a defect of the computer but a necessity of finite representation, and there are proper ways to handle them (chapter 54). One thing to remember for now: <strong>floating point is not an exact number but a faithful approximation.</strong></div></div><div class="dev mathbox"><p class="dev-label">The mathematics.<span style="white-space: pre-wrap">&#x20;&#x20;</span>Why 0.1 does not terminate in binary</p><div class="dev-body"><p>A fraction terminates only when (in lowest terms) its denominator has no prime factors other than those of the base. In decimal (base <math><mn>10</mn><mo>=</mo><mn>2</mn><mo lspace="0.2222222222222222em" rspace="0.2222222222222222em">×</mo><mn>5</mn></math>), <math><mfrac><mn>1</mn><mn>10</mn></mfrac></math> ends after one digit. But binary’s base is only 2, so <math><mfrac><mn>1</mn><mn>10</mn></mfrac></math>, with a 5 in the denominator, never terminates:</p><math display="block"><msub><mn>0.1</mn><mn>10</mn></msub><mo>=</mo><mn>0.0001100110011</mn><msub><mi>…</mi><mn>2</mn></msub></math><p>It is the same as <math><mfrac><mn>1</mn><mn>3</mn></mfrac></math> running on endlessly as <math><mn>0.333</mn><mi>…</mi></math> in decimal. A finite significand has to cut this infinity off somewhere, and that cut is the source of the approximation.</p></div></div><h3 id="s7-3">7.3 How the bits are really divided<a class="plink" href="#s7-3" aria-label="Link to this section" title="Link to this section">#</a></h3><div></div><p>Take “the significand and the exponent are stored together” all the way down to the bit layout. IEEE 754 divides a value into three pieces — the <strong>sign</strong> (1 bit), the <strong>exponent</strong>, and the <strong>fraction</strong>.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>format</strong></th><th><strong>total</strong></th><th><strong>sign</strong></th><th><strong>exponent</strong></th><th><strong>fraction</strong></th></tr><tr><td><code>float</code> (single precision)</td><td>32 bits</td><td>1</td><td>8</td><td>23</td></tr><tr><td><code>double</code> (double precision)</td><td>64 bits</td><td>1</td><td>11</td><td>52</td></tr></table></div><span id="doc-float-21"></span><p class="float-caption">Table 7.1 — How the bits of <code>float</code> and <code>double</code> are divided</p></figure><figure class="fig"><img src="figures/ieee754.svg" alt="ieee754" loading="lazy"><span id="doc-float-22"></span><p class="float-caption">Figure 7.1 — The bit layout of <code>float</code> and <code>double</code>. The width of each field is proportional to its bit count.</p></figure><p>The rules for reading the three pieces are these.</p><ul><li><strong>Sign</strong>: 0 for positive, 1 for negative. It is a separate bit, unrelated to the magnitude, which is why <strong><code>-0.0</code> exists</strong> — a zero whose sign bit alone is 1.</li><li><strong>Exponent</strong>: negative exponents must fit too, so a <strong>bias</strong> is added before storing. <code>float</code> adds 127, <code>double</code> adds 1023. A stored 1023 means an actual exponent of 0; a stored 1019 means <math><mo>−</mo><mn>4</mn></math>.</li><li><strong>Fraction</strong>: in a normalised number — one written with the exponent adjusted so that the leading digit is 1 — the leading digit is always 1, so <strong>that 1 is not stored</strong> (the hidden bit). Hence <code>double</code> stores 52 bits and yet carries 53 bits of precision.</li></ul><p>So the value of a normal number is recovered as</p><math display="block"><msup><mrow><mo>(</mo><mrow><mo>−</mo><mn>1</mn></mrow><mo>)</mo></mrow><mtext>sign</mtext></msup><mo lspace="0.2222222222222222em" rspace="0.2222222222222222em">×</mo><mn>1</mn><mi>.</mi><mtext>fraction</mtext><mo lspace="0.2222222222222222em" rspace="0.2222222222222222em">×</mo><msup><mn>2</mn><mrow><mtext>stored exponent</mtext><mspace width="0.2222em"/><mo lspace="0em" rspace="0em">−</mo><mspace width="0.2222em"/><mtext>bias</mtext></mrow></msup></math><p>The two ends of the exponent range are reserved for special meanings.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>exponent bits</strong></th><th><strong>fraction</strong></th><th><strong>meaning</strong></th></tr><tr><td>all zero</td><td>0</td><td>zero (<code>+0.0</code> or <code>-0.0</code> by the sign bit)</td></tr><tr><td>all zero</td><td>non-zero</td><td><strong>subnormal</strong> — the hidden bit is taken as 0, filling in densely near zero</td></tr><tr><td>all one</td><td>0</td><td>infinity (<math><mo>±</mo><mi>∞</mi></math> by the sign)</td></tr><tr><td>all one</td><td>non-zero</td><td>NaN — “not a number”</td></tr><tr><td>anything else</td><td>anything</td><td>a normal number — the formula above</td></tr></table></div><span id="doc-float-23"></span><p class="float-caption">Table 7.2 — The special values reserved at the two ends of the exponent range</p></figure><p>This table is the origin of the properties met in chapter 54. That NaN is not equal to itself, that infinity comes out of overflow, that <code>+0.0 == -0.0</code> while their bits differ — all of it comes from this layout. Chapter 54 confirms each of them by <strong>printing the actual bits</strong>.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Why bias the exponent — why not store it in two’s complement?</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> It could be stored that way. The bias has a practical advantage, though — <strong>read the bits other than the sign bit as an integer and the ordering of the real numbers comes out right.</strong> The exponent sits in the high bits, and thanks to the bias a smaller exponent gives a smaller bit pattern, so two positive numbers of the same sign compare correctly even when their patterns are read as unsigned integers. The hardware’s comparison circuits get simpler, and tasks such as sorting get faster. A two’s complement exponent would break that property.</p></div></div><h3 id="s7-4">7.4 Three incidents caused by approximation<a class="plink" href="#s7-4" aria-label="Link to this section" title="Link to this section">#</a></h3><div></div><p>Here is a numerical preview of the faces “faithful approximation” wears in practice. (Here it is shown by calculation on the page; running it in C comes in chapter 54.)</p><p><strong>Incident 1 — 0.1 + 0.2 ≠ 0.3.</strong> The most famous non-equation in the programming world. As we just saw, 0.1, 0.2 and 0.3 all have infinite binary expansions, so the machine holds each one’s “nearest neighbour” instead. And the sum of 0.1’s neighbour and 0.2’s neighbour happens to round the <strong>other way</strong> from 0.3’s neighbour. Written out in the 64-bit format —</p><ul><li><math><mn>0.1</mn><mo>+</mo><mn>0.2</mn></math> in the machine = <code>0.30000000000000004440...</code></li><li><math><mn>0.3</mn></math> in the machine = <code>0.29999999999999998889...</code></li></ul><p>Both are faithfully close to 0.3, but <strong>they are not the same number</strong>. So when you ask “are they equal?” (<code>==</code>), the machine answers honestly: no.</p><p>Look at the internal representation and the whole incident is visible at a glance. The 64-bit format splits into [1 sign bit | 11 exponent bits | 52 fraction bits]; here are the 64 bits of the four numbers 0.1, 0.2, 0.3 and 0.1 + 0.2 in hexadecimal —</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>number</strong></th><th><strong>64-bit internal representation (hex)</strong></th></tr><tr><td>0.1</td><td><code>3FB9 9999 9999 999A</code></td></tr><tr><td>0.2</td><td><code>3FC9 9999 9999 999A</code></td></tr><tr><td>0.3</td><td><code>3FD3 3333 3333 3333</code></td></tr><tr><td>0.1 + 0.2</td><td><code>3FD3 3333 3333 333</code><code>4</code></td></tr></table></div><span id="doc-float-24"></span><p class="float-caption">Table 7.3 — The same numbers as 64-bit representations</p></figure><p>There are three layers to read here. First, the <code>9999...</code> in the significands of 0.1 and 0.2 is the repeating binary <code>0011</code> seen in hexadecimal, and the fact that <strong>the last digit is <code>A</code> and not 9</strong> is the trace of rounding up while cutting the infinity off at 52 bits — the “cut” of the maths box is stamped right into the bits. Second, 0.3’s significand <code>3333...</code> is the same repetition at a different phase, and this one rounded down at the end. Third — the crux — 0.3 and 0.1+0.2 differ by <strong>exactly one final bit</strong>. They are the immediate neighbours, one tick apart (a tick being the gap between two adjacent representable numbers; 1 ulp, in the jargon). <code>==</code> answers “different” even to that one-bit difference, so floating-point “equality” breaks under a discrepancy of a single tick.</p><p><strong>Incident 2 — so how do you compare?</strong> In the floating-point world the question of equality itself has to change — not “are they exactly equal?” but <strong>“are they close enough?”</strong> You settle on a tolerance (traditionally called <strong>epsilon</strong>, <math><mi>𝜀</mi></math>) and count the two numbers as equal if their difference falls inside it:</p><math display="block"><mo stretchy="false">|</mo><mi>𝑎</mi><mo>−</mo><mi>𝑏</mi><mo lspace="0em" rspace="0em">|</mo><mo>&lt;</mo><mi>𝜀</mi><mspace width="1em"/><mtext>(e.g. </mtext><mspace width="0.2222em"/><mi>𝜀</mi><mo>=</mo><msup><mn>10</mn><mrow><mo>−</mo><mn>9</mn></mrow></msup><mspace width="0.2222em"/><mtext>)</mtext></math><p>That is the basic form; in practice there is one more layer — as numbers grow, so does the gap between neighbours (incident 3 below), so instead of a fixed <math><mi>𝜀</mi></math> it is safer to use a tolerance <strong>proportional to the size of the numbers</strong> (relative error). The concrete use of both approaches, and their traps, are covered in C code in chapter 54. What to remember now is one sentence: <strong>code that compares floating-point numbers with <code>==</code> is almost always suspect.</strong></p><p><strong>Incident 3 — beside a large number, a small one disappears.</strong> Because the significant digits are finite, when two numbers of very different sizes meet in one container, the smaller one can <strong>vanish entirely</strong>. This shows most cleanly in the 64-bit <code>double</code> (about 15–16 significant decimal digits) around <math><msup><mn>10</mn><mn>16</mn></msup></math>.</p><ul><li><math><msup><mn>10</mn><mn>16</mn></msup><mo>+</mo><mn>1</mn></math> is <strong><math><msup><mn>10</mn><mn>16</mn></msup></math> again.</strong> The 1 that was added simply disappears. And yet <math><msup><mn>10</mn><mn>16</mn></msup><mo>+</mo><mn>2</mn></math> becomes <math><mn>10000000000000002</mn></math> and grows properly. There is one reason for this strange contrast — at that magnitude the gap between representable neighbours is exactly <strong>2</strong>. With ticks 2 apart, 1 is half a tick and is swallowed by rounding, while 2 is exactly one tick and survives. This phenomenon of a small value being eaten by a large one is called <strong>absorption</strong>.</li><li>So the limit up to which a <code>double</code> can hold <strong>every</strong> integer without gaps is <math><msup><mn>2</mn><mn>53</mn></msup><mo>=</mo><mn>9007199254740992</mn></math>. Above that the tick spacing exceeds 1 and even integers begin to be skipped — try to hold <math><msup><mn>2</mn><mn>53</mn></msup><mo>+</mo><mn>1</mn></math> and you get <math><msup><mn>2</mn><mn>53</mn></msup></math> again. The practical rule “do not put money or identifiers in floating point” comes from here (JavaScript, which handles integers as <code>double</code>, hit this same wall and brought in <code>BigInt</code> for the same reason).</li><li>There is an accident in the opposite direction too. <strong>Subtracting two nearly equal numbers</strong> erases all the leading digits and leaves only the approximate trailing digits — a calculation that started with sixteen significant digits produces an answer with two or three. This is called <strong>cancellation</strong>, and it is the chief culprit in eroding precision in numerical work.</li></ul><p>The three incidents have a single root — the representable numbers are a <strong>discrete set of ticks</strong>, and the spacing between ticks widens as numbers grow. Near 0 the ticks are dense enough to distinguish something like <math><msup><mn>10</mn><mrow><mo>−</mo><mn>300</mn></mrow></msup></math>, but as we just saw, around <math><msup><mn>10</mn><mn>16</mn></msup></math> the spacing exceeds 1 and <strong>even integers get skipped</strong>. It is no exaggeration to say that a feel for “how many digits can I trust?” (significant digits) is the whole of using floating point.</p><h3 id="s7-5">7.5 The chaos, and the contract called IEEE 754<a class="plink" href="#s7-5" aria-label="Link to this section" title="Link to this section">#</a></h3><div></div><p>The idea of floating point was old, but <strong>how</strong> to hold it — how many bits for the significand and how many for the exponent, which way to round — varied from company to company for a long time. IBM mainframes, DEC’s VAX and Cray supercomputers each used a different format. The same program moved to another machine gave <strong>different answers</strong>, and numerical programmers had to learn each machine’s arithmetic habits afresh.</p><p>In 1985 a standard called IEEE 754 brought order to the chaos. IEEE is the name of the institute that issued it (the Institute of Electrical and Electronics Engineers). It is a precise contract that pins down the format (1 sign bit + exponent + significand), the rounding rules, and the treatment of special values such as infinity and “not a number” (NaN). Today virtually every CPU and GPU (graphics processing unit) follows this contract. Its representative formats are the 32-bit format (C’s <code>float</code>) and the 64-bit format (C’s <code>double</code>).</p><p>The dates are worth noticing. The contract for floating point (IEEE 754, 1985) and the contract for the C language (ANSI C, 1989 — ANSI is the American National Standards Institute) were born within a few years of each other. It was an era in which the industry, unable to bear vendor-by-vendor arbitrariness any longer, turned to “let us write contracts” — and we meet this “age of contracts” again in chapter 13.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> How do you choose between the 32-bit <code>float</code> and the 64-bit <code>double</code> in practice?</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> The default is <code>double</code>. The 64-bit format handles about 15–16 significant decimal digits, which is enough for most calculations. <code>float</code> (about 7 digits) is chosen for its size advantage where memory and bandwidth matter — large coordinate arrays, graphics, machine learning. “double for precision, float for volume” is roughly right. Actual use in C is covered in chapter 54.</p></div></div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Integer overflow in chapter 6 and rounding in this chapter are both problems of “a finite container” — are they the same kind of problem?</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> The root is the same; the symptoms differ. The integer container is finite in <strong>range</strong>, so it overflows at the end (and is perfectly exact until it does); the floating-point container is finite in <strong>precision</strong>, so it approximates a little everywhere (but its range is enormous). An exact but narrow container and a wide but approximating one — a feel for which container to use is a fundamental skill in handling numbers, and choosing types in C (chapters 28 and 54) is exactly that choice.</p></div></div><h3 id="s7-6">7.6 Seeing floating-point approximation with your own eyes<a class="plink" href="#s7-6" aria-label="Link to this section" title="Link to this section">#</a></h3><div></div><p>“Approximation” is an abstract word. Ask the machine directly and it becomes concrete.</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/floats-repr/floats.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> A look inside the container that holds fractions --- why 0.1 + 0.2 is not 0.3.</span></em>
+<em><span class="tok-c">   The values printed here are the same on any machine that follows IEEE 754. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdint.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">string.h</span><span class="tok-s">></span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> Print the bits of a double, split into sign, exponent and fraction </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong>show</strong><span class="tok-x">(</span><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>label<span class="tok-x">,</span> <strong><span class="tok-t">double</span></strong> v<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">uint64_t</span></strong> u<span class="tok-x">;</span>
+    <strong>memcpy</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>u</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>v</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> u</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%-10s</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-s">%.17g</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> label</strong><strong><span class="tok-x">,</span></strong><strong> v</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">           sign </span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-s">  exponent </span></strong><strong><span class="tok-s">%4u</span></strong><strong><span class="tok-s">  fraction 0x</span></strong><strong><span class="tok-s">%013llx</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">unsigned</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">(</span></strong><strong>u </strong><strong><span class="tok-x">>></span></strong><strong> </strong><strong><span class="tok-n">63</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">unsigned</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">(</span></strong><strong>u </strong><strong><span class="tok-x">>></span></strong><strong> </strong><strong><span class="tok-n">52</span></strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong> </strong><strong><span class="tok-x">0x</span></strong><strong><span class="tok-n">7FF</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">unsigned</span></strong><strong> </strong><strong><span class="tok-t">long</span></strong><strong> </strong><strong><span class="tok-t">long</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">(</span></strong><strong>u </strong><strong><span class="tok-x">&amp;</span></strong><strong> </strong><strong><span class="tok-x">0x</span></strong><strong><span class="tok-n">FFFFFFFFFFFFF</span></strong><strong><span class="tok-t">ULL</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">== the famous one ==</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">0.1 + 0.2 == 0.3 ? </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">1</span></strong><strong> </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">2</span></strong><strong> </strong><strong><span class="tok-x">==</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">3</span></strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">yes</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">no</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">0.1 + 0.2 = </span></strong><strong><span class="tok-s">%.17g</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">1</span></strong><strong> </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">2</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">0.3       = </span></strong><strong><span class="tok-s">%.17g</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">3</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">== why: 0.1 has no exact form in base two ==</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>show</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">0.1</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>show</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">0.2</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">2</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>show</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">0.5</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">5</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">0.5 is exact (fraction is all zeros); 0.1 and 0.2 are not.</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">== the error piles up ==</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-t">double</span></strong> sum <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">.</span><span class="tok-n">0</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> <span class="tok-n">10</span><span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> sum <strong><span class="tok-x">+=</span></strong> <span class="tok-n">0</span><span class="tok-x">.</span><span class="tok-n">1</span><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">adding 0.1 ten times = </span></strong><strong><span class="tok-s">%.17g</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> sum</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">1.0                  = </span></strong><strong><span class="tok-s">%.17g</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">difference           = </span></strong><strong><span class="tok-s">%.3g</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> sum </strong><strong><span class="tok-x">-</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">== a narrower container loses more ==</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-t">float</span></strong>  f <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">.</span><span class="tok-n">1</span><strong><span class="tok-t">f</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-t">double</span></strong> d <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">.</span><span class="tok-n">1</span><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">0.1 as float  = </span></strong><strong><span class="tok-s">%.17g</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">double</span></strong><strong><span class="tok-x">)</span></strong><strong>f</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">0.1 as double = </span></strong><strong><span class="tok-s">%.17g</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> d</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">== and some numbers are not numbers ==</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-t">double</span></strong> inf <strong><span class="tok-x">=</span></strong> <span class="tok-n">1</span><span class="tok-x">.</span><span class="tok-n">0</span> <strong><span class="tok-x">/</span></strong> <span class="tok-n">0</span><span class="tok-x">.</span><span class="tok-n">0e0</span><span class="tok-x">,</span> nan <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">.</span><span class="tok-n">0</span> <strong><span class="tok-x">/</span></strong> <span class="tok-n">0</span><span class="tok-x">.</span><span class="tok-n">0e0</span><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">1.0 / 0.0 = </span></strong><strong><span class="tok-s">%g</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> inf</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">0.0 / 0.0 = </span></strong><strong><span class="tok-s">%g</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> nan</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">nan == nan ? </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">   (the only value not equal to itself)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-x">(</span></strong><strong>nan </strong><strong><span class="tok-x">==</span></strong><strong> nan</strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">yes</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">no</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>== the famous one ==
+0.1 + 0.2 == 0.3 ? no
+0.1 + 0.2 = 0.30000000000000004
+0.3       = 0.29999999999999999
+
+== why: 0.1 has no exact form in base two ==
+0.1        0.10000000000000001
+           sign 0  exponent 1019  fraction 0x999999999999a
+0.2        0.20000000000000001
+           sign 0  exponent 1020  fraction 0x999999999999a
+0.5        0.5
+           sign 0  exponent 1022  fraction 0x0000000000000
+0.5 is exact (fraction is all zeros); 0.1 and 0.2 are not.
+
+== the error piles up ==
+adding 0.1 ten times = 0.99999999999999989
+1.0                  = 1
+difference           = -1.11e-16
+
+== a narrower container loses more ==
+0.1 as float  = 0.10000000149011612
+0.1 as double = 0.10000000000000001
+
+== and some numbers are not numbers ==
+1.0 / 0.0 = inf
+0.0 / 0.0 = -nan
+nan == nan ? no   (the only value not equal to itself)
+</code></pre></div></div><p>The first lines are the famous result. Printed to seventeen digits, <code>0.1 + 0.2</code> is <code>0.30000000000000004</code> and <code>0.3</code> is <code>0.29999999999999999</code>. Both are “the nearest representable value to 0.3” — but <strong>the nearest ones are not the same.</strong></p><p>The reason lies in the bits printed on the lines that follow. The fraction of <code>0.5</code> is all zeros: it comes out exactly in base two. The fractions of <code>0.1</code> and <code>0.2</code> end in <code>999…9a</code>, a repeating pattern cut short. The same thing happens to 1/10 in base two as happens to 1/3 when written as <code>0.333…</code> in base ten.</p><p>A single rounding error is invisible. Yet adding <code>0.1</code> ten times gives not <code>1</code> but a value a little below it — repetition brings it into view.</p><p>At the end come values that are not numbers: infinity from dividing by zero, and NaN, the result that cannot be defined. NaN in particular <strong>is not equal to itself</strong> — the only value for which <code>x == x</code> is false. (How the sign of a NaN is printed is up to the machine and the library, so nothing should rely on it.)</p><p>There is one more special kind of value: the <strong>subnormal numbers</strong>, named in passing in the table of special exponent values earlier. They are the very small numbers that lie closest to zero, where the rules for normal numbers change — and the change affects not only the hidden bit but also how the exponent is read, which makes them subtler than they look. That subtlety has caused real security incidents: servers brought to a halt, secrets leaked. The bit diagrams and the mechanism of those incidents are in chapter 54. <strong>Anyone who will actually use floating point should read chapter 54</strong> — it shows where and how the contract set up in this chapter breaks.</p><p>★ This demonstration does not say “do not use floating point”. It says <strong>know the container you are using.</strong> How to ask how close two values are instead of whether they are equal — and how to choose what counts as close — is shown with real code in chapter 54.</p><p>To summarise this rung of the ladder: the decimal point is not in the bits but in an agreement. Pin the agreement down and you have fixed point; carry it in the data and you have floating point, whose agreement is set out in the IEEE 754 contract. And numbers under that contract are not exact numbers but faithful approximations.</p><p>The next rung is characters. What has to be agreed to put “hello” in the lockers — the world of characters and text, and the story of the scars left where those agreements diverged.</p>
+<div class="nav"><a href="ch06.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch08.html">Next →</a></div>
+</div></main>
+<script>(function(){var b=document.querySelector('.menu-btn'),p=document.getElementById('here-panel');function open(o){if(!p)return;p.hidden=!o;if(b)b.setAttribute('aria-expanded',o);}if(b)b.addEventListener('click',function(){open(p.hidden);});if(p)p.addEventListener('click',function(e){if(e.target.tagName==='A'&&e.target.getAttribute('href').charAt(0)==='#')open(false);});document.addEventListener('keydown',function(e){if(e.key==='Escape'&&p&&!p.hidden){open(false);if(b)b.focus();}});document.addEventListener('click',function(e){if(p&&!p.hidden&&!p.contains(e.target)&&!(b&&b.contains(e.target)))open(false);});var bk=document.querySelector('.bar .back');if(bk)bk.addEventListener('click',function(e){if(history.length>1&&document.referrer){e.preventDefault();history.back();}});var box=document.getElementById('setbox');if(!box)return;var r=document.documentElement;function load(){try{return JSON.parse(localStorage.getItem('doc-read')||'{}');}catch(e){return {};}}function save(s){try{localStorage.setItem('doc-read',JSON.stringify(s));}catch(e){}}function css(n){return getComputedStyle(r).getPropertyValue(n).trim();}function paint(){var s=load();var t=s.theme||'auto',w=s.width==='fit'?'fit':'960';[].forEach.call(box.querySelectorAll('.segb[data-theme]'),function(x){x.setAttribute('aria-pressed',x.dataset.theme===t);});[].forEach.call(box.querySelectorAll('.segb[data-width]'),function(x){x.setAttribute('aria-pressed',x.dataset.width===w);});var ly=s.layout||'auto';[].forEach.call(box.querySelectorAll('.segb[data-layout]'),function(x){x.setAttribute('aria-pressed',x.dataset.layout===ly);});document.getElementById('s-fg').value=s.fg||hex(css('--fg'));document.getElementById('s-bg').value=s.bg||hex(css('--bg'));document.getElementById('s-link').value=s.link||hex(css('--link'));}function hex(v){var m=v.match(/^rgba?\((\d+)[ ,]+(\d+)[ ,]+(\d+)/);if(!m)return v.charAt(0)==='#'?v:'#000000';return '#'+[1,2,3].map(function(i){return ('0'+parseInt(m[i],10).toString(16)).slice(-2);}).join('');}paint();[].forEach.call(box.querySelectorAll('.segb[data-width]'),function(x){x.addEventListener('click',function(){var s=load();if(x.dataset.width==='fit'){s.width='fit';r.setAttribute('data-measure','fit');}else{delete s.width;r.removeAttribute('data-measure');}save(s);setTimeout(paint,0);});});[].forEach.call(box.querySelectorAll('.segb[data-layout]'),function(x){x.addEventListener('click',function(){var s=load(),v=x.dataset.layout;if(v==='auto'){delete s.layout;r.removeAttribute('data-layout');}else{s.layout=v;r.setAttribute('data-layout',v);}save(s);var m=document.querySelector('meta[name=viewport]');var want=v==='desktop'?'width=1100':'width=device-width, initial-scale=1';if(m&&m.getAttribute('content')!==want)location.reload();else setTimeout(paint,0);});});[].forEach.call(box.querySelectorAll('.segb[data-theme]'),function(x){x.addEventListener('click',function(){var s=load();s.theme=x.dataset.theme;delete s.fg;delete s.bg;delete s.link;save(s);['--fg','--bg','--link'].forEach(function(n){r.style.removeProperty(n);});if(s.theme==='auto')r.removeAttribute('data-theme');else r.setAttribute('data-theme',s.theme);setTimeout(paint,0);});});[['s-fg','--fg','fg'],['s-bg','--bg','bg'],['s-link','--link','link']].forEach(function(a){document.getElementById(a[0]).addEventListener('input',function(){var s=load();s[a[2]]=this.value;save(s);r.style.setProperty(a[1],this.value);});});})();</script><script>
+(function(){
+  var q=document.getElementById('q'), out=document.getElementById('qr');
+  if(!q||!out) return;
+  var data=null, NONE="Nothing found";
+  function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+  function run(){
+    var v=q.value.trim().toLowerCase();
+    out.innerHTML='';
+    if(!v||!data) return;
+    var hits=[];
+    for(var i=0;i<data.length && hits.length<40;i++){
+      if(data[i][0].toLowerCase().indexOf(v)>=0) hits.push(data[i]);
+    }
+    if(!hits.length){ out.innerHTML='<li>'+NONE+'</li>'; return; }
+    out.innerHTML=hits.map(function(h){
+      return '<li><a href="'+h[1]+'">'+esc(h[0])+'</a>'+
+             (h[2]?'<span class="where">'+esc(h[2])+'</span>':'')+'</li>';
+    }).join('');
+  }
+  q.addEventListener('input',function(){
+    if(data){ run(); return; }
+    fetch('search-index.json').then(function(r){return r.json();})
+      .then(function(j){ data=j; run(); })
+      .catch(function(){ out.innerHTML='<li>'+NONE+'</li>'; });
+  });
+})();
+</script></body></html>

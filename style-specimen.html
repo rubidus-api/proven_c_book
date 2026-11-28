@@ -1,0 +1,805 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Proven C Book — 서식 예시</title><style>/* doc.css - the web edition's design (scriptor_kit, DS-G).
+ *
+ * SPDX-License-Identifier: MIT
+ * Origin: proven_c_book styles/book.css (P1c); rules unchanged, comments new.
+ * Design lives here, page generation in tools/wrap.py. wrap.py inlines this file with its
+ * comments removed, so comments cost the reader nothing.
+ *
+ * Change procedure: edit this file only, check the specimen page (DS-T5), then rebuild.
+ *
+ * One discipline: a device marks its area with a left rail; a heading marks a boundary with
+ * a full-width rule. Only source code and its output (.demo) get a four-sided box.
+ */
+
+/* --- web fonts --------------------------------------------------------------
+   Without @font-face, a family named here that the visitor lacks falls back to some other
+   font (a serif body turning sans). Three families only: serif (body), sans-serif (headings,
+   UI), monospace (code). tools/webfonts.py subsets them to the characters actually used.
+   font-display:swap: text never waits for a font. */
+@font-face { font-family:"Doc Serif"; src:url("fonts/serif.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("fonts/serif-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("fonts/serif-italic.woff2") format("woff2");
+  font-weight:400; font-style:italic; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("fonts/serif-kr.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Serif"; src:url("fonts/serif-kr-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Sans"; src:url("fonts/sans.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Sans"; src:url("fonts/sans-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Sans"; src:url("fonts/sans-kr.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Sans"; src:url("fonts/sans-kr-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Mono"; src:url("fonts/mono.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Mono"; src:url("fonts/mono-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+/* --- colours: the workspace UI guide's document palette (N-C9), role tokens as in its colour file ---
+ *   1. :root                                          light palette
+ *   2. system dark, unless the reader chose light     dark palette
+ *   3. the reader chose dark                          dark palette
+ *   2 and 3 repeat the same values (CSS cannot name a group of variables): change both.
+ *   The older names are aliases of the roles, so every device rule keeps working.
+ *   Syntax colours (--tok-*) come from the print theme, not from the palette.
+ */
+:root { color-scheme: light dark; --bg:#fafaf8; --bg2:#f2f2f0; --bg3:#e6e6e3; --fg:#141414; --muted:#555555; --line:#c9c9c9; --line-strong:#8a8a8a; --accent:#1a4f8a; --accent-fg:#ffffff; --accent2:#96530f; --honey:#f2b04a; --honey-fg:#2b1d00; --honey-text:#855400; --honey-soft:#fbebc6; --danger:#9b1b30; --ok:#1d6e37; --warn:#855400; --select:#d4dde8;
+  --rule:var(--line); --box-bg:var(--bg2); --code-bg:var(--bg2); --box-rule:var(--line); --link:var(--accent);
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg:#121314; --bg2:#1c1e20; --bg3:#2a2c2f; --fg:#e8e8e8; --muted:#a6a6a6; --line:#3a3d40; --line-strong:#75787c; --accent:#8ab4e8; --accent-fg:#121314; --accent2:#d4883b; --honey:#f2b04a; --honey-fg:#121314; --honey-text:#f2b04a; --honey-soft:#3b311e; --danger:#f07a8c; --ok:#7bcb95; --warn:#f2b04a; --select:#2f3d52;
+    --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+:root[data-theme="dark"] { color-scheme: dark; --bg:#121314; --bg2:#1c1e20; --bg3:#2a2c2f; --fg:#e8e8e8; --muted:#a6a6a6; --line:#3a3d40; --line-strong:#75787c; --accent:#8ab4e8; --accent-fg:#121314; --accent2:#d4883b; --honey:#f2b04a; --honey-fg:#121314; --honey-text:#f2b04a; --honey-soft:#3b311e; --danger:#f07a8c; --ok:#7bcb95; --warn:#f2b04a; --select:#2f3d52;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; }
+:root[data-theme="light"] { color-scheme: light; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Doc Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+/* --- detailed contents and the 'contents of this chapter' panel --- */
+.here-head { display:flex; align-items:center; gap:.8rem; padding:.2rem 0 .5rem;
+  border-bottom:1px solid var(--rule,#ddd); margin-bottom:.5rem; }
+.here-head .sp { flex:1; }
+.here-all { margin-left:auto; font-size:.9rem; }
+.here-x { font:inherit; font-size:.9rem; cursor:pointer; background:none;
+  border:1px solid var(--line-strong); padding:.05rem .45rem;
+  color:inherit; }
+.here-body a, .tf-secs a { display:block; text-decoration:none; padding:.12rem 0;
+  line-height:1.45; }
+.here-body a:hover, .tf-secs a:hover { text-decoration:underline; }
+.here-body a.lv4, .tf-secs a.lv4 { padding-left:1.6rem; font-size:.94rem;
+  color:var(--muted,#555); }
+.tf-no { display:inline-block; min-width:3.2rem; color:var(--muted,#666);
+  font-variant-numeric:tabular-nums; }
+.toc-full .tf-ch { margin:.9rem 0 .15rem; font-weight:700; }
+.toc-full .tf-secs { margin:0 0 .5rem .2rem; border-left:2px solid var(--rule,#e2e2e2);
+  padding-left:.7rem; }
+.toc-full h4.toc-part { margin-top:1.8rem; }
+.toc a.toc-detail { font-weight:700; }
+@media print { .here-btn, .here-panel { display:none; } }
+/* The bar runs left to right and wraps when narrow; a spacer pushing items to the right
+   end split it into two clumps that drifted apart on small screens. */
+.bar { position:sticky; top:0; z-index:20; display:flex; flex-wrap:nowrap; gap:.25rem; align-items:center;
+       min-height:44px; padding:0 clamp(.4rem,2vw,1.6rem); background:var(--bg2);
+       border-bottom:1px solid var(--line); font-size:.9rem;
+       font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--fg); text-decoration:none; } .bar a:hover { text-decoration:none; }
+.bar .sp { display:none; }        /* unused: items run on from the left */
+main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
+/* Text width (UI guide N-W4): 960 by default; "fit the window" is the reader's choice. */
+.wrap { width:100%; }
+main .wrap { max-width:960px; margin-inline:auto; }
+:root[data-measure="fit"] main .wrap { max-width:none; margin:0; }
+h1,h2,h3,h4 { font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35;
+  padding-bottom:.18rem; border-bottom:1px solid var(--rule); }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem;
+     padding-bottom:.22rem; border-bottom:1.5px solid var(--fg); }
+p { margin:.9rem 0; } a { color:var(--link); }
+/* Body paragraphs indent the first line by one em, as in the PDF. Structural places
+   (cover, contents, headings, captions, lists) do not. */
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+/* Source notes are the PDF's footnotes. Typst's HTML export drops footnote bodies, so the
+   devices spread them inline and wrap.py numbers them and moves them to the end of the page.
+   .src-note is the fallback for a note that was not moved. */
+.src-note { font-size: .86em; color: var(--muted, #666); }
+.src-note code { font-size: .95em; }
+sup.fnref { font-size: .72em; line-height: 0; vertical-align: super; }
+sup.fnref a { text-decoration: none; padding: 0 .1em; }
+sup.fnref a::before { content: "["; }
+sup.fnref a::after  { content: "]"; }
+.chapter-notes { margin: 3rem 0 1rem; padding-top: .9rem;
+                 border-top: 2px solid var(--rule, #333); }
+.chapter-notes h2 { font-size: 1.05rem; margin: 0 0 .6rem; }
+.chapter-notes ol { margin: 0; padding-left: 1.6em; }
+.chapter-notes li { font-size: .92em; margin: .35em 0; text-indent: 0; }
+.chapter-notes a.fnback { text-decoration: none; }
+/* inside a box only the first paragraph after the label is not indented (the PDF's all:false) */
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+/* a first paragraph that holds a Q./A. label is never indented */
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
+pre,code,kbd { font-family:"Doc Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
+pre code { background:none; padding:0; }
+/* tables: heavy outside, light inside, bold header row with a light shade */
+/* A table takes only the width its content needs and stands centred; stretched to 100%
+   it leaves empty space at the right of each cell. .tblwrap scrolls when it overflows. */
+.tblwrap { overflow-x:auto; text-align:center; }
+/* inline-table always shrinks to fit; centring with flex stretches or clips the left edge
+   in some browsers. */
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+/* header row: a translucent grey shade (as in the PDF), natural in both themes */
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+/* lists of tables and figures are scanned, so they are tight */
+.float-list { list-style:none; padding-left:0; }
+.float-list li { margin:.12rem 0; }
+/* memory-row diagram: cells and the addresses below them, kept apart from table styles */
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"Doc Mono","D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"Doc Mono","D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+/* demonstrations: source and output get a clear border */
+/* A demonstration box has two cells like a Q&A: the head (file path in monospace, the
+   output label in bold sans) and, below a rule, the content. */
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"Doc Mono","D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+
+/* --- left-rail discipline ----------------------------------------------------
+   A four-sided box eats width on both sides. A single left rail marks the area and leaves
+   the right open. The label rail is heavier than the content rail and the two do not touch.
+   Headings use a horizontal rule instead: area and boundary are different jobs. */
+.dev { margin:1.15rem 0; padding:0; background:none; border:none; border-radius:0; }
+/* label line: heavy left rail */
+.dev > .dev-label { border-left:4px solid var(--fg);
+  padding:.1rem .8rem .25rem .8rem; margin:0 0 .34rem; }
+/* content: one light rail all the way down. A rail per child breaks between paragraphs
+   and gives a one-paragraph body no rail at all, so the body is wrapped once and ruled. */
+.dev > .dev-body { border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem .35rem .8rem; margin:0; }
+.dev > .dev-body > *:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child { margin-bottom:0; }
+/* table and figure captions: centred below, sans-serif */
+.float-caption { text-align:center; font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+/* Chapter opening blocks: each is one box, label line over content like Q&A and recap.
+   The box gives the side padding; padding on the children leaves bare text unpadded and
+   doubles it for several paragraphs. */
+.dev.open { border:none; border-radius:0; background:none;
+  padding:0; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
+  text-indent:0; border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+/* opening content sits in one wrapper (.open-body): its vertical space is given once, here */
+.dev.open > .open-body { margin:0; padding:.35rem .8rem;
+  border-left:2px solid var(--box-rule); }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+/* question list: numbers shown, items tight */
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+/* the answer inside a review block: a light left rail */
+.dev.open .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.06rem 0 .06rem .7rem; margin:.32rem 0 0; }
+/* opening labels: bold, clear sans, a little larger than the body; no capitals and no
+   letter spacing. */
+.prereq .dev-label, .deepqa .dev-label, .why .dev-label,
+.organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+/* the answer inside a review block: a clearer left rail */
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+
+/* Q&A: heavy rail on the question, light on the answer, a gap between them */
+.qa-box { border:none; margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:0; background:none; }
+.qa-box .qa-q { border-left:4px solid var(--fg);
+  padding:.1rem .8rem .25rem .8rem; margin:0; }
+.qa-box .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem; margin:.34rem 0 0; }
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:0; }
+/* recap uses the Q&A shape: label line over the body */
+.dev.recap { border:none; background:none; padding:0; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
+  text-indent:0; border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > .dev-body > p, .dev.recap > .dev-body > div:not(.demo),
+.dev.recap > .dev-body > figure { margin:.3rem 0; padding:0; }
+
+/* A demonstration inside a device keeps its box; it sits a little narrower inside the
+   outer rail. */
+.dev > .dev-body > .demo { margin:.7rem 0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+/* Q./A. labels run on into the first paragraph of the question or answer; later
+   paragraphs of the answer flow as paragraphs. */
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+/* Box devices share the Q&A shape: label line over the body, side padding from the box.
+   This also removes an old two-level rule that drew a following Q&A as part of the
+   misconception box. */
+/* The boxes of the same family: no four sides, only the left rail. Source and output
+   (.demo) stay boxed. */
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:none; border-radius:0; background:none; padding:0; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem; text-indent:0;
+  border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+/* The body cell (.dev-body) is left alone: a `> div` rule once caught it and set padding
+   to 0, pressing the text against the rail. Only inner paragraph spacing is set. */
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
+.dev > .dev-body > figure, .dev > .open-body > p {
+  margin:.35rem 0; padding:0; }
+/* paragraph spacing inside a box is about one line; the body's .9rem looks loose there */
+/* the bar (UI guide N-W2): menu, Back, where you are, then Prev · TOC · Next, on every screen */
+.bar .menu-btn { flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center;
+  min-width:38px; min-height:38px; padding:0; font:inherit; font-size:1.25rem; line-height:1;
+  color:var(--fg); background:none; border:0; cursor:pointer; text-decoration:none; }
+/* Back and the three page buttons share one look: a thin frame, the word beside the arrow */
+.bar .back, .bar .bar-nav .nb { flex:0 0 auto; display:inline-flex; align-items:center; gap:.3em;
+  min-height:32px; padding:0 .65rem; border:1px solid var(--line); background:var(--bg);
+  color:var(--fg); font-weight:600; white-space:nowrap; text-decoration:none; }
+.bar .menu-btn[aria-expanded="true"] { background:var(--bg3); }
+.bar .place { flex:1 1 auto; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
+  padding:0 .35rem; }
+.bar .place strong a { color:var(--honey-text); }
+.bar .place .cur { color:var(--fg); }
+.bar .bar-nav { flex:0 0 auto; display:flex; gap:.3rem; align-items:center; white-space:nowrap; }
+.bar .bar-nav .off { color:var(--muted); border-color:var(--line); opacity:.45; }
+.bar .back:hover, .bar .menu-btn:hover, .bar .bar-nav a.nb:hover, .bar .place a:hover { background:var(--bg3); }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+/* The counter-example rail is solid too: the kind is told by the label text, not by the
+   line style. */
+.dev.antipattern > .dev-label { border-left-style:solid; }
+
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+/* The cover has no horizontal rules: the light rule under its title was the general heading
+   rule, and the one under the blurb was the block's own border. A cover marks no boundary. */
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.2rem; }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em;
+            padding-bottom:0; border-bottom:none; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+/* figures are black line drawings: invert them in the dark theme */
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
+.toc { columns:24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.toc > .toc-part:first-child, .toc > .toc-keep:first-child > .toc-part, .toc-full > .toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
+/* contents without rules: no left rail, no rule under each chapter. It is a list, not a
+   device, so a line would mean nothing. */
+/* rows flow across columns; a heading keeps its first rows and the last rows keep together
+   (.toc-keep, made by wrap.py), so no heading is left alone at a column foot. */
+.toc-group { padding-left:.85rem; }
+.toc-keep, .toc a { break-inside:avoid; }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+
+/* --- specimen name tags ------------------------------------------------------
+   Only on the specimen page: the name of each shape, next to it. Never in documents. */
+code.style-name { font-family:"Doc Mono","D2Coding",ui-monospace,monospace;
+  font-size:.72em; color:var(--muted); background:var(--rule);
+  padding:.05em .35em; border-radius:3px; white-space:nowrap;
+  font-weight:400; letter-spacing:0; }
+
+/* --- adopted typesetting values ------------------------------------------------
+ * Values checked on the specimen and then adopted. Spacing follows an ordinary book;
+ * rules share one colour, except tables (a light grid does not read as cells).
+ */
+
+/* chapter opening blocks: the label line was pressed against its rule */
+.dev.open > .dev-label { padding-top:.42rem; padding-bottom:.42rem; }
+.dev.open > .open-body { padding-top:.4rem; padding-bottom:.4rem; }
+.dev.open > .open-body > p { margin:.6rem 0; }
+
+/* a little more room for text inside devices */
+.dev > .dev-body { padding-top:.5rem; padding-bottom:.5rem; }
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
+.dev > .dev-body > figure { margin:.55rem 0; }
+
+/* body: line and paragraph spacing */
+main { line-height:1.85; }
+p { margin:1.15rem 0; }
+h2 { margin-top:2.4rem; }
+h3 { margin-top:2rem; }
+li { margin:.3rem 0; }
+
+/* heading rules: light grey instead of black, a boundary that does not outshout the text */
+/* heading rules follow the palette; a fixed colour would glare in the dark theme */
+h1, h2, h3, h4 { border-bottom-color:var(--box-rule) !important; }
+
+/* contents: the body's generous leading made it loose; a list must be tight to be scanned */
+.toc { line-height:1.45; }
+.toc a { padding:.16rem 0; }
+.toc-part { margin:.85rem 0 .2rem; }
+
+/* copyright and contact: in a two-column list, wide line gaps separate the pairs */
+.metalist { line-height:1.45; gap:.2rem 1.2rem; }
+.metalist dt, .metalist dd { margin:0; }
+
+/* demonstration boxes: a light grey border; the code is already a dark block */
+.demo { border-color:var(--box-rule); }
+.demo > .demo-head { border-bottom-color:var(--box-rule); }
+
+/* --- left rails: light grey, from the palette (--box-rule) -----------------------
+ * The colour follows the theme. Weight (4px against 2px) tells the level, so the colour
+ * need not.
+ */
+.dev > .dev-label,
+.dev.open > .dev-label,
+.qa-box .qa-q,
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  border-left-color:var(--box-rule); }
+
+.dev > .dev-body,
+.dev > .open-body,
+.dev.open .qa-a,
+.qa-box .qa-a,
+.deepqa .qa-a { border-left-color:var(--box-rule); }
+
+/* One rule colour; only tables (.tbl) keep their own. Pinned here so whatever follows
+   gets the same grey. */
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div {
+  border-color:var(--box-rule); }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+
+/* Specificity trap: `.dev.open > .open-body` has three classes and beats `.dev *` (one)
+   and `.dev > .open-body` (two), so only the opening content rail stayed dark. The same
+   place is pressed with the same weight. */
+.dev.open > .open-body,
+.dev.open > .qa-a,
+.dev.open .qa-a,
+.dev.deepqa .qa-a,
+.qa-box > .qa-a,
+.qa-box > .qa-q { border-left-color:var(--box-rule); }
+
+/* the contents glyph in the top bar: slightly larger, level with the other names */
+.bar .bar-toc { font-size:1.15em; line-height:1; text-decoration:none; }
+
+/* --- uniformity ----------------------------------------------------------------
+ * Text inside devices and the per-chapter contents use the body's size, leading and
+ * paragraph spacing; different values per place shook the rhythm at every box.
+ */
+.dev, .dev-body, .open-body, .qa-box, .qa-q, .qa-a, .dev-label,
+.toc-full, .toc-full .tf-secs { line-height:inherit; font-size:1rem; }
+.dev > .dev-body > p, .dev > .open-body > p,
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:1.15rem 0; }
+.dev > .dev-body > *:first-child, .dev > .open-body > *:first-child,
+.qa-box .qa-q > p:first-child, .qa-box .qa-a > p:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child, .dev > .open-body > *:last-child,
+.qa-box .qa-q > p:last-child, .qa-box .qa-a > p:last-child { margin-bottom:0; }
+/* label lines keep their own size: a name, not body text */
+.dev > .dev-label, .dev.open > .dev-label { font-size:.98rem; line-height:1.4; }
+
+/* headings: generous space between text and rule, and as much below the rule */
+h1,h2,h3,h4 { padding-bottom:.34rem; }
+h1 { margin:.2rem 0 1.3rem; }
+h2 { padding-bottom:.42rem; margin-bottom:1.15rem; }
+h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
+
+/* --- lists and paragraphs in the opening blocks ------------------------------------
+ * Extra space between items looks like doubled leading, worst where short lines stack.
+ * The leading separates items; paragraphs get a minimal space. Leading is the body's,
+ * inherited from main.
+ */
+.dev.open > .open-body > * { margin:.3rem 0; }
+.dev.open > .open-body > p { margin:.5rem 0; }
+.dev.open > .open-body > div { margin:.15rem 0; }   /* the lines of the prerequisites block */
+.dev.open ul, .dev.open ol { margin:.3rem 0; }
+.dev.open li, .dev.open ol.qlist li { margin:0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open .qa-a > p { margin:.35rem 0; }
+
+/* --- web-only adjustments ------------------------------------------------------
+ * Paper and screen use different rule colours. #d5d5d5 shows in ink, but on a white
+ * screen it is 1.47:1 and vanishes on dim or cheap panels. The web is one step darker
+ * (#c4c4c4, 1.75:1).
+ */
+/* rules follow the palette's --box-rule, so they change with the theme */
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div { border-color:var(--box-rule); }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+
+/* keyboard users must see where they are, or they count links */
+a:focus-visible, button:focus-visible, summary:focus-visible, input:focus-visible {
+  outline:2px solid var(--accent2); outline-offset:2px; }
+
+/* headings do not hide under the fixed bar when reached from the contents */
+:target, h1, h2, h3, h4, [id] { scroll-margin-top:4.2rem; }
+
+/* skip link: no need to pass the bar's links on every page */
+.skip { position:absolute; left:-9999px; top:0; z-index:30;
+        background:var(--bg); color:var(--fg); border:1px solid var(--fg);
+        padding:.5rem .8rem; font-size:.9rem; text-decoration:none; }
+.skip:focus { left:.5rem; top:.5rem; }
+
+/* --- the bar's panel and reading settings -----------------------------------------
+ * The bar holds four things; the rest folds into this panel, one press away, which widens
+ * the reading area.
+ */
+/* The panel is a floating box (UI guide N-D1, N-D6): a nearly opaque face, square corners
+   with brackets, no shadow. It opens under the menu button and covers the text without
+   pushing it. */
+.here-panel { position:fixed; top:46px; left:clamp(.2rem,1vw,1rem); z-index:19;
+  width:min(32rem, calc(100vw - .4rem)); max-height:calc(100vh - 54px); overflow:auto;
+  padding:.7rem .9rem .9rem; border:1px solid var(--line); --k:var(--line-strong);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-size:.9rem; line-height:1.4;
+  background:
+    linear-gradient(var(--k),var(--k)) left top / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) left top / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) right top / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) right top / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) left bottom / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) left bottom / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) right bottom / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) right bottom / 3px 8px no-repeat,
+    color-mix(in srgb, var(--bg) 97%, transparent); }
+
+/* tool row: runs inline and wraps to the next line when narrow */
+.here-panel .tools { display:flex; flex-wrap:wrap; gap:.3rem .4rem; align-items:center;
+  margin-bottom:.6rem; }
+.tool, .segb { font:inherit; font-size:.88rem; color:var(--fg); background:none;
+  border:1px solid var(--line-strong); padding:0 .6rem; min-height:30px;
+  display:inline-flex; align-items:center; text-decoration:none; cursor:pointer; white-space:nowrap; }
+
+/* What can be pressed says so with its background (a short change, N-M1). */
+.tool:hover, .segb:hover, .nav a:hover, .here-panel .here-body a:hover { background:var(--bg3); }
+.segb[aria-pressed="true"] { background:var(--select); border-color:var(--accent); font-weight:700; }
+.tool, .segb, .bar a, .bar button, .nav a, .here-panel a { transition:background-color .08s; }
+@media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
+
+/* body links: an underline says they are there; the background answers the pointer */
+main a { text-decoration:underline; text-decoration-color:var(--box-rule);
+  text-underline-offset:2px; }
+main a:hover { background:var(--box-bg); text-decoration-color:var(--link); }
+main .toc a, main .toc-full a, main .here-body a { text-decoration:none; }
+main .toc a:hover, main .toc-full a:hover { background:var(--box-bg); text-decoration:underline; }
+
+/* reading settings (UI guide N-W4): theme, text width, colours */
+.setbox { margin:0 0 .6rem; }
+.setrow { display:flex; flex-wrap:wrap; gap:.4rem .5rem; align-items:center; margin:.35rem 0; }
+.setlbl { min-width:4.2rem; font-size:.82rem; font-weight:700; }
+.seg { display:inline-flex; flex-wrap:wrap; gap:.25rem; }
+.col { display:inline-flex; align-items:center; gap:.3rem; }
+.col input[type=color] { width:2rem; height:1.4rem; padding:0; border:1px solid var(--line-strong);
+  background:none; cursor:pointer; }
+.setnote { margin:.5rem 0 0; font-size:.82rem; }
+
+/* the edition number at the left of the panel: a label, not a tool (nothing to press) */
+.here-panel .ver { font-size:.82rem; color:var(--muted); padding:.2rem .45rem .2rem 0;
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; white-space:nowrap; }
+
+/* --- wrapping code and output ------------------------------------------------------
+ * Long lines left to overflow hide inside a horizontal scroll. Paper folds them by
+ * character (the devices' hard wrap), so the screen keeps the same promise: fold, do not
+ * overflow, and keep the indentation.
+ */
+.demo pre, .demo pre code {
+  white-space:pre-wrap; overflow-wrap:anywhere; word-break:break-word; }
+.demo > .demo-body { overflow-x:visible; }
+
+/* --- section permalinks ----------------------------------------------------------
+   Paper has page numbers, the web edition has none, so there was no way to point someone
+   to a place. Each section gets an anchor that stays hidden until the heading is hovered
+   or focused. */
+.plink {
+  margin-left: .4em; font-weight: 400; text-decoration: none;
+  color: var(--muted, #888); opacity: 0;
+}
+h3:hover > .plink, h4:hover > .plink,
+h3 > .plink:focus, h4 > .plink:focus { opacity: 1; }
+@media (hover: none) { .plink { opacity: .45; } }
+
+/* --- search ------------------------------------------------------------------
+   Headings and index terms only: a full-text index costs megabytes per edition, more
+   than it gives. The screen says what is searched. */
+.searchbox { margin:.6em 0 0; }
+.searchbox input[type=search] {
+  width: 100%; padding: .45em .6em; font: inherit;
+  border: 1px solid var(--line-strong);
+  background: var(--bg); color: var(--fg);
+}
+.search-hint { color: var(--muted, #777); font-size: .85em; margin:.3em 0 0; }
+.search-results { list-style: none; padding: 0; margin: .5em 0 0; }
+.search-results li { margin: .15em 0; }
+.search-results .where { color: var(--muted, #777); font-size: .85em; margin-left: .4em; }
+
+/* Display mode (owner 2026-11-27): Auto follows the screen; Desktop and Mobile are the reader's choice
+   (data-layout on the root). The narrow rules apply in Auto on a narrow or portrait screen, and in
+   Mobile anywhere; Desktop never takes them. The four bar buttons stay on every screen: the place
+   name gives way first, then the words of Prev and Next (their arrows stay). Touch targets reach 44. */
+@media (max-width: 900px), (orientation: portrait) {
+  :root:not([data-layout="desktop"]) .bar .place .cur { display:none; }
+  :root:not([data-layout="desktop"]) .bar .back,
+  :root:not([data-layout="desktop"]) .bar .bar-nav .nb { min-height:40px; padding:0 .5rem; }
+}
+@media (max-width: 480px) {
+  :root:not([data-layout="desktop"]) .bar .bar-nav .prev .lbl,
+  :root:not([data-layout="desktop"]) .bar .bar-nav .next .lbl { display:none; }
+  :root:not([data-layout="desktop"]) .bar .bar-nav .nb { min-width:44px; justify-content:center; }
+  :root:not([data-layout="desktop"]) .bar { gap:.2rem; }
+}
+:root[data-layout="mobile"] .bar .place .cur { display:none; }
+:root[data-layout="mobile"] .bar .back, :root[data-layout="mobile"] .bar .bar-nav .nb { min-height:40px; padding:0 .5rem; }
+:root[data-layout="mobile"] main .wrap { max-width:34rem; }
+@media (pointer: coarse), (max-width: 900px) {
+  .bar .menu-btn { min-width:44px; min-height:44px; }
+  .tool, .segb { min-height:38px; }
+}
+@media print { .bar, .here-panel { display:none; } }
+
+/* ── 시험 중인 웹 조판 값 (RFC-0027 §5) ────────────────────────────────
+ *
+ * ★ 이 파일은 *조판 견본에만* 실린다(scripts/style-preview-html.py 가 얹는다).
+ *   책의 웹판(docs/ko, docs/en)은 styles/book.css 만 쓴다.
+ *
+ * 쓰는 법: 시험할 규칙을 여기에 적고 scripts/style-preview.sh → 견본으로 본다.
+ * 마음에 들면 book.css 끝으로 옮겨 적는다 --- 그것이 채택이다.
+ *
+ * 지금은 비어 있다(2026-08-10 시험분은 모두 채택되어 book.css 로 갔다).
+ */
+</style></head><body><main><div class="wrap"><header class="cover"><h1>Proven C Book</h1><p class="cover-sub">조판 견본 — 이 판의 서식을 한자리에</p><p><span class="badge">서식 예시(style specimen)</span></p><p class="cover-meta">이 판 · 표지는 cover-body / .cover</p><p class="cover-author">rubidus</p><p class="cover-links">rubidus@gmail.com github.com/rubidus-api/proven_c_book</p><div class="cover-blurb">표지의 각 줄에는 저마다 이름이 있다 — 제목 <code class="style-name">.cover h1</code>, 부제 <code class="style-name">.cover-sub</code>, 딱지 <code class="style-name">.badge</code>, 판 정보 <code class="style-name">.cover-meta</code>, 지은이 <code class="style-name">.cover-author</code>, 링크 <code class="style-name">.cover-links</code>, 그리고 이 소개글 <code class="style-name">.cover-blurb</code>.</div></header><p>차례 <code class="style-name">.toc / toc-row</code></p><div class="toc"><h4 class="toc-part">제1부 — 부의 제목은 이렇게 <code class="style-name">.toc-part / toc-part</code></h4><div class="toc-group"><a>1. 장 제목이 놓이는 줄</a> <a>1.1 절까지 편다 <code class="style-name">.toc a / toc-subrow</code></a> <a>1.2 점선은 흐리고 글자는 본문색이다</a> <a>2. 다음 장</a> <a>2.1 앞차례의 행간은 style.typ 이 정한다</a></div><h4 class="toc-part">부록과 찾아보기 <code class="style-name">.toc-group</code></h4><div class="toc-group"><a>부록 A. 이렇게 들어간다</a></div></div><h3>머리말 <code class="style-name">h2 / heading lv2</code></h3><div></div><p>이 자리는 번호가 없는 제목이다. 앞부속(머리말·저작권)과 뒤부속(부록·찾아보기)의 제목이 이 꼴을 쓴다. 본문 문단은 첫 줄을 한 글자 들여쓴다 <code class="style-name">p / set par(first-line-indent)</code>.</p><h3>저작권과 연락처</h3><div></div><dl class="metalist"><dt>지은이</dt><dd>rubidus</dd><dt>연락</dt><dd>rubidus@gmail.com</dd><dt>판</dt><dd>이 견본은 판마다 함께 나간다</dd><dt>이 표의 이름</dt><dd><code class="style-name">metalist / .metalist</code></dd></dl><h2>1 장 제목은 이렇게 보인다 <code class="style-name">h1 / heading lv1</code></h2><div></div><p>장 서두의 다섯 칸은 <strong>한 장치의 다섯 얼굴</strong>이다. 모두 <code>_open-block</code> 이 그리고, 갈래는 클래스로만 갈린다 — 표지 줄은 <code>p.dev-label</code>, 내용은 <code>div.open-body</code>. 아래 이름표는 각 칸의 표지 줄 <strong>안에</strong> 붙어 있다.</p><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것 <code class="style-name">prereq() → _open-block · div.dev.open.prereq > p.dev-label</code></p><div class="open-body"><div>1장 어딘가 · 기댄 개념 한 줄</div><div>5장 다른 곳 · 또 하나</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기 <code class="style-name">deepqa() → _open-block · div.dev.open.deepqa > p.dev-label</code></p><div class="open-body"><p>인출 문답의 질문은 이렇게 보인다. 굵은 왼쪽 선 아래 가는 선이 이어지는가?</p><div class="qa-a"><p><p><span class="dev-label">답.</span> 답은 이렇게. 문단이 둘일 때 선이 끊기지 않아야 한다.</p><p>두 번째 문단이다. 앞 문단과 같은 선 위에 이어져 있어야 한다.</p></p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락 <code class="style-name">why() → _open-block · div.dev.open.why > p.dev-label</code></p><div class="open-body">이 칸이 「이 장의 필요성과 맥락」이다. 표지 줄과 내용 사이에만 틈이 있고, 내용 안에서는 선이 이어진다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면 <code class="style-name">organizer() → _open-block · div.dev.open.organizer > p.dev-label</code></p><div class="open-body">「이 장이 끝나면」 칸. 서두 넷은 칸과 칸 사이에 가로선이 없어야 한다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문 <code class="style-name">chapter-questions() → _open-block · div.dev.open.questions > p.dev-label</code></p><div class="open-body"><ol class="qlist"><li>문답의 질문. 왼쪽 선이 굵은가? <code class="style-name">qa / .qa-box</code></li></ol></div></div><div></div><h3>1.1 절 제목 — 밑줄이 글자에 붙었는가 <code class="style-name">h2</code></h3><div></div><p>본문이다. 인라인 코드 <code>&lt;stdio.h></code> <code class="style-name">code / raw(block: false)</code> 가 둘레 글자보다 작아 보이지 않아야 한다. 줄 간격과 첫 줄 들여쓰기도 여기서 함께 본다. 각주는 이렇게 단다<span class="src-note">각주의 내용 <code class="style-name">note / .src-note → 장 끝의 「주」</code>. 텍스트 판에서는 이 쪽 아래에, 웹판에서는 장 끝에 모인다.</span> — 문장이 끊기지 않는다.</p><p>색인에 실을 낱말은 표시만 남기고 화면에는 아무것도 그리지 않는다<span id="idx-entry"></span> <code class="style-name">idx / metadata</code>.</p><h4>1.1.1 항 제목 — 더 가는 밑줄 <code class="style-name">h3</code></h4><div></div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 문답의 질문. 왼쪽 선이 굵은가? <code class="style-name">qa / .qa-box</code></p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> <code class="style-name">.qa-a</code> 선이 가늘어졌고, 질문과 답 사이가 떨어져 있는가?</p><div class="demo demo-src"><p class="demo-head"><code>examples/function-semantics/fact.c</code></p><div class="demo-body"><pre><code data-lang="c"><span style="color: #d73948">#include</span> <span style="color: #198810">&lt;</span><span style="color: #198810">stdio.h</span><span style="color: #198810">></span>
+
+<span style="color: #d73948">int</span> <span style="color: #4b69c6">fact</span>(<span style="color: #d73948">int</span> n)
+{
+    <span style="color: #d73948">if</span> (n <span style="color: #d73948">&lt;=</span> <span style="color: #b60157">1</span>) {
+        <span style="color: #d73948">return</span> <span style="color: #b60157">1</span>;               <span style="color: #74747c">/*</span><span style="color: #74747c"> 바닥: 더 내려가지 않는 경우 </span><span style="color: #74747c">*/</span>
+    }
+    <span style="color: #d73948">return</span> n <span style="color: #d73948">*</span> <span style="color: #4b69c6">fact</span>(n <span style="color: #d73948">-</span> <span style="color: #b60157">1</span>);     <span style="color: #74747c">/*</span><span style="color: #74747c"> 자신을 부르되, 더 작은 문제로 </span><span style="color: #74747c">*/</span>
+}
+
+<span style="color: #d73948">int</span> <span style="color: #4b69c6">main</span>(<span style="color: #d73948">void</span>)
+{
+    <span style="color: #4b69c6">printf</span>(<span style="color: #198810">"</span><span style="color: #198810">5! = </span><span style="color: #b60157">%d</span><span style="color: #1d6c76">\n</span><span style="color: #198810">"</span>, <span style="color: #4b69c6">fact</span>(<span style="color: #b60157">5</span>));
+    <span style="color: #d73948">return</span> <span style="color: #b60157">0</span>;
+}
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>5! = 120
+</code></pre></div></div><p>시연 뒤에도 왼쪽 선이 이어져야 한다.</p></p></div></div><div class="dev misconception"><p class="dev-label">흔한 오해. <strong>“흔한 오해의 제목은 이렇게” <code class="style-name">misconception / .dev.device</code></strong></p><div class="dev-body"><p>내용 칸 <code class="style-name">.dev-body</code> 에도 왼쪽 선이 있어야 한다.</p><div class="demo demo-src"><p class="demo-head"><code>examples/function-semantics/fact.c</code></p><div class="demo-body"><pre><code data-lang="c"><span style="color: #d73948">#include</span> <span style="color: #198810">&lt;</span><span style="color: #198810">stdio.h</span><span style="color: #198810">></span>
+
+<span style="color: #d73948">int</span> <span style="color: #4b69c6">fact</span>(<span style="color: #d73948">int</span> n)
+{
+    <span style="color: #d73948">if</span> (n <span style="color: #d73948">&lt;=</span> <span style="color: #b60157">1</span>) {
+        <span style="color: #d73948">return</span> <span style="color: #b60157">1</span>;               <span style="color: #74747c">/*</span><span style="color: #74747c"> 바닥: 더 내려가지 않는 경우 </span><span style="color: #74747c">*/</span>
+    }
+    <span style="color: #d73948">return</span> n <span style="color: #d73948">*</span> <span style="color: #4b69c6">fact</span>(n <span style="color: #d73948">-</span> <span style="color: #b60157">1</span>);     <span style="color: #74747c">/*</span><span style="color: #74747c"> 자신을 부르되, 더 작은 문제로 </span><span style="color: #74747c">*/</span>
+}
+
+<span style="color: #d73948">int</span> <span style="color: #4b69c6">main</span>(<span style="color: #d73948">void</span>)
+{
+    <span style="color: #4b69c6">printf</span>(<span style="color: #198810">"</span><span style="color: #198810">5! = </span><span style="color: #b60157">%d</span><span style="color: #1d6c76">\n</span><span style="color: #198810">"</span>, <span style="color: #4b69c6">fact</span>(<span style="color: #b60157">5</span>));
+    <span style="color: #d73948">return</span> <span style="color: #b60157">0</span>;
+}
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>5! = 120
+</code></pre></div></div></div></div><div class="dev realcase"><p class="dev-label">실제 사례.<span style="white-space: pre-wrap">&#x20;&#x20;</span>실제 사례의 제목 <code class="style-name">realcase / .dev.realcase</code></p><div class="dev-body"><p>선 오른쪽에 숨이 있어야 한다. 글이 선에 바짝 붙으면 답답하다.</p><div class="demo demo-src"><p class="demo-head"><code>examples/function-semantics/fact.c</code></p><div class="demo-body"><pre><code data-lang="c"><span style="color: #d73948">#include</span> <span style="color: #198810">&lt;</span><span style="color: #198810">stdio.h</span><span style="color: #198810">></span>
+
+<span style="color: #d73948">int</span> <span style="color: #4b69c6">fact</span>(<span style="color: #d73948">int</span> n)
+{
+    <span style="color: #d73948">if</span> (n <span style="color: #d73948">&lt;=</span> <span style="color: #b60157">1</span>) {
+        <span style="color: #d73948">return</span> <span style="color: #b60157">1</span>;               <span style="color: #74747c">/*</span><span style="color: #74747c"> 바닥: 더 내려가지 않는 경우 </span><span style="color: #74747c">*/</span>
+    }
+    <span style="color: #d73948">return</span> n <span style="color: #d73948">*</span> <span style="color: #4b69c6">fact</span>(n <span style="color: #d73948">-</span> <span style="color: #b60157">1</span>);     <span style="color: #74747c">/*</span><span style="color: #74747c"> 자신을 부르되, 더 작은 문제로 </span><span style="color: #74747c">*/</span>
+}
+
+<span style="color: #d73948">int</span> <span style="color: #4b69c6">main</span>(<span style="color: #d73948">void</span>)
+{
+    <span style="color: #4b69c6">printf</span>(<span style="color: #198810">"</span><span style="color: #198810">5! = </span><span style="color: #b60157">%d</span><span style="color: #1d6c76">\n</span><span style="color: #198810">"</span>, <span style="color: #4b69c6">fact</span>(<span style="color: #b60157">5</span>));
+    <span style="color: #d73948">return</span> <span style="color: #b60157">0</span>;
+}
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>5! = 120
+</code></pre></div></div></div></div><div class="dev antipattern"><p class="dev-label">반례.<span style="white-space: pre-wrap">&#x20;&#x20;</span>반례의 제목 <code class="style-name">antipattern / .dev.antipattern</code></p><div class="dev-body"><p>반례도 다른 장치와 <strong>같은 꼴</strong>이다 — 제목 줄이 굵고, 내용 칸에 가는 선이 이어지고, 선 오른쪽에 같은 만큼의 숨이 있다.</p><div class="demo demo-src"><p class="demo-head"><code>examples/function-semantics/fact.c</code></p><div class="demo-body"><pre><code data-lang="c"><span style="color: #d73948">#include</span> <span style="color: #198810">&lt;</span><span style="color: #198810">stdio.h</span><span style="color: #198810">></span>
+
+<span style="color: #d73948">int</span> <span style="color: #4b69c6">fact</span>(<span style="color: #d73948">int</span> n)
+{
+    <span style="color: #d73948">if</span> (n <span style="color: #d73948">&lt;=</span> <span style="color: #b60157">1</span>) {
+        <span style="color: #d73948">return</span> <span style="color: #b60157">1</span>;               <span style="color: #74747c">/*</span><span style="color: #74747c"> 바닥: 더 내려가지 않는 경우 </span><span style="color: #74747c">*/</span>
+    }
+    <span style="color: #d73948">return</span> n <span style="color: #d73948">*</span> <span style="color: #4b69c6">fact</span>(n <span style="color: #d73948">-</span> <span style="color: #b60157">1</span>);     <span style="color: #74747c">/*</span><span style="color: #74747c"> 자신을 부르되, 더 작은 문제로 </span><span style="color: #74747c">*/</span>
+}
+
+<span style="color: #d73948">int</span> <span style="color: #4b69c6">main</span>(<span style="color: #d73948">void</span>)
+{
+    <span style="color: #4b69c6">printf</span>(<span style="color: #198810">"</span><span style="color: #198810">5! = </span><span style="color: #b60157">%d</span><span style="color: #1d6c76">\n</span><span style="color: #198810">"</span>, <span style="color: #4b69c6">fact</span>(<span style="color: #b60157">5</span>));
+    <span style="color: #d73948">return</span> <span style="color: #b60157">0</span>;
+}
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>5! = 120
+</code></pre></div></div></div></div><div class="dev platform"><p class="dev-label">플랫폼 노트.<span style="white-space: pre-wrap">&#x20;&#x20;</span>플랫폼 노트의 제목 <code class="style-name">platform / .dev.platform</code></p><div class="dev-body"><p>다른 장치와 <strong>같은 꼴</strong>이어야 한다 — 점선이나 겹선으로 따로 놀지 않는다.</p><div class="demo demo-src"><p class="demo-head"><code>examples/function-semantics/fact.c</code></p><div class="demo-body"><pre><code data-lang="c"><span style="color: #d73948">#include</span> <span style="color: #198810">&lt;</span><span style="color: #198810">stdio.h</span><span style="color: #198810">></span>
+
+<span style="color: #d73948">int</span> <span style="color: #4b69c6">fact</span>(<span style="color: #d73948">int</span> n)
+{
+    <span style="color: #d73948">if</span> (n <span style="color: #d73948">&lt;=</span> <span style="color: #b60157">1</span>) {
+        <span style="color: #d73948">return</span> <span style="color: #b60157">1</span>;               <span style="color: #74747c">/*</span><span style="color: #74747c"> 바닥: 더 내려가지 않는 경우 </span><span style="color: #74747c">*/</span>
+    }
+    <span style="color: #d73948">return</span> n <span style="color: #d73948">*</span> <span style="color: #4b69c6">fact</span>(n <span style="color: #d73948">-</span> <span style="color: #b60157">1</span>);     <span style="color: #74747c">/*</span><span style="color: #74747c"> 자신을 부르되, 더 작은 문제로 </span><span style="color: #74747c">*/</span>
+}
+
+<span style="color: #d73948">int</span> <span style="color: #4b69c6">main</span>(<span style="color: #d73948">void</span>)
+{
+    <span style="color: #4b69c6">printf</span>(<span style="color: #198810">"</span><span style="color: #198810">5! = </span><span style="color: #b60157">%d</span><span style="color: #1d6c76">\n</span><span style="color: #198810">"</span>, <span style="color: #4b69c6">fact</span>(<span style="color: #b60157">5</span>));
+    <span style="color: #d73948">return</span> <span style="color: #b60157">0</span>;
+}
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>5! = 120
+</code></pre></div></div></div></div><div class="dev mathbox"><p class="dev-label">수학.<span style="white-space: pre-wrap">&#x20;&#x20;</span>수학 상자의 제목 <code class="style-name">mathbox / .dev.mathbox</code></p><div class="dev-body"><p>제목 왼쪽의 줄이 다른 장치의 제목과 같은 굵기인가? 예전에는 여기만 얇았다.</p><div class="demo demo-src"><p class="demo-head"><code>examples/function-semantics/fact.c</code></p><div class="demo-body"><pre><code data-lang="c"><span style="color: #d73948">#include</span> <span style="color: #198810">&lt;</span><span style="color: #198810">stdio.h</span><span style="color: #198810">></span>
+
+<span style="color: #d73948">int</span> <span style="color: #4b69c6">fact</span>(<span style="color: #d73948">int</span> n)
+{
+    <span style="color: #d73948">if</span> (n <span style="color: #d73948">&lt;=</span> <span style="color: #b60157">1</span>) {
+        <span style="color: #d73948">return</span> <span style="color: #b60157">1</span>;               <span style="color: #74747c">/*</span><span style="color: #74747c"> 바닥: 더 내려가지 않는 경우 </span><span style="color: #74747c">*/</span>
+    }
+    <span style="color: #d73948">return</span> n <span style="color: #d73948">*</span> <span style="color: #4b69c6">fact</span>(n <span style="color: #d73948">-</span> <span style="color: #b60157">1</span>);     <span style="color: #74747c">/*</span><span style="color: #74747c"> 자신을 부르되, 더 작은 문제로 </span><span style="color: #74747c">*/</span>
+}
+
+<span style="color: #d73948">int</span> <span style="color: #4b69c6">main</span>(<span style="color: #d73948">void</span>)
+{
+    <span style="color: #4b69c6">printf</span>(<span style="color: #198810">"</span><span style="color: #198810">5! = </span><span style="color: #b60157">%d</span><span style="color: #1d6c76">\n</span><span style="color: #198810">"</span>, <span style="color: #4b69c6">fact</span>(<span style="color: #b60157">5</span>));
+    <span style="color: #d73948">return</span> <span style="color: #b60157">0</span>;
+}
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>5! = 120
+</code></pre></div></div></div></div><div class="dev recap"><p class="dev-label">복습 정리</p><div class="dev-body"><ul><li>복습 정리의 첫 줄 <code class="style-name">recap / .dev.recap</code></li><li>둘째 줄</li></ul><div class="demo demo-src"><p class="demo-head"><code>examples/function-semantics/fact.c</code></p><div class="demo-body"><pre><code data-lang="c"><span style="color: #d73948">#include</span> <span style="color: #198810">&lt;</span><span style="color: #198810">stdio.h</span><span style="color: #198810">></span>
+
+<span style="color: #d73948">int</span> <span style="color: #4b69c6">fact</span>(<span style="color: #d73948">int</span> n)
+{
+    <span style="color: #d73948">if</span> (n <span style="color: #d73948">&lt;=</span> <span style="color: #b60157">1</span>) {
+        <span style="color: #d73948">return</span> <span style="color: #b60157">1</span>;               <span style="color: #74747c">/*</span><span style="color: #74747c"> 바닥: 더 내려가지 않는 경우 </span><span style="color: #74747c">*/</span>
+    }
+    <span style="color: #d73948">return</span> n <span style="color: #d73948">*</span> <span style="color: #4b69c6">fact</span>(n <span style="color: #d73948">-</span> <span style="color: #b60157">1</span>);     <span style="color: #74747c">/*</span><span style="color: #74747c"> 자신을 부르되, 더 작은 문제로 </span><span style="color: #74747c">*/</span>
+}
+
+<span style="color: #d73948">int</span> <span style="color: #4b69c6">main</span>(<span style="color: #d73948">void</span>)
+{
+    <span style="color: #4b69c6">printf</span>(<span style="color: #198810">"</span><span style="color: #198810">5! = </span><span style="color: #b60157">%d</span><span style="color: #1d6c76">\n</span><span style="color: #198810">"</span>, <span style="color: #4b69c6">fact</span>(<span style="color: #b60157">5</span>));
+    <span style="color: #d73948">return</span> <span style="color: #b60157">0</span>;
+}
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>5! = 120
+</code></pre></div></div></div></div><figure class="tbl"><table><tr><th><strong>열 하나</strong></th><th><strong>열 둘</strong></th><th><strong>열 셋</strong></th></tr><tr><td>값</td><td>값</td><td>값</td></tr></table><p class="float-caption">표 1.1 — 표의 캡션 — <code class="style-name">dtable / figure.tbl</code></p></figure><h3>1.2 시연 — ★ 여기만 상자를 쓴다 <code class="style-name">demo / .demo</code></h3><div></div><div class="demo demo-src"><p class="demo-head"><code>examples/function-semantics/ternary.c</code></p><div class="demo-body"><pre><code data-lang="c"><span style="color: #d73948">#include</span> <span style="color: #198810">&lt;</span><span style="color: #198810">stdio.h</span><span style="color: #198810">></span>
+
+<span style="color: #d73948">int</span> <span style="color: #4b69c6">main</span>(<span style="color: #d73948">void</span>)
+{
+    <span style="color: #d73948">int</span>    i <span style="color: #d73948">=</span> <span style="color: #b60157">7</span>;
+    <span style="color: #d73948">double</span> d <span style="color: #d73948">=</span> <span style="color: #b60157">2</span><span style="color: #b60157">.</span><span style="color: #b60157">5</span>;
+
+    <span style="color: #74747c">/*</span><span style="color: #74747c"> 조건 연산자의 타입은 *컴파일 시간에 하나로* 정해진다.</span>
+<span style="color: #74747c">       두 가지가 int 와 double 이면 결과는 언제나 double 이다. </span><span style="color: #74747c">*/</span>
+    <span style="color: #4b69c6">printf</span>(<span style="color: #198810">"</span><span style="color: #198810">sizeof(int)=</span><span style="color: #b60157">%zu</span><span style="color: #198810"> sizeof(double)=</span><span style="color: #b60157">%zu</span><span style="color: #1d6c76">\n</span><span style="color: #198810">"</span>, <span style="color: #d73948">sizeof</span> i, <span style="color: #d73948">sizeof</span> d);
+    <span style="color: #4b69c6">printf</span>(<span style="color: #198810">"</span><span style="color: #198810">sizeof(1 ? i : d) = </span><span style="color: #b60157">%zu</span><span style="color: #198810">  (double even when the condition is true)</span><span style="color: #1d6c76">\n</span><span style="color: #198810">"</span>, <span style="color: #d73948">sizeof</span>(<span style="color: #b60157">1</span> <span style="color: #d73948">?</span> i <span style="color: #d73948">:</span> d));
+    <span style="color: #4b69c6">printf</span>(<span style="color: #198810">"</span><span style="color: #198810">value  (1 ? i : d) = </span><span style="color: #b60157">%.1f</span><span style="color: #1d6c76">\n</span><span style="color: #198810">"</span>, <span style="color: #b60157">1</span> <span style="color: #d73948">?</span> i <span style="color: #d73948">:</span> d);   <span style="color: #74747c">/*</span><span style="color: #74747c"> 7 이 아니라 7.0 </span><span style="color: #74747c">*/</span>
+
+    <span style="color: #74747c">/*</span><span style="color: #74747c"> 부호가 섞이면 통상 산술 변환이 그대로 적용된다.</span>
+<span style="color: #74747c">       (아래는 컴파일러 경고를 피하려고 미리 맞춰 준 판이다 —</span>
+<span style="color: #74747c">        맞추지 않으면 gcc 가 -Wsign-compare 로 이 자리를 짚는다) </span><span style="color: #74747c">*/</span>
+    <span style="color: #d73948">int</span>      neg <span style="color: #d73948">=</span> <span style="color: #d73948">-</span><span style="color: #b60157">1</span>;
+    <span style="color: #d73948">unsigned</span> one <span style="color: #d73948">=</span> <span style="color: #b60157">1</span><span style="color: #d73948">u</span>;
+    <span style="color: #d73948">unsigned</span> mixed <span style="color: #d73948">=</span> <span style="color: #b60157">1</span> <span style="color: #d73948">?</span> (<span style="color: #d73948">unsigned</span>)neg <span style="color: #d73948">:</span> one;
+    <span style="color: #4b69c6">printf</span>(<span style="color: #198810">"</span><span style="color: #198810">(1 ? neg : one) becomes unsigned = </span><span style="color: #b60157">%u</span><span style="color: #1d6c76">\n</span><span style="color: #198810">"</span>, mixed);
+
+    <span style="color: #74747c">/*</span><span style="color: #74747c"> 문자 상수는 C 에서 이미 int 다 </span><span style="color: #74747c">*/</span>
+    <span style="color: #4b69c6">printf</span>(<span style="color: #198810">"</span><span style="color: #198810">sizeof('a')=</span><span style="color: #b60157">%zu</span><span style="color: #198810"> sizeof(1 ? 'a' : 'b')=</span><span style="color: #b60157">%zu</span><span style="color: #1d6c76">\n</span><span style="color: #198810">"</span>,
+           <span style="color: #d73948">sizeof</span>(<span style="color: #198810">'</span><span style="color: #198810">a</span><span style="color: #198810">'</span>), <span style="color: #d73948">sizeof</span>(<span style="color: #b60157">1</span> <span style="color: #d73948">?</span> <span style="color: #198810">'</span><span style="color: #198810">a</span><span style="color: #198810">'</span> <span style="color: #d73948">:</span> <span style="color: #198810">'</span><span style="color: #198810">b</span><span style="color: #198810">'</span>));
+
+    <span style="color: #74747c">/*</span><span style="color: #74747c"> 포인터 쪽 규칙: 한쪽이 널 포인터 상수면 결과는 다른 쪽의 타입 </span><span style="color: #74747c">*/</span>
+    <span style="color: #d73948">const</span> <span style="color: #d73948">char</span> <span style="color: #d73948">*</span>s <span style="color: #d73948">=</span> <span style="color: #198810">"</span><span style="color: #198810">text</span><span style="color: #198810">"</span>;
+    <span style="color: #d73948">const</span> <span style="color: #d73948">char</span> <span style="color: #d73948">*</span>r <span style="color: #d73948">=</span> <span style="color: #b60157">1</span> <span style="color: #d73948">?</span> s <span style="color: #d73948">:</span> <span style="color: #d73948">NULL</span>;
+    <span style="color: #4b69c6">printf</span>(<span style="color: #198810">"</span><span style="color: #198810">pointer branch: </span><span style="color: #b60157">%s</span><span style="color: #1d6c76">\n</span><span style="color: #198810">"</span>, r);
+    <span style="color: #d73948">return</span> <span style="color: #b60157">0</span>;
+}
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>sizeof(int)=4 sizeof(double)=8
+sizeof(1 ? i : d) = 8  (double even when the condition is true)
+value  (1 ? i : d) = 7.0
+(1 ? neg : one) becomes unsigned = 4294967295
+sizeof('a')=4 sizeof(1 ? 'a' : 'b')=4
+pointer branch: text
+</code></pre></div></div><h3>1.3 참고 문헌 — 인용은 이렇게 적는다</h3><div></div><p>책에는 인용 전용 장치가 없다. 표준과 책을 가리킬 때는 본문에서 이름과 자리를 그대로 밝히고<span class="src-note">예: ISO/IEC 9899:2024 (C23), §6.7.3.1 「형 지정자」.</span>, 모아 보일 자리에서는 아래처럼 목록으로 적는다 <code class="style-name">list / ul</code>.</p><ul><li>ISO/IEC 9899:2024, <em>Programming languages — C</em> (C23). 표준 문서.</li><li>Kernighan, B. W. and Ritchie, D. M., <em>The C Programming Language</em>, 2판, 1988.</li><li>Gustedt, J., <em>Modern C</em>, 2판, Manning, 2019.</li></ul><h3>1.4 찾아보기 <code class="style-name">make-index / ul</code></h3><div></div><ul><li><a href="#idx-entry">견본</a></li></ul></div></main></body></html>

@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>13 속도의 기계장치 — 표준의 탄생 — Proven C Book</title><style>@font-face { font-family:"Doc Serif"; src:url("../fonts/serif.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-italic.woff2") format("woff2");
+  font-weight:400; font-style:italic; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-kr.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-kr-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans-kr.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans-kr-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Mono"; src:url("../fonts/mono.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Mono"; src:url("../fonts/mono-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+:root { color-scheme: light dark; --bg:#fafaf8; --bg2:#f2f2f0; --bg3:#e6e6e3; --fg:#141414; --muted:#555555; --line:#c9c9c9; --line-strong:#8a8a8a; --accent:#1a4f8a; --accent-fg:#ffffff; --accent2:#96530f; --honey:#f2b04a; --honey-fg:#2b1d00; --honey-text:#855400; --honey-soft:#fbebc6; --danger:#9b1b30; --ok:#1d6e37; --warn:#855400; --select:#d4dde8;
+  --rule:var(--line); --box-bg:var(--bg2); --code-bg:var(--bg2); --box-rule:var(--line); --link:var(--accent);
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg:#121314; --bg2:#1c1e20; --bg3:#2a2c2f; --fg:#e8e8e8; --muted:#a6a6a6; --line:#3a3d40; --line-strong:#75787c; --accent:#8ab4e8; --accent-fg:#121314; --accent2:#d4883b; --honey:#f2b04a; --honey-fg:#121314; --honey-text:#f2b04a; --honey-soft:#3b311e; --danger:#f07a8c; --ok:#7bcb95; --warn:#f2b04a; --select:#2f3d52;
+    --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+:root[data-theme="dark"] { color-scheme: dark; --bg:#121314; --bg2:#1c1e20; --bg3:#2a2c2f; --fg:#e8e8e8; --muted:#a6a6a6; --line:#3a3d40; --line-strong:#75787c; --accent:#8ab4e8; --accent-fg:#121314; --accent2:#d4883b; --honey:#f2b04a; --honey-fg:#121314; --honey-text:#f2b04a; --honey-soft:#3b311e; --danger:#f07a8c; --ok:#7bcb95; --warn:#f2b04a; --select:#2f3d52;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; }
+:root[data-theme="light"] { color-scheme: light; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Doc Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.here-head { display:flex; align-items:center; gap:.8rem; padding:.2rem 0 .5rem;
+  border-bottom:1px solid var(--rule,#ddd); margin-bottom:.5rem; }
+.here-head .sp { flex:1; }
+.here-all { margin-left:auto; font-size:.9rem; }
+.here-x { font:inherit; font-size:.9rem; cursor:pointer; background:none;
+  border:1px solid var(--line-strong); padding:.05rem .45rem;
+  color:inherit; }
+.here-body a, .tf-secs a { display:block; text-decoration:none; padding:.12rem 0;
+  line-height:1.45; }
+.here-body a:hover, .tf-secs a:hover { text-decoration:underline; }
+.here-body a.lv4, .tf-secs a.lv4 { padding-left:1.6rem; font-size:.94rem;
+  color:var(--muted,#555); }
+.tf-no { display:inline-block; min-width:3.2rem; color:var(--muted,#666);
+  font-variant-numeric:tabular-nums; }
+.toc-full .tf-ch { margin:.9rem 0 .15rem; font-weight:700; }
+.toc-full .tf-secs { margin:0 0 .5rem .2rem; border-left:2px solid var(--rule,#e2e2e2);
+  padding-left:.7rem; }
+.toc-full h4.toc-part { margin-top:1.8rem; }
+.toc a.toc-detail { font-weight:700; }
+@media print { .here-btn, .here-panel { display:none; } }
+.bar { position:sticky; top:0; z-index:20; display:flex; flex-wrap:nowrap; gap:.25rem; align-items:center;
+       min-height:44px; padding:0 clamp(.4rem,2vw,1.6rem); background:var(--bg2);
+       border-bottom:1px solid var(--line); font-size:.9rem;
+       font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--fg); text-decoration:none; } .bar a:hover { text-decoration:none; }
+.bar .sp { display:none; }
+main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
+.wrap { width:100%; }
+main .wrap { max-width:960px; margin-inline:auto; }
+:root[data-measure="fit"] main .wrap { max-width:none; margin:0; }
+h1,h2,h3,h4 { font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35;
+  padding-bottom:.18rem; border-bottom:1px solid var(--rule); }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem;
+     padding-bottom:.22rem; border-bottom:1.5px solid var(--fg); }
+p { margin:.9rem 0; } a { color:var(--link); }
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+.src-note { font-size: .86em; color: var(--muted, #666); }
+.src-note code { font-size: .95em; }
+sup.fnref { font-size: .72em; line-height: 0; vertical-align: super; }
+sup.fnref a { text-decoration: none; padding: 0 .1em; }
+sup.fnref a::before { content: "["; }
+sup.fnref a::after  { content: "]"; }
+.chapter-notes { margin: 3rem 0 1rem; padding-top: .9rem;
+                 border-top: 2px solid var(--rule, #333); }
+.chapter-notes h2 { font-size: 1.05rem; margin: 0 0 .6rem; }
+.chapter-notes ol { margin: 0; padding-left: 1.6em; }
+.chapter-notes li { font-size: .92em; margin: .35em 0; text-indent: 0; }
+.chapter-notes a.fnback { text-decoration: none; }
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
+pre,code,kbd { font-family:"Doc Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
+pre code { background:none; padding:0; }
+.tblwrap { overflow-x:auto; text-align:center; }
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.float-list { list-style:none; padding-left:0; }
+.float-list li { margin:.12rem 0; }
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"Doc Mono","D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"Doc Mono","D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"Doc Mono","D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+.dev { margin:1.15rem 0; padding:0; background:none; border:none; border-radius:0; }
+.dev > .dev-label { border-left:4px solid var(--fg);
+  padding:.1rem .8rem .25rem .8rem; margin:0 0 .34rem; }
+.dev > .dev-body { border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem .35rem .8rem; margin:0; }
+.dev > .dev-body > *:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child { margin-bottom:0; }
+.float-caption { text-align:center; font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+.dev.open { border:none; border-radius:0; background:none;
+  padding:0; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
+  text-indent:0; border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+.dev.open > .open-body { margin:0; padding:.35rem .8rem;
+  border-left:2px solid var(--box-rule); }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+.dev.open .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.06rem 0 .06rem .7rem; margin:.32rem 0 0; }
+.prereq .dev-label, .deepqa .dev-label, .why .dev-label,
+.organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+.qa-box { border:none; margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:0; background:none; }
+.qa-box .qa-q { border-left:4px solid var(--fg);
+  padding:.1rem .8rem .25rem .8rem; margin:0; }
+.qa-box .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem; margin:.34rem 0 0; }
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:0; }
+.dev.recap { border:none; background:none; padding:0; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
+  text-indent:0; border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > .dev-body > p, .dev.recap > .dev-body > div:not(.demo),
+.dev.recap > .dev-body > figure { margin:.3rem 0; padding:0; }
+.dev > .dev-body > .demo { margin:.7rem 0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:none; border-radius:0; background:none; padding:0; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem; text-indent:0;
+  border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
+.dev > .dev-body > figure, .dev > .open-body > p {
+  margin:.35rem 0; padding:0; }
+.bar .menu-btn { flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center;
+  min-width:38px; min-height:38px; padding:0; font:inherit; font-size:1.25rem; line-height:1;
+  color:var(--fg); background:none; border:0; cursor:pointer; text-decoration:none; }
+.bar .back, .bar .bar-nav .nb { flex:0 0 auto; display:inline-flex; align-items:center; gap:.3em;
+  min-height:32px; padding:0 .65rem; border:1px solid var(--line); background:var(--bg);
+  color:var(--fg); font-weight:600; white-space:nowrap; text-decoration:none; }
+.bar .menu-btn[aria-expanded="true"] { background:var(--bg3); }
+.bar .place { flex:1 1 auto; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
+  padding:0 .35rem; }
+.bar .place strong a { color:var(--honey-text); }
+.bar .place .cur { color:var(--fg); }
+.bar .bar-nav { flex:0 0 auto; display:flex; gap:.3rem; align-items:center; white-space:nowrap; }
+.bar .bar-nav .off { color:var(--muted); border-color:var(--line); opacity:.45; }
+.bar .back:hover, .bar .menu-btn:hover, .bar .bar-nav a.nb:hover, .bar .place a:hover { background:var(--bg3); }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+.dev.antipattern > .dev-label { border-left-style:solid; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.2rem; }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em;
+            padding-bottom:0; border-bottom:none; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
+.toc { columns:24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.toc > .toc-part:first-child, .toc > .toc-keep:first-child > .toc-part, .toc-full > .toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
+.toc-group { padding-left:.85rem; }
+.toc-keep, .toc a { break-inside:avoid; }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+code.style-name { font-family:"Doc Mono","D2Coding",ui-monospace,monospace;
+  font-size:.72em; color:var(--muted); background:var(--rule);
+  padding:.05em .35em; border-radius:3px; white-space:nowrap;
+  font-weight:400; letter-spacing:0; }
+.dev.open > .dev-label { padding-top:.42rem; padding-bottom:.42rem; }
+.dev.open > .open-body { padding-top:.4rem; padding-bottom:.4rem; }
+.dev.open > .open-body > p { margin:.6rem 0; }
+.dev > .dev-body { padding-top:.5rem; padding-bottom:.5rem; }
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
+.dev > .dev-body > figure { margin:.55rem 0; }
+main { line-height:1.85; }
+p { margin:1.15rem 0; }
+h2 { margin-top:2.4rem; }
+h3 { margin-top:2rem; }
+li { margin:.3rem 0; }
+h1, h2, h3, h4 { border-bottom-color:var(--box-rule) !important; }
+.toc { line-height:1.45; }
+.toc a { padding:.16rem 0; }
+.toc-part { margin:.85rem 0 .2rem; }
+.metalist { line-height:1.45; gap:.2rem 1.2rem; }
+.metalist dt, .metalist dd { margin:0; }
+.demo { border-color:var(--box-rule); }
+.demo > .demo-head { border-bottom-color:var(--box-rule); }
+.dev > .dev-label,
+.dev.open > .dev-label,
+.qa-box .qa-q,
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  border-left-color:var(--box-rule); }
+.dev > .dev-body,
+.dev > .open-body,
+.dev.open .qa-a,
+.qa-box .qa-a,
+.deepqa .qa-a { border-left-color:var(--box-rule); }
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div {
+  border-color:var(--box-rule); }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+.dev.open > .open-body,
+.dev.open > .qa-a,
+.dev.open .qa-a,
+.dev.deepqa .qa-a,
+.qa-box > .qa-a,
+.qa-box > .qa-q { border-left-color:var(--box-rule); }
+.bar .bar-toc { font-size:1.15em; line-height:1; text-decoration:none; }
+.dev, .dev-body, .open-body, .qa-box, .qa-q, .qa-a, .dev-label,
+.toc-full, .toc-full .tf-secs { line-height:inherit; font-size:1rem; }
+.dev > .dev-body > p, .dev > .open-body > p,
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:1.15rem 0; }
+.dev > .dev-body > *:first-child, .dev > .open-body > *:first-child,
+.qa-box .qa-q > p:first-child, .qa-box .qa-a > p:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child, .dev > .open-body > *:last-child,
+.qa-box .qa-q > p:last-child, .qa-box .qa-a > p:last-child { margin-bottom:0; }
+.dev > .dev-label, .dev.open > .dev-label { font-size:.98rem; line-height:1.4; }
+h1,h2,h3,h4 { padding-bottom:.34rem; }
+h1 { margin:.2rem 0 1.3rem; }
+h2 { padding-bottom:.42rem; margin-bottom:1.15rem; }
+h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
+.dev.open > .open-body > * { margin:.3rem 0; }
+.dev.open > .open-body > p { margin:.5rem 0; }
+.dev.open > .open-body > div { margin:.15rem 0; }
+.dev.open ul, .dev.open ol { margin:.3rem 0; }
+.dev.open li, .dev.open ol.qlist li { margin:0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open .qa-a > p { margin:.35rem 0; }
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div { border-color:var(--box-rule); }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+a:focus-visible, button:focus-visible, summary:focus-visible, input:focus-visible {
+  outline:2px solid var(--accent2); outline-offset:2px; }
+:target, h1, h2, h3, h4, [id] { scroll-margin-top:4.2rem; }
+.skip { position:absolute; left:-9999px; top:0; z-index:30;
+        background:var(--bg); color:var(--fg); border:1px solid var(--fg);
+        padding:.5rem .8rem; font-size:.9rem; text-decoration:none; }
+.skip:focus { left:.5rem; top:.5rem; }
+.here-panel { position:fixed; top:46px; left:clamp(.2rem,1vw,1rem); z-index:19;
+  width:min(32rem, calc(100vw - .4rem)); max-height:calc(100vh - 54px); overflow:auto;
+  padding:.7rem .9rem .9rem; border:1px solid var(--line); --k:var(--line-strong);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-size:.9rem; line-height:1.4;
+  background:
+    linear-gradient(var(--k),var(--k)) left top / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) left top / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) right top / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) right top / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) left bottom / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) left bottom / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) right bottom / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) right bottom / 3px 8px no-repeat,
+    color-mix(in srgb, var(--bg) 97%, transparent); }
+.here-panel .tools { display:flex; flex-wrap:wrap; gap:.3rem .4rem; align-items:center;
+  margin-bottom:.6rem; }
+.tool, .segb { font:inherit; font-size:.88rem; color:var(--fg); background:none;
+  border:1px solid var(--line-strong); padding:0 .6rem; min-height:30px;
+  display:inline-flex; align-items:center; text-decoration:none; cursor:pointer; white-space:nowrap; }
+.tool:hover, .segb:hover, .nav a:hover, .here-panel .here-body a:hover { background:var(--bg3); }
+.segb[aria-pressed="true"] { background:var(--select); border-color:var(--accent); font-weight:700; }
+.tool, .segb, .bar a, .bar button, .nav a, .here-panel a { transition:background-color .08s; }
+@media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
+main a { text-decoration:underline; text-decoration-color:var(--box-rule);
+  text-underline-offset:2px; }
+main a:hover { background:var(--box-bg); text-decoration-color:var(--link); }
+main .toc a, main .toc-full a, main .here-body a { text-decoration:none; }
+main .toc a:hover, main .toc-full a:hover { background:var(--box-bg); text-decoration:underline; }
+.setbox { margin:0 0 .6rem; }
+.setrow { display:flex; flex-wrap:wrap; gap:.4rem .5rem; align-items:center; margin:.35rem 0; }
+.setlbl { min-width:4.2rem; font-size:.82rem; font-weight:700; }
+.seg { display:inline-flex; flex-wrap:wrap; gap:.25rem; }
+.col { display:inline-flex; align-items:center; gap:.3rem; }
+.col input[type=color] { width:2rem; height:1.4rem; padding:0; border:1px solid var(--line-strong);
+  background:none; cursor:pointer; }
+.setnote { margin:.5rem 0 0; font-size:.82rem; }
+.here-panel .ver { font-size:.82rem; color:var(--muted); padding:.2rem .45rem .2rem 0;
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; white-space:nowrap; }
+.demo pre, .demo pre code {
+  white-space:pre-wrap; overflow-wrap:anywhere; word-break:break-word; }
+.demo > .demo-body { overflow-x:visible; }
+.plink {
+  margin-left: .4em; font-weight: 400; text-decoration: none;
+  color: var(--muted, #888); opacity: 0;
+}
+h3:hover > .plink, h4:hover > .plink,
+h3 > .plink:focus, h4 > .plink:focus { opacity: 1; }
+@media (hover: none) { .plink { opacity: .45; } }
+.searchbox { margin:.6em 0 0; }
+.searchbox input[type=search] {
+  width: 100%; padding: .45em .6em; font: inherit;
+  border: 1px solid var(--line-strong);
+  background: var(--bg); color: var(--fg);
+}
+.search-hint { color: var(--muted, #777); font-size: .85em; margin:.3em 0 0; }
+.search-results { list-style: none; padding: 0; margin: .5em 0 0; }
+.search-results li { margin: .15em 0; }
+.search-results .where { color: var(--muted, #777); font-size: .85em; margin-left: .4em; }
+@media (max-width: 900px), (orientation: portrait) {
+  :root:not([data-layout="desktop"]) .bar .place .cur { display:none; }
+  :root:not([data-layout="desktop"]) .bar .back,
+  :root:not([data-layout="desktop"]) .bar .bar-nav .nb { min-height:40px; padding:0 .5rem; }
+}
+@media (max-width: 480px) {
+  :root:not([data-layout="desktop"]) .bar .bar-nav .prev .lbl,
+  :root:not([data-layout="desktop"]) .bar .bar-nav .next .lbl { display:none; }
+  :root:not([data-layout="desktop"]) .bar .bar-nav .nb { min-width:44px; justify-content:center; }
+  :root:not([data-layout="desktop"]) .bar { gap:.2rem; }
+}
+:root[data-layout="mobile"] .bar .place .cur { display:none; }
+:root[data-layout="mobile"] .bar .back, :root[data-layout="mobile"] .bar .bar-nav .nb { min-height:40px; padding:0 .5rem; }
+:root[data-layout="mobile"] main .wrap { max-width:34rem; }
+@media (pointer: coarse), (max-width: 900px) {
+  .bar .menu-btn { min-width:44px; min-height:44px; }
+  .tool, .segb { min-height:38px; }
+}
+@media print { .bar, .here-panel { display:none; } }
+
+body { font-family:"Doc Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Doc Sans","Noto Sans CJK KR","Noto Sans KR",system-ui,sans-serif; }
+pre,code,kbd { font-family:"Doc Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+</style>
+<script>(function(){try{var L=localStorage,o='pcb-read';if(o&&o!=='doc-read'&&L.getItem(o)!==null&&L.getItem('doc-read')===null){var v=JSON.parse(L.getItem(o)||'{}');delete v.width;L.setItem('doc-read',JSON.stringify(v));L.removeItem(o);}var s=JSON.parse(L.getItem('doc-read')||'{}');var r=document.documentElement;if(s.theme&&s.theme!=='auto')r.setAttribute('data-theme',s.theme);if(s.fg)r.style.setProperty('--fg',s.fg);if(s.bg)r.style.setProperty('--bg',s.bg);if(s.link)r.style.setProperty('--link',s.link);if(s.width==='fit')r.setAttribute('data-measure','fit');if(s.layout==='desktop'||s.layout==='mobile')r.setAttribute('data-layout',s.layout);if(s.layout==='desktop'){var m=document.querySelector('meta[name=viewport]');if(m)m.setAttribute('content','width=1100');}}catch(e){}})();</script></head>
+<body>
+<a class="skip" href="#content">본문으로 건너뛰기</a>
+<div class="bar"><button class="menu-btn" id="set-open" type="button" aria-expanded="false" aria-controls="here-panel" aria-label="메뉴" title="메뉴">☰</button><a class="back" href="index.html" title="뒤로">← <span class="lbl">뒤로</span></a><span class="place"><strong><a href="index.html">Proven C Book</a></strong><span class="cur"> › 13장</span></span><span class="bar-nav"><a class="nb prev" href="ch12.html">‹ <span class="lbl">이전</span></a><a class="nb toc" href="index.html"><span class="lbl">목차</span></a><a class="nb next" href="ch14.html"><span class="lbl">다음</span> ›</a></span></div><div id="here-panel" class="here-panel" hidden><div class="setbox" id="setbox"><div class="setrow"><span class="setlbl">언어</span><span class="seg"><a class="segb" href="../en/ch13.html">English</a></span></div><div class="setrow"><span class="setlbl">본문 폭</span><span class="seg" id="s-width"><button type="button" class="segb" data-width="960">960</button><button type="button" class="segb" data-width="fit">창에 맞춤</button></span></div><div class="setrow"><span class="setlbl">배치</span><span class="seg" id="s-layout"><button type="button" class="segb" data-layout="auto">자동</button><button type="button" class="segb" data-layout="desktop">PC</button><button type="button" class="segb" data-layout="mobile">모바일</button></span></div><div class="setrow"><span class="setlbl">테마</span><span class="seg"><button type="button" class="segb" data-theme="auto">시스템</button><button type="button" class="segb" data-theme="light">밝게</button><button type="button" class="segb" data-theme="dark">어둡게</button></span></div><div class="setrow"><span class="setlbl">색</span><label class="col"><span>글자</span><input type="color" id="s-fg"></label><label class="col"><span>배경</span><input type="color" id="s-bg"></label><label class="col"><span>링크</span><input type="color" id="s-link"></label></div><p class="setnote">설정은 이 브라우저에만 저장된다.</p></div><div class="tools"><span class="ver">v0.110.2</span><a class="tool" href="toc.html">▤ 상세 차례</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book/releases/download/v0.110.2/proven_c_book-v0.110.2-ko.pdf">⤓ PDF</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book" title="이 책의 GitHub 저장소">Git</a><a class="tool" href="https://rubidus-api.github.io/" title="rubidus-api.github.io --- 공개된 모든 프로젝트">⌂ 전체 사이트</a><a class="tool" href="https://github.com/rubidus-api" title="github.com/rubidus-api --- 모든 저장소">≡ 저장소 목록</a></div><div class="here-head"><strong>이 장의 차례</strong></div><div class="here-body"><a class="lv3" href="#s13-1"><span class="tf-no">13.1</span>파이프라인 — 조립 라인 위의 명령들</a><a class="lv3" href="#s13-2"><span class="tf-no">13.2</span>분기 예측 — 갈림길을 미리 짐작하다</a><a class="lv3" href="#s13-3"><span class="tf-no">13.3</span>분기 예측을 재어 보기 — 맞히기 쉬운 조건과 어려운 조건</a><a class="lv3" href="#s13-4"><span class="tf-no">13.4</span>클록의 한계, 그리고 멀티코어</a><a class="lv3" href="#s13-5"><span class="tf-no">13.5</span>같은 시대, C는 계약서를 썼다 — 표준 이전의 C와 C89</a><a class="lv3" href="#s13-6"><span class="tf-no">13.6</span>계약서에 없는 자리 — 회색지대</a><a class="lv3" href="#s13-7"><span class="tf-no">13.7</span>C 밖의 표준이 대신 보장할 때</a></div></div>
+<main id="content"><div class="wrap">
+<h2>13 속도의 기계장치 — 표준의 탄생</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>2장 단순한 기계 모델 · 기계마다 사정이 다르다</div><div>12장 기억의 분화 · 기억의 층</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>2장의 문답에서 “걸음 수(클록)가 전부는 아니다 — 한 걸음에 여러 일을 하는 요령이 현대 CPU의 진짜 무기”라고 예고했다. 한 걸음에 여러 일이란 어떻게 가능한가? 한 명령이 끝나야 다음 명령을 하는 것 아닌가?</p><div class="qa-a"><p><span class="dev-label">답.</span> “끝나야 시작한다”를 버리면 된다. 명령 하나의 처리를 여러 단계로 쪼개고, 단계가 다른 여러 명령을 <strong>동시에</strong> 진행하는 것이다 — 한 명령이 계산되는 동안 다음 명령을 가져오고, 그다음 명령을 해독한다. 이 장의 첫 장치, 파이프라인이다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">기억을 사다리로 고쳤으니, 이번에는 <strong>실행</strong>을 겹친다. 그리고 이 장은 C의 첫 표준이 태어난 이야기를 나란히 놓는다. 하드웨어가 복잡해지던 바로 그 시기에 C가 처음 계약서(C89)를 썼다. 「왜 표준이 필요했나」의 답이 바로 옆 절의 하드웨어에 있으므로, 두 이야기를 한 장에 붙여 둔다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">기다림을 줄인 것이 캐시였다면, 이번에는 실행 자체를 겹치는 장치들이다 — <span id="idx-entry-48"></span>파이프라인, 분기 예측(branch prediction), 그리고 클록의 한계가 부른 멀티코어(multicore)까지. 코어가 여럿이 되며 생기는 기묘한 사고(거짓 공유, false sharing)도 구경한다. 나란히, 같은 요동의 시대에 C가 처음으로 계약서(C89)를 쓰게 된 사연을 본다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>코어마다 자기 캐시(책상)가 있다면, 두 코어가 같은 데이터를 만질 때는 무슨 일이 일어나는가?</li><li>그러면 회색지대를 써도 되는가, 안 되는가?</li><li>그러면 C 표준은 비워 두고 다른 표준이 약속한 자리는 어떻게 생각해야 하는가?</li></ol></div></div><div></div><h3 id="s13-1">13.1 파이프라인 — 조립 라인 위의 명령들<a class="plink" href="#s13-1" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>세탁소를 떠올리면 된다. 세탁 30분, 건조 30분, 다림질 30분이라 할 때, 한 벌을 끝내고 다음 벌을 시작하면 세 벌에 270분이 걸린다. 그러나 첫 벌이 건조기로 넘어가는 순간 둘째 벌을 세탁기에 넣으면 — 장비 세 대가 <strong>서로 다른 벌을 동시에</strong> 처리하며, 흐름이 차오른 뒤에는 30분마다 한 벌씩 완성되어 나온다.</p><p>CPU가 명령을 처리하는 것도 똑같이 단계로 나뉜다 — 가져오고(fetch), 해독하고(decode), 계산하고(execute), 결과를 쓴다(write). 이 단계들을 조립 라인으로 만든 것이 <strong>파이프라인</strong>(pipeline)이다. 명령 하나하나가 빨라지는 것이 아니다 — <strong>단위 시간에 완성되는 명령의 수</strong>가 는다. 현대 CPU의 파이프라인은 열 단계가 넘고, 여기에 라인을 여러 개 두어 박자당 여러 명령을 완성하는 데까지 나아갔다. 2장의 “한 박자에 한 걸음”은 이렇게 무너진다 — 겉보기 순서는 지키되, 속은 겹쳐 돌아간다.</p><p>루프를 덜 돌게 하는 같은 시대의 요령 하나를 여기 적어 둔다. 루프 한 바퀴마다 드는 관리 비용(횟수 세기, 갈림길 판단)을 아끼려고 <strong>한 바퀴에 여러 개씩</strong> 일을 <span id="idx-entry-49"></span>처리하는 기법이 있다 — 루프 언롤링(loop unrolling)이라 한다. 1983년, Tom Duff라는 프로그래머는 이 기법을 C의 두 문법을 기괴하게 겹쳐 쓰는 방법으로 극한까지 밀어붙였고, 그 코드는 <strong>Duff’s device</strong>라는 이름의 전설이 됐다. 코드 자체는 아직 보여 줄 수 없다 — 이 책이 그 문법들을 아직 소개하지 않았기 때문이다. 재회를 예약해 둔다(33장). 지금은 한 문장이면 된다: 그 시절에는 사람이 이런 곡예로 기계의 박자를 짜냈다는 것, 그리고 오늘날 그 곡예는 컴파일러의 일이 됐다는 것(14장).</p><h3 id="s13-2">13.2 분기 예측 — 갈림길을 미리 짐작하다<a class="plink" href="#s13-2" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>파이프라인에는 아픈 곳이 있다. <strong>갈림길</strong>이다. “결과가 0이면 저쪽으로 건너뛰어라” 같은 명령(분기)을 만나면, 어느 쪽 길의 명령을 라인에 실어야 할지 결과가 나오기 전에는 모른다. 라인을 세우고 기다리면 겹침의 이득이 사라진다.</p><p>그래서 CPU는 <strong>짐작</strong>한다. 단골 손님의 주문을 미리 만들어 두는 카페처럼, 지금까지의 이력으로 “이 갈림길은 대개 이쪽”을 학습해 그쪽 명령을 미리 <span id="idx-entry-50"></span>라인에 싣는다 — <strong>분기 예측</strong>(branch prediction)이다. 맞으면 공짜고, 틀리면 미리 만든 주문을 전부 버리고 라인을 비운 뒤 다시 시작한다. 이 벌금이 파이프라인 깊이만큼 크기 때문에, 현대 CPU는 예측기에 상당한 회로를 들이고 적중률은 일상 코드에서 90%를 훌쩍 넘는다.</p><div class="dev realcase"><p class="dev-label">실제 사례.<span style="white-space: pre-wrap">&#x20;&#x20;</span>정렬된 배열이 더 빨랐던 사건</p><div class="dev-body">프로그래머들 사이에 널리 회자된 실측이 있다 — 큰 배열에서 “값이 일정 기준보다 큰 것만 더하라”는 같은 코드가, 배열을 <strong>미리 정렬해 두면</strong> 몇 배 빨라진다는 관찰이다. 덧셈의 횟수는 같은데 왜인가. 답은 분기 예측이다. 뒤섞인 배열에서는 “크다/작다” 갈림길이 매번 무작위라 예측이 절반쯤 틀리고, 그때마다 라인을 비우는 벌금을 문다. 정렬된 배열에서는 갈림길의 답이 한동안 같은 쪽으로 이어져 예측이 거의 다 맞는다. 눈에 보이지 않는 짐작 회로 하나가, 같은 코드의 속도를 몇 배 가른 것이다 (32장에서 이 감각을 다시 쓴다 — “<code>if</code>는 공짜가 아니다”).</div></div><h3 id="s13-3">13.3 분기 예측을 재어 보기 — 맞히기 쉬운 조건과 어려운 조건<a class="plink" href="#s13-3" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>분기 예측이 얼마나 값어치가 있는지도 물어볼 수 있다.</p><p>실험은 이렇다. <strong>값이 완전히 같은 배열 둘</strong>을 준비한다. 하나는 뒤섞인 채로, 하나는 정렬해 둔다. 그리고 같은 루프를 돌린다 — 「128 이상인 값만 더한다」. 비교 횟수도, 덧셈 횟수도, 읽는 값도 같다. 다른 것은 <strong>조건이 참인지 거짓인지의 순서</strong>뿐이다.</p><div class="demo demo-src"><p class="demo-head"><code>examples/speed-machinery/branch.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> 같은 자료, 같은 조건문 --- 순서만 다르다. 그 차이를 기계에게 물어본다.</span></em>
+<em><span class="tok-c">   ★ 시간을 재는 예제다. 절대 시간은 찍지 않고 배수만 낸다(회차·기계마다 다르다). </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdlib.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdint.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">time.h</span><span class="tok-s">></span>
+
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><span class="tok-p">N</span><span class="tok-p">      </span><span class="tok-x">(</span><span class="tok-n">1</span><strong><span class="tok-t">u</span></strong><span class="tok-p"> </span><strong><span class="tok-x">&lt;&lt;</span></strong><span class="tok-p"> </span><span class="tok-n">20</span><span class="tok-x">)</span><span class="tok-p">     </span><em><span class="tok-c">/*</span></em><em><span class="tok-c"> 원소 백만 개 </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><span class="tok-p">ROUNDS</span><span class="tok-p"> </span><span class="tok-n">5</span>
+
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">volatile</span></strong> <strong><span class="tok-t">uint64_t</span></strong> sink<span class="tok-x">;</span>
+
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">uint64_t</span></strong> rng <strong><span class="tok-x">=</span></strong> <span class="tok-x">0x</span><span class="tok-n">9E3779B97F4A7C15</span><strong><span class="tok-t">ULL</span></strong><span class="tok-x">;</span>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">uint32_t</span></strong> <strong>rnd</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span> rng <strong><span class="tok-x">^=</span></strong> rng <strong><span class="tok-x">&lt;&lt;</span></strong> <span class="tok-n">13</span><span class="tok-x">;</span> rng <strong><span class="tok-x">^=</span></strong> rng <strong><span class="tok-x">>></span></strong> <span class="tok-n">7</span><span class="tok-x">;</span> rng <strong><span class="tok-x">^=</span></strong> rng <strong><span class="tok-x">&lt;&lt;</span></strong> <span class="tok-n">17</span><span class="tok-x">;</span> <strong><span class="tok-k">return</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">uint32_t</span></strong><span class="tok-x">)</span><span class="tok-x">(</span>rng <strong><span class="tok-x">>></span></strong> <span class="tok-n">32</span><span class="tok-x">)</span><span class="tok-x">;</span> <span class="tok-x">}</span>
+
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">int</span></strong> <strong>cmp_u8</strong><span class="tok-x">(</span><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">void</span></strong> <strong><span class="tok-x">*</span></strong>a<span class="tok-x">,</span> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">void</span></strong> <strong><span class="tok-x">*</span></strong>b<span class="tok-x">)</span>
+<span class="tok-x">{</span> <strong><span class="tok-t">int</span></strong> x <strong><span class="tok-x">=</span></strong> <strong><span class="tok-x">*</span></strong><span class="tok-x">(</span><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">unsigned</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong><span class="tok-x">)</span>a<span class="tok-x">,</span> y <strong><span class="tok-x">=</span></strong> <strong><span class="tok-x">*</span></strong><span class="tok-x">(</span><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">unsigned</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong><span class="tok-x">)</span>b<span class="tok-x">;</span> <strong><span class="tok-k">return</span></strong> <span class="tok-x">(</span>x <strong><span class="tok-x">></span></strong> y<span class="tok-x">)</span> <strong><span class="tok-x">-</span></strong> <span class="tok-x">(</span>x <strong><span class="tok-x">&lt;</span></strong> y<span class="tok-x">)</span><span class="tok-x">;</span> <span class="tok-x">}</span>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">int</span></strong> <strong>cmp_d</strong><span class="tok-x">(</span><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">void</span></strong> <strong><span class="tok-x">*</span></strong>a<span class="tok-x">,</span> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">void</span></strong> <strong><span class="tok-x">*</span></strong>b<span class="tok-x">)</span>
+<span class="tok-x">{</span> <strong><span class="tok-t">double</span></strong> x <strong><span class="tok-x">=</span></strong> <strong><span class="tok-x">*</span></strong><span class="tok-x">(</span><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">double</span></strong> <strong><span class="tok-x">*</span></strong><span class="tok-x">)</span>a<span class="tok-x">,</span> y <strong><span class="tok-x">=</span></strong> <strong><span class="tok-x">*</span></strong><span class="tok-x">(</span><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">double</span></strong> <strong><span class="tok-x">*</span></strong><span class="tok-x">)</span>b<span class="tok-x">;</span> <strong><span class="tok-k">return</span></strong> <span class="tok-x">(</span>x <strong><span class="tok-x">></span></strong> y<span class="tok-x">)</span> <strong><span class="tok-x">-</span></strong> <span class="tok-x">(</span>x <strong><span class="tok-x">&lt;</span></strong> y<span class="tok-x">)</span><span class="tok-x">;</span> <span class="tok-x">}</span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> 조건에 걸리는 것만 더한다 --- 조건이 맞히기 쉬운지 어려운지가 이 예제의 주제다 </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">double</span></strong> <strong>sum_over</strong><span class="tok-x">(</span><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">unsigned</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>v<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">clock_t</span></strong> t0 <strong><span class="tok-x">=</span></strong> <strong>clock</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-t">uint64_t</span></strong> acc <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">unsigned</span></strong> round <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> round <strong><span class="tok-x">&lt;</span></strong> <span class="tok-n">8</span><span class="tok-x">;</span> round<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span>
+        <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">uint32_t</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> N<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span>
+            <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>v<span class="tok-x">[</span>i<span class="tok-x">]</span> <strong><span class="tok-x">>=</span></strong> <span class="tok-n">128</span><span class="tok-x">)</span> acc <strong><span class="tok-x">+=</span></strong> v<span class="tok-x">[</span>i<span class="tok-x">]</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">clock_t</span></strong> t1 <strong><span class="tok-x">=</span></strong> <strong>clock</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    sink <strong><span class="tok-x">=</span></strong> acc<span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">double</span></strong><span class="tok-x">)</span><span class="tok-x">(</span>t1 <strong><span class="tok-x">-</span></strong> t0<span class="tok-x">)</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">unsigned</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>shuffled <strong><span class="tok-x">=</span></strong> <strong>malloc</strong><strong><span class="tok-x">(</span></strong><strong>N</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">,</span> <strong><span class="tok-x">*</span></strong>sorted <strong><span class="tok-x">=</span></strong> <strong>malloc</strong><strong><span class="tok-x">(</span></strong><strong>N</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong>shuffled <strong><span class="tok-x">||</span></strong> <strong><span class="tok-x">!</span></strong>sorted<span class="tok-x">)</span> <span class="tok-x">{</span> <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">out of memory</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <strong><span class="tok-k">return</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span> <span class="tok-x">}</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">uint32_t</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> N<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> shuffled<span class="tok-x">[</span>i<span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">unsigned</span></strong> <strong><span class="tok-t">char</span></strong><span class="tok-x">)</span><span class="tok-x">(</span><strong>rnd</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">)</span></strong> <strong><span class="tok-x">&amp;</span></strong> <span class="tok-x">0x</span><span class="tok-n">FF</span><span class="tok-x">)</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">uint32_t</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> N<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> sorted<span class="tok-x">[</span>i<span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> shuffled<span class="tok-x">[</span>i<span class="tok-x">]</span><span class="tok-x">;</span>
+    <strong>qsort</strong><strong><span class="tok-x">(</span></strong><strong>sorted</strong><strong><span class="tok-x">,</span></strong><strong> N</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">,</span></strong><strong> cmp_u8</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong><span class="tok-t">double</span></strong> a<span class="tok-x">[</span>ROUNDS<span class="tok-x">]</span><span class="tok-x">,</span> b<span class="tok-x">[</span>ROUNDS<span class="tok-x">]</span><span class="tok-x">;</span>
+    <strong>sum_over</strong><strong><span class="tok-x">(</span></strong><strong>shuffled</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <strong>sum_over</strong><strong><span class="tok-x">(</span></strong><strong>sorted</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>                    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 데우기 </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> r <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> r <strong><span class="tok-x">&lt;</span></strong> ROUNDS<span class="tok-x">;</span> r<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span> a<span class="tok-x">[</span>r<span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <strong>sum_over</strong><strong><span class="tok-x">(</span></strong><strong>shuffled</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> b<span class="tok-x">[</span>r<span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <strong>sum_over</strong><strong><span class="tok-x">(</span></strong><strong>sorted</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <span class="tok-x">}</span>
+    <strong>qsort</strong><strong><span class="tok-x">(</span></strong><strong>a</strong><strong><span class="tok-x">,</span></strong><strong> ROUNDS</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong>a</strong><strong><span class="tok-x">,</span></strong><strong> cmp_d</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>qsort</strong><strong><span class="tok-x">(</span></strong><strong>b</strong><strong><span class="tok-x">,</span></strong><strong> ROUNDS</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong>b</strong><strong><span class="tok-x">,</span></strong><strong> cmp_d</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-t">double</span></strong> mixed <strong><span class="tok-x">=</span></strong> a<span class="tok-x">[</span>ROUNDS <strong><span class="tok-x">/</span></strong> <span class="tok-n">2</span><span class="tok-x">]</span><span class="tok-x">,</span> ordered <strong><span class="tok-x">=</span></strong> b<span class="tok-x">[</span>ROUNDS <strong><span class="tok-x">/</span></strong> <span class="tok-n">2</span><span class="tok-x">]</span><span class="tok-x">;</span>
+
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">the two arrays hold exactly the same values;</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">one is shuffled, the other is sorted.</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">the loop is the same: add the values that are 128 or more.</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>ordered <strong><span class="tok-x">></span></strong> <span class="tok-n">0</span><span class="tok-x">.</span><span class="tok-n">0</span><span class="tok-x">)</span>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">the shuffled array took </span></strong><strong><span class="tok-s">%.2f</span></strong><strong><span class="tok-s"> times as long as the sorted one</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>               mixed </strong><strong><span class="tok-x">/</span></strong><strong> ordered</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">else</span></strong>
+        <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">the clock is too coarse on this machine to tell them apart</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">same data, same comparisons, same additions --- only the order differs.</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">(no absolute times: they differ by machine and by run.)</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>free</strong><strong><span class="tok-x">(</span></strong><strong>sorted</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <strong>free</strong><strong><span class="tok-x">(</span></strong><strong>shuffled</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>the two arrays hold exactly the same values;
+one is shuffled, the other is sorted.
+the loop is the same: add the values that are 128 or more.
+
+the shuffled array took 3.04 times as long as the sorted one
+
+same data, same comparisons, same additions --- only the order differs.
+(no absolute times: they differ by machine and by run.)
+</code></pre></div></div><p>정렬된 배열에서는 조건이 오랫동안 거짓이다가 어느 지점부터 계속 참이다. 예측기는 이런 흐름을 거의 다 맞힌다. 뒤섞인 배열에서는 참과 거짓이 무작위로 오므로 절반쯤 틀리고, 틀릴 때마다 파이프라인을 비우고 다시 채운다. 그 비용이 몇 배의 차이로 나타난다.</p><p>★ 그러니 「분기가 비싸다」는 말은 부정확하다. <strong>비싼 것은 맞히지 못하는 분기다.</strong> 규칙적인 갈림길은 백만 번을 돌아도 거의 공짜다.</p><p>이 예제를 최적화를 켜고 다시 빌드하면 차이가 <strong>사라질 수도</strong> 있다. 컴파일러가 이런 짧은 갈림길을 「양쪽을 다 계산하고 하나를 고르는」 분기 없는 코드로 바꿔 버리기 때문이다. 그러면 예측할 분기 자체가 없어진다. 이 책의 예제는 최적화를 켜지 않고 빌드하므로 위 결과가 나온다 — 컴파일러가 우리 코드를 어디까지 고쳐 쓰는지는 14장의 주제다.</p><p>★ 「사라질 수도 있다」는 말을 부록 「재어 보는 기계」가 <strong>실제로 재어 두었다.</strong> 같은 소스를 최적화를 켜고 빌드하면 정렬 여부의 차이가 1.00배로 사라지고, 분기를 없애는 그 변환만 꺼서 분기를 남기면 4.98배가 된다. 사라진 것은 분기의 비용이 아니라 <strong>분기 자체</strong>다.</p><h3 id="s13-4">13.4 클록의 한계, 그리고 멀티코어<a class="plink" href="#s13-4" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>이 모든 겹침에도 불구하고, 2000년대 중반에 벽이 왔다. 클록을 더 올리면 전력과 발열이 감당할 수 없이 치솟는 물리적 한계였다. 수십 년 이어지던 “내년에는 더 빠른 클록”이 멈춘 것이다.</p><p>산업의 응답은 방향 전환이었다 — 한 일꾼을 더 빠르게 만드는 대신, <strong>일꾼의 수를 늘린다.</strong> CPU 하나에 독립적으로 명령을 실행하는 엔진, 곧 <strong>코어</strong>(core)를 두 개, 네 개, 수십 개씩 넣기 시작했다. 오늘의 스마트폰조차 코어 여덟 개쯤은 예사다. 프로그램이 저절로 빨라지던 시대가 끝나고, 여러 일꾼에게 일을 <strong>나누어 주는</strong> 문제가 프로그래머의 몫이 된 것이다(이 책의 범위 밖이지만, 지형은 알아 둔다).</p><p>그리고 일꾼이 여럿이 되자, 12장의 캐시가 뜻밖의 사고 현장이 된다.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 코어마다 자기 캐시(책상)가 있다면, 두 코어가 같은 데이터를 만질 때는 무슨 일이 일어나는가?</p></div><div class="dev qa-a"><p><span class="dev-label">답.</span> 하드웨어가 뒤에서 책상들 사이의 일관성을 맞춰 준다 — 한 코어가 값을 고치면 다른 코어의 책상에 놓인 사본을 무효로 만드는 식이다. 정확성은 이렇게 지켜지는데, 문제는 이 정리 정돈이 <strong>공짜가 아니라는 것</strong>, 그리고 그 단위가 변수 하나가 아니라 12장의 <strong>캐시 라인 상자</strong>라는 것이다. 여기서 기묘한 사고가 태어난다.</p></div></div><span id="idx-entry-51"></span><p><strong>거짓 공유</strong>(false sharing)라 불리는 사고다. 두 코어가 <strong>서로 다른</strong> 변수를 만지는데 — 공유한 것이 하나도 없는데 — 하필 두 변수가 <strong>같은 캐시 라인 상자</strong>에 나란히 놓여 있으면, 하드웨어의 눈에는 같은 상자를 두 코어가 다투는 것으로 보인다. 한쪽이 쓸 때마다 다른 쪽 책상의 상자가 무효가 되고, 상자가 두 책상 사이를 핑퐁처럼 오가며, 두 코어 모두 수십 배 느려진다. 코드만 보면 아무것도 공유하지 않으므로 원인이 보이지 않는다 — 기억이 상자 단위로 움직인다는 12장의 사실을 알아야만 진단이 되는, 현대적인 사고의 대표 사례다.</p><h3 id="s13-5">13.5 같은 시대, C는 계약서를 썼다 — 표준 이전의 C와 C89<a class="plink" href="#s13-5" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>기계가 이렇게 요동치던 시기, C의 세계에도 다른 종류의 요동이 있었다.</p><p>C에는 오랫동안 <strong>공식 표준이 없었다</strong>. 1978년에 나온 K&amp;R의 책 “The C Programming Language”가 <strong>사실상의 표준</strong> 노릇을 했다 — 언어의 규격서가 아니라, 잘 쓰인 한 권의 책이 법전을 대신한 것이다. Unix와 함께 C가 대학과 업계로 번지자 회사마다 자기 컴파일러를 만들었고, 책이 못박지 않은 구석마다 방언이 자랐다. 그 시절의 C는 지금 눈에는 헐겁다 — 함수를 선언할 때 인자의 타입을 적지 않았고(원형이 없었다), 타입을 안 적은 이름은 슬그머니 int로 통했다. 어느 컴파일러에서 되던 코드가 다른 컴파일러에서 안 되는 일이 예사였고, 이식은 번번이 모험이었다.</p><p>견디다 못한 산업이 1983년 표준화 위원회(ANSI X3J11)를 꾸렸고, 6년의 격론 끝에 1989년 최초의 공식 C 표준인 <strong>C89</strong>가 나왔다. 함수 <strong>원형</strong>(인자 타입까지 적는 선언, 25장)을 들여 컴파일러가 호출의 실수를 잡을 수 있게 했고, 헐거운 구석들을 조였으며, 무엇보다 “프로그래머는 무엇을 약속받고, 구현은 어디까지 자유로운가”를 처음으로 <strong>문서로</strong> 못박았다. 7장의 IEEE 754(1985)와 몇 해 차이 나지 않는 일이다 — 하드웨어의 수도, 언어의 문법도, 벤더마다 제멋대로이던 것을 계약서로 다스리기 시작한 “계약의 시대”였다.</p><h3 id="s13-6">13.6 계약서에 없는 자리 — 회색지대<a class="plink" href="#s13-6" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>계약서가 생기면 곧바로 따라오는 물음이 있다. <strong>계약서에 적히지 않은 일은 어떻게 되는가?</strong></p><p>표준이 하는 말은 세 갈래다 — <strong>약속한다</strong>(어디서나 이렇게 된다), <strong>구현이 정한다</strong>(구현마다 다르되 문서로 밝힌다), 그리고 <strong>아무 말도 하지 않는다</strong>. 셋의 정식 이름과 정확한 구별은 56장에서 다룬다.</p><p>그리고 실무에는 이름조차 없는 자리가 하나 더 있다 — <strong>표준의 문장으로는 보장되지 않는데 모든 주요 구현에서 실제로 통하고, 널리 쓰여 사실상의 관행이 된 것</strong>이다. 이 책은 이 자리를 <strong>회색지대</strong>라 부른다.</p><div class="dev misconception"><p class="dev-label">흔한 오해. <strong>「회색지대」는 C 표준의 용어가 아니다</strong></p><div class="dev-body"><p><strong>못박아 둔다. 「회색지대」는 이 책이 편의상 붙인 이름이다.</strong> 표준 문서를 아무리 뒤져도 이 낱말은 나오지 않는다. 표준이 실제로 쓰는 낱말은 셋뿐이고, 그 셋에는 정확한 정의가 있다 — <strong>구현 정의</strong>(implementation-defined), <strong>미지정</strong> (unspecified), <strong>정의되지 않은 동작</strong>(undefined behavior). 56장이 그 셋을 정식으로 다룬다.</p><p>그러면 왜 다른 이름을 두는가. 표준의 셋만으로는 실무의 한 자리를 가리킬 말이 없기 때문이다 — <strong>표준이 아무 약속도 하지 않았는데 모든 구현이 사실상 같은 일을 해 주는</strong> 자리다. 이 책은 그 자리를 가리키려고 「회색지대」라는 말을 쓴다.</p><p>영어로 옮길 때도 마찬가지다. 이 책의 영어판은 <strong>grey area</strong>라 적는데, 그 말은 영어에서 「규칙이 딱 잘라 정해 주지 않는 경우」를 뜻하는 흔한 관용구다 — 어색하지도, 다른 뜻으로 읽히지도 않는다. 다만 그 관용구가 가리키는 범위가 이 책의 뜻보다 조금 넓어서(표준이 <strong>모호한</strong> 경우까지 포함한다), 영어판도 같은 자리에서 뜻을 좁혀 못박는다.</p><p>그래서 이 낱말을 <strong>책 밖에서 쓸 때는 조심해야 한다.</strong> 표준 문서를 읽거나 컴파일러 개발자와 이야기할 때는 정의되지 않은 동작(undefined behavior, UB)인가, 미지정인가, 구현 정의인가, 아니면 표준이 아예 다루지 않는가를 정확한 낱말로 가려 말해야 대화가 된다. 이 책이 본문에서 「계약 밖」(정의되지 않은 동작)과 「회색지대」를 굳이 갈라 쓰는 이유도 같다.</p></div></div><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>이 책이 회색지대라 부르는 것</strong></th><th><strong>무엇이 아닌가</strong></th></tr><tr><td>표준의 문장만으로는 보장되지 않는다</td><td>금지된 것은 아니다 — 「하지 마라」가 적혀 있지도 않다</td></tr><tr><td>그런데 주요 구현에서 실제로 통한다</td><td>운으로 되는 것이 아니다 — 대개 이유가 있다</td></tr><tr><td>널리 쓰여 사실상의 관행이 되었다</td><td>그렇다고 계약이 되지는 않는다</td></tr></table></div><span id="doc-float-52"></span><p class="float-caption">표 13.1 — 이 책이 말하는 회색지대와 그렇지 않은 것</p></figure><p>왜 이런 자리가 생기는가. 표준은 <strong>최소공통분모</strong>를 적는다 — 아주 특이한 기계에서도 성립할 만큼만 약속한다. 실제 구현은 대개 그보다 넉넉히 준다. 그리고 커다란 코드베이스들이 그 넉넉함 위에 집을 지으면, 컴파일러 쪽에서도 그것을 쉽게 깨뜨리지 못하게 된다 — <strong>깨는 순간 세상의 절반이 안 도니까.</strong></p><p>이 책에서 만나게 될 회색지대의 예를 미리 몇 개 적어 둔다. 지금은 이름만 알아 두면 된다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>관행</strong></th><th><strong>어디서 다룬다</strong></th></tr><tr><td><code>memset</code>으로 포인터를 0으로 밀어 널로 삼기</td><td>4·37·47장</td></tr><tr><td>선언된 2차원 배열을 1차원으로 평탄하게 훑기</td><td>40장</td></tr><tr><td><code>offsetof</code>를 빼서 바깥 구조체를 되찾기(<code>container_of</code>)</td><td>48장</td></tr><tr><td><code>int rc = setjmp(env);</code>처럼 표준이 정한 네 문맥 밖에서 쓰기</td><td>92장</td></tr><tr><td><code>#pragma pack</code>으로 배치를 강제하기</td><td>48장</td></tr><tr><td>함수 포인터를 <code>void *</code>로 바꿔 인쇄하거나 넘기기</td><td>68장 — POSIX가 요구하는 자리</td></tr></table></div><span id="doc-float-53"></span><p class="float-caption">표 13.2 — 회색지대 관행과 그것을 다루는 자리</p></figure><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 그러면 회색지대를 써도 되는가, 안 되는가?</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> <strong>판단은 그때그때 사람의 몫이다.</strong> 이 책은 어느 쪽이 옳다고 정해 주지 않는다 — 겨냥하는 기계가 하나뿐인 임베디드 프로젝트와, 어디서 컴파일될지 모르는 라이브러리는 답이 다르기 때문이다. 기준으로 삼을 만한 것은 넷이다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>물음</strong></th><th><strong>회색지대를 피할 이유가 커지는 쪽</strong></th></tr><tr><td>이 코드가 어디서 컴파일되는가</td><td>모르는 곳에서도 컴파일된다</td></tr><tr><td>얼마나 오래 살 코드인가</td><td>오래 산다 — 컴파일러가 그동안 바뀐다</td></tr><tr><td>깨졌을 때 무엇이 무너지는가</td><td>조용히 틀린 값이 나온다(터지는 편이 낫다)</td></tr><tr><td>대안의 비용이 얼마인가</td><td>대안이 몇 줄이면 된다</td></tr></table></div><span id="doc-float-54"></span><p class="float-caption">표 13.3 — 회색지대를 피할 이유가 커지는 물음들</p></figure><p><strong>다만 어느 쪽을 고르든 반드시 해야 하는 것이 하나 있다 — 지금 통하는 경우와 나중에 깨지는 경우를 다 대비하는 것이다.</strong> 회색지대는 「지금은 되는 것」이지 「앞으로도 될 것」이 아니기 때문이다.</p><ul><li><strong>쓰기로 했다면</strong> — 그 자리를 <strong>보이게</strong> 만들어 둔다. 무엇을 얼마나 두를지는 아래의 사다리대로 경중에 따라 정한다.</li><li><strong>쓰지 않기로 했다면</strong> — 대개 코드가 길어지고 느려지는 대가를 치른다. 그 대가를 알고 치르는 것과 모르고 피하는 것은 다르다.</li></ul><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>단계</strong></th><th><strong>무엇을 두르는가</strong></th><th><strong>이 정도면 되는 자리</strong></th></tr><tr><td>1</td><td>주석 한 줄 — 무엇에 기대는지, 왜 여기서는 괜찮은지</td><td>혼자 쓰는 도구, 곧 버릴 코드</td></tr><tr><td>2</td><td>문서 — 「이 모듈은 무엇을 전제한다」를 팀이 읽는 자리에</td><td>여럿이 고치는 코드</td></tr><tr><td>3</td><td>빌드가 알리게 — <code>static_assert</code>·기능 검사 매크로·컴파일 오류</td><td>전제가 깨지면 조용히 틀리는 경우</td></tr><tr><td>4</td><td>시험 — 전제가 성립하는지 확인하는 시험을 따로 둔다</td><td>오래 살 코드, 여러 플랫폼</td></tr><tr><td>5</td><td>격리 — 그 자리를 한 파일·한 함수로 몰아 두고 대안 구현을 준비</td><td>이식이 예정되어 있거나, 깨지면 큰 것이 무너지는 경우</td></tr></table></div><span id="doc-float-55"></span><p class="float-caption">표 13.4 — 회색지대를 다루는 사다리</p></figure><p>사다리를 오르는 기준은 앞의 네 물음과 같다 — <strong>어디서 컴파일되는가, 얼마나 오래 사는가, 깨지면 무엇이 무너지는가, 대안의 비용은 얼마인가.</strong> 혼자 쓰는 스크립트에 시험까지 붙이는 것은 과하고, 여러 플랫폼으로 나가는 라이브러리에 주석 한 줄만 남기는 것은 모자라다. <strong>경중을 재는 일까지가 프로그래머의 몫이다.</strong></p><p>최악은 쓰기로 한 것도, 쓰지 않기로 한 것도 아닌 셋째 태도다 — <strong>회색지대인 줄 모르고 쓰는 것.</strong> 그때는 대비할 것이 있다는 사실조차 모른다. 이 책이 「계약 밖」과 「회색지대」를 굳이 갈라 부르는 이유가 이것이다.</p></p></div></div><h3 id="s13-7">13.7 C 밖의 표준이 대신 보장할 때<a class="plink" href="#s13-7" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>회색지대 중에는 성격이 조금 다른 것들이 있다. <strong>C 표준은 아무 말도 하지 않는데, 다른 표준이 그 자리를 대신 약속하는</strong> 경우다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>C 표준의 태도</strong></th><th><strong>대신 약속하는 것</strong></th><th><strong>예</strong></th></tr><tr><td>부동소수의 형식·반올림을 정하지 않는다</td><td>IEEE 754 (= ISO/IEC 60559)</td><td><code>float</code>이 32비트이고 반올림이 어떻게 되는지(7·54장)</td></tr><tr><td>함수 포인터와 <code>void *</code>의 변환을 정하지 않는다</td><td>POSIX(ISO/IEC 9945)</td><td><code>dlsym</code>이 함수 주소를 <code>void *</code>로 돌려주므로(68장)</td></tr><tr><td>파일 이름·경로·프로세스를 정하지 않는다</td><td>POSIX</td><td><code>open</code>·<code>fork</code>·경로 구분자(114장)</td></tr><tr><td>로케일 이름의 문법을 정하지 않는다</td><td>POSIX</td><td><code>ko_KR.UTF-8</code>이라는 표기(83장)</td></tr><tr><td>문자 집합을 정하지 않는다</td><td>유니코드(ISO/IEC 10646)</td><td><code>__STDC_ISO_10646__</code>이 정의될 때(85장)</td></tr></table></div><span id="doc-float-56"></span><p class="float-caption">표 13.5 — C 표준이 정하지 않는 것과 다른 표준이 대신 하는 약속</p></figure><p>여기서 「C 표준이 안 정했으니 아무렇게나 되는 것」이라고 읽으면 안 된다. 그 자리에 <strong>다른 계약서가 놓여 있고</strong>, 그 계약서도 나름의 신중함으로 쓰였다.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 그러면 C 표준은 비워 두고 다른 표준이 약속한 자리는 어떻게 생각해야 하는가?</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> 이 책의 판단을 적어 둔다. 세 문장이다.</p><p><strong>첫째, 표준이 정하지 않은 데에는 대개 그럴 만한 이유가 있다.</strong> 위원회가 게을러서 비워 둔 자리가 아니다 — 세상의 어떤 기계에서도 성립하는 약속만 담으려니, 특정 기계에서만 참인 것을 뺄 수밖에 없었던 것이다. 부동소수를 IEEE 754로 못박지 않은 것도, 함수 포인터와 데이터 포인터를 같은 것으로 보지 않은 것도, 그렇게 하면 돌아가지 않는 기계가 실제로 있었기 때문이다(68장의 플랫폼 노트가 그 목록이다).</p><p><strong>둘째, 그 자리를 메우는 다른 표준에도 나름의 이유가 있고, 둘이 부딪칠 수 있다.</strong> POSIX는 동적 라이브러리를 쓸 수 있게 하려고 함수 포인터와 <code>void *</code>의 변환을 요구했다 — 그것이 없으면 <code>dlsym</code>이 성립하지 않기 때문이다. C 표준의 신중함과 POSIX의 실용이 같은 자리에서 다른 답을 낸 것이고, 어느 쪽이 틀린 것이 아니다. <strong>어느 계약서 아래에서 일하고 있는지</strong>가 다를 뿐이다.</p><p><strong>셋째, 그러므로 프로그래머가 할 일은 고르는 것이 아니라 「분명히 하는 것」이다.</strong> 까다롭더라도 지금 밟고 선 자리가 어느 계약인지 알아야 하고, 고른 뒤에는 그 선택을 <strong>눈에 보이게</strong> 만들어 두어야 한다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>무엇으로 보이게 하는가</strong></th><th><strong>무엇을 적는가</strong></th></tr><tr><td>문서·주석</td><td>「이 코드는 POSIX를 전제한다」처럼 <strong>어느 계약에 기대는지</strong>를 한 줄로</td></tr><tr><td>빌드 설정과 경고</td><td>전제가 깨지면 컴파일이 실패하거나 경고가 나게(예: <code>static_assert</code>, 기능 검사 매크로)</td></tr><tr><td>시험</td><td>그 전제가 성립하는지 확인하는 시험 한 개(예: 왕복이 같은지, 크기가 같은지)</td></tr></table></div><span id="doc-float-57"></span><p class="float-caption">표 13.6 — 회색지대를 쓸 때 남기는 기록</p></figure><p>이 셋이 있으면 <strong>상황이 바뀌어도 안전하게 바뀐다.</strong> 컴파일러를 판올림했을 때, 다른 플랫폼으로 옮길 때, 새 아키텍처가 들어왔을 때 — 무엇을 다시 확인해야 하는지가 코드 안에 이미 적혀 있기 때문이다. 반대로 셋이 없으면, 전제가 깨진 사실을 <strong>사고가 난 뒤에</strong> 알게 된다.</p><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> 이 파일은 POSIX를 전제한다: 함수 포인터 ↔ void * 변환(dlsym). </span></em><em><span class="tok-c">*/</span></em>
+<strong>static_assert</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">void</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">void</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">==</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">void</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>              </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">함수 포인터와 데이터 포인터의 크기가 다른 플랫폼이다</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span></code></pre></p></div></div><p>계약이라는 관념은 갈수록 중요해진다. 이 장에서 본 것처럼 기계는 갈수록 명령을 겹치고, 갈림길을 짐작하고, 일을 나누는데, 프로그래머가 그 모든 것을 일일이 알 수는 없다. 그래서 프로그래머는 기계가 아니라 계약을 보고 코드를 쓴다. 그리고 기계와 프로그래머 사이에는 <strong>또 하나의 층</strong>이 서 있다. 소스 코드를 받아 기계의 말로 옮기면서, 뜻만 지킨다면 무엇이든 뜯어고칠 권리를 쥔 층 — 컴파일러다. 다음 장의 주인공이다.</p>
+<div class="nav"><a href="ch12.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch14.html">다음 →</a></div>
+</div></main>
+<script>(function(){var b=document.querySelector('.menu-btn'),p=document.getElementById('here-panel');function open(o){if(!p)return;p.hidden=!o;if(b)b.setAttribute('aria-expanded',o);}if(b)b.addEventListener('click',function(){open(p.hidden);});if(p)p.addEventListener('click',function(e){if(e.target.tagName==='A'&&e.target.getAttribute('href').charAt(0)==='#')open(false);});document.addEventListener('keydown',function(e){if(e.key==='Escape'&&p&&!p.hidden){open(false);if(b)b.focus();}});document.addEventListener('click',function(e){if(p&&!p.hidden&&!p.contains(e.target)&&!(b&&b.contains(e.target)))open(false);});var bk=document.querySelector('.bar .back');if(bk)bk.addEventListener('click',function(e){if(history.length>1&&document.referrer){e.preventDefault();history.back();}});var box=document.getElementById('setbox');if(!box)return;var r=document.documentElement;function load(){try{return JSON.parse(localStorage.getItem('doc-read')||'{}');}catch(e){return {};}}function save(s){try{localStorage.setItem('doc-read',JSON.stringify(s));}catch(e){}}function css(n){return getComputedStyle(r).getPropertyValue(n).trim();}function paint(){var s=load();var t=s.theme||'auto',w=s.width==='fit'?'fit':'960';[].forEach.call(box.querySelectorAll('.segb[data-theme]'),function(x){x.setAttribute('aria-pressed',x.dataset.theme===t);});[].forEach.call(box.querySelectorAll('.segb[data-width]'),function(x){x.setAttribute('aria-pressed',x.dataset.width===w);});var ly=s.layout||'auto';[].forEach.call(box.querySelectorAll('.segb[data-layout]'),function(x){x.setAttribute('aria-pressed',x.dataset.layout===ly);});document.getElementById('s-fg').value=s.fg||hex(css('--fg'));document.getElementById('s-bg').value=s.bg||hex(css('--bg'));document.getElementById('s-link').value=s.link||hex(css('--link'));}function hex(v){var m=v.match(/^rgba?\((\d+)[ ,]+(\d+)[ ,]+(\d+)/);if(!m)return v.charAt(0)==='#'?v:'#000000';return '#'+[1,2,3].map(function(i){return ('0'+parseInt(m[i],10).toString(16)).slice(-2);}).join('');}paint();[].forEach.call(box.querySelectorAll('.segb[data-width]'),function(x){x.addEventListener('click',function(){var s=load();if(x.dataset.width==='fit'){s.width='fit';r.setAttribute('data-measure','fit');}else{delete s.width;r.removeAttribute('data-measure');}save(s);setTimeout(paint,0);});});[].forEach.call(box.querySelectorAll('.segb[data-layout]'),function(x){x.addEventListener('click',function(){var s=load(),v=x.dataset.layout;if(v==='auto'){delete s.layout;r.removeAttribute('data-layout');}else{s.layout=v;r.setAttribute('data-layout',v);}save(s);var m=document.querySelector('meta[name=viewport]');var want=v==='desktop'?'width=1100':'width=device-width, initial-scale=1';if(m&&m.getAttribute('content')!==want)location.reload();else setTimeout(paint,0);});});[].forEach.call(box.querySelectorAll('.segb[data-theme]'),function(x){x.addEventListener('click',function(){var s=load();s.theme=x.dataset.theme;delete s.fg;delete s.bg;delete s.link;save(s);['--fg','--bg','--link'].forEach(function(n){r.style.removeProperty(n);});if(s.theme==='auto')r.removeAttribute('data-theme');else r.setAttribute('data-theme',s.theme);setTimeout(paint,0);});});[['s-fg','--fg','fg'],['s-bg','--bg','bg'],['s-link','--link','link']].forEach(function(a){document.getElementById(a[0]).addEventListener('input',function(){var s=load();s[a[2]]=this.value;save(s);r.style.setProperty(a[1],this.value);});});})();</script><script>
+(function(){
+  var q=document.getElementById('q'), out=document.getElementById('qr');
+  if(!q||!out) return;
+  var data=null, NONE="\ucc3e\uc740 \uac83\uc774 \uc5c6\ub2e4";
+  function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+  function run(){
+    var v=q.value.trim().toLowerCase();
+    out.innerHTML='';
+    if(!v||!data) return;
+    var hits=[];
+    for(var i=0;i<data.length && hits.length<40;i++){
+      if(data[i][0].toLowerCase().indexOf(v)>=0) hits.push(data[i]);
+    }
+    if(!hits.length){ out.innerHTML='<li>'+NONE+'</li>'; return; }
+    out.innerHTML=hits.map(function(h){
+      return '<li><a href="'+h[1]+'">'+esc(h[0])+'</a>'+
+             (h[2]?'<span class="where">'+esc(h[2])+'</span>':'')+'</li>';
+    }).join('');
+  }
+  q.addEventListener('input',function(){
+    if(data){ run(); return; }
+    fetch('search-index.json').then(function(r){return r.json();})
+      .then(function(j){ data=j; run(); })
+      .catch(function(){ out.innerHTML='<li>'+NONE+'</li>'; });
+  });
+})();
+</script></body></html>

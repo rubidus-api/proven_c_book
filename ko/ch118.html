@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>118 빌드와 시험 — 여럿이 짓는 프로젝트의 구조 — Proven C Book</title><style>@font-face { font-family:"Doc Serif"; src:url("../fonts/serif.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-italic.woff2") format("woff2");
+  font-weight:400; font-style:italic; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-kr.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-kr-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans-kr.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans-kr-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Mono"; src:url("../fonts/mono.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Mono"; src:url("../fonts/mono-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+:root { color-scheme: light dark; --bg:#fafaf8; --bg2:#f2f2f0; --bg3:#e6e6e3; --fg:#141414; --muted:#555555; --line:#c9c9c9; --line-strong:#8a8a8a; --accent:#1a4f8a; --accent-fg:#ffffff; --accent2:#96530f; --honey:#f2b04a; --honey-fg:#2b1d00; --honey-text:#855400; --honey-soft:#fbebc6; --danger:#9b1b30; --ok:#1d6e37; --warn:#855400; --select:#d4dde8;
+  --rule:var(--line); --box-bg:var(--bg2); --code-bg:var(--bg2); --box-rule:var(--line); --link:var(--accent);
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg:#121314; --bg2:#1c1e20; --bg3:#2a2c2f; --fg:#e8e8e8; --muted:#a6a6a6; --line:#3a3d40; --line-strong:#75787c; --accent:#8ab4e8; --accent-fg:#121314; --accent2:#d4883b; --honey:#f2b04a; --honey-fg:#121314; --honey-text:#f2b04a; --honey-soft:#3b311e; --danger:#f07a8c; --ok:#7bcb95; --warn:#f2b04a; --select:#2f3d52;
+    --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+:root[data-theme="dark"] { color-scheme: dark; --bg:#121314; --bg2:#1c1e20; --bg3:#2a2c2f; --fg:#e8e8e8; --muted:#a6a6a6; --line:#3a3d40; --line-strong:#75787c; --accent:#8ab4e8; --accent-fg:#121314; --accent2:#d4883b; --honey:#f2b04a; --honey-fg:#121314; --honey-text:#f2b04a; --honey-soft:#3b311e; --danger:#f07a8c; --ok:#7bcb95; --warn:#f2b04a; --select:#2f3d52;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; }
+:root[data-theme="light"] { color-scheme: light; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Doc Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.here-head { display:flex; align-items:center; gap:.8rem; padding:.2rem 0 .5rem;
+  border-bottom:1px solid var(--rule,#ddd); margin-bottom:.5rem; }
+.here-head .sp { flex:1; }
+.here-all { margin-left:auto; font-size:.9rem; }
+.here-x { font:inherit; font-size:.9rem; cursor:pointer; background:none;
+  border:1px solid var(--line-strong); padding:.05rem .45rem;
+  color:inherit; }
+.here-body a, .tf-secs a { display:block; text-decoration:none; padding:.12rem 0;
+  line-height:1.45; }
+.here-body a:hover, .tf-secs a:hover { text-decoration:underline; }
+.here-body a.lv4, .tf-secs a.lv4 { padding-left:1.6rem; font-size:.94rem;
+  color:var(--muted,#555); }
+.tf-no { display:inline-block; min-width:3.2rem; color:var(--muted,#666);
+  font-variant-numeric:tabular-nums; }
+.toc-full .tf-ch { margin:.9rem 0 .15rem; font-weight:700; }
+.toc-full .tf-secs { margin:0 0 .5rem .2rem; border-left:2px solid var(--rule,#e2e2e2);
+  padding-left:.7rem; }
+.toc-full h4.toc-part { margin-top:1.8rem; }
+.toc a.toc-detail { font-weight:700; }
+@media print { .here-btn, .here-panel { display:none; } }
+.bar { position:sticky; top:0; z-index:20; display:flex; flex-wrap:nowrap; gap:.25rem; align-items:center;
+       min-height:44px; padding:0 clamp(.4rem,2vw,1.6rem); background:var(--bg2);
+       border-bottom:1px solid var(--line); font-size:.9rem;
+       font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--fg); text-decoration:none; } .bar a:hover { text-decoration:none; }
+.bar .sp { display:none; }
+main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
+.wrap { width:100%; }
+main .wrap { max-width:960px; margin-inline:auto; }
+:root[data-measure="fit"] main .wrap { max-width:none; margin:0; }
+h1,h2,h3,h4 { font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35;
+  padding-bottom:.18rem; border-bottom:1px solid var(--rule); }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem;
+     padding-bottom:.22rem; border-bottom:1.5px solid var(--fg); }
+p { margin:.9rem 0; } a { color:var(--link); }
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+.src-note { font-size: .86em; color: var(--muted, #666); }
+.src-note code { font-size: .95em; }
+sup.fnref { font-size: .72em; line-height: 0; vertical-align: super; }
+sup.fnref a { text-decoration: none; padding: 0 .1em; }
+sup.fnref a::before { content: "["; }
+sup.fnref a::after  { content: "]"; }
+.chapter-notes { margin: 3rem 0 1rem; padding-top: .9rem;
+                 border-top: 2px solid var(--rule, #333); }
+.chapter-notes h2 { font-size: 1.05rem; margin: 0 0 .6rem; }
+.chapter-notes ol { margin: 0; padding-left: 1.6em; }
+.chapter-notes li { font-size: .92em; margin: .35em 0; text-indent: 0; }
+.chapter-notes a.fnback { text-decoration: none; }
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
+pre,code,kbd { font-family:"Doc Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
+pre code { background:none; padding:0; }
+.tblwrap { overflow-x:auto; text-align:center; }
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.float-list { list-style:none; padding-left:0; }
+.float-list li { margin:.12rem 0; }
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"Doc Mono","D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"Doc Mono","D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"Doc Mono","D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+.dev { margin:1.15rem 0; padding:0; background:none; border:none; border-radius:0; }
+.dev > .dev-label { border-left:4px solid var(--fg);
+  padding:.1rem .8rem .25rem .8rem; margin:0 0 .34rem; }
+.dev > .dev-body { border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem .35rem .8rem; margin:0; }
+.dev > .dev-body > *:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child { margin-bottom:0; }
+.float-caption { text-align:center; font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+.dev.open { border:none; border-radius:0; background:none;
+  padding:0; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
+  text-indent:0; border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+.dev.open > .open-body { margin:0; padding:.35rem .8rem;
+  border-left:2px solid var(--box-rule); }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+.dev.open .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.06rem 0 .06rem .7rem; margin:.32rem 0 0; }
+.prereq .dev-label, .deepqa .dev-label, .why .dev-label,
+.organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+.qa-box { border:none; margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:0; background:none; }
+.qa-box .qa-q { border-left:4px solid var(--fg);
+  padding:.1rem .8rem .25rem .8rem; margin:0; }
+.qa-box .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem; margin:.34rem 0 0; }
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:0; }
+.dev.recap { border:none; background:none; padding:0; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
+  text-indent:0; border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > .dev-body > p, .dev.recap > .dev-body > div:not(.demo),
+.dev.recap > .dev-body > figure { margin:.3rem 0; padding:0; }
+.dev > .dev-body > .demo { margin:.7rem 0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:none; border-radius:0; background:none; padding:0; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem; text-indent:0;
+  border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
+.dev > .dev-body > figure, .dev > .open-body > p {
+  margin:.35rem 0; padding:0; }
+.bar .menu-btn { flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center;
+  min-width:38px; min-height:38px; padding:0; font:inherit; font-size:1.25rem; line-height:1;
+  color:var(--fg); background:none; border:0; cursor:pointer; text-decoration:none; }
+.bar .back, .bar .bar-nav .nb { flex:0 0 auto; display:inline-flex; align-items:center; gap:.3em;
+  min-height:32px; padding:0 .65rem; border:1px solid var(--line); background:var(--bg);
+  color:var(--fg); font-weight:600; white-space:nowrap; text-decoration:none; }
+.bar .menu-btn[aria-expanded="true"] { background:var(--bg3); }
+.bar .place { flex:1 1 auto; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
+  padding:0 .35rem; }
+.bar .place strong a { color:var(--honey-text); }
+.bar .place .cur { color:var(--fg); }
+.bar .bar-nav { flex:0 0 auto; display:flex; gap:.3rem; align-items:center; white-space:nowrap; }
+.bar .bar-nav .off { color:var(--muted); border-color:var(--line); opacity:.45; }
+.bar .back:hover, .bar .menu-btn:hover, .bar .bar-nav a.nb:hover, .bar .place a:hover { background:var(--bg3); }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+.dev.antipattern > .dev-label { border-left-style:solid; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.2rem; }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em;
+            padding-bottom:0; border-bottom:none; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
+.toc { columns:24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.toc > .toc-part:first-child, .toc > .toc-keep:first-child > .toc-part, .toc-full > .toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
+.toc-group { padding-left:.85rem; }
+.toc-keep, .toc a { break-inside:avoid; }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+code.style-name { font-family:"Doc Mono","D2Coding",ui-monospace,monospace;
+  font-size:.72em; color:var(--muted); background:var(--rule);
+  padding:.05em .35em; border-radius:3px; white-space:nowrap;
+  font-weight:400; letter-spacing:0; }
+.dev.open > .dev-label { padding-top:.42rem; padding-bottom:.42rem; }
+.dev.open > .open-body { padding-top:.4rem; padding-bottom:.4rem; }
+.dev.open > .open-body > p { margin:.6rem 0; }
+.dev > .dev-body { padding-top:.5rem; padding-bottom:.5rem; }
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
+.dev > .dev-body > figure { margin:.55rem 0; }
+main { line-height:1.85; }
+p { margin:1.15rem 0; }
+h2 { margin-top:2.4rem; }
+h3 { margin-top:2rem; }
+li { margin:.3rem 0; }
+h1, h2, h3, h4 { border-bottom-color:var(--box-rule) !important; }
+.toc { line-height:1.45; }
+.toc a { padding:.16rem 0; }
+.toc-part { margin:.85rem 0 .2rem; }
+.metalist { line-height:1.45; gap:.2rem 1.2rem; }
+.metalist dt, .metalist dd { margin:0; }
+.demo { border-color:var(--box-rule); }
+.demo > .demo-head { border-bottom-color:var(--box-rule); }
+.dev > .dev-label,
+.dev.open > .dev-label,
+.qa-box .qa-q,
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  border-left-color:var(--box-rule); }
+.dev > .dev-body,
+.dev > .open-body,
+.dev.open .qa-a,
+.qa-box .qa-a,
+.deepqa .qa-a { border-left-color:var(--box-rule); }
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div {
+  border-color:var(--box-rule); }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+.dev.open > .open-body,
+.dev.open > .qa-a,
+.dev.open .qa-a,
+.dev.deepqa .qa-a,
+.qa-box > .qa-a,
+.qa-box > .qa-q { border-left-color:var(--box-rule); }
+.bar .bar-toc { font-size:1.15em; line-height:1; text-decoration:none; }
+.dev, .dev-body, .open-body, .qa-box, .qa-q, .qa-a, .dev-label,
+.toc-full, .toc-full .tf-secs { line-height:inherit; font-size:1rem; }
+.dev > .dev-body > p, .dev > .open-body > p,
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:1.15rem 0; }
+.dev > .dev-body > *:first-child, .dev > .open-body > *:first-child,
+.qa-box .qa-q > p:first-child, .qa-box .qa-a > p:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child, .dev > .open-body > *:last-child,
+.qa-box .qa-q > p:last-child, .qa-box .qa-a > p:last-child { margin-bottom:0; }
+.dev > .dev-label, .dev.open > .dev-label { font-size:.98rem; line-height:1.4; }
+h1,h2,h3,h4 { padding-bottom:.34rem; }
+h1 { margin:.2rem 0 1.3rem; }
+h2 { padding-bottom:.42rem; margin-bottom:1.15rem; }
+h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
+.dev.open > .open-body > * { margin:.3rem 0; }
+.dev.open > .open-body > p { margin:.5rem 0; }
+.dev.open > .open-body > div { margin:.15rem 0; }
+.dev.open ul, .dev.open ol { margin:.3rem 0; }
+.dev.open li, .dev.open ol.qlist li { margin:0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open .qa-a > p { margin:.35rem 0; }
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div { border-color:var(--box-rule); }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+a:focus-visible, button:focus-visible, summary:focus-visible, input:focus-visible {
+  outline:2px solid var(--accent2); outline-offset:2px; }
+:target, h1, h2, h3, h4, [id] { scroll-margin-top:4.2rem; }
+.skip { position:absolute; left:-9999px; top:0; z-index:30;
+        background:var(--bg); color:var(--fg); border:1px solid var(--fg);
+        padding:.5rem .8rem; font-size:.9rem; text-decoration:none; }
+.skip:focus { left:.5rem; top:.5rem; }
+.here-panel { position:fixed; top:46px; left:clamp(.2rem,1vw,1rem); z-index:19;
+  width:min(32rem, calc(100vw - .4rem)); max-height:calc(100vh - 54px); overflow:auto;
+  padding:.7rem .9rem .9rem; border:1px solid var(--line); --k:var(--line-strong);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-size:.9rem; line-height:1.4;
+  background:
+    linear-gradient(var(--k),var(--k)) left top / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) left top / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) right top / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) right top / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) left bottom / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) left bottom / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) right bottom / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) right bottom / 3px 8px no-repeat,
+    color-mix(in srgb, var(--bg) 97%, transparent); }
+.here-panel .tools { display:flex; flex-wrap:wrap; gap:.3rem .4rem; align-items:center;
+  margin-bottom:.6rem; }
+.tool, .segb { font:inherit; font-size:.88rem; color:var(--fg); background:none;
+  border:1px solid var(--line-strong); padding:0 .6rem; min-height:30px;
+  display:inline-flex; align-items:center; text-decoration:none; cursor:pointer; white-space:nowrap; }
+.tool:hover, .segb:hover, .nav a:hover, .here-panel .here-body a:hover { background:var(--bg3); }
+.segb[aria-pressed="true"] { background:var(--select); border-color:var(--accent); font-weight:700; }
+.tool, .segb, .bar a, .bar button, .nav a, .here-panel a { transition:background-color .08s; }
+@media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
+main a { text-decoration:underline; text-decoration-color:var(--box-rule);
+  text-underline-offset:2px; }
+main a:hover { background:var(--box-bg); text-decoration-color:var(--link); }
+main .toc a, main .toc-full a, main .here-body a { text-decoration:none; }
+main .toc a:hover, main .toc-full a:hover { background:var(--box-bg); text-decoration:underline; }
+.setbox { margin:0 0 .6rem; }
+.setrow { display:flex; flex-wrap:wrap; gap:.4rem .5rem; align-items:center; margin:.35rem 0; }
+.setlbl { min-width:4.2rem; font-size:.82rem; font-weight:700; }
+.seg { display:inline-flex; flex-wrap:wrap; gap:.25rem; }
+.col { display:inline-flex; align-items:center; gap:.3rem; }
+.col input[type=color] { width:2rem; height:1.4rem; padding:0; border:1px solid var(--line-strong);
+  background:none; cursor:pointer; }
+.setnote { margin:.5rem 0 0; font-size:.82rem; }
+.here-panel .ver { font-size:.82rem; color:var(--muted); padding:.2rem .45rem .2rem 0;
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; white-space:nowrap; }
+.demo pre, .demo pre code {
+  white-space:pre-wrap; overflow-wrap:anywhere; word-break:break-word; }
+.demo > .demo-body { overflow-x:visible; }
+.plink {
+  margin-left: .4em; font-weight: 400; text-decoration: none;
+  color: var(--muted, #888); opacity: 0;
+}
+h3:hover > .plink, h4:hover > .plink,
+h3 > .plink:focus, h4 > .plink:focus { opacity: 1; }
+@media (hover: none) { .plink { opacity: .45; } }
+.searchbox { margin:.6em 0 0; }
+.searchbox input[type=search] {
+  width: 100%; padding: .45em .6em; font: inherit;
+  border: 1px solid var(--line-strong);
+  background: var(--bg); color: var(--fg);
+}
+.search-hint { color: var(--muted, #777); font-size: .85em; margin:.3em 0 0; }
+.search-results { list-style: none; padding: 0; margin: .5em 0 0; }
+.search-results li { margin: .15em 0; }
+.search-results .where { color: var(--muted, #777); font-size: .85em; margin-left: .4em; }
+@media (max-width: 900px), (orientation: portrait) {
+  :root:not([data-layout="desktop"]) .bar .place .cur { display:none; }
+  :root:not([data-layout="desktop"]) .bar .back,
+  :root:not([data-layout="desktop"]) .bar .bar-nav .nb { min-height:40px; padding:0 .5rem; }
+}
+@media (max-width: 480px) {
+  :root:not([data-layout="desktop"]) .bar .bar-nav .prev .lbl,
+  :root:not([data-layout="desktop"]) .bar .bar-nav .next .lbl { display:none; }
+  :root:not([data-layout="desktop"]) .bar .bar-nav .nb { min-width:44px; justify-content:center; }
+  :root:not([data-layout="desktop"]) .bar { gap:.2rem; }
+}
+:root[data-layout="mobile"] .bar .place .cur { display:none; }
+:root[data-layout="mobile"] .bar .back, :root[data-layout="mobile"] .bar .bar-nav .nb { min-height:40px; padding:0 .5rem; }
+:root[data-layout="mobile"] main .wrap { max-width:34rem; }
+@media (pointer: coarse), (max-width: 900px) {
+  .bar .menu-btn { min-width:44px; min-height:44px; }
+  .tool, .segb { min-height:38px; }
+}
+@media print { .bar, .here-panel { display:none; } }
+
+body { font-family:"Doc Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Doc Sans","Noto Sans CJK KR","Noto Sans KR",system-ui,sans-serif; }
+pre,code,kbd { font-family:"Doc Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+</style>
+<script>(function(){try{var L=localStorage,o='pcb-read';if(o&&o!=='doc-read'&&L.getItem(o)!==null&&L.getItem('doc-read')===null){var v=JSON.parse(L.getItem(o)||'{}');delete v.width;L.setItem('doc-read',JSON.stringify(v));L.removeItem(o);}var s=JSON.parse(L.getItem('doc-read')||'{}');var r=document.documentElement;if(s.theme&&s.theme!=='auto')r.setAttribute('data-theme',s.theme);if(s.fg)r.style.setProperty('--fg',s.fg);if(s.bg)r.style.setProperty('--bg',s.bg);if(s.link)r.style.setProperty('--link',s.link);if(s.width==='fit')r.setAttribute('data-measure','fit');if(s.layout==='desktop'||s.layout==='mobile')r.setAttribute('data-layout',s.layout);if(s.layout==='desktop'){var m=document.querySelector('meta[name=viewport]');if(m)m.setAttribute('content','width=1100');}}catch(e){}})();</script></head>
+<body>
+<a class="skip" href="#content">본문으로 건너뛰기</a>
+<div class="bar"><button class="menu-btn" id="set-open" type="button" aria-expanded="false" aria-controls="here-panel" aria-label="메뉴" title="메뉴">☰</button><a class="back" href="index.html" title="뒤로">← <span class="lbl">뒤로</span></a><span class="place"><strong><a href="index.html">Proven C Book</a></strong><span class="cur"> › 118장</span></span><span class="bar-nav"><a class="nb prev" href="ch117.html">‹ <span class="lbl">이전</span></a><a class="nb toc" href="index.html"><span class="lbl">목차</span></a><a class="nb next" href="ch119.html"><span class="lbl">다음</span> ›</a></span></div><div id="here-panel" class="here-panel" hidden><div class="setbox" id="setbox"><div class="setrow"><span class="setlbl">언어</span><span class="seg"><a class="segb" href="../en/ch118.html">English</a></span></div><div class="setrow"><span class="setlbl">본문 폭</span><span class="seg" id="s-width"><button type="button" class="segb" data-width="960">960</button><button type="button" class="segb" data-width="fit">창에 맞춤</button></span></div><div class="setrow"><span class="setlbl">배치</span><span class="seg" id="s-layout"><button type="button" class="segb" data-layout="auto">자동</button><button type="button" class="segb" data-layout="desktop">PC</button><button type="button" class="segb" data-layout="mobile">모바일</button></span></div><div class="setrow"><span class="setlbl">테마</span><span class="seg"><button type="button" class="segb" data-theme="auto">시스템</button><button type="button" class="segb" data-theme="light">밝게</button><button type="button" class="segb" data-theme="dark">어둡게</button></span></div><div class="setrow"><span class="setlbl">색</span><label class="col"><span>글자</span><input type="color" id="s-fg"></label><label class="col"><span>배경</span><input type="color" id="s-bg"></label><label class="col"><span>링크</span><input type="color" id="s-link"></label></div><p class="setnote">설정은 이 브라우저에만 저장된다.</p></div><div class="tools"><span class="ver">v0.110.2</span><a class="tool" href="toc.html">▤ 상세 차례</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book/releases/download/v0.110.2/proven_c_book-v0.110.2-ko.pdf">⤓ PDF</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book" title="이 책의 GitHub 저장소">Git</a><a class="tool" href="https://rubidus-api.github.io/" title="rubidus-api.github.io --- 공개된 모든 프로젝트">⌂ 전체 사이트</a><a class="tool" href="https://github.com/rubidus-api" title="github.com/rubidus-api --- 모든 저장소">≡ 저장소 목록</a></div><div class="here-head"><strong>이 장의 차례</strong></div><div class="here-body"><a class="lv3" href="#s118-1"><span class="tf-no">118.1</span>빌드가 있으면 무엇이 달라지는가</a><a class="lv3" href="#s118-2"><span class="tf-no">118.2</span>파일을 어떻게 나누는가 — 헤더는 계약, 소스는 사정</a><a class="lv3" href="#s118-3"><span class="tf-no">118.3</span>공개와 내부의 경계</a><a class="lv3" href="#s118-4"><span class="tf-no">118.4</span>폴더 구조 — 관행은 무엇을 위한 것인가</a><a class="lv3" href="#s118-5"><span class="tf-no">118.5</span>시험의 갈래 — 각각 무엇을 잡는가</a><a class="lv3" href="#s118-6"><span class="tf-no">118.6</span>골든 시험 — 정답을 파일로 굳힌다</a><a class="lv3" href="#s118-7"><span class="tf-no">118.7</span>얼마나, 그리고 무엇을 시험하지 않는가</a><a class="lv3" href="#s118-8"><span class="tf-no">118.8</span>협업 — 기계가 막는 것과 사람이 보는 것</a><a class="lv3" href="#s118-9"><span class="tf-no">118.9</span>적어 두어야 하는 것</a></div></div>
+<main id="content"><div class="wrap">
+<h2>118 빌드와 시험 — 여럿이 짓는 프로젝트의 구조</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>18장 개발환경 구축 · Makefile 과 새니타이저</div><div>104장 파일 나누기, 빌드, 골든·회귀 시험 · 작은 여러 파일 빌드와 골든·회귀 시험</div><div>117장 실전의 C · <code>make</code> 와 <code>git</code></div><div>55장 오류와 계약 · 계약이라는 생각</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>18장에서 Makefile 을 하나 썼고 그것으로 이 책의 예제가 전부 돌았다. 그런데 왜 실제 프로젝트들은 빌드에 그렇게 공을 들이는가 — 컴파일이 되면 된 것 아닌가?</p><div class="qa-a"><p><p><span class="dev-label">답.</span> 「컴파일된다」와 「빌드가 있다」는 다른 말이기 때문이다. 컴파일은 <strong>이번 한 번</strong> 소스가 기계어가 되는 일이고, 빌드는 <strong>언제 무엇을 다시 만들 것인가</strong>에 대한 약속이다. 파일이 셋일 때는 그 약속이 없어도 된다 — 통째로 다시 만들면 그만이다. 그러나 파일이 수백 개가 되면 통째로 다시 만드는 데 몇 분이 들고, 그러면 사람은 <strong>다시 만들지 않기 시작한다.</strong> 그 순간부터 손에 든 실행 파일이 지금 소스에서 나온 것인지 아무도 모른다.</p><p>★ 이 장의 첫 시연이 그 자리에서 벌어지는 사고다. 그리고 그 사고는 「느려서 불편하다」가 아니라 <strong>버퍼 넘침</strong>으로 나타난다.</p></p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">104장에서 헤더 하나와 소스 셋으로 나눈 <code>sumcsv</code> 에 <code>-MMD -MP</code> 와 골든 시험을 붙여 보았고, 117장에서 <code>make</code> 와 <code>git</code> 의 <strong>이름</strong>을 보았다. 이 장은 그 위에 <strong>규모</strong>를 얹는다. 앞서는 한 사람의 책상 위 작은 프로그램 하나를 가정했지만, C 로 짓는 것들은 대개 여럿이 오래 짓는다. 파일을 어떻게 나누고, 무엇을 시험하고, 무엇을 기계가 막게 할 것인가 — 이것들은 취향이 아니라 <strong>규모가 강제하는 구조</strong>다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body"><span id="idx-entry-331"></span>네 가지를 다룬다. <strong>빌드가 있으면 무엇이 달라지는가</strong>(그리고 없으면 무엇을 잃는가), <strong>파일과 폴더를 어떻게 나누는가</strong>, <strong>시험을 어떻게 구성하는가</strong>, 그리고 <strong>여럿이 일할 때 무엇을 기계에 맡기고 무엇을 사람이 보는가</strong>. 도구의 문법은 다루지 않는다 — <code>make</code> 나 CMake 의 문법은 판마다 달라지고, 이 장이 남기려는 것은 문법이 아니라 <strong>왜 그렇게 배치하는가</strong>다. 근거는 실물 프로젝트 넷이다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>시험은 많을수록 좋은가?</li></ol></div></div><div></div><h3 id="s118-1">118.1 빌드가 있으면 무엇이 달라지는가<a class="plink" href="#s118-1" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>빌드 도구가 대신해 주는 일은 셋이다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>무엇</strong></th><th><strong>하는 일 · 없으면 생기는 일</strong></th></tr><tr><td><strong>증분</strong></td><td>바뀐 것만 다시 만든다. 없으면 전체 재빌드가 몇 분이 되고, 사람이 <strong>다시 만들기를 건너뛴다</strong></td></tr><tr><td><strong>의존</strong></td><td>무엇이 바뀌면 무엇을 다시 만들어야 하는지 안다. 없으면 낡은 산출물이 조용히 살아남는다</td></tr><tr><td><strong>재현</strong></td><td>같은 소스에서 같은 것이 나온다. 없으면 「내 기계에서는 됩니다」가 논쟁이 된다</td></tr></table></div><span id="doc-float-580"></span><p class="float-caption">표 118.1 — 빌드가 대신해 주는 일</p></figure><p>가운데 것이 이 절의 주제다. 없을 때 무슨 일이 생기는지 실제로 일으켜 본다.</p><div class="demo demo-src"><p class="demo-head"><code>examples/build-test/stale/run.sh</code></p><div class="demo-body"><pre><code data-lang="c">#<strong><span class="tok-x">!</span></strong><strong><span class="tok-x">/</span></strong>bin<strong><span class="tok-x">/</span></strong>sh
+# 낡은 산출물 사고를 재현한다<span class="tok-x">.</span>
+#
+#   헤더의 GREET_MAX 를 <span class="tok-n">16</span> → <span class="tok-n">32</span> 로 넓히고 greet<span class="tok-x">.</span>c 만 손댄다<span class="tok-x">.</span>
+#   의존을 적지 않은 규칙은 greet<span class="tok-x">.</span>o 만 다시 만든다 <strong><span class="tok-x">--</span></strong><strong><span class="tok-x">-</span></strong> greet 는 <span class="tok-n">32</span> 를 믿고 쓰는데
+#   main<span class="tok-x">.</span>o 는 옛 <span class="tok-n">16</span> 으로 그릇을 잡은 채 남는다<span class="tok-x">.</span> 곧 <strong><span class="tok-x">*</span></strong>버퍼가 넘친다<span class="tok-x">.</span><strong><span class="tok-x">*</span></strong>
+set <strong><span class="tok-x">-</span></strong>eu
+cd <span class="tok-s">"</span><span class="tok-s">$(dirname </span><span class="tok-s">"</span>$<span class="tok-n">0</span><span class="tok-s">"</span><span class="tok-s">)</span><span class="tok-s">"</span>
+
+cp greet<span class="tok-x">.</span>h greet<span class="tok-x">.</span>h<span class="tok-x">.</span>orig
+trap <span class="tok-s">'</span><span class="tok-s">mv -f greet.h.orig greet.h 2>/dev/null || true</span><span class="tok-s">'</span> EXIT <strong><span class="tok-t">INT</span></strong> TERM
+
+<strong><span class="tok-k">for</span></strong> kind in broken fixed<span class="tok-x">;</span> <strong><span class="tok-k">do</span></strong>
+    printf <span class="tok-s">'</span><span class="tok-s">== Makefile.%s</span><span class="tok-n">\n</span><span class="tok-s">'</span> <span class="tok-s">"</span><span class="tok-s">$kind</span><span class="tok-s">"</span>
+    make <strong><span class="tok-x">-</span></strong>s <strong><span class="tok-x">-</span></strong>f <span class="tok-s">"</span><span class="tok-s">Makefile.$kind</span><span class="tok-s">"</span> clean <strong><span class="tok-x">></span></strong><strong><span class="tok-x">/</span></strong>dev<strong><span class="tok-x">/</span></strong>null
+    make <strong><span class="tok-x">-</span></strong>s <strong><span class="tok-x">-</span></strong>f <span class="tok-s">"</span><span class="tok-s">Makefile.$kind</span><span class="tok-s">"</span> CFLAGS<strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">-std=c23 -Wall -Wextra -g -fsanitize=address$([ $kind = fixed ] &amp;&amp; printf ' -MMD -MP')</span><span class="tok-s">"</span> <strong><span class="tok-x">></span></strong><strong><span class="tok-x">/</span></strong>dev<strong><span class="tok-x">/</span></strong>null <span class="tok-n">2</span><strong><span class="tok-x">></span></strong><strong><span class="tok-x">&amp;</span></strong><span class="tok-n">1</span>
+    printf <span class="tok-s">'</span><span class="tok-s">   처음        : %s</span><span class="tok-n">\n</span><span class="tok-s">'</span> <span class="tok-s">"</span><span class="tok-s">$(./demo 2>&amp;1 | head -1)</span><span class="tok-s">"</span>
+
+    sed <strong><span class="tok-x">-</span></strong>i <span class="tok-s">'</span><span class="tok-s">s/#define GREET_MAX 16/#define GREET_MAX 32/</span><span class="tok-s">'</span> greet<span class="tok-x">.</span>h
+    touch greet<span class="tok-x">.</span>c
+    make <strong><span class="tok-x">-</span></strong>s <strong><span class="tok-x">-</span></strong>f <span class="tok-s">"</span><span class="tok-s">Makefile.$kind</span><span class="tok-s">"</span> CFLAGS<strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">-std=c23 -Wall -Wextra -g -fsanitize=address$([ $kind = fixed ] &amp;&amp; printf ' -MMD -MP')</span><span class="tok-s">"</span> <strong><span class="tok-x">></span></strong><strong><span class="tok-x">/</span></strong>dev<strong><span class="tok-x">/</span></strong>null <span class="tok-n">2</span><strong><span class="tok-x">></span></strong><strong><span class="tok-x">&amp;</span></strong><span class="tok-n">1</span>
+    out<strong><span class="tok-x">=</span></strong>$<span class="tok-x">(</span><span class="tok-x">.</span><strong><span class="tok-x">/</span></strong>demo <span class="tok-n">2</span><strong><span class="tok-x">></span></strong><strong><span class="tok-x">&amp;</span></strong><span class="tok-n">1</span> <strong><span class="tok-x">|</span></strong> head <strong><span class="tok-x">-</span></strong><span class="tok-n">3</span> <strong><span class="tok-x">||</span></strong> <span class="tok-n">true</span><span class="tok-x">)</span>
+    printf <span class="tok-s">'</span><span class="tok-s">   헤더를 넓힌 뒤: %s</span><span class="tok-n">\n</span><span class="tok-s">'</span> <span class="tok-s">"</span><span class="tok-s">$(printf '</span><span class="tok-s">%s</span><span class="tok-s">' </span><span class="tok-s">"</span>$out<span class="tok-s">"</span><span class="tok-s"> | head -1)</span><span class="tok-s">"</span>
+    printf <span class="tok-s">'</span><span class="tok-s">%s</span><span class="tok-s">'</span> <span class="tok-s">"</span><span class="tok-s">$out</span><span class="tok-s">"</span> <strong><span class="tok-x">|</span></strong> grep <strong><span class="tok-x">-</span></strong>q <span class="tok-s">'</span><span class="tok-s">stack-buffer-overflow</span><span class="tok-s">'</span> <strong><span class="tok-x">&amp;&amp;</span></strong> printf <span class="tok-s">'</span><span class="tok-s">   → ASan: stack-buffer-overflow</span><span class="tok-n">\n</span><span class="tok-s">'</span> <strong><span class="tok-x">||</span></strong> <span class="tok-n">true</span>
+
+    sed <strong><span class="tok-x">-</span></strong>i <span class="tok-s">'</span><span class="tok-s">s/#define GREET_MAX 32/#define GREET_MAX 16/</span><span class="tok-s">'</span> greet<span class="tok-x">.</span>h
+    make <strong><span class="tok-x">-</span></strong>s <strong><span class="tok-x">-</span></strong>f <span class="tok-s">"</span><span class="tok-s">Makefile.$kind</span><span class="tok-s">"</span> clean <strong><span class="tok-x">></span></strong><strong><span class="tok-x">/</span></strong>dev<strong><span class="tok-x">/</span></strong>null
+done
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>== Makefile.broken
+   처음        :   GREET_MAX=16  len=15
+   헤더를 넓힌 뒤: =================================================================
+   → ASan: stack-buffer-overflow
+== Makefile.fixed
+   처음        :   GREET_MAX=16  len=15
+   헤더를 넓힌 뒤:   GREET_MAX=32  len=31
+</code></pre></div></div><p>무엇이 벌어졌는지 뜯어본다. 헤더에 그릇의 크기가 있다.</p><pre><code data-lang="c"><strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><span class="tok-p">GREET_MAX</span><span class="tok-p"> </span><span class="tok-n">16</span>
+<strong><span class="tok-t">void</span></strong> <strong>greet</strong><span class="tok-x">(</span><strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>out<span class="tok-x">)</span><span class="tok-x">;</span></code></pre><p><code>greet.c</code> 는 그 수만큼 채우고, <code>main.c</code> 는 그 수만큼 그릇을 잡는다. <strong>두 파일이 같은 수를 믿는다.</strong> 그런데 <code>Makefile.broken</code> 의 규칙은 이렇게만 적혀 있다.</p><pre><code data-lang="make"><strong>%</strong><strong>.o</strong><strong><span class="tok-x">:</span></strong> %<span class="tok-s">.c</span>
+  <strong><span class="tok-k">$(</span></strong>CC<strong><span class="tok-k">)</span></strong> <strong><span class="tok-k">$(</span></strong>CFLAGS<strong><span class="tok-k">)</span></strong> <strong>-c</strong><strong><span class="tok-x"> -</span></strong><strong>o</strong><strong> </strong><strong>$@</strong><strong> </strong><strong>$&lt;</strong></code></pre><p>여기 어디에도 「이 목적 파일은 <code>greet.h</code> 에도 딸려 있다」는 말이 없다. 그래서 헤더의 <code>GREET_MAX</code> 를 16 에서 32 로 넓히고 <code>greet.c</code> 만 손대면, <code>make</code> 는 <code>greet.o</code> 만 다시 만든다. 새 <code>greet</code>는 31 글자와 끝의 NUL 까지 <strong>32 바이트</strong>를 쓰는데, 옛 <code>main.o</code> 는 여전히 16 바이트짜리 그릇을 잡는다.</p><p>★ 결과는 <strong>느림</strong>이 아니라 <strong>스택 버퍼 넘침</strong>이다. 시연이 새니타이저(18장) 아래에서 그것을 그 자리에서 잡아 준다. 잡히지 않았다면 이 프로그램은 「가끔 이상한 값이 나오는」 물건이 되었을 것이다.</p><div class="dev misconception"><p class="dev-label">흔한 오해. <strong>“그러면 늘 <code>make clean</code> 을 하면 되지 않나”</strong></p><div class="dev-body"><p>되기는 한다. 그리고 그것이 바로 <strong>증분을 버리는 일</strong>이다. 파일이 셋일 때는 비용이 0 이지만, 수백 개가 되면 매번 몇 분이고, 그 몇 분이 쌓이면 사람은 결국 <code>clean</code> 도 건너뛴다. 규율을 사람의 의지에 맡기면 규모가 그것을 이긴다.</p><p>답은 <strong>의존을 사람이 적지 않는 것</strong>이다. 컴파일러가 이미 알고 있다 — 어떤 헤더를 열었는지는 컴파일할 때 알게 되므로, 그것을 받아 적게 하면 된다.</p><pre><code data-lang="make">CFLAGS <strong><span class="tok-x">=</span></strong> <span class="tok-s">... -MMD -MP</span>
+<strong><span class="tok-k">-include</span></strong> <span class="tok-s">main.d greet.d</span></code></pre><p><code>-MMD</code> 는 목적 파일마다 「이 파일은 이 헤더들에 딸려 있다」는 규칙을 <code>.d</code> 파일로 남기고, <code>-include</code> 가 그것을 다음 빌드에 물린다. 시연의 <code>Makefile.fixed</code> 는 <code>CFLAGS</code> 에 그 두 낱말을 붙이고 <code>-include</code> 한 줄을 더했을 뿐이며, 같은 조작에서 사고가 나지 않는다.</p></div></div><h3 id="s118-2">118.2 파일을 어떻게 나누는가 — 헤더는 계약, 소스는 사정<a class="plink" href="#s118-2" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>파일을 나누는 기준은 「길어서」가 아니다. <strong>함께 바뀌는 것끼리 모으고, 따로 바뀌는 것을 가른다</strong>가 기준이다. 함께 바뀌는 것을 갈라 두면 고칠 때마다 여러 파일을 오가야 하고, 따로 바뀌는 것을 붙여 두면 한쪽 때문에 다른 쪽이 자꾸 다시 만들어진다.</p><p>그 위에 C 에만 있는 기준이 하나 얹힌다 — <strong>헤더는 계약이고 소스는 사정이다</strong> (55장). 헤더에 적힌 것은 부르는 쪽이 기대는 약속이고, 소스에 있는 것은 그 약속을 지키는 방법이다. 방법은 바꿔도 되지만 약속을 바꾸면 남이 깨진다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>무엇</strong></th><th><strong>어디에</strong></th><th><strong>왜</strong></th></tr><tr><td>함수 원형·공개 타입·공개 매크로</td><td>헤더</td><td>부르는 쪽이 알아야 하는 약속</td></tr><tr><td>내부 도우미 함수</td><td>소스에 <code>static</code></td><td>약속이 아니다. 이름도 밖으로 새지 않는다(60장)</td></tr><tr><td>구조체의 <strong>속</strong></td><td>되도록 소스</td><td>멤버를 드러내면 배치가 계약이 된다 — 그때부터 못 바꾼다</td></tr><tr><td>전역 변수</td><td>되도록 두지 않는다</td><td>바뀌는 자리가 어디인지 아무도 모르게 된다(62장)</td></tr><tr><td><code>static</code> 함수의 정의</td><td>헤더에 두지 않는다</td><td>포함하는 파일마다 사본이 생긴다 — 예외는 아래</td></tr></table></div><span id="doc-float-581"></span><p class="float-caption">표 118.2 — 헤더에 둘 것과 두지 않을 것</p></figure><p>★ 마지막 줄에는 널리 쓰이는 예외가 하나 있다. 아주 짧은 함수를 헤더에 두고 싶을 때 <code>static inline</code> 으로 적는 관행이다(C99 부터). 사본이 생기는 것은 같지만 컴파일러가 대개 펼쳐 넣고, 쓰이지 않아도 경고가 나지 않는다. 그래도 <strong>그 함수의 몸이 헤더에 드러난다</strong>는 사실은 남으므로, 고칠 여지가 있는 것은 여전히 소스에 둔다.</p><p>★ 세 번째 줄(구조체의 속)은 규모가 커질수록 어겼을 때의 비용이 가장 크다. 헤더에 <code>struct</code> 의 멤버를 적어 두면 그 배치가 공개 약속이 되어, 멤버 하나를 늘리는 일이 <strong>부르는 쪽 전부를 다시 만드는 일</strong>이 된다. 그래서 큰 프로젝트는 자주 이름만 내놓고 속은 감춘다.</p><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> 헤더: 이름만 있고 속이 없다 </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">typedef</span></strong> <strong><span class="tok-t">struct</span></strong> config <strong><span class="tok-t">config</span></strong><span class="tok-x">;</span>
+config <strong><span class="tok-x">*</span></strong><strong>config_open</strong><span class="tok-x">(</span><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>path<span class="tok-x">)</span><span class="tok-x">;</span>
+<strong><span class="tok-t">int</span></strong>     <strong>config_get_int</strong><span class="tok-x">(</span><strong><span class="tok-k">const</span></strong> config <strong><span class="tok-x">*</span></strong>c<span class="tok-x">,</span> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>key<span class="tok-x">,</span> <strong><span class="tok-t">int</span></strong> fallback<span class="tok-x">)</span><span class="tok-x">;</span>
+<strong><span class="tok-t">void</span></strong>    <strong>config_close</strong><span class="tok-x">(</span>config <strong><span class="tok-x">*</span></strong><span class="tok-x">)</span><span class="tok-x">;</span></code></pre><p>부르는 쪽은 <code>config</code> 가 몇 바이트인지 모른다. 그래서 <strong>알 필요도 없고, 바뀌어도 안 깨진다.</strong> 대가는 값으로 못 쓰고 포인터로만 다뤄야 한다는 것이다.</p><h3 id="s118-3">118.3 공개와 내부의 경계<a class="plink" href="#s118-3" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>프로젝트가 커지면 헤더도 두 갈래가 된다 — 밖에 내놓는 것과 안에서만 쓰는 것이다. 이 경계를 파일 배치로 못박은 대표 사례가 리눅스 커널이다. 커널은 사용자 공간에 나가는 선언을 <code>include/uapi/</code> 로 갈라내고, 안쪽 헤더가 그것을 포함하는 구조로 바꾸었다. 갈라낸 까닭은 두 가지로 알려져 있다 — 헤더끼리의 얽힘을 줄이는 것, 그리고 <strong>무엇이 공개 약속인지 눈으로 분명해지는 것</strong>이다.</p><div class="dev realcase"><p class="dev-label">실제 사례. 경계가 없으면 무슨 일이 생기나</p><div class="dev-body"><p>경계를 적어 두지 않아도 프로그램은 돈다. 문제는 시간이 지난 뒤다.</p><p>누군가 내부용 헤더를 포함해 내부 함수를 부르기 시작한다. 그 함수는 계약이 아니라 사정이었으므로 이름과 인자가 바뀔 수 있는 물건인데, 이제 <strong>쓰는 사람이 생겼다.</strong> 다음번에 그것을 고치려는 사람은 「이건 내부니까」라고 말할 근거가 없다 — 어디에도 적혀 있지 않기 때문이다.</p><p>그래서 경계는 <strong>디렉터리로</strong> 긋는 편이 낫다. 주석으로 「내부용」이라 적는 것보다 <code>include/</code> 와 <code>src/</code> 로 갈라 두는 편이 훨씬 강하다. 사람은 주석을 안 읽지만 경로는 눈에 들어오고, 빌드 규칙으로 강제할 수도 있다.</p></div></div><h3 id="s118-4">118.4 폴더 구조 — 관행은 무엇을 위한 것인가<a class="plink" href="#s118-4" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>프로젝트마다 이름은 조금씩 다르지만 갈래는 대개 같다. 외울 목록이 아니라 <strong>각각이 무엇을 위한 것인지</strong>를 보는 것이 요점이다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>자리</strong></th><th><strong>무엇이 있나</strong></th><th><strong>왜 갈라 두나</strong></th></tr><tr><td><code>include/</code></td><td>공개 헤더</td><td>여기 있는 것이 곧 약속이다 — 경계가 경로로 보인다</td></tr><tr><td><code>src/</code></td><td>소스와 내부 헤더</td><td>사정은 사정끼리</td></tr><tr><td><code>tests/</code></td><td>시험과 그 자료</td><td>본체와 섞이지 않아야 배포할 때 골라내기 쉽다</td></tr><tr><td><code>build/</code></td><td>산출물</td><td>★ <strong>소스와 섞지 않는다.</strong> 통째로 지울 수 있어야 하고, 버전 관리에서 빼기 쉬워야 한다</td></tr><tr><td><code>docs/</code></td><td>문서</td><td>코드와 함께 버전이 매겨져야 뜻이 있다</td></tr><tr><td><code>scripts/</code></td><td>기계가 하는 일</td><td>사람의 기억에 기대던 절차를 파일로 굳힌 자리</td></tr></table></div><span id="doc-float-582"></span><p class="float-caption">표 118.3 — 흔한 폴더 갈래와 그 이유</p></figure><p>★ <code>build/</code> 를 따로 두는 것이 생각보다 크게 남는 장사다. 산출물이 소스 옆에 흩어져 있으면 「지금 이 <code>.o</code> 가 어느 설정으로 만들어진 것인가」를 아무도 모르고, 설정을 바꿔 가며 빌드할 수도 없다. 자리를 나누면 <code>build/debug</code> 와 <code>build/release</code> 가 나란히 살 수 있다.</p><h3 id="s118-5">118.5 시험의 갈래 — 각각 무엇을 잡는가<a class="plink" href="#s118-5" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><span id="idx-entry-332"></span><p>「시험을 짠다」는 한 가지 일이 아니다. 갈래마다 <strong>잡는 사고가 다르다.</strong></p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>갈래</strong></th><th><strong>무엇을 잡나</strong></th><th><strong>얻는 것과 대가</strong></th></tr><tr><td>단위 시험</td><td>함수 하나의 계약 위반 — 경계값, 실패 경로</td><td>빠르고 자주 돈다. 그러나 <strong>부품이 맞물리는 자리</strong>는 못 본다</td></tr><tr><td>통합 시험</td><td>부품을 이었을 때 생기는 어긋남</td><td>진짜에 가깝다. 느리고, 깨졌을 때 원인 찾기가 어렵다</td></tr><tr><td>「회귀(regression)」·골든</td><td>「예전에는 이렇게 나왔다」가 달라진 것 — 고쳤던 결함이 되돌아온 것을 회귀라 한다</td><td>고치려던 것 말고 <strong>딴 것이 바뀐 것</strong>을 잡는다</td></tr><tr><td>퍼즈</td><td>사람이 생각 못 한 입력 — 넘침, 널, 깨진 형식</td><td>사람의 상상력 밖을 훑는다. 새니타이저와 함께 써야 뜻이 산다</td></tr></table></div><span id="doc-float-583"></span><p class="float-caption">표 118.4 — 시험의 갈래와 각각이 잡는 것</p></figure><p>이 책이 이미 그중 둘을 보였다. 18장의 새니타이저는 퍼즈와 짝이고, 108장에서 본 「실패하는 껍데기」는 단위 시험이 <strong>잘 안 도는 경로</strong>를 일부러 밟게 하는 기법이다.</p><h3 id="s118-6">118.6 골든 시험 — 정답을 파일로 굳힌다<a class="plink" href="#s118-6" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>갈래 가운데 규모가 커질수록 가장 크게 보답하는 것이 골든이다. 출력이 있는 프로그램이라면 거의 공짜로 세울 수 있기 때문이다. 입력을 파일로 두고, <strong>지금 옳다고 확인한 출력</strong>을 정답 파일로 굳혀 두고, 다음부터는 기계가 <code>diff</code> 로 견준다.</p><p>PostgreSQL 이 이 방식을 크게 쓴다. <code>src/test/regress/</code> 아래에 입력을 담은 <code>sql/</code>, 정답을 담은 <code>expected/</code>, 이번 결과가 쌓이는 <code>results/</code> 를 두고, 어긋난 것을 <code>regression.diffs</code> 에 남긴다. 견주는 도구는 특별한 것이 아니라 그냥 <code>diff</code> 다.</p><p>같은 것을 열 몇 줄로 세울 수 있다.</p><div class="demo demo-src"><p class="demo-head"><code>examples/build-test/golden/run.sh</code></p><div class="demo-body"><pre><code data-lang="c">#<strong><span class="tok-x">!</span></strong><strong><span class="tok-x">/</span></strong>bin<strong><span class="tok-x">/</span></strong>sh
+# 골든 시험 <strong><span class="tok-x">--</span></strong><strong><span class="tok-x">-</span></strong> 정답을 파일로 굳혀 두고 기계가 견준다<span class="tok-x">.</span>
+#   in<strong><span class="tok-x">/</span></strong>X<span class="tok-x">.</span>txt 를 먹여 나온 것을 expected<strong><span class="tok-x">/</span></strong>X<span class="tok-x">.</span>txt 와 diff 로 맞대어 본다<span class="tok-x">.</span>
+#   <strong><span class="tok-x">--</span></strong>accept 를 주면 지금 결과를 정답으로 <strong>굳힌다</strong><strong><span class="tok-x">(</span></strong><strong>처음 한 번</strong><strong><span class="tok-x">,</span></strong><strong> 그리고 </strong><strong><span class="tok-x">*</span></strong><strong>의도한</strong><strong><span class="tok-x">*</span></strong><strong> 변경 뒤</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">.</span>
+set <strong><span class="tok-x">-</span></strong>eu
+cd <span class="tok-s">"</span><span class="tok-s">$(dirname </span><span class="tok-s">"</span>$<span class="tok-n">0</span><span class="tok-s">"</span><span class="tok-s">)</span><span class="tok-s">"</span>
+cc <strong><span class="tok-x">-</span></strong>std<strong><span class="tok-x">=</span></strong>c23 <strong><span class="tok-x">-</span></strong>Wall <strong><span class="tok-x">-</span></strong>Wextra <strong><span class="tok-x">-</span></strong>o wordcount wordcount<span class="tok-x">.</span>c
+mkdir <strong><span class="tok-x">-</span></strong>p results
+fail<strong><span class="tok-x">=</span></strong><span class="tok-n">0</span> n<strong><span class="tok-x">=</span></strong><span class="tok-n">0</span>
+<strong><span class="tok-k">for</span></strong> input in in<em><span class="tok-c">/*</span></em><em><span class="tok-c">.txt; do</span></em>
+<em><span class="tok-c">    name=$(basename "$input" .txt)</span></em>
+<em><span class="tok-c">    ./wordcount &lt; "$input" > "results/$name.txt"</span></em>
+<em><span class="tok-c">    n=$((n + 1))</span></em>
+<em><span class="tok-c">    if [ "${1:-}" = "--accept" ]; then</span></em>
+<em><span class="tok-c">        cp "results/$name.txt" "expected/$name.txt"</span></em>
+<em><span class="tok-c">        continue</span></em>
+<em><span class="tok-c">    fi</span></em>
+<em><span class="tok-c">    if ! diff -u "expected/$name.txt" "results/$name.txt" > "results/$name.diff"; then</span></em>
+<em><span class="tok-c">        printf '  ✗ %s\n' "$name"</span></em>
+<em><span class="tok-c">        sed -n '3,6p' "results/$name.diff" | sed 's/^/      /'</span></em>
+<em><span class="tok-c">        fail=$((fail + 1))</span></em>
+<em><span class="tok-c">    else</span></em>
+<em><span class="tok-c">        printf '  ✓ %s\n' "$name"</span></em>
+<em><span class="tok-c">        rm -f "results/$name.diff"</span></em>
+<em><span class="tok-c">    fi</span></em>
+<em><span class="tok-c">done</span></em>
+<em><span class="tok-c">[ "${1:-}" = "--accept" ] &amp;&amp; { printf '정답 %d 개를 굳혔다\n' "$n"; exit 0; }</span></em>
+<em><span class="tok-c">[ "$fail" -eq 0 ] &amp;&amp; printf '골든 %d 개 통과\n' "$n" || { printf '어긋남 %d 개\n' "$fail"; exit 1; }</span></em>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>  ✓ empty
+  ✓ spaces
+  ✓ two-lines
+골든 3 개 통과
+</code></pre></div></div><p>이렇게 굳혀 둔 입력과 정답을 <strong>픽스처</strong>라 부른다 — 시험이 딛고 서는 준비물이다. 그 성질과 함정은 119장에서 따로 본다.</p><p>세 가지를 눈여겨본다.</p><ol><li><strong>정답은 손으로 적지 않는다.</strong> <code>--accept</code> 로 지금 결과를 굳힌다. 손으로 적으면 틀리고, 틀린 정답은 시험을 <strong>거꾸로</strong> 만든다.</li><li><strong>실패는 어긋난 줄만 보여 준다.</strong> <code>diff</code> 가 그 일을 이미 한다.</li><li>그래서 이 시험은 「무엇이 옳은가」를 모르는 채로도 쓸모가 있다 — <strong>어제와 달라졌는가</strong>를 묻기 때문이다.</li></ol><div class="dev antipattern"><p class="dev-label">반례.<span style="white-space: pre-wrap">&#x20;&#x20;</span>정답을 눈으로 보지 않고 굳히기</p><div class="dev-body"><p><code>--accept</code> 는 편해서 위험하다. 시험이 깨졌을 때 원인을 보지 않고 다시 굳혀 버리면, <strong>버그를 정답으로 만든 것</strong>이다. 그때부터 그 시험은 아무것도 지키지 않는다.</p><p>규율은 하나다 — <code>--accept</code> 는 <strong>어긋난 곳을 읽고 「이 변경은 의도한 것」이라고 말할 수 있을 때만</strong> 누른다. 이 책의 예제 검증도 같은 규율로 돈다.</p></div></div><h3 id="s118-7">118.7 얼마나, 그리고 무엇을 시험하지 않는가<a class="plink" href="#s118-7" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>「얼마나 시험해야 하는가」에 답이 있는가. 상한을 보여 주는 사례가 하나 있다.</p><p>SQLite 는 자기 시험 문서에서 수를 밝힌다<sup class="fnref" id="ch118-fnref-1"><a href="#ch118-fn-1" aria-label="주 1">1</a></sup> — <strong>3.42.0(2023년 5월) 기준</strong>으로 라이브러리 본체가 약 155.8 KSLOC 인데 시험 코드와 스크립트는 92,053.1 KSLOC, 곧 <strong>본체의 590배</strong> 라고 적는다. 시험을 돌리는 틀 — 하네스 — 도 하나가 아니라 넷이고(TCL 시험, TH3, SQL Logic Test, 그리고 <code>dbsqlfuzz</code>), <strong>기본 구성의 핵심 부분</strong>에 대해 TH3 아래에서 분기 덮개율 100% 를 유지한다고 밝힌다 — 「라이브러리 전체가 언제나」가 아니라는 단서가 원문에 붙어 있다.</p><p>★ 여기서 배울 것은 「590배를 따라 하라」가 아니다. 두 가지다.</p><ol><li><strong>틀을 여럿 두는 까닭</strong> — 한 방식이 눈감는 자리를 다른 방식이 본다. 같은 생각으로 짠 시험 백 개보다 다르게 짠 시험 열 개가 낫다.</li><li><strong>시험의 양은 목적이 아니라 결과다</strong> — SQLite 가 그만큼 시험하는 것은 그것이 「어디서나 도는 데이터베이스」를 표방하기 때문이다. 목표가 다르면 답도 다르다.</li></ol><p>그리고 반대편 물음이 더 중요하다.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 시험은 많을수록 좋은가?</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> 아니다. <strong>시험도 코드이고, 코드는 부채다.</strong> 시험 하나를 늘리면 앞으로 그것을 고치는 일도 함께 늘어난다. 그래서 제 몫을 못 하는 시험은 짐이다.</p><p>그런 시험들의 얼굴은 대개 비슷하다. <strong>구현을 그대로 베낀 시험</strong>(함수가 하는 일을 그대로 다시 적어 놓아, 구현을 고치면 반드시 함께 깨진다), <strong>언어를 시험하는 시험</strong>(<code>1 + 1</code> 이 2 인지 확인한다), <strong>깨졌을 때 무엇이 잘못됐는지 알려 주지 않는 시험</strong>(오백 줄짜리 통합 시험 하나).</p><p>쓸 만한 것을 고르는 기준은 하나로 줄일 수 있다 — <strong>깨졌을 때 내가 무엇을 고쳐야 하는지 알려 주는가.</strong></p></p></div></div><h3 id="s118-8">118.8 협업 — 기계가 막는 것과 사람이 보는 것<a class="plink" href="#s118-8" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>여럿이 일하기 시작하면 물음이 하나 늘어난다. <strong>어긋난 것을 누가 막는가.</strong></p><p>답은 둘로 나뉜다. <strong>기계가 막는 것(게이트)</strong> 과 <strong>사람이 보는 것(리뷰)</strong> 이다. 이 둘을 섞으면 양쪽 다 나빠진다 — 기계가 셀 수 있는 것을 사람에게 시키면 사람이 지치고, 사람이 판단할 것을 기계에 맡기면 규칙이 엉뚱한 것을 막는다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>기계가 막는다</strong></th><th><strong>사람이 본다</strong></th></tr><tr><td>빌드가 되는가 · 시험이 도는가</td><td>이 설계가 옳은 방향인가</td></tr><tr><td>서식·이름 규칙</td><td>이름이 <strong>뜻에 맞는가</strong></td></tr><tr><td>새니타이저·정적 분석이 조용한가</td><td>이 계약이 부르는 쪽에 자연스러운가</td></tr><tr><td>문서에 적힌 수가 실제와 같은가</td><td>이 설명이 읽는 사람에게 통하는가</td></tr></table></div><span id="doc-float-584"></span><p class="float-caption">표 118.5 — 기계에 맡길 것과 사람이 볼 것</p></figure><div class="dev realcase"><p class="dev-label">실제 사례. 이 책이 그렇게 돌고 있다</p><div class="dev-body"><p>이 책의 저장소에는 그 게이트가 스물아홉 개 있다(<code>scripts/check-*.py</code>). 몇 가지만 들면 이렇다 — 두 판(한국어·영어)이 같은 장을 가리키는지, 표준 조항 인용이 실재하는 조항인지(문단 번호까지), 「이 부의 마지막 장이다」가 정말 마지막인지, 약어가 장마다 처음 나올 때 풀리는지.</p><p>★ 이것들은 전부 <strong>사람이 눈으로는 못 지키는</strong> 것들이다. 실제로 한 장을 끼워 넣을 때마다 번호를 가리키던 서술 여럿이 조용히 낡았고, 그때마다 사람이 아니라 검사기가 찾아냈다. 게이트의 가치는 「엄격함」이 아니라 <strong>사람의 주의력을 아껴 주는 것</strong>에 있다.</p><p>그리고 게이트에는 대가가 있다. 거짓 양성이 잦은 검사는 사람을 무시하게 만들고, 그러면 진짜를 놓친다. 이 저장소도 그래서 검사 하나를 만들었다가 싣지 않았다 — 원고에 대고 돌려 보니 잡은 스물넷이 <strong>전부</strong> 거짓 양성이었다. 헛짚는 게이트는 없느니만 못하다.</p></div></div><h3 id="s118-9">118.9 적어 두어야 하는 것<a class="plink" href="#s118-9" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>마지막으로, 남이 들어올 자리를 만드는 일이다. 문서는 많을수록 좋은 것이 아니라 <strong>각각이 다른 물음에 답할 때</strong> 쓸모가 있다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>문서</strong></th><th><strong>답하는 물음</strong></th></tr><tr><td>README</td><td>이것은 무엇이고, 어떻게 만들고, 어떻게 쓰는가</td></tr><tr><td>기여 안내</td><td>무엇을 지켜야 내 변경이 받아들여지는가 — 게이트 목록이 여기 온다</td></tr><tr><td>변경 기록</td><td>지난 판에서 무엇이 달라졌는가 — 특히 <strong>깨지는 변경</strong></td></tr><tr><td>설계 기록</td><td>왜 그렇게 정했는가. 코드는 「무엇」을 말하지만 「왜」는 못 말한다</td></tr></table></div><span id="doc-float-585"></span><p class="float-caption">표 118.6 — 무엇이 어떤 물음에 답하는가</p></figure><p>★ 마지막 줄이 가장 자주 빠지고 가장 비싸다. 몇 달 뒤 그 결정을 되돌리려는 사람은 <strong>무엇을 견주어 그렇게 정했는지</strong> 모르므로, 이미 검토하고 버린 길을 다시 걷는다.</p><div class="dev recap"><p class="dev-label">복습 정리</p><div class="dev-body"><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>기억할 것</strong></th><th><strong>요지</strong></th></tr><tr><td>빌드가 하는 일</td><td>증분·의존·재현. 없으면 사람이 「다시 만들기」를 건너뛴다</td></tr><tr><td>낡은 산출물</td><td>의존을 안 적으면 한쪽만 다시 만들어져 <strong>버퍼가 넘친다</strong></td></tr><tr><td>고치는 법</td><td>사람이 적지 않는다 — <code>-MMD -MP</code> 로 컴파일러가 받아 적게</td></tr><tr><td>파일 나누기</td><td>함께 바뀌는 것끼리. 헤더는 계약, 소스는 사정</td></tr><tr><td>구조체의 속</td><td>헤더에 드러내면 배치가 계약이 된다 — 되도록 감춘다</td></tr><tr><td>폴더</td><td>경계를 경로로 긋는다. 산출물은 <code>build/</code> 로 갈라 둔다</td></tr><tr><td>시험의 갈래</td><td>단위·통합·골든·퍼즈가 <strong>각각 다른 사고</strong>를 잡는다</td></tr><tr><td>골든</td><td>정답을 굳히고 <code>diff</code> 로 견준다. 어긋난 곳을 <strong>읽고</strong> 다시 굳힌다</td></tr><tr><td>얼마나</td><td>양이 아니라 <strong>독립성</strong>. 그리고 제 몫을 못 하는 시험은 부채다</td></tr><tr><td>협업</td><td>기계가 셀 수 있는 것은 게이트로, 판단할 것은 리뷰로</td></tr></table></div><span id="doc-float-586"></span><p class="float-caption">표 118.7 — 빌드와 시험 — 기억할 것</p></figure></div></div><p>여기까지가 <strong>무엇을 어디에 둘 것인가</strong>다. 다음 장은 그 위에서 <strong>어떻게 일할 것인가</strong>를 본다 — 여럿이 굴릴 때 쓰는 어휘와 절차, 그리고 검사가 정말 무는지 확인하는 법이다.</p><section class="chapter-notes" role="doc-endnotes"><h2>주</h2><ol><li id="ch118-fn-1">SQLite. How SQLite Is Tested. <a href="https://www.sqlite.org/testing.html"><code>sqlite.org/testing.html</code></a> — 수치는 그 문서의 3.42.0 기준 절이다. <a class="fnback" href="#ch118-fnref-1" aria-label="본문으로 돌아가기" title="본문으로 돌아가기">&#8617;</a></li></ol></section>
+<div class="nav"><a href="ch117.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch119.html">다음 →</a></div>
+</div></main>
+<script>(function(){var b=document.querySelector('.menu-btn'),p=document.getElementById('here-panel');function open(o){if(!p)return;p.hidden=!o;if(b)b.setAttribute('aria-expanded',o);}if(b)b.addEventListener('click',function(){open(p.hidden);});if(p)p.addEventListener('click',function(e){if(e.target.tagName==='A'&&e.target.getAttribute('href').charAt(0)==='#')open(false);});document.addEventListener('keydown',function(e){if(e.key==='Escape'&&p&&!p.hidden){open(false);if(b)b.focus();}});document.addEventListener('click',function(e){if(p&&!p.hidden&&!p.contains(e.target)&&!(b&&b.contains(e.target)))open(false);});var bk=document.querySelector('.bar .back');if(bk)bk.addEventListener('click',function(e){if(history.length>1&&document.referrer){e.preventDefault();history.back();}});var box=document.getElementById('setbox');if(!box)return;var r=document.documentElement;function load(){try{return JSON.parse(localStorage.getItem('doc-read')||'{}');}catch(e){return {};}}function save(s){try{localStorage.setItem('doc-read',JSON.stringify(s));}catch(e){}}function css(n){return getComputedStyle(r).getPropertyValue(n).trim();}function paint(){var s=load();var t=s.theme||'auto',w=s.width==='fit'?'fit':'960';[].forEach.call(box.querySelectorAll('.segb[data-theme]'),function(x){x.setAttribute('aria-pressed',x.dataset.theme===t);});[].forEach.call(box.querySelectorAll('.segb[data-width]'),function(x){x.setAttribute('aria-pressed',x.dataset.width===w);});var ly=s.layout||'auto';[].forEach.call(box.querySelectorAll('.segb[data-layout]'),function(x){x.setAttribute('aria-pressed',x.dataset.layout===ly);});document.getElementById('s-fg').value=s.fg||hex(css('--fg'));document.getElementById('s-bg').value=s.bg||hex(css('--bg'));document.getElementById('s-link').value=s.link||hex(css('--link'));}function hex(v){var m=v.match(/^rgba?\((\d+)[ ,]+(\d+)[ ,]+(\d+)/);if(!m)return v.charAt(0)==='#'?v:'#000000';return '#'+[1,2,3].map(function(i){return ('0'+parseInt(m[i],10).toString(16)).slice(-2);}).join('');}paint();[].forEach.call(box.querySelectorAll('.segb[data-width]'),function(x){x.addEventListener('click',function(){var s=load();if(x.dataset.width==='fit'){s.width='fit';r.setAttribute('data-measure','fit');}else{delete s.width;r.removeAttribute('data-measure');}save(s);setTimeout(paint,0);});});[].forEach.call(box.querySelectorAll('.segb[data-layout]'),function(x){x.addEventListener('click',function(){var s=load(),v=x.dataset.layout;if(v==='auto'){delete s.layout;r.removeAttribute('data-layout');}else{s.layout=v;r.setAttribute('data-layout',v);}save(s);var m=document.querySelector('meta[name=viewport]');var want=v==='desktop'?'width=1100':'width=device-width, initial-scale=1';if(m&&m.getAttribute('content')!==want)location.reload();else setTimeout(paint,0);});});[].forEach.call(box.querySelectorAll('.segb[data-theme]'),function(x){x.addEventListener('click',function(){var s=load();s.theme=x.dataset.theme;delete s.fg;delete s.bg;delete s.link;save(s);['--fg','--bg','--link'].forEach(function(n){r.style.removeProperty(n);});if(s.theme==='auto')r.removeAttribute('data-theme');else r.setAttribute('data-theme',s.theme);setTimeout(paint,0);});});[['s-fg','--fg','fg'],['s-bg','--bg','bg'],['s-link','--link','link']].forEach(function(a){document.getElementById(a[0]).addEventListener('input',function(){var s=load();s[a[2]]=this.value;save(s);r.style.setProperty(a[1],this.value);});});})();</script><script>
+(function(){
+  var q=document.getElementById('q'), out=document.getElementById('qr');
+  if(!q||!out) return;
+  var data=null, NONE="\ucc3e\uc740 \uac83\uc774 \uc5c6\ub2e4";
+  function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+  function run(){
+    var v=q.value.trim().toLowerCase();
+    out.innerHTML='';
+    if(!v||!data) return;
+    var hits=[];
+    for(var i=0;i<data.length && hits.length<40;i++){
+      if(data[i][0].toLowerCase().indexOf(v)>=0) hits.push(data[i]);
+    }
+    if(!hits.length){ out.innerHTML='<li>'+NONE+'</li>'; return; }
+    out.innerHTML=hits.map(function(h){
+      return '<li><a href="'+h[1]+'">'+esc(h[0])+'</a>'+
+             (h[2]?'<span class="where">'+esc(h[2])+'</span>':'')+'</li>';
+    }).join('');
+  }
+  q.addEventListener('input',function(){
+    if(data){ run(); return; }
+    fetch('search-index.json').then(function(r){return r.json();})
+      .then(function(j){ data=j; run(); })
+      .catch(function(){ out.innerHTML='<li>'+NONE+'</li>'; });
+  });
+})();
+</script></body></html>

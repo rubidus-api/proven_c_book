@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3 워드와 주소 — C의 원형 — Proven C Book</title><style>@font-face { font-family:"Doc Serif"; src:url("../fonts/serif.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-italic.woff2") format("woff2");
+  font-weight:400; font-style:italic; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-kr.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-kr-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans-kr.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans-kr-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Mono"; src:url("../fonts/mono.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Mono"; src:url("../fonts/mono-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+:root { color-scheme: light dark; --bg:#fafaf8; --bg2:#f2f2f0; --bg3:#e6e6e3; --fg:#141414; --muted:#555555; --line:#c9c9c9; --line-strong:#8a8a8a; --accent:#1a4f8a; --accent-fg:#ffffff; --accent2:#96530f; --honey:#f2b04a; --honey-fg:#2b1d00; --honey-text:#855400; --honey-soft:#fbebc6; --danger:#9b1b30; --ok:#1d6e37; --warn:#855400; --select:#d4dde8;
+  --rule:var(--line); --box-bg:var(--bg2); --code-bg:var(--bg2); --box-rule:var(--line); --link:var(--accent);
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg:#121314; --bg2:#1c1e20; --bg3:#2a2c2f; --fg:#e8e8e8; --muted:#a6a6a6; --line:#3a3d40; --line-strong:#75787c; --accent:#8ab4e8; --accent-fg:#121314; --accent2:#d4883b; --honey:#f2b04a; --honey-fg:#121314; --honey-text:#f2b04a; --honey-soft:#3b311e; --danger:#f07a8c; --ok:#7bcb95; --warn:#f2b04a; --select:#2f3d52;
+    --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+:root[data-theme="dark"] { color-scheme: dark; --bg:#121314; --bg2:#1c1e20; --bg3:#2a2c2f; --fg:#e8e8e8; --muted:#a6a6a6; --line:#3a3d40; --line-strong:#75787c; --accent:#8ab4e8; --accent-fg:#121314; --accent2:#d4883b; --honey:#f2b04a; --honey-fg:#121314; --honey-text:#f2b04a; --honey-soft:#3b311e; --danger:#f07a8c; --ok:#7bcb95; --warn:#f2b04a; --select:#2f3d52;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; }
+:root[data-theme="light"] { color-scheme: light; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Doc Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.here-head { display:flex; align-items:center; gap:.8rem; padding:.2rem 0 .5rem;
+  border-bottom:1px solid var(--rule,#ddd); margin-bottom:.5rem; }
+.here-head .sp { flex:1; }
+.here-all { margin-left:auto; font-size:.9rem; }
+.here-x { font:inherit; font-size:.9rem; cursor:pointer; background:none;
+  border:1px solid var(--line-strong); padding:.05rem .45rem;
+  color:inherit; }
+.here-body a, .tf-secs a { display:block; text-decoration:none; padding:.12rem 0;
+  line-height:1.45; }
+.here-body a:hover, .tf-secs a:hover { text-decoration:underline; }
+.here-body a.lv4, .tf-secs a.lv4 { padding-left:1.6rem; font-size:.94rem;
+  color:var(--muted,#555); }
+.tf-no { display:inline-block; min-width:3.2rem; color:var(--muted,#666);
+  font-variant-numeric:tabular-nums; }
+.toc-full .tf-ch { margin:.9rem 0 .15rem; font-weight:700; }
+.toc-full .tf-secs { margin:0 0 .5rem .2rem; border-left:2px solid var(--rule,#e2e2e2);
+  padding-left:.7rem; }
+.toc-full h4.toc-part { margin-top:1.8rem; }
+.toc a.toc-detail { font-weight:700; }
+@media print { .here-btn, .here-panel { display:none; } }
+.bar { position:sticky; top:0; z-index:20; display:flex; flex-wrap:nowrap; gap:.25rem; align-items:center;
+       min-height:44px; padding:0 clamp(.4rem,2vw,1.6rem); background:var(--bg2);
+       border-bottom:1px solid var(--line); font-size:.9rem;
+       font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--fg); text-decoration:none; } .bar a:hover { text-decoration:none; }
+.bar .sp { display:none; }
+main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
+.wrap { width:100%; }
+main .wrap { max-width:960px; margin-inline:auto; }
+:root[data-measure="fit"] main .wrap { max-width:none; margin:0; }
+h1,h2,h3,h4 { font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35;
+  padding-bottom:.18rem; border-bottom:1px solid var(--rule); }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem;
+     padding-bottom:.22rem; border-bottom:1.5px solid var(--fg); }
+p { margin:.9rem 0; } a { color:var(--link); }
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+.src-note { font-size: .86em; color: var(--muted, #666); }
+.src-note code { font-size: .95em; }
+sup.fnref { font-size: .72em; line-height: 0; vertical-align: super; }
+sup.fnref a { text-decoration: none; padding: 0 .1em; }
+sup.fnref a::before { content: "["; }
+sup.fnref a::after  { content: "]"; }
+.chapter-notes { margin: 3rem 0 1rem; padding-top: .9rem;
+                 border-top: 2px solid var(--rule, #333); }
+.chapter-notes h2 { font-size: 1.05rem; margin: 0 0 .6rem; }
+.chapter-notes ol { margin: 0; padding-left: 1.6em; }
+.chapter-notes li { font-size: .92em; margin: .35em 0; text-indent: 0; }
+.chapter-notes a.fnback { text-decoration: none; }
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
+pre,code,kbd { font-family:"Doc Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
+pre code { background:none; padding:0; }
+.tblwrap { overflow-x:auto; text-align:center; }
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.float-list { list-style:none; padding-left:0; }
+.float-list li { margin:.12rem 0; }
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"Doc Mono","D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"Doc Mono","D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"Doc Mono","D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+.dev { margin:1.15rem 0; padding:0; background:none; border:none; border-radius:0; }
+.dev > .dev-label { border-left:4px solid var(--fg);
+  padding:.1rem .8rem .25rem .8rem; margin:0 0 .34rem; }
+.dev > .dev-body { border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem .35rem .8rem; margin:0; }
+.dev > .dev-body > *:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child { margin-bottom:0; }
+.float-caption { text-align:center; font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+.dev.open { border:none; border-radius:0; background:none;
+  padding:0; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
+  text-indent:0; border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+.dev.open > .open-body { margin:0; padding:.35rem .8rem;
+  border-left:2px solid var(--box-rule); }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+.dev.open .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.06rem 0 .06rem .7rem; margin:.32rem 0 0; }
+.prereq .dev-label, .deepqa .dev-label, .why .dev-label,
+.organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+.qa-box { border:none; margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:0; background:none; }
+.qa-box .qa-q { border-left:4px solid var(--fg);
+  padding:.1rem .8rem .25rem .8rem; margin:0; }
+.qa-box .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem; margin:.34rem 0 0; }
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:0; }
+.dev.recap { border:none; background:none; padding:0; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
+  text-indent:0; border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > .dev-body > p, .dev.recap > .dev-body > div:not(.demo),
+.dev.recap > .dev-body > figure { margin:.3rem 0; padding:0; }
+.dev > .dev-body > .demo { margin:.7rem 0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:none; border-radius:0; background:none; padding:0; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem; text-indent:0;
+  border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
+.dev > .dev-body > figure, .dev > .open-body > p {
+  margin:.35rem 0; padding:0; }
+.bar .menu-btn { flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center;
+  min-width:38px; min-height:38px; padding:0; font:inherit; font-size:1.25rem; line-height:1;
+  color:var(--fg); background:none; border:0; cursor:pointer; text-decoration:none; }
+.bar .back, .bar .bar-nav .nb { flex:0 0 auto; display:inline-flex; align-items:center; gap:.3em;
+  min-height:32px; padding:0 .65rem; border:1px solid var(--line); background:var(--bg);
+  color:var(--fg); font-weight:600; white-space:nowrap; text-decoration:none; }
+.bar .menu-btn[aria-expanded="true"] { background:var(--bg3); }
+.bar .place { flex:1 1 auto; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
+  padding:0 .35rem; }
+.bar .place strong a { color:var(--honey-text); }
+.bar .place .cur { color:var(--fg); }
+.bar .bar-nav { flex:0 0 auto; display:flex; gap:.3rem; align-items:center; white-space:nowrap; }
+.bar .bar-nav .off { color:var(--muted); border-color:var(--line); opacity:.45; }
+.bar .back:hover, .bar .menu-btn:hover, .bar .bar-nav a.nb:hover, .bar .place a:hover { background:var(--bg3); }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+.dev.antipattern > .dev-label { border-left-style:solid; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.2rem; }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em;
+            padding-bottom:0; border-bottom:none; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
+.toc { columns:24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.toc > .toc-part:first-child, .toc > .toc-keep:first-child > .toc-part, .toc-full > .toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
+.toc-group { padding-left:.85rem; }
+.toc-keep, .toc a { break-inside:avoid; }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+code.style-name { font-family:"Doc Mono","D2Coding",ui-monospace,monospace;
+  font-size:.72em; color:var(--muted); background:var(--rule);
+  padding:.05em .35em; border-radius:3px; white-space:nowrap;
+  font-weight:400; letter-spacing:0; }
+.dev.open > .dev-label { padding-top:.42rem; padding-bottom:.42rem; }
+.dev.open > .open-body { padding-top:.4rem; padding-bottom:.4rem; }
+.dev.open > .open-body > p { margin:.6rem 0; }
+.dev > .dev-body { padding-top:.5rem; padding-bottom:.5rem; }
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
+.dev > .dev-body > figure { margin:.55rem 0; }
+main { line-height:1.85; }
+p { margin:1.15rem 0; }
+h2 { margin-top:2.4rem; }
+h3 { margin-top:2rem; }
+li { margin:.3rem 0; }
+h1, h2, h3, h4 { border-bottom-color:var(--box-rule) !important; }
+.toc { line-height:1.45; }
+.toc a { padding:.16rem 0; }
+.toc-part { margin:.85rem 0 .2rem; }
+.metalist { line-height:1.45; gap:.2rem 1.2rem; }
+.metalist dt, .metalist dd { margin:0; }
+.demo { border-color:var(--box-rule); }
+.demo > .demo-head { border-bottom-color:var(--box-rule); }
+.dev > .dev-label,
+.dev.open > .dev-label,
+.qa-box .qa-q,
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  border-left-color:var(--box-rule); }
+.dev > .dev-body,
+.dev > .open-body,
+.dev.open .qa-a,
+.qa-box .qa-a,
+.deepqa .qa-a { border-left-color:var(--box-rule); }
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div {
+  border-color:var(--box-rule); }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+.dev.open > .open-body,
+.dev.open > .qa-a,
+.dev.open .qa-a,
+.dev.deepqa .qa-a,
+.qa-box > .qa-a,
+.qa-box > .qa-q { border-left-color:var(--box-rule); }
+.bar .bar-toc { font-size:1.15em; line-height:1; text-decoration:none; }
+.dev, .dev-body, .open-body, .qa-box, .qa-q, .qa-a, .dev-label,
+.toc-full, .toc-full .tf-secs { line-height:inherit; font-size:1rem; }
+.dev > .dev-body > p, .dev > .open-body > p,
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:1.15rem 0; }
+.dev > .dev-body > *:first-child, .dev > .open-body > *:first-child,
+.qa-box .qa-q > p:first-child, .qa-box .qa-a > p:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child, .dev > .open-body > *:last-child,
+.qa-box .qa-q > p:last-child, .qa-box .qa-a > p:last-child { margin-bottom:0; }
+.dev > .dev-label, .dev.open > .dev-label { font-size:.98rem; line-height:1.4; }
+h1,h2,h3,h4 { padding-bottom:.34rem; }
+h1 { margin:.2rem 0 1.3rem; }
+h2 { padding-bottom:.42rem; margin-bottom:1.15rem; }
+h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
+.dev.open > .open-body > * { margin:.3rem 0; }
+.dev.open > .open-body > p { margin:.5rem 0; }
+.dev.open > .open-body > div { margin:.15rem 0; }
+.dev.open ul, .dev.open ol { margin:.3rem 0; }
+.dev.open li, .dev.open ol.qlist li { margin:0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open .qa-a > p { margin:.35rem 0; }
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div { border-color:var(--box-rule); }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+a:focus-visible, button:focus-visible, summary:focus-visible, input:focus-visible {
+  outline:2px solid var(--accent2); outline-offset:2px; }
+:target, h1, h2, h3, h4, [id] { scroll-margin-top:4.2rem; }
+.skip { position:absolute; left:-9999px; top:0; z-index:30;
+        background:var(--bg); color:var(--fg); border:1px solid var(--fg);
+        padding:.5rem .8rem; font-size:.9rem; text-decoration:none; }
+.skip:focus { left:.5rem; top:.5rem; }
+.here-panel { position:fixed; top:46px; left:clamp(.2rem,1vw,1rem); z-index:19;
+  width:min(32rem, calc(100vw - .4rem)); max-height:calc(100vh - 54px); overflow:auto;
+  padding:.7rem .9rem .9rem; border:1px solid var(--line); --k:var(--line-strong);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-size:.9rem; line-height:1.4;
+  background:
+    linear-gradient(var(--k),var(--k)) left top / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) left top / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) right top / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) right top / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) left bottom / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) left bottom / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) right bottom / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) right bottom / 3px 8px no-repeat,
+    color-mix(in srgb, var(--bg) 97%, transparent); }
+.here-panel .tools { display:flex; flex-wrap:wrap; gap:.3rem .4rem; align-items:center;
+  margin-bottom:.6rem; }
+.tool, .segb { font:inherit; font-size:.88rem; color:var(--fg); background:none;
+  border:1px solid var(--line-strong); padding:0 .6rem; min-height:30px;
+  display:inline-flex; align-items:center; text-decoration:none; cursor:pointer; white-space:nowrap; }
+.tool:hover, .segb:hover, .nav a:hover, .here-panel .here-body a:hover { background:var(--bg3); }
+.segb[aria-pressed="true"] { background:var(--select); border-color:var(--accent); font-weight:700; }
+.tool, .segb, .bar a, .bar button, .nav a, .here-panel a { transition:background-color .08s; }
+@media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
+main a { text-decoration:underline; text-decoration-color:var(--box-rule);
+  text-underline-offset:2px; }
+main a:hover { background:var(--box-bg); text-decoration-color:var(--link); }
+main .toc a, main .toc-full a, main .here-body a { text-decoration:none; }
+main .toc a:hover, main .toc-full a:hover { background:var(--box-bg); text-decoration:underline; }
+.setbox { margin:0 0 .6rem; }
+.setrow { display:flex; flex-wrap:wrap; gap:.4rem .5rem; align-items:center; margin:.35rem 0; }
+.setlbl { min-width:4.2rem; font-size:.82rem; font-weight:700; }
+.seg { display:inline-flex; flex-wrap:wrap; gap:.25rem; }
+.col { display:inline-flex; align-items:center; gap:.3rem; }
+.col input[type=color] { width:2rem; height:1.4rem; padding:0; border:1px solid var(--line-strong);
+  background:none; cursor:pointer; }
+.setnote { margin:.5rem 0 0; font-size:.82rem; }
+.here-panel .ver { font-size:.82rem; color:var(--muted); padding:.2rem .45rem .2rem 0;
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; white-space:nowrap; }
+.demo pre, .demo pre code {
+  white-space:pre-wrap; overflow-wrap:anywhere; word-break:break-word; }
+.demo > .demo-body { overflow-x:visible; }
+.plink {
+  margin-left: .4em; font-weight: 400; text-decoration: none;
+  color: var(--muted, #888); opacity: 0;
+}
+h3:hover > .plink, h4:hover > .plink,
+h3 > .plink:focus, h4 > .plink:focus { opacity: 1; }
+@media (hover: none) { .plink { opacity: .45; } }
+.searchbox { margin:.6em 0 0; }
+.searchbox input[type=search] {
+  width: 100%; padding: .45em .6em; font: inherit;
+  border: 1px solid var(--line-strong);
+  background: var(--bg); color: var(--fg);
+}
+.search-hint { color: var(--muted, #777); font-size: .85em; margin:.3em 0 0; }
+.search-results { list-style: none; padding: 0; margin: .5em 0 0; }
+.search-results li { margin: .15em 0; }
+.search-results .where { color: var(--muted, #777); font-size: .85em; margin-left: .4em; }
+@media (max-width: 900px), (orientation: portrait) {
+  :root:not([data-layout="desktop"]) .bar .place .cur { display:none; }
+  :root:not([data-layout="desktop"]) .bar .back,
+  :root:not([data-layout="desktop"]) .bar .bar-nav .nb { min-height:40px; padding:0 .5rem; }
+}
+@media (max-width: 480px) {
+  :root:not([data-layout="desktop"]) .bar .bar-nav .prev .lbl,
+  :root:not([data-layout="desktop"]) .bar .bar-nav .next .lbl { display:none; }
+  :root:not([data-layout="desktop"]) .bar .bar-nav .nb { min-width:44px; justify-content:center; }
+  :root:not([data-layout="desktop"]) .bar { gap:.2rem; }
+}
+:root[data-layout="mobile"] .bar .place .cur { display:none; }
+:root[data-layout="mobile"] .bar .back, :root[data-layout="mobile"] .bar .bar-nav .nb { min-height:40px; padding:0 .5rem; }
+:root[data-layout="mobile"] main .wrap { max-width:34rem; }
+@media (pointer: coarse), (max-width: 900px) {
+  .bar .menu-btn { min-width:44px; min-height:44px; }
+  .tool, .segb { min-height:38px; }
+}
+@media print { .bar, .here-panel { display:none; } }
+
+body { font-family:"Doc Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Doc Sans","Noto Sans CJK KR","Noto Sans KR",system-ui,sans-serif; }
+pre,code,kbd { font-family:"Doc Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+</style>
+<script>(function(){try{var L=localStorage,o='pcb-read';if(o&&o!=='doc-read'&&L.getItem(o)!==null&&L.getItem('doc-read')===null){var v=JSON.parse(L.getItem(o)||'{}');delete v.width;L.setItem('doc-read',JSON.stringify(v));L.removeItem(o);}var s=JSON.parse(L.getItem('doc-read')||'{}');var r=document.documentElement;if(s.theme&&s.theme!=='auto')r.setAttribute('data-theme',s.theme);if(s.fg)r.style.setProperty('--fg',s.fg);if(s.bg)r.style.setProperty('--bg',s.bg);if(s.link)r.style.setProperty('--link',s.link);if(s.width==='fit')r.setAttribute('data-measure','fit');if(s.layout==='desktop'||s.layout==='mobile')r.setAttribute('data-layout',s.layout);if(s.layout==='desktop'){var m=document.querySelector('meta[name=viewport]');if(m)m.setAttribute('content','width=1100');}}catch(e){}})();</script></head>
+<body>
+<a class="skip" href="#content">본문으로 건너뛰기</a>
+<div class="bar"><button class="menu-btn" id="set-open" type="button" aria-expanded="false" aria-controls="here-panel" aria-label="메뉴" title="메뉴">☰</button><a class="back" href="index.html" title="뒤로">← <span class="lbl">뒤로</span></a><span class="place"><strong><a href="index.html">Proven C Book</a></strong><span class="cur"> › 3장</span></span><span class="bar-nav"><a class="nb prev" href="ch02.html">‹ <span class="lbl">이전</span></a><a class="nb toc" href="index.html"><span class="lbl">목차</span></a><a class="nb next" href="ch04.html"><span class="lbl">다음</span> ›</a></span></div><div id="here-panel" class="here-panel" hidden><div class="setbox" id="setbox"><div class="setrow"><span class="setlbl">언어</span><span class="seg"><a class="segb" href="../en/ch03.html">English</a></span></div><div class="setrow"><span class="setlbl">본문 폭</span><span class="seg" id="s-width"><button type="button" class="segb" data-width="960">960</button><button type="button" class="segb" data-width="fit">창에 맞춤</button></span></div><div class="setrow"><span class="setlbl">배치</span><span class="seg" id="s-layout"><button type="button" class="segb" data-layout="auto">자동</button><button type="button" class="segb" data-layout="desktop">PC</button><button type="button" class="segb" data-layout="mobile">모바일</button></span></div><div class="setrow"><span class="setlbl">테마</span><span class="seg"><button type="button" class="segb" data-theme="auto">시스템</button><button type="button" class="segb" data-theme="light">밝게</button><button type="button" class="segb" data-theme="dark">어둡게</button></span></div><div class="setrow"><span class="setlbl">색</span><label class="col"><span>글자</span><input type="color" id="s-fg"></label><label class="col"><span>배경</span><input type="color" id="s-bg"></label><label class="col"><span>링크</span><input type="color" id="s-link"></label></div><p class="setnote">설정은 이 브라우저에만 저장된다.</p></div><div class="tools"><span class="ver">v0.110.2</span><a class="tool" href="toc.html">▤ 상세 차례</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book/releases/download/v0.110.2/proven_c_book-v0.110.2-ko.pdf">⤓ PDF</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book" title="이 책의 GitHub 저장소">Git</a><a class="tool" href="https://rubidus-api.github.io/" title="rubidus-api.github.io --- 공개된 모든 프로젝트">⌂ 전체 사이트</a><a class="tool" href="https://github.com/rubidus-api" title="github.com/rubidus-api --- 모든 저장소">≡ 저장소 목록</a></div><div class="here-head"><strong>이 장의 차례</strong></div><div class="here-body"><a class="lv3" href="#s3-1"><span class="tf-no">3.1</span>사물함 복도</a><a class="lv3" href="#s3-2"><span class="tf-no">3.2</span>워드 — 기계의 자연스러운 한 움큼</a><a class="lv3" href="#s3-3"><span class="tf-no">3.3</span>엔디안 — 여러 칸에 수를 넣는 두 가지 순서</a><a class="lv3" href="#s3-4"><span class="tf-no">3.4</span>사물함 번호는 진짜 주소인가</a><a class="lv3" href="#s3-5"><span class="tf-no">3.5</span>C의 원형은 사물함 복도에 있다</a></div></div>
+<main id="content"><div class="wrap">
+<h2>3 워드와 주소 — C의 원형</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>2장 단순한 기계 모델 · 주소로 기억을 지목하는 단순한 기계 모델</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>2장에서 바이트 하나는 256가지밖에 구별하지 못하며, 큰 수는 바이트를 여러 개 이어 붙여 담는다고 했다. 그러면 기계는 이어 붙인 바이트들이 “한 덩어리”라는 것을 어떻게 아는가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 모른다 — 이것이 이 장의 출발점이다. 메모리 자체는 어느 칸이 어느 칸과 한 덩어리인지 전혀 기록하지 않는다. 덩어리를 아는 것은 메모리가 아니라 <strong>읽는 쪽</strong>이다. 프로그램이 “여기서부터 네 칸을 하나의 수로 읽겠다”고 정할 뿐이다. 2장의 오개념 상자가 짚은 구분(기억된 것 자체와 읽는 방법의 분리)이 여기서 첫 실전을 치른다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">이 장은 2장의 「기억하는 곳」을 한 칸씩 들여다본다. C의 포인터(36장)는 새 개념이 아니라 <strong>기억의 칸마다 붙은 번호, 곧 주소에 타입을 입힌 것</strong>이다. 그래서 주소라는 낱말을 여기서 붙잡아 둔다. 포인터를 어렵게 만드는 것의 절반은 「주소」를 그림으로 못 그리는 데서 온다. 그 그림을 포인터가 나오기 서른세 장 전에 그려 둔다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">메모리를 번호 붙은 사물함들의 긴 복도로 그릴 수 있게 된다. 그 번호가 <span id="idx-entry-4"></span>주소이고, 기계가 사물함을 한 번에 몇 칸씩 다루는지가 워드다. 여러 칸에 <span id="idx-entry-5"></span>걸치는 수를 넣는 두 가지 순서(리틀 엔디안과 빅 엔디안)를 그림으로 구별하게 된다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>복도의 길이, 그러니까 사물함의 개수는 얼마나 되는가?</li><li>그러면 64비트 기계에서는 모든 것이 8바이트 단위로 저장되는가?</li><li>사람 눈에는 빅 엔디안이 자연스러운데, 왜 대부분의 기계는 “뒤집힌” 리틀 엔디안을 택했는가? 무슨 장점이 있는가?</li><li>내 컴퓨터가 리틀 엔디안이라는 것을 프로그램으로 확인할 수 있는가?</li><li>그러면 지금까지 배운 사물함 그림은 틀린 것인가?</li></ol></div></div><div></div><h3 id="s3-1">3.1 사물함 복도<a class="plink" href="#s3-1" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>메모리를 그림으로 그리면 이렇다. 긴 복도에 같은 크기의 사물함이 한 줄로 끝없이 이어져 있고, 사물함마다 번호가 붙어 있다. 사물함 한 칸의 크기는 <span id="idx-entry-6"></span>1바이트다. 번호는 0부터 시작해 1씩 늘어난다. 이 번호가 <strong>주소</strong>(address), 곧 메모리 주소(memory address)다.</p><div class="memrow"><table class="mem"><tr><td class="cell"><code>01001000</code></td><td class="cell"><code>01101001</code></td><td class="cell"><code>00100001</code></td><td class="cell"><code>00000000</code></td><td class="cell"><code>11111111</code></td></tr><tr><td class="addr"><code>100</code></td><td class="addr"><code>101</code></td><td class="addr"><code>102</code></td><td class="addr"><code>103</code></td><td class="addr"><code>104</code></td></tr></table></div><span id="doc-float-8"></span><p class="float-caption">그림 3.1 — 기억의 칸 — 한 칸은 여덟 비트, 번호는 1씩 늘어난다</p><p>칸 안에 든 것은 언제나 그저 비트 여덟 개다. 그 여덟 비트가 수인지, 글자인지, 더 큰 무엇의 조각인지는 칸 자신도 복도도 모른다 — 읽는 쪽의 해석이 정한다.</p><p>주소에 관해 첫눈에 안 보이는 중요한 사실이 하나 있다. <strong>주소는 값으로 다룰 수 있다.</strong> 사물함 번호는 적어 둘 수 있는 것이고, 적어 둘 수 있으니 다른 사물함에 넣어 둘 수도 있다. “347번 칸에, 512번이라는 번호를 적어 둔다” — 이상할 것이 하나도 없다. 이 평범한 착상이 나중에 C에서 가장 유명한 개념인 <strong>포인터</strong>가 된다(36장).</p><p>여기서 단순 모델의 주소와 C 언어의 포인터 값, 두 층을 갈라 두자. 지금 그리는 <strong>단순 모델</strong>에서는 주소를 번호, 곧 정수처럼 그려도 좋다 — 복도와 사물함 그림이 그렇게 그려져 있다. 그러나 <strong>C 라는 언어에서 포인터 값은 정수 타입이 아니다.</strong> 복사하고 비교할 수 있는 값이되, 어떤 타입을 가리키는지와 어디에서 나왔는지가 따라붙는 별도의 종류다. 이 장 뒤쪽(「사물함 번호는 진짜 주소인가」)에서 그 이유를 보고, 36·38장에서 정식으로 다룬다. 지금 챙길 것은 한 줄이다 — <strong>주소는 값이고, 그 값을 담는 전용 타입이 따로 있다.</strong></p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 복도의 길이, 그러니까 사물함의 개수는 얼마나 되는가?</p></div><div class="dev qa-a"><p><span class="dev-label">답.</span> 주소를 몇 비트로 적느냐가 정한다. 주소가 <math><mi>𝑛</mi></math>비트 수라면 사물함은 최대 <math><msup><mn>2</mn><mi>𝑛</mi></msup></math>개까지 구별할 수 있다(2장의 <math><msup><mn>2</mn><mi>𝑛</mi></msup></math>이 바로 다시 나왔다). 주소를 32비트로 적던 시절의 복도는 최대 약 43억 칸 — 4GiB — 이었고, 오늘의 64비트 주소는 사실상 다 쓸 수 없을 만큼 긴 복도를 만든다. “32비트 시스템에서 메모리 4GB 한계” 같은 말의 정체가 이것이다.</p></div></div><h3 id="s3-2">3.2 워드 — 기계의 자연스러운 한 움큼<a class="plink" href="#s3-2" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>사물함은 한 칸씩 있지만, 기계가 일할 때 한 칸씩만 집으면 너무 느리다. 그래서 CPU는 여러 칸을 <strong>한 움큼</strong>에 집도록 만들어져 있다. 그 움큼의 크기 — 기계가 가장 자연스럽게, 한 번에 다루는 비트 수 — 를 <strong>워드</strong>(word)라 부른다.</p><p>“64비트 컴퓨터”라는 말이 대개 이것을 가리킨다 — 일반 목적 레지스터와 산술 연산의 대표 폭이 64비트, 즉 8바이트라는 뜻이다. 워드는 기계의 “손 크기”라 해도 좋다 — 손이 큰 기계는 한 번에 더 큰 수를 집는다.</p><p>다만 「워드」와 「64비트 컴퓨터」는 <strong>느슨한 말</strong>이라는 것을 함께 알아 두자. 한 CPU 안에도 폭이 다른 레지스터와 통로가 함께 있고(부동소수점·벡터 레지스터는 128·256·512 비트가 흔하다), 주소 폭과 레지스터 폭이 다를 수 있으며, 언어가 쓰는 <code>long</code>이나 포인터의 폭은 또 다른 선택이다(36장에서 그 사례를 본다). 게다가 「워드」라는 낱말의 뜻 자체가 기계마다 다르기도 하다. 어떤 기계가 어떤 명령을 알아듣고 <span id="idx-entry-7"></span>그것을 어떻게 적는지를 정해 둔 규격을 <strong>명령어 집합</strong>(instruction set architecture, 줄여서 ISA)이라 하는데 — 말하자면 「이 기계에 무엇을 시킬 수 있는가」의 목록이다 — <strong>그 규격이 “워드”를 다르게 정의하는 경우가 있다.</strong> x86 문서에서 word 는 전통적으로 16비트이고, 32비트는 doubleword, 64비트는 quadword다.</p><p>그러니 “64비트 기계”는 정확한 정의라기보다 <strong>대체로 그 폭으로 일한다</strong>는 관용적 표현으로 받아들이는 편이 옳다. 이 책에서 워드라고 쓸 때는 “그 기계가 한 움큼에 다루기 편한 폭”이라는 느슨한 뜻이다.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 그러면 64비트 기계에서는 모든 것이 8바이트 단위로 저장되는가?</p></div><div class="dev qa-a"><p><span class="dev-label">답.</span> 아니다. 저장은 여전히 바이트 단위로 이루어진다 — 1바이트짜리 글자도, 4바이트짜리 수도 같은 복도에 산다. 워드는 “기계가 가장 편하게 집는 크기”이지 “모든 것의 크기”가 아니다. 실제로 C에는 크기가 다른 여러 수 타입이 있고(28장), 어떤 크기의 데이터를 어디에 두는 것이 편한가라는 문제는 4장(정렬)에서 다시 만난다.</p></div></div><h3 id="s3-3">3.3 엔디안 — 여러 칸에 수를 넣는 두 가지 순서<a class="plink" href="#s3-3" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>이제 이 장의 하이라이트인 엔디안이다. 4바이트짜리 수 하나를 사물함 네 칸에 넣어야 한다. 수를 16진법으로 <code>12 34 56 78</code>이라는 네 바이트 조각으로 나눴다고 하자(16진법 두 자리가 1바이트다). 100번 칸부터 넣는다면 — 어느 조각을 100번 칸에 넣어야 하는가?</p><p>두 학파가 있다. <strong>빅 엔디안</strong>(big-endian)은 큰 자리부터 넣는다. 사람이 종이에 수를 적는 순서 그대로다.</p><div class="memrow"><table class="mem"><tr><td class="cell hi"><code>12</code></td><td class="cell"><code>34</code></td><td class="cell"><code>56</code></td><td class="cell"><code>78</code></td></tr><tr><td class="addr"><code>100</code></td><td class="addr"><code>101</code></td><td class="addr"><code>102</code></td><td class="addr"><code>103</code></td></tr></table></div><span id="doc-float-9"></span><p class="float-caption">그림 3.2 — 빅 엔디안 — 큰 자리부터 넣는다</p><p><strong>리틀 엔디안</strong>(little-endian)은 작은 자리부터 넣는다. 뒤집힌 것처럼 보이지만, “<math><mi>𝑖</mi></math>번째 칸에 <math><mi>𝑖</mi></math>번째로 작은 자리가 있다”는 나름의 정연한 규칙이다.</p><div class="memrow"><table class="mem"><tr><td class="cell hi"><code>78</code></td><td class="cell"><code>56</code></td><td class="cell"><code>34</code></td><td class="cell"><code>12</code></td></tr><tr><td class="addr"><code>100</code></td><td class="addr"><code>101</code></td><td class="addr"><code>102</code></td><td class="addr"><code>103</code></td></tr></table></div><span id="doc-float-10"></span><p class="float-caption">그림 3.3 — 리틀 엔디안 — 작은 자리부터 넣는다</p><p>지금 이 글을 읽는 컴퓨터와 스마트폰은 거의 확실히 리틀 엔디안이다(개인용 컴퓨터에 들어가는 인텔·AMD 의 칩, 그리고 휴대전화에 주로 들어가는 ARM 계열 칩이 대부분 그렇다). 날짜 표기와 똑같은 상황이다 — 2026-08-04라고 적는 나라와 04-08-2026이라고 적는 나라가 있고, 어느 쪽도 틀리지 않았지만, <strong>서로의 편지를 그대로 읽으면 사고가 난다</strong>.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 사람 눈에는 빅 엔디안이 자연스러운데, 왜 대부분의 기계는 “뒤집힌” 리틀 엔디안을 택했는가? 무슨 장점이 있는가?</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> 두 가지 실속 때문이다.</p><p>첫째, <strong>시작 칸이 흔들리지 않는다.</strong> 리틀 엔디안에서는 수의 가장 작은 자리가 언제나 시작 주소 그 칸에 있다. 위 그림의 수를 “4바이트 전부”로 읽든 “아래 2바이트만”·“아래 1바이트만”으로 줄여 읽든, 읽기 시작하는 칸은 똑같이 100번이다. 빅 엔디안에서는 읽는 폭을 바꿀 때마다 시작 칸을 옮겨 다시 계산해야 한다. 같은 값을 크기가 다른 눈으로 읽는 일이 잦은 기계에게 “시작 주소 불변”은 꽤 큰 단순함이다.</p><p>둘째, <strong>계산의 진행 방향과 맞는다.</strong> 손으로 덧셈을 할 때를 떠올리면 된다 — 일의 자리부터 더하고 받아올림을 위로 넘긴다. 여러 바이트짜리 수를 더하는 기계도 마찬가지로 작은 자리부터 처리하는데, 리틀 엔디안에서는 그것이 “낮은 주소부터 순서대로”와 정확히 일치한다. 초기의 작은 CPU들은 첫 바이트를 가져오자마자 덧셈을 시작할 수 있었고, 이 이점이 초창기 설계(인텔 계열의 조상들)에 스며서 오늘까지 이어졌다.</p><p>빅 엔디안의 장점도 공정하게 적으면 — 덤프가 사람 눈에 그대로 읽히고, 바이트를 앞에서부터 통째로 비교하면 수의 대소 비교와 일치한다. 그래서 통신 규약처럼 “사람과 기계가 함께 들여다보는 자리”에는 빅 엔디안이 남았다. 어느 쪽도 우월하지 않다 — 자주 하는 일이 다를 뿐이다.</p></p></div></div><div class="dev misconception"><p class="dev-label">흔한 오해. <strong>“메모리를 앞에서부터 읽으면 적힌 순서대로 수가 보인다”</strong></p><div class="dev-body">그럴듯하다 — 종이에 적힌 수는 그렇게 읽으니까. 그러나 리틀 엔디안 기계에서 <code>12 34 56 78</code>이라는 수는 메모리에 <code>78 56 34 12</code> 순서로 놓인다. 메모리를 칸 순서대로 들여다보면(디버거나 파일 덤프에서 실제로 이렇게 본다) 수가 “뒤집혀” 보인다. 뒤집힌 것이 아니라, 넣는 순서의 약속이 다를 뿐이다. 기억할 것: 메모리 덤프는 종이에 적은 수가 아니다.</div></div><div class="dev realcase"><p class="dev-label">실제 사례.<span style="white-space: pre-wrap">&#x20;&#x20;</span>NUXI — 순서가 낳은 유령</p><div class="dev-body">초기 Unix를 다른 회사의 컴퓨터로 이식하던 엔지니어들이 화면에서 기묘한 것을 보았다. <code>UNIX</code>라고 찍혀야 할 곳에 <code>NUXI</code>가 찍힌 것이다. 두 기계의 엔디안이 달라서, 2바이트 묶음 안의 글자 순서가 통째로 뒤집힌 결과였다. 이 사건은 “NUXI 문제”라는 이름으로 엔디안 사고의 대명사가 됐다. 같은 종류의 사고는 지금도 난다 — 파일을 한 기계에서 저장해 다른 기계에서 읽을 때, 네트워크로 수를 주고받을 때, 엔디안을 정하지 않으면 수가 깨진다. 그래서 인터넷 규약은 “통신할 때는 빅 엔디안으로 보낸다”는 <strong>네트워크 바이트 순서</strong>를 합의해 두었다.</div></div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 내 컴퓨터가 리틀 엔디안이라는 것을 프로그램으로 확인할 수 있는가?</p></div><div class="dev qa-a"><p><span class="dev-label">답.</span> 있다 — 여러 바이트짜리 수를 메모리에 넣고, 그 첫 칸을 1바이트만 따로 읽어 보면 된다. 첫 칸에 작은 자리 조각이 있으면 리틀 엔디안이다. 이 확인을 C로 실제로 해 보이는 것이 49장(공용체)의 시연이다 — 같은 기억을 다른 눈으로 읽는 도구가 그때 생긴다.</p></div></div><h3 id="s3-4">3.4 사물함 번호는 진짜 주소인가<a class="plink" href="#s3-4" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>여기서 사물함 그림의 한계를 미리 밝혀 두어야 한다. 지금까지 그린 그림(사물함마다 번호가 하나씩 붙어 있고, 그 번호가 곧 기억의 자리)은 <strong>배우기에 좋은 그림</strong>이지 오늘의 컴퓨터를 정확히 그린 것은 아니다.</p><p>오늘의 프로그램이 보는 번호는 대개 <strong>가상 주소</strong>다. 운영체제와 CPU 안의 번역 장치(memory management unit, 줄여서 MMU — 프로그램이 말한 번호를 실제 칸 번호로 바꿔 주는 회로)가 프로그램마다 따로 만들어 준 번호이고, 그 번호가 실제 메모리 칩(DRAM, dynamic random-access memory — 우리가 「램」 이라 부르는 그것)의 몇 번 칸인지는 프로그램이 알지 못한다. 같은 번호를 두 프로그램이 동시에 써도 서로 다른 물리 칸에 닿는다. 이 번역의 구조는 12장에서 제대로 본다. 지금 필요한 것은 한 문장이다 — <strong>번호는 실체가 아니라 약속이다.</strong></p><p>번호가 하나가 아니었던 시절도 있다. 8086 의 세그먼트 방식에서는 주소가 “세그먼트:오프셋” 두 조각이었고, 같은 물리 칸을 가리키는 표기가 여러 개 있었다(<code>0x0000:0x0010</code>과 <code>0x0001:0x0000</code>이 같은 자리다). 어떤 기계는 프로그램용 기억과 자료용 기억이 아예 다른 주소 공간에 있었다(하버드 구조 — 120장의 작은 칩들이 아직 그렇다).</p><p>그리고 번호 안에 번호가 아닌 것이 섞여 있기도 하다.</p><div class="dev realcase"><p class="dev-label">실제 사례. 주소값 안에 실려 다니는 것들</p><div class="dev-body"><p>(이 사례들은 <strong>외울 필요가 없다.</strong> “주소가 늘 번호 하나인 것은 아니다”만 남기면 되고, 이름들은 나중에 그런 기계를 만났을 때 다시 찾아보면 된다.)</p><p><strong>남는 끝자리.</strong> 정렬(4장) 덕분에 주소의 하위 몇 비트는 늘 0이다. 그 자리에 작은 표시를 끼워 넣는 재주가 널리 쓰인다 — 다음 장의 태그 포인터다.</p><p><strong>남는 윗자리.</strong> 64비트 주소를 전부 쓰는 기계는 없다. x86-64(인텔과 AMD 의 칩이 따르는 64비트 명령어 집합의 이름)는 실제로 48비트(요즘은 57비트)만 쓰고 나머지 상위 비트는 부호 확장 규칙에 묶여 있다. AArch64(ARM 계열의 64비트 명령어 집합 이름)의 TBI(top byte ignore — 「맨 위 바이트는 무시한다」)는 상위 한 바이트를 아예 무시하도록 정해 두어, 그 자리에 태그를 실을 수 있게 했다(메모리 태깅 확장(memory tagging extension, MTE)이 이것을 쓴다).</p><p><strong>수와 포인터를 한 그릇에.</strong> 일부 자바스크립트 엔진은 실수 표현에서 「수가 아님」을 뜻하는 값(NaN, not a number)의 남는 비트 패턴 안에 포인터를 숨긴다(NaN 박싱). 하나의 64비트 값이 상황에 따라 수이기도 하고 주소이기도 하다. 실수 표현과 NaN 자체는 54장에서 본다.</p><p><strong>주소가 아예 번호가 아닌 기계.</strong> CHERI(capability hardware enhanced RISC instructions — 「권한을 실은 주소」를 하드웨어로 밀어붙인 연구 계열)와 그것을 실제 칩으로 만든 시제품 Arm Morello 에서 포인터는 주소와 함께 범위·권한을 담은 128비트 묶음(capability)이다. 하드웨어가 그 범위를 검사하므로, 정수로 바꿔 조작한 뒤 되돌린 값은 권한을 잃어 쓸 수 없다.</p></div></div><p>그래서 C는 주소를 “그냥 정수”로 정의하지 않았다. 복사할 수 있고 비교할 수 있는 <strong>값</strong>이되, 어떤 타입을 가리키는지와 어디에서 나왔는지가 따라붙는 값으로 두었다. 이 결정이 왜 필요했는지는 36장에서 포인터를 배우고 38장에서 프로버넌스를 만나면 분명해진다.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 그러면 지금까지 배운 사물함 그림은 틀린 것인가?</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> 틀리지 않았다 — <strong>한 겹 아래를 잠시 접어 둔 그림</strong>이다. 프로그램의 눈으로 보면 기억은 여전히 번호가 붙은 칸의 열이고, 이웃한 번호는 이웃한 칸이며, 그 위에서 C의 배열과 포인터 산술이 정확히 동작한다. 가상 주소든 물리 주소든 그 성질은 유지되도록 만들어져 있다.</p><p>접어 둔 것을 펴야 하는 순간은 따로 온다 — 성능을 재고 캐시를 따질 때(12장), 프로그램이 왜 서로를 못 건드리는지 물을 때(10장·12장), 그리고 “주소를 정수로 바꿔 마음대로 만져도 되는가”를 물을 때(38장)다.</p></p></div></div><h3 id="s3-5">3.5 C의 원형은 사물함 복도에 있다<a class="plink" href="#s3-5" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>이 장의 복도 그림은 C라는 언어의 설계도이기도 하다. C가 태어난 시절 (2장), 언어를 설계한 사람들은 기계의 이 모습을 감추는 대신 언어의 개념으로 그대로 들어 올렸다. 메모리는 바이트의 열이라는 것 — C의 모든 데이터는 크기가 바이트 단위다. 칸마다 주소가 있다는 것 — C에서는 거의 모든 것의 주소를 물을 수 있다. 주소를 값으로 다룬다는 것 — 그 값을 담는 <strong>별도의 타입</strong>(포인터)이 언어의 한복판에 있다(정수 타입이 아니다). 다른 많은 언어가 “사물함 복도”를 프로그래머에게 보이지 않게 봉인해 둔 것과 대조적이다.</p><p>C가 기계의 이 모습을 감추지 않았으니, 프로그래머는 기계가 무엇을 할지 훤히 내다보며 일할 수 있다. 하지만 같은 이유로, 주소를 잘못 다루면 그 실수가 그대로 사고가 된다. 이 책의 제7부가 그 힘과 위험을 정면으로 다룬다.</p><p>다음 장은 이 복도의 구석에 있는 흥미로운 특례들을 구경한다. 0번 사물함에는 무엇이 있는가, 왜 두 칸짜리 짐은 아무 번호에나 못 넣는가(정렬), 그리고 번호의 끝자리가 항상 0이라는 사실을 이용해 몰래 정보를 숨기는 재주(태그 포인터)까지 — 단순해 보이던 번호에도 생각보다 많은 사정이 얽혀 있다는 것을 보게 된다.</p>
+<div class="nav"><a href="ch02.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch04.html">다음 →</a></div>
+</div></main>
+<script>(function(){var b=document.querySelector('.menu-btn'),p=document.getElementById('here-panel');function open(o){if(!p)return;p.hidden=!o;if(b)b.setAttribute('aria-expanded',o);}if(b)b.addEventListener('click',function(){open(p.hidden);});if(p)p.addEventListener('click',function(e){if(e.target.tagName==='A'&&e.target.getAttribute('href').charAt(0)==='#')open(false);});document.addEventListener('keydown',function(e){if(e.key==='Escape'&&p&&!p.hidden){open(false);if(b)b.focus();}});document.addEventListener('click',function(e){if(p&&!p.hidden&&!p.contains(e.target)&&!(b&&b.contains(e.target)))open(false);});var bk=document.querySelector('.bar .back');if(bk)bk.addEventListener('click',function(e){if(history.length>1&&document.referrer){e.preventDefault();history.back();}});var box=document.getElementById('setbox');if(!box)return;var r=document.documentElement;function load(){try{return JSON.parse(localStorage.getItem('doc-read')||'{}');}catch(e){return {};}}function save(s){try{localStorage.setItem('doc-read',JSON.stringify(s));}catch(e){}}function css(n){return getComputedStyle(r).getPropertyValue(n).trim();}function paint(){var s=load();var t=s.theme||'auto',w=s.width==='fit'?'fit':'960';[].forEach.call(box.querySelectorAll('.segb[data-theme]'),function(x){x.setAttribute('aria-pressed',x.dataset.theme===t);});[].forEach.call(box.querySelectorAll('.segb[data-width]'),function(x){x.setAttribute('aria-pressed',x.dataset.width===w);});var ly=s.layout||'auto';[].forEach.call(box.querySelectorAll('.segb[data-layout]'),function(x){x.setAttribute('aria-pressed',x.dataset.layout===ly);});document.getElementById('s-fg').value=s.fg||hex(css('--fg'));document.getElementById('s-bg').value=s.bg||hex(css('--bg'));document.getElementById('s-link').value=s.link||hex(css('--link'));}function hex(v){var m=v.match(/^rgba?\((\d+)[ ,]+(\d+)[ ,]+(\d+)/);if(!m)return v.charAt(0)==='#'?v:'#000000';return '#'+[1,2,3].map(function(i){return ('0'+parseInt(m[i],10).toString(16)).slice(-2);}).join('');}paint();[].forEach.call(box.querySelectorAll('.segb[data-width]'),function(x){x.addEventListener('click',function(){var s=load();if(x.dataset.width==='fit'){s.width='fit';r.setAttribute('data-measure','fit');}else{delete s.width;r.removeAttribute('data-measure');}save(s);setTimeout(paint,0);});});[].forEach.call(box.querySelectorAll('.segb[data-layout]'),function(x){x.addEventListener('click',function(){var s=load(),v=x.dataset.layout;if(v==='auto'){delete s.layout;r.removeAttribute('data-layout');}else{s.layout=v;r.setAttribute('data-layout',v);}save(s);var m=document.querySelector('meta[name=viewport]');var want=v==='desktop'?'width=1100':'width=device-width, initial-scale=1';if(m&&m.getAttribute('content')!==want)location.reload();else setTimeout(paint,0);});});[].forEach.call(box.querySelectorAll('.segb[data-theme]'),function(x){x.addEventListener('click',function(){var s=load();s.theme=x.dataset.theme;delete s.fg;delete s.bg;delete s.link;save(s);['--fg','--bg','--link'].forEach(function(n){r.style.removeProperty(n);});if(s.theme==='auto')r.removeAttribute('data-theme');else r.setAttribute('data-theme',s.theme);setTimeout(paint,0);});});[['s-fg','--fg','fg'],['s-bg','--bg','bg'],['s-link','--link','link']].forEach(function(a){document.getElementById(a[0]).addEventListener('input',function(){var s=load();s[a[2]]=this.value;save(s);r.style.setProperty(a[1],this.value);});});})();</script><script>
+(function(){
+  var q=document.getElementById('q'), out=document.getElementById('qr');
+  if(!q||!out) return;
+  var data=null, NONE="\ucc3e\uc740 \uac83\uc774 \uc5c6\ub2e4";
+  function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+  function run(){
+    var v=q.value.trim().toLowerCase();
+    out.innerHTML='';
+    if(!v||!data) return;
+    var hits=[];
+    for(var i=0;i<data.length && hits.length<40;i++){
+      if(data[i][0].toLowerCase().indexOf(v)>=0) hits.push(data[i]);
+    }
+    if(!hits.length){ out.innerHTML='<li>'+NONE+'</li>'; return; }
+    out.innerHTML=hits.map(function(h){
+      return '<li><a href="'+h[1]+'">'+esc(h[0])+'</a>'+
+             (h[2]?'<span class="where">'+esc(h[2])+'</span>':'')+'</li>';
+    }).join('');
+  }
+  q.addEventListener('input',function(){
+    if(data){ run(); return; }
+    fetch('search-index.json').then(function(r){return r.json();})
+      .then(function(j){ data=j; run(); })
+      .catch(function(){ out.innerHTML='<li>'+NONE+'</li>'; });
+  });
+})();
+</script></body></html>

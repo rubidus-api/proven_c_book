@@ -1,0 +1,715 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>114 The outside world — files, streams, time, random numbers — Proven C Book</title><style>@font-face { font-family:"Doc Serif"; src:url("../fonts/serif.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-italic.woff2") format("woff2");
+  font-weight:400; font-style:italic; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-kr.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-kr-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans-kr.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans-kr-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Mono"; src:url("../fonts/mono.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Mono"; src:url("../fonts/mono-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+:root { color-scheme: light dark; --bg:#fafaf8; --bg2:#f2f2f0; --bg3:#e6e6e3; --fg:#141414; --muted:#555555; --line:#c9c9c9; --line-strong:#8a8a8a; --accent:#1a4f8a; --accent-fg:#ffffff; --accent2:#96530f; --honey:#f2b04a; --honey-fg:#2b1d00; --honey-text:#855400; --honey-soft:#fbebc6; --danger:#9b1b30; --ok:#1d6e37; --warn:#855400; --select:#d4dde8;
+  --rule:var(--line); --box-bg:var(--bg2); --code-bg:var(--bg2); --box-rule:var(--line); --link:var(--accent);
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg:#121314; --bg2:#1c1e20; --bg3:#2a2c2f; --fg:#e8e8e8; --muted:#a6a6a6; --line:#3a3d40; --line-strong:#75787c; --accent:#8ab4e8; --accent-fg:#121314; --accent2:#d4883b; --honey:#f2b04a; --honey-fg:#121314; --honey-text:#f2b04a; --honey-soft:#3b311e; --danger:#f07a8c; --ok:#7bcb95; --warn:#f2b04a; --select:#2f3d52;
+    --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+:root[data-theme="dark"] { color-scheme: dark; --bg:#121314; --bg2:#1c1e20; --bg3:#2a2c2f; --fg:#e8e8e8; --muted:#a6a6a6; --line:#3a3d40; --line-strong:#75787c; --accent:#8ab4e8; --accent-fg:#121314; --accent2:#d4883b; --honey:#f2b04a; --honey-fg:#121314; --honey-text:#f2b04a; --honey-soft:#3b311e; --danger:#f07a8c; --ok:#7bcb95; --warn:#f2b04a; --select:#2f3d52;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; }
+:root[data-theme="light"] { color-scheme: light; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Doc Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.here-head { display:flex; align-items:center; gap:.8rem; padding:.2rem 0 .5rem;
+  border-bottom:1px solid var(--rule,#ddd); margin-bottom:.5rem; }
+.here-head .sp { flex:1; }
+.here-all { margin-left:auto; font-size:.9rem; }
+.here-x { font:inherit; font-size:.9rem; cursor:pointer; background:none;
+  border:1px solid var(--line-strong); padding:.05rem .45rem;
+  color:inherit; }
+.here-body a, .tf-secs a { display:block; text-decoration:none; padding:.12rem 0;
+  line-height:1.45; }
+.here-body a:hover, .tf-secs a:hover { text-decoration:underline; }
+.here-body a.lv4, .tf-secs a.lv4 { padding-left:1.6rem; font-size:.94rem;
+  color:var(--muted,#555); }
+.tf-no { display:inline-block; min-width:3.2rem; color:var(--muted,#666);
+  font-variant-numeric:tabular-nums; }
+.toc-full .tf-ch { margin:.9rem 0 .15rem; font-weight:700; }
+.toc-full .tf-secs { margin:0 0 .5rem .2rem; border-left:2px solid var(--rule,#e2e2e2);
+  padding-left:.7rem; }
+.toc-full h4.toc-part { margin-top:1.8rem; }
+.toc a.toc-detail { font-weight:700; }
+@media print { .here-btn, .here-panel { display:none; } }
+.bar { position:sticky; top:0; z-index:20; display:flex; flex-wrap:nowrap; gap:.25rem; align-items:center;
+       min-height:44px; padding:0 clamp(.4rem,2vw,1.6rem); background:var(--bg2);
+       border-bottom:1px solid var(--line); font-size:.9rem;
+       font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--fg); text-decoration:none; } .bar a:hover { text-decoration:none; }
+.bar .sp { display:none; }
+main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
+.wrap { width:100%; }
+main .wrap { max-width:960px; margin-inline:auto; }
+:root[data-measure="fit"] main .wrap { max-width:none; margin:0; }
+h1,h2,h3,h4 { font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35;
+  padding-bottom:.18rem; border-bottom:1px solid var(--rule); }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem;
+     padding-bottom:.22rem; border-bottom:1.5px solid var(--fg); }
+p { margin:.9rem 0; } a { color:var(--link); }
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+.src-note { font-size: .86em; color: var(--muted, #666); }
+.src-note code { font-size: .95em; }
+sup.fnref { font-size: .72em; line-height: 0; vertical-align: super; }
+sup.fnref a { text-decoration: none; padding: 0 .1em; }
+sup.fnref a::before { content: "["; }
+sup.fnref a::after  { content: "]"; }
+.chapter-notes { margin: 3rem 0 1rem; padding-top: .9rem;
+                 border-top: 2px solid var(--rule, #333); }
+.chapter-notes h2 { font-size: 1.05rem; margin: 0 0 .6rem; }
+.chapter-notes ol { margin: 0; padding-left: 1.6em; }
+.chapter-notes li { font-size: .92em; margin: .35em 0; text-indent: 0; }
+.chapter-notes a.fnback { text-decoration: none; }
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
+pre,code,kbd { font-family:"Doc Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
+pre code { background:none; padding:0; }
+.tblwrap { overflow-x:auto; text-align:center; }
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.float-list { list-style:none; padding-left:0; }
+.float-list li { margin:.12rem 0; }
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"Doc Mono","D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"Doc Mono","D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"Doc Mono","D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+.dev { margin:1.15rem 0; padding:0; background:none; border:none; border-radius:0; }
+.dev > .dev-label { border-left:4px solid var(--fg);
+  padding:.1rem .8rem .25rem .8rem; margin:0 0 .34rem; }
+.dev > .dev-body { border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem .35rem .8rem; margin:0; }
+.dev > .dev-body > *:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child { margin-bottom:0; }
+.float-caption { text-align:center; font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+.dev.open { border:none; border-radius:0; background:none;
+  padding:0; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
+  text-indent:0; border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+.dev.open > .open-body { margin:0; padding:.35rem .8rem;
+  border-left:2px solid var(--box-rule); }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+.dev.open .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.06rem 0 .06rem .7rem; margin:.32rem 0 0; }
+.prereq .dev-label, .deepqa .dev-label, .why .dev-label,
+.organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+.qa-box { border:none; margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:0; background:none; }
+.qa-box .qa-q { border-left:4px solid var(--fg);
+  padding:.1rem .8rem .25rem .8rem; margin:0; }
+.qa-box .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem; margin:.34rem 0 0; }
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:0; }
+.dev.recap { border:none; background:none; padding:0; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
+  text-indent:0; border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > .dev-body > p, .dev.recap > .dev-body > div:not(.demo),
+.dev.recap > .dev-body > figure { margin:.3rem 0; padding:0; }
+.dev > .dev-body > .demo { margin:.7rem 0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:none; border-radius:0; background:none; padding:0; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem; text-indent:0;
+  border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
+.dev > .dev-body > figure, .dev > .open-body > p {
+  margin:.35rem 0; padding:0; }
+.bar .menu-btn { flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center;
+  min-width:38px; min-height:38px; padding:0; font:inherit; font-size:1.25rem; line-height:1;
+  color:var(--fg); background:none; border:0; cursor:pointer; text-decoration:none; }
+.bar .back, .bar .bar-nav .nb { flex:0 0 auto; display:inline-flex; align-items:center; gap:.3em;
+  min-height:32px; padding:0 .65rem; border:1px solid var(--line); background:var(--bg);
+  color:var(--fg); font-weight:600; white-space:nowrap; text-decoration:none; }
+.bar .menu-btn[aria-expanded="true"] { background:var(--bg3); }
+.bar .place { flex:1 1 auto; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
+  padding:0 .35rem; }
+.bar .place strong a { color:var(--honey-text); }
+.bar .place .cur { color:var(--fg); }
+.bar .bar-nav { flex:0 0 auto; display:flex; gap:.3rem; align-items:center; white-space:nowrap; }
+.bar .bar-nav .off { color:var(--muted); border-color:var(--line); opacity:.45; }
+.bar .back:hover, .bar .menu-btn:hover, .bar .bar-nav a.nb:hover, .bar .place a:hover { background:var(--bg3); }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+.dev.antipattern > .dev-label { border-left-style:solid; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.2rem; }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em;
+            padding-bottom:0; border-bottom:none; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
+.toc { columns:24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.toc > .toc-part:first-child, .toc > .toc-keep:first-child > .toc-part, .toc-full > .toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
+.toc-group { padding-left:.85rem; }
+.toc-keep, .toc a { break-inside:avoid; }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+code.style-name { font-family:"Doc Mono","D2Coding",ui-monospace,monospace;
+  font-size:.72em; color:var(--muted); background:var(--rule);
+  padding:.05em .35em; border-radius:3px; white-space:nowrap;
+  font-weight:400; letter-spacing:0; }
+.dev.open > .dev-label { padding-top:.42rem; padding-bottom:.42rem; }
+.dev.open > .open-body { padding-top:.4rem; padding-bottom:.4rem; }
+.dev.open > .open-body > p { margin:.6rem 0; }
+.dev > .dev-body { padding-top:.5rem; padding-bottom:.5rem; }
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
+.dev > .dev-body > figure { margin:.55rem 0; }
+main { line-height:1.85; }
+p { margin:1.15rem 0; }
+h2 { margin-top:2.4rem; }
+h3 { margin-top:2rem; }
+li { margin:.3rem 0; }
+h1, h2, h3, h4 { border-bottom-color:var(--box-rule) !important; }
+.toc { line-height:1.45; }
+.toc a { padding:.16rem 0; }
+.toc-part { margin:.85rem 0 .2rem; }
+.metalist { line-height:1.45; gap:.2rem 1.2rem; }
+.metalist dt, .metalist dd { margin:0; }
+.demo { border-color:var(--box-rule); }
+.demo > .demo-head { border-bottom-color:var(--box-rule); }
+.dev > .dev-label,
+.dev.open > .dev-label,
+.qa-box .qa-q,
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  border-left-color:var(--box-rule); }
+.dev > .dev-body,
+.dev > .open-body,
+.dev.open .qa-a,
+.qa-box .qa-a,
+.deepqa .qa-a { border-left-color:var(--box-rule); }
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div {
+  border-color:var(--box-rule); }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+.dev.open > .open-body,
+.dev.open > .qa-a,
+.dev.open .qa-a,
+.dev.deepqa .qa-a,
+.qa-box > .qa-a,
+.qa-box > .qa-q { border-left-color:var(--box-rule); }
+.bar .bar-toc { font-size:1.15em; line-height:1; text-decoration:none; }
+.dev, .dev-body, .open-body, .qa-box, .qa-q, .qa-a, .dev-label,
+.toc-full, .toc-full .tf-secs { line-height:inherit; font-size:1rem; }
+.dev > .dev-body > p, .dev > .open-body > p,
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:1.15rem 0; }
+.dev > .dev-body > *:first-child, .dev > .open-body > *:first-child,
+.qa-box .qa-q > p:first-child, .qa-box .qa-a > p:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child, .dev > .open-body > *:last-child,
+.qa-box .qa-q > p:last-child, .qa-box .qa-a > p:last-child { margin-bottom:0; }
+.dev > .dev-label, .dev.open > .dev-label { font-size:.98rem; line-height:1.4; }
+h1,h2,h3,h4 { padding-bottom:.34rem; }
+h1 { margin:.2rem 0 1.3rem; }
+h2 { padding-bottom:.42rem; margin-bottom:1.15rem; }
+h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
+.dev.open > .open-body > * { margin:.3rem 0; }
+.dev.open > .open-body > p { margin:.5rem 0; }
+.dev.open > .open-body > div { margin:.15rem 0; }
+.dev.open ul, .dev.open ol { margin:.3rem 0; }
+.dev.open li, .dev.open ol.qlist li { margin:0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open .qa-a > p { margin:.35rem 0; }
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div { border-color:var(--box-rule); }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+a:focus-visible, button:focus-visible, summary:focus-visible, input:focus-visible {
+  outline:2px solid var(--accent2); outline-offset:2px; }
+:target, h1, h2, h3, h4, [id] { scroll-margin-top:4.2rem; }
+.skip { position:absolute; left:-9999px; top:0; z-index:30;
+        background:var(--bg); color:var(--fg); border:1px solid var(--fg);
+        padding:.5rem .8rem; font-size:.9rem; text-decoration:none; }
+.skip:focus { left:.5rem; top:.5rem; }
+.here-panel { position:fixed; top:46px; left:clamp(.2rem,1vw,1rem); z-index:19;
+  width:min(32rem, calc(100vw - .4rem)); max-height:calc(100vh - 54px); overflow:auto;
+  padding:.7rem .9rem .9rem; border:1px solid var(--line); --k:var(--line-strong);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-size:.9rem; line-height:1.4;
+  background:
+    linear-gradient(var(--k),var(--k)) left top / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) left top / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) right top / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) right top / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) left bottom / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) left bottom / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) right bottom / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) right bottom / 3px 8px no-repeat,
+    color-mix(in srgb, var(--bg) 97%, transparent); }
+.here-panel .tools { display:flex; flex-wrap:wrap; gap:.3rem .4rem; align-items:center;
+  margin-bottom:.6rem; }
+.tool, .segb { font:inherit; font-size:.88rem; color:var(--fg); background:none;
+  border:1px solid var(--line-strong); padding:0 .6rem; min-height:30px;
+  display:inline-flex; align-items:center; text-decoration:none; cursor:pointer; white-space:nowrap; }
+.tool:hover, .segb:hover, .nav a:hover, .here-panel .here-body a:hover { background:var(--bg3); }
+.segb[aria-pressed="true"] { background:var(--select); border-color:var(--accent); font-weight:700; }
+.tool, .segb, .bar a, .bar button, .nav a, .here-panel a { transition:background-color .08s; }
+@media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
+main a { text-decoration:underline; text-decoration-color:var(--box-rule);
+  text-underline-offset:2px; }
+main a:hover { background:var(--box-bg); text-decoration-color:var(--link); }
+main .toc a, main .toc-full a, main .here-body a { text-decoration:none; }
+main .toc a:hover, main .toc-full a:hover { background:var(--box-bg); text-decoration:underline; }
+.setbox { margin:0 0 .6rem; }
+.setrow { display:flex; flex-wrap:wrap; gap:.4rem .5rem; align-items:center; margin:.35rem 0; }
+.setlbl { min-width:4.2rem; font-size:.82rem; font-weight:700; }
+.seg { display:inline-flex; flex-wrap:wrap; gap:.25rem; }
+.col { display:inline-flex; align-items:center; gap:.3rem; }
+.col input[type=color] { width:2rem; height:1.4rem; padding:0; border:1px solid var(--line-strong);
+  background:none; cursor:pointer; }
+.setnote { margin:.5rem 0 0; font-size:.82rem; }
+.here-panel .ver { font-size:.82rem; color:var(--muted); padding:.2rem .45rem .2rem 0;
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; white-space:nowrap; }
+.demo pre, .demo pre code {
+  white-space:pre-wrap; overflow-wrap:anywhere; word-break:break-word; }
+.demo > .demo-body { overflow-x:visible; }
+.plink {
+  margin-left: .4em; font-weight: 400; text-decoration: none;
+  color: var(--muted, #888); opacity: 0;
+}
+h3:hover > .plink, h4:hover > .plink,
+h3 > .plink:focus, h4 > .plink:focus { opacity: 1; }
+@media (hover: none) { .plink { opacity: .45; } }
+.searchbox { margin:.6em 0 0; }
+.searchbox input[type=search] {
+  width: 100%; padding: .45em .6em; font: inherit;
+  border: 1px solid var(--line-strong);
+  background: var(--bg); color: var(--fg);
+}
+.search-hint { color: var(--muted, #777); font-size: .85em; margin:.3em 0 0; }
+.search-results { list-style: none; padding: 0; margin: .5em 0 0; }
+.search-results li { margin: .15em 0; }
+.search-results .where { color: var(--muted, #777); font-size: .85em; margin-left: .4em; }
+@media (max-width: 900px), (orientation: portrait) {
+  :root:not([data-layout="desktop"]) .bar .place .cur { display:none; }
+  :root:not([data-layout="desktop"]) .bar .back,
+  :root:not([data-layout="desktop"]) .bar .bar-nav .nb { min-height:40px; padding:0 .5rem; }
+}
+@media (max-width: 480px) {
+  :root:not([data-layout="desktop"]) .bar .bar-nav .prev .lbl,
+  :root:not([data-layout="desktop"]) .bar .bar-nav .next .lbl { display:none; }
+  :root:not([data-layout="desktop"]) .bar .bar-nav .nb { min-width:44px; justify-content:center; }
+  :root:not([data-layout="desktop"]) .bar { gap:.2rem; }
+}
+:root[data-layout="mobile"] .bar .place .cur { display:none; }
+:root[data-layout="mobile"] .bar .back, :root[data-layout="mobile"] .bar .bar-nav .nb { min-height:40px; padding:0 .5rem; }
+:root[data-layout="mobile"] main .wrap { max-width:34rem; }
+@media (pointer: coarse), (max-width: 900px) {
+  .bar .menu-btn { min-width:44px; min-height:44px; }
+  .tool, .segb { min-height:38px; }
+}
+@media print { .bar, .here-panel { display:none; } }
+
+body { font-family:"Doc Serif","Noto Serif",Georgia,"Noto Serif CJK KR",serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans",system-ui,"Noto Sans CJK KR",sans-serif; }
+pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
+</style>
+<script>(function(){try{var L=localStorage,o='pcb-read';if(o&&o!=='doc-read'&&L.getItem(o)!==null&&L.getItem('doc-read')===null){var v=JSON.parse(L.getItem(o)||'{}');delete v.width;L.setItem('doc-read',JSON.stringify(v));L.removeItem(o);}var s=JSON.parse(L.getItem('doc-read')||'{}');var r=document.documentElement;if(s.theme&&s.theme!=='auto')r.setAttribute('data-theme',s.theme);if(s.fg)r.style.setProperty('--fg',s.fg);if(s.bg)r.style.setProperty('--bg',s.bg);if(s.link)r.style.setProperty('--link',s.link);if(s.width==='fit')r.setAttribute('data-measure','fit');if(s.layout==='desktop'||s.layout==='mobile')r.setAttribute('data-layout',s.layout);if(s.layout==='desktop'){var m=document.querySelector('meta[name=viewport]');if(m)m.setAttribute('content','width=1100');}}catch(e){}})();</script></head>
+<body>
+<a class="skip" href="#content">Skip to content</a>
+<div class="bar"><button class="menu-btn" id="set-open" type="button" aria-expanded="false" aria-controls="here-panel" aria-label="Menu" title="Menu">☰</button><a class="back" href="index.html" title="Back">← <span class="lbl">Back</span></a><span class="place"><strong><a href="index.html">Proven C Book</a></strong><span class="cur"> › ch. 114</span></span><span class="bar-nav"><a class="nb prev" href="ch113.html">‹ <span class="lbl">Prev</span></a><a class="nb toc" href="index.html"><span class="lbl">TOC</span></a><a class="nb next" href="ch115.html"><span class="lbl">Next</span> ›</a></span></div><div id="here-panel" class="here-panel" hidden><div class="setbox" id="setbox"><div class="setrow"><span class="setlbl">Language</span><span class="seg"><a class="segb" href="../ko/ch114.html">한국어</a></span></div><div class="setrow"><span class="setlbl">Text width</span><span class="seg" id="s-width"><button type="button" class="segb" data-width="960">960</button><button type="button" class="segb" data-width="fit">Fit the window</button></span></div><div class="setrow"><span class="setlbl">Layout</span><span class="seg" id="s-layout"><button type="button" class="segb" data-layout="auto">Auto</button><button type="button" class="segb" data-layout="desktop">PC</button><button type="button" class="segb" data-layout="mobile">Mobile</button></span></div><div class="setrow"><span class="setlbl">Theme</span><span class="seg"><button type="button" class="segb" data-theme="auto">System</button><button type="button" class="segb" data-theme="light">Light</button><button type="button" class="segb" data-theme="dark">Dark</button></span></div><div class="setrow"><span class="setlbl">Colours</span><label class="col"><span>Text</span><input type="color" id="s-fg"></label><label class="col"><span>Background</span><input type="color" id="s-bg"></label><label class="col"><span>Link</span><input type="color" id="s-link"></label></div><p class="setnote">Settings are kept in this browser only.</p></div><div class="tools"><span class="ver">v0.110.2</span><a class="tool" href="toc.html">▤ Detailed contents</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book/releases/download/v0.110.2/proven_c_book-v0.110.2-en.pdf">⤓ PDF</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book" title="This book on GitHub">Git</a><a class="tool" href="https://rubidus-api.github.io/" title="rubidus-api.github.io --- every published project">⌂ All projects</a><a class="tool" href="https://github.com/rubidus-api" title="github.com/rubidus-api --- every repository">≡ All repos</a></div><div class="here-head"><strong>Contents of this chapter</strong></div><div class="here-body"><a class="lv3" href="#s114-1"><span class="tf-no">114.1</span>The life of one file</a><a class="lv4" href="#s114-1-1"><span class="tf-no">114.1.1</span>The convenience functions that read and write in one go</a><a class="lv3" href="#s114-2"><span class="tf-no">114.2</span>Streams — reading and writing with a buffer</a><a class="lv3" href="#s114-3"><span class="tf-no">114.3</span>Time — two different clocks</a><a class="lv3" href="#s114-4"><span class="tf-no">114.4</span>Random numbers — the purpose decides the generator</a><a class="lv3" href="#s114-5"><span class="tf-no">114.5</span>Memory mapping</a></div></div>
+<main id="content"><div class="wrap">
+<h2>114 The outside world — files, streams, time, random numbers</h2><div></div><div class="dev open prereq"><p class="dev-label">What to know first</p><div class="open-body"><div>chapter 78, Streams in reality · streams</div><div>chapter 26, Input · input</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 9 described a stream as designed so that “the program does not know what it is connected to”, and chapter 76 said <code>fopen</code> reports failure with null. Then what failure is most often missed in a file API?</p><div class="qa-a"><p><span class="dev-label">A.</span> <strong>The partial write.</strong> A failure to open is conspicuous, but the case of <code>write</code> returning without writing all that was requested is easy to forget — it really happens when the disk fills, when a signal cuts in, or when the other end is a pipe. So this library has two variants. <code>proven_fs_write</code> returns <strong>the number of bytes actually written</strong>, and <code>proven_fs_write_all</code> repeats until all is written and then reports only success or failure. What most code wants is the latter, and the former remains so as not to hide that fact.</p></div></div></div><div class="dev open why"><p class="dev-label">The need for this chapter, and its context</p><div class="open-body">Only after the self-contained layers are built does the library step outside. This order follows from the promise made in chapter 106: the price of portability changes the moment you touch an operating system, so the layer that stands without one is finished first. It also sets up chapter 115, where there is no OS at all.</div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body">From here we touch the operating system. Opening, reading and writing files, buffered streams, reading and formatting time, and random numbers — those random numbers that become entirely different things according to the purpose. Chapter 9’s story of streams and chapter 26’s story of input are completed here as real APIs.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>What becomes of random numbers for secrets if there is no operating system?</li></ol></div></div><div></div><h3 id="s114-1">114.1 The life of one file<a class="plink" href="#s114-1" aria-label="Link to this section" title="Link to this section">#</a></h3><div></div><p>A file is the first resource in this part that touches <strong>the outside world</strong>. The discipline of making and giving back is the same as in the earlier chapters, but the kinds of failure are far more numerous.</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/proven-world/fslife.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> The life of one file — the open modes, partial writes, the position, and</span></em>
+<em><span class="tok-c">   saving safely. How failure arrives as a value where the outside world is</span></em>
+<em><span class="tok-c">   touched. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">proven.h</span><span class="tok-s">></span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> a helper for seeing the bytes read as text (to keep a comma out of a macro argument) </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> proven_u8str_view_t <strong>as_text</strong><span class="tok-x">(</span><strong><span class="tok-k">const</span></strong> proven_byte_t <strong><span class="tok-x">*</span></strong>p<span class="tok-x">,</span> proven_size_t n<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-x">(</span>proven_u8str_view_t<span class="tok-x">)</span><span class="tok-x">{</span> <span class="tok-x">.</span>ptr <strong><span class="tok-x">=</span></strong> p<span class="tok-x">,</span> <span class="tok-x">.</span>size <strong><span class="tok-x">=</span></strong> n <span class="tok-x">}</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong><strong>codename</strong><span class="tok-x">(</span>proven_err_t e<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-k">switch</span></strong> <span class="tok-x">(</span>e<span class="tok-x">)</span> <span class="tok-x">{</span>
+    <strong><span class="tok-k">case</span></strong> PROVEN_OK<span class="tok-x">:</span>               <strong><span class="tok-k">return</span></strong> <span class="tok-s">"</span><span class="tok-s">OK</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">case</span></strong> PROVEN_ERR_NOT_FOUND<span class="tok-x">:</span>    <strong><span class="tok-k">return</span></strong> <span class="tok-s">"</span><span class="tok-s">NOT_FOUND</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">case</span></strong> PROVEN_ERR_PERMISSION<span class="tok-x">:</span>   <strong><span class="tok-k">return</span></strong> <span class="tok-s">"</span><span class="tok-s">PERMISSION</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">case</span></strong> PROVEN_ERR_IO<span class="tok-x">:</span>           <strong><span class="tok-k">return</span></strong> <span class="tok-s">"</span><span class="tok-s">IO</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">case</span></strong> PROVEN_ERR_EOF<span class="tok-x">:</span>          <strong><span class="tok-k">return</span></strong> <span class="tok-s">"</span><span class="tok-s">EOF</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">case</span></strong> PROVEN_ERR_INVALID_ARG<span class="tok-x">:</span>  <strong><span class="tok-k">return</span></strong> <span class="tok-s">"</span><span class="tok-s">INVALID_ARG</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">default</span></strong><span class="tok-x">:</span>                      <strong><span class="tok-k">return</span></strong> <span class="tok-s">"</span><span class="tok-s">(other)</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    proven_allocator_t scratch <strong><span class="tok-x">=</span></strong> <strong>proven_heap_allocator</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    proven_u8str_view_t path <strong><span class="tok-x">=</span></strong> <strong>PROVEN_LIT</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">build/ch77-demo.txt</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── (1) opening — the mode weaves bit flags together ────────── </span></em><em><span class="tok-c">*/</span></em>
+    proven_result_file_t opened <strong><span class="tok-x">=</span></strong> <strong>proven_fs_open</strong><strong><span class="tok-x">(</span></strong>
+<strong>        scratch</strong><strong><span class="tok-x">,</span></strong><strong> path</strong><strong><span class="tok-x">,</span></strong>
+<strong>        PROVEN_FS_WRITE </strong><strong><span class="tok-x">|</span></strong><strong> PROVEN_FS_CREATE </strong><strong><span class="tok-x">|</span></strong><strong> PROVEN_FS_TRUNC</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong><strong>proven_is_ok</strong><strong><span class="tok-x">(</span></strong><strong>opened</strong><strong><span class="tok-x">.</span></strong><strong>err</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+        <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">open failed: {}</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>codename</strong><strong><span class="tok-x">(</span></strong><strong>opened</strong><strong><span class="tok-x">.</span></strong><strong>err</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong><span class="tok-k">return</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+    proven_file_t f <strong><span class="tok-x">=</span></strong> opened<span class="tok-x">.</span>value<span class="tok-x">;</span>
+    <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">open            -> OK (write, create, truncate)</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── (2) the two versions of writing ─────────────────────────── </span></em><em><span class="tok-c">*/</span></em>
+    proven_u8str_view_t line <strong><span class="tok-x">=</span></strong> <strong>PROVEN_LIT</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">first line</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">second line</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> _write returns "how much was really written" — a partial write can happen </span></em><em><span class="tok-c">*/</span></em>
+    proven_result_size_t w <strong><span class="tok-x">=</span></strong> <strong>proven_fs_write</strong><strong><span class="tok-x">(</span></strong><strong>f</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>proven_mem_view_from_u8</strong><strong><span class="tok-x">(</span></strong><strong>line</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">write           -> err={} bytes written={} (requested {})</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                   </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>codename</strong><strong><span class="tok-x">(</span></strong><strong>w</strong><strong><span class="tok-x">.</span></strong><strong>err</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>w</strong><strong><span class="tok-x">.</span></strong><strong>value</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                   </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>line</strong><strong><span class="tok-x">.</span></strong><strong>size</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> _write_all repeats until everything is written and then reports success or failure only </span></em><em><span class="tok-c">*/</span></em>
+    proven_err_t e <strong><span class="tok-x">=</span></strong> <strong>proven_fs_write_all</strong><strong><span class="tok-x">(</span></strong><strong>f</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>proven_mem_view_from_u8</strong><strong><span class="tok-x">(</span></strong><strong>PROVEN_LIT</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">third</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">write_all       -> {} (what most code wants)</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                   </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>codename</strong><strong><span class="tok-x">(</span></strong><strong>e</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── (3) nailing it to the disk — flush and sync differ ──────── </span></em><em><span class="tok-c">*/</span></em>
+    e <strong><span class="tok-x">=</span></strong> <strong>proven_fs_sync</strong><strong><span class="tok-x">(</span></strong><strong>f</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">sync            -> {} (only this far does it survive a power cut)</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                   </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>codename</strong><strong><span class="tok-x">(</span></strong><strong>e</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    proven_result_size_t sz <strong><span class="tok-x">=</span></strong> <strong>proven_fs_size</strong><strong><span class="tok-x">(</span></strong><strong>f</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    proven_result_u64_t at <strong><span class="tok-x">=</span></strong> <strong>proven_fs_tell</strong><strong><span class="tok-x">(</span></strong><strong>f</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">size={} tell={}</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>sz</strong><strong><span class="tok-x">.</span></strong><strong>value</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>at</strong><strong><span class="tok-x">.</span></strong><strong>val</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span><strong>proven_fs_close</strong><strong><span class="tok-x">(</span></strong><strong>f</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── (4) reading — what is asked for and what is read differ ─── </span></em><em><span class="tok-c">*/</span></em>
+    proven_result_file_t ro <strong><span class="tok-x">=</span></strong> <strong>proven_fs_open</strong><strong><span class="tok-x">(</span></strong><strong>scratch</strong><strong><span class="tok-x">,</span></strong><strong> path</strong><strong><span class="tok-x">,</span></strong><strong> PROVEN_FS_READ</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong>proven_is_ok</strong><strong><span class="tok-x">(</span></strong><strong>ro</strong><strong><span class="tok-x">.</span></strong><strong>err</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+        proven_file_t r <strong><span class="tok-x">=</span></strong> ro<span class="tok-x">.</span>value<span class="tok-x">;</span>
+        proven_byte_t buf<span class="tok-x">[</span><span class="tok-n">16</span><span class="tok-x">]</span><span class="tok-x">;</span>
+        proven_result_size_t got <strong><span class="tok-x">=</span></strong> <strong>proven_fs_read</strong><strong><span class="tok-x">(</span></strong><strong>r</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong>proven_mem_mut_t</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">{</span></strong><strong> buf</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> buf </strong><strong><span class="tok-x">}</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">read(16)        -> bytes read={} </span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">{}</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                       </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>got</strong><strong><span class="tok-x">.</span></strong><strong>value</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                       </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>as_text</strong><strong><span class="tok-x">(</span></strong><strong>buf</strong><strong><span class="tok-x">,</span></strong><strong> got</strong><strong><span class="tok-x">.</span></strong><strong>value</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+        <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the position is rewound and it is read again </span></em><em><span class="tok-c">*/</span></em>
+        <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span><strong>proven_fs_seek</strong><strong><span class="tok-x">(</span></strong><strong>r</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">,</span></strong><strong> PROVEN_FS_SEEK_SET</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        proven_result_size_t again <strong><span class="tok-x">=</span></strong> <strong>proven_fs_read</strong><strong><span class="tok-x">(</span></strong><strong>r</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong>proven_mem_mut_t</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">{</span></strong><strong> buf</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">5</span></strong><strong> </strong><strong><span class="tok-x">}</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">seek(0)+read(5) -> {} bytes</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>again</strong><strong><span class="tok-x">.</span></strong><strong>value</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span><strong>proven_fs_close</strong><strong><span class="tok-x">(</span></strong><strong>r</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── (5) reading it all at once — when the size is unknown ───── </span></em><em><span class="tok-c">*/</span></em>
+    proven_result_u8str_t all <strong><span class="tok-x">=</span></strong> <strong>proven_fs_read_all_u8str</strong><strong><span class="tok-x">(</span></strong><strong>scratch</strong><strong><span class="tok-x">,</span></strong><strong> path</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong>proven_is_ok</strong><strong><span class="tok-x">(</span></strong><strong>all</strong><strong><span class="tok-x">.</span></strong><strong>err</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+        proven_u8str_t s <strong><span class="tok-x">=</span></strong> all<span class="tok-x">.</span>value<span class="tok-x">;</span>
+        <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">read_all        -> {} bytes (the whole file at one go)</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                       </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>proven_u8str_as_view</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>s</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">.</span></strong><strong>size</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong>proven_u8str_destroy</strong><strong><span class="tok-x">(</span></strong><strong>scratch</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>s</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── (6) a file that is not there — failure arrives as a value ─ </span></em><em><span class="tok-c">*/</span></em>
+    proven_result_file_t missing <strong><span class="tok-x">=</span></strong>
+        <strong>proven_fs_open</strong><strong><span class="tok-x">(</span></strong><strong>scratch</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_LIT</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">build/no-such-file.txt</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> PROVEN_FS_READ</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">opening a missing file -> {} (check which code the platform layer maps it to)</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                   </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>codename</strong><strong><span class="tok-x">(</span></strong><strong>missing</strong><strong><span class="tok-x">.</span></strong><strong>err</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── (7) an atomic save — written to a temporary and swapped in ─ </span></em><em><span class="tok-c">*/</span></em>
+    e <strong><span class="tok-x">=</span></strong> <strong>proven_fs_write_file_atomic</strong><strong><span class="tok-x">(</span></strong><strong>scratch</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_LIT</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">build/ch77-atomic.txt</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                                    </strong><strong>proven_mem_view_from_u8</strong><strong><span class="tok-x">(</span></strong><strong>PROVEN_LIT</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">all or nothing</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">write_file_atomic -> {} (no half-written file is left behind)</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                   </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>codename</strong><strong><span class="tok-x">(</span></strong><strong>e</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span><strong>proven_fs_remove</strong><strong><span class="tok-x">(</span></strong><strong>scratch</strong><strong><span class="tok-x">,</span></strong><strong> path</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span><strong>proven_fs_remove</strong><strong><span class="tok-x">(</span></strong><strong>scratch</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_LIT</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">build/ch77-atomic.txt</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>open            -> OK (write, create, truncate)
+write           -> err=OK bytes written=23 (requested 23)
+write_all       -> OK (what most code wants)
+sync            -> OK (only this far does it survive a power cut)
+size=29 tell=29
+read(16)        -> bytes read=16 "first line
+secon"
+seek(0)+read(5) -> 5 bytes
+read_all        -> 29 bytes (the whole file at one go)
+opening a missing file -> NOT_FOUND (check which code the platform layer maps it to)
+write_file_atomic -> OK (no half-written file is left behind)
+</code></pre></div></div><p>The life cycle is four steps, and at each step failure comes as a value.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>step</strong></th><th><strong>function</strong></th><th><strong>to know</strong></th></tr><tr><td>opening</td><td><code>proven_fs_open(scratch, path, mode)</code></td><td><strong>a scratch allocator</strong> is needed (for path conversion)</td></tr><tr><td>writing, reading</td><td><code>_write</code>/<code>_write_all</code>, <code>_read</code></td><td>amount requested ≠ amount handled</td></tr><tr><td>nailing it down</td><td><code>proven_fs_sync(file)</code></td><td>closing alone does not guarantee it reaches the disk</td></tr><tr><td>closing</td><td><code>proven_fs_close(file)</code></td><td>it has a return value — there is something to check</td></tr></table></div><span id="doc-float-561"></span><p class="float-caption">Table 114.1 — The steps of handling a file</p></figure><p><strong>The mode weaves bit flags.</strong> Instead of a string like the standard <code>fopen</code>’s <code>"w+b"</code>, named values are joined with <code>|</code>.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>flag</strong></th><th><strong>meaning</strong></th></tr><tr><td><code>PROVEN_FS_READ</code></td><td>reading</td></tr><tr><td><code>PROVEN_FS_WRITE</code></td><td>writing</td></tr><tr><td><code>PROVEN_FS_APPEND</code></td><td>appending at the end</td></tr><tr><td><code>PROVEN_FS_CREATE</code></td><td>create it if absent</td></tr><tr><td><code>PROVEN_FS_TRUNC</code></td><td>empty it if present</td></tr><tr><td><code>PROVEN_FS_CREATE_NEW</code></td><td>★ <strong>fail if it already exists</strong> (<code>PROVEN_ERR_EXISTS</code>) — creating anew without a race</td></tr></table></div><span id="doc-float-562"></span><p class="float-caption">Table 114.2 — What the file flags mean</p></figure><p>Flags are better than string modes in two ways. First, <strong>the combination is visible</strong> — there is no need to memorise what <code>"a+"</code> exactly is. Second, things absent from string modes, such as <code>CREATE_NEW</code>, can be expressed. When making a lock file or a temporary file, “fail if it already exists” is the only road that blocks a race condition (recall chapter 79’s <code>tmpnam</code> story). The code that comes back then is <code>PROVEN_ERR_EXISTS</code>. It is a different code from the <code>PROVEN_ERR_IO</code> of a failing disk, so “choose another name” can be told from “give up”.</p><p><strong>Handles travel by value.</strong> That the functions take a <code>proven_file_t</code> by value rather than by pointer is the mark of it, because what is inside is about one integer descriptor. So the discipline of not using that value again after closing is still a human’s part.</p><h4 id="s114-1-1">114.1.1 The convenience functions that read and write in one go<a class="plink" href="#s114-1-1" aria-label="Link to this section" title="Link to this section">#</a></h4><div></div><p>In practice the file is often small enough to be handled whole. Then opening, reading and closing need not be woven by hand.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>function</strong></th><th><strong>what it does</strong></th><th><strong>caution</strong></th></tr><tr><td><code>proven_fs_read_all(alloc, path)</code></td><td>the whole file as bytes</td><td>no ceiling — only for a path you trust</td></tr><tr><td><code>proven_fs_read_all_bounded(alloc, path, max)</code></td><td>reads at most <code>max</code> bytes</td><td>past that, <code>ERR_OUT_OF_BOUNDS</code> and no buffer</td></tr><tr><td><code>proven_fs_read_all_u8str(alloc, path)</code></td><td>the whole file as a string</td><td>the same as <code>read_all</code>. it does not check the encoding</td></tr><tr><td><code>proven_fs_write_file(scratch, path, data)</code></td><td>writing it whole</td><td>die in the middle and a half-written file is left</td></tr><tr><td><code>proven_fs_write_file_atomic(...)</code></td><td>write to a temporary and swap</td><td>★ no half-written file is left</td></tr><tr><td><code>proven_fs_write_file_durable(...)</code></td><td>atomic + <code>sync</code></td><td>it survives a power cut. the slowest</td></tr></table></div><span id="doc-float-563"></span><p class="float-caption">Table 114.3 — The whole-file read and write functions and what to watch</p></figure><p>Start with the first two reading rows, <code>read_all</code> and <code>read_all_bounded</code>. <code>proven_fs_read_all</code> reads until the source ends. When the path names <code>/dev/zero</code> or a FIFO that never ends, the buffer grows until the allocator refuses. A path that came from outside the program is read with <code>proven_fs_read_all_bounded</code> — it refuses before allocating when the size is known in advance, and at the moment byte <code>max + 1</code> arrives when it is not.</p><p>On the writing side, the difference between the last three rows matters in practice. Code that overwrites a configuration file or saved data, <strong>if it dies in the middle, leaves a file that is neither the original nor the new one</strong>, and the standard practice that prevents it is “write to a temporary file and rename” (renaming is atomic within the same file system). <code>_atomic</code> does that work for you, and <code>_durable</code> hangs a <code>sync</code> on it as well so that it survives a power cut.</p><p>The temporary file is named <code>&lt;path>.pvtmp</code> followed by thirteen random characters. The name cannot be guessed in advance, so nobody can block the write by creating that name first. When the process dies in the middle of a write, the temporary file stays. The library does not remove it — it cannot tell an abandoned file from one another process is writing right now. Cleaning up is the program’s job, and <code>proven_fs_is_staging_name</code> answers “does this name have the shape of that temporary file”.</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/proven-world/fileio.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">proven.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    proven_allocator_t alloc <strong><span class="tok-x">=</span></strong> <strong>proven_heap_allocator</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    proven_u8str_view_t path <strong><span class="tok-x">=</span></strong> <strong>proven_u8str_view_from_cstr</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">proven_demo.txt</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>text <strong><span class="tok-x">=</span></strong> <span class="tok-s">"</span><span class="tok-s">one</span><span class="tok-n">\n</span><span class="tok-s">two</span><span class="tok-n">\n</span><span class="tok-s">three</span><span class="tok-n">\n</span><span class="tok-s">"</span><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> writing: created if absent, emptied if present </span></em><em><span class="tok-c">*/</span></em>
+    proven_result_file_t opened <strong><span class="tok-x">=</span></strong> <strong>proven_fs_open</strong><strong><span class="tok-x">(</span></strong>
+<strong>        alloc</strong><strong><span class="tok-x">,</span></strong><strong> path</strong><strong><span class="tok-x">,</span></strong><strong> PROVEN_FS_WRITE </strong><strong><span class="tok-x">|</span></strong><strong> PROVEN_FS_CREATE </strong><strong><span class="tok-x">|</span></strong><strong> PROVEN_FS_TRUNC</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong><strong>proven_is_ok</strong><strong><span class="tok-x">(</span></strong><strong>opened</strong><strong><span class="tok-x">.</span></strong><strong>err</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">open for write failed (err=</span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong>opened</strong><strong><span class="tok-x">.</span></strong><strong>err</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong><span class="tok-k">return</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+    proven_file_t f <strong><span class="tok-x">=</span></strong> opened<span class="tok-x">.</span>value<span class="tok-x">;</span>
+
+    proven_mem_view_t src <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span>
+        <span class="tok-x">.</span>ptr <strong><span class="tok-x">=</span></strong> <span class="tok-x">(</span><strong><span class="tok-k">const</span></strong> proven_byte_t <strong><span class="tok-x">*</span></strong><span class="tok-x">)</span>text<span class="tok-x">,</span>
+        <span class="tok-x">.</span>size <strong><span class="tok-x">=</span></strong> <strong>proven_cstr_len</strong><strong><span class="tok-x">(</span></strong><strong>text</strong><strong><span class="tok-x">)</span></strong>
+    <span class="tok-x">}</span><span class="tok-x">;</span>
+    proven_err_t e <strong><span class="tok-x">=</span></strong> <strong>proven_fs_write_all</strong><strong><span class="tok-x">(</span></strong><strong>f</strong><strong><span class="tok-x">,</span></strong><strong> src</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> it repeats over partial writes for us </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">write_all  : </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s"> (</span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> bytes)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>proven_is_ok</strong><strong><span class="tok-x">(</span></strong><strong>e</strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">ok</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">failed</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> src</strong><strong><span class="tok-x">.</span></strong><strong>size</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span><strong>proven_fs_close</strong><strong><span class="tok-x">(</span></strong><strong>f</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> reading </span></em><em><span class="tok-c">*/</span></em>
+    opened <strong><span class="tok-x">=</span></strong> <strong>proven_fs_open</strong><strong><span class="tok-x">(</span></strong><strong>alloc</strong><strong><span class="tok-x">,</span></strong><strong> path</strong><strong><span class="tok-x">,</span></strong><strong> PROVEN_FS_READ</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong><strong>proven_is_ok</strong><strong><span class="tok-x">(</span></strong><strong>opened</strong><strong><span class="tok-x">.</span></strong><strong>err</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <strong><span class="tok-k">return</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+    f <strong><span class="tok-x">=</span></strong> opened<span class="tok-x">.</span>value<span class="tok-x">;</span>
+
+    proven_result_size_t sz <strong><span class="tok-x">=</span></strong> <strong>proven_fs_size</strong><strong><span class="tok-x">(</span></strong><strong>f</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">size       : </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> bytes</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> sz</strong><strong><span class="tok-x">.</span></strong><strong>value</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    proven_byte_t buf<span class="tok-x">[</span><span class="tok-n">64</span><span class="tok-x">]</span><span class="tok-x">;</span>
+    proven_result_size_t got <strong><span class="tok-x">=</span></strong> <strong>proven_fs_read</strong><strong><span class="tok-x">(</span></strong><strong>f</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong>proven_mem_mut_t</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">{</span></strong><strong> </strong><strong><span class="tok-x">.</span></strong><strong>ptr</strong><strong> </strong><strong><span class="tok-x">=</span></strong><strong> buf</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">.</span></strong><strong>size</strong><strong> </strong><strong><span class="tok-x">=</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> buf </strong><strong><span class="tok-x">}</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">read       : </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> bytes</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> got</strong><strong><span class="tok-x">.</span></strong><strong>value</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> what was read is handled as a view — sliced line by line </span></em><em><span class="tok-c">*/</span></em>
+    proven_u8str_view_t all <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-x">.</span>ptr <strong><span class="tok-x">=</span></strong> buf<span class="tok-x">,</span> <span class="tok-x">.</span>size <strong><span class="tok-x">=</span></strong> got<span class="tok-x">.</span>value <span class="tok-x">}</span><span class="tok-x">;</span>
+    proven_u8str_view_t nl <strong><span class="tok-x">=</span></strong> <strong>proven_u8str_view_from_cstr</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    proven_size_t start <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">int</span></strong> line <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">while</span></strong> <span class="tok-x">(</span>start <strong><span class="tok-x">&lt;</span></strong> all<span class="tok-x">.</span>size<span class="tok-x">)</span> <span class="tok-x">{</span>
+        proven_size_t hit <strong><span class="tok-x">=</span></strong> <strong>proven_u8str_view_find</strong><strong><span class="tok-x">(</span></strong><strong>all</strong><strong><span class="tok-x">,</span></strong><strong> start</strong><strong><span class="tok-x">,</span></strong><strong> nl</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        proven_size_t end <strong><span class="tok-x">=</span></strong> <span class="tok-x">(</span>hit <strong><span class="tok-x">==</span></strong> PROVEN_INDEX_NOT_FOUND<span class="tok-x">)</span> <strong><span class="tok-x">?</span></strong> all<span class="tok-x">.</span>size <strong><span class="tok-x">:</span></strong> hit<span class="tok-x">;</span>
+        proven_u8str_view_t v <strong><span class="tok-x">=</span></strong> <strong>proven_u8str_view_slice</strong><strong><span class="tok-x">(</span></strong><strong>all</strong><strong><span class="tok-x">,</span></strong><strong> start</strong><strong><span class="tok-x">,</span></strong><strong> end </strong><strong><span class="tok-x">-</span></strong><strong> start</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  line </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">   : </span></strong><strong><span class="tok-s">%.*s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">++</span></strong><strong>line</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong>v</strong><strong><span class="tok-x">.</span></strong><strong>size</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-k">const</span></strong><strong> </strong><strong><span class="tok-t">char</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">)</span></strong><strong>v</strong><strong><span class="tok-x">.</span></strong><strong>ptr</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>hit <strong><span class="tok-x">==</span></strong> PROVEN_INDEX_NOT_FOUND<span class="tok-x">)</span> <strong><span class="tok-k">break</span></strong><span class="tok-x">;</span>
+        start <strong><span class="tok-x">=</span></strong> hit <strong><span class="tok-x">+</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+    <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span><strong>proven_fs_close</strong><strong><span class="tok-x">(</span></strong><strong>f</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> open a file that is not there and the failure arrives as a value </span></em><em><span class="tok-c">*/</span></em>
+    proven_result_file_t missing <strong><span class="tok-x">=</span></strong> <strong>proven_fs_open</strong><strong><span class="tok-x">(</span></strong>
+<strong>        alloc</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>proven_u8str_view_from_cstr</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">no_such_file.txt</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> PROVEN_FS_READ</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">missing    : </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>proven_is_ok</strong><strong><span class="tok-x">(</span></strong><strong>missing</strong><strong><span class="tok-x">.</span></strong><strong>err</strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">opened</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">refused with an error code</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span><strong>proven_fs_remove</strong><strong><span class="tok-x">(</span></strong><strong>alloc</strong><strong><span class="tok-x">,</span></strong><strong> path</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>write_all  : ok (14 bytes)
+size       : 14 bytes
+read       : 14 bytes
+  line 1   : one
+  line 2   : two
+  line 3   : three
+missing    : refused with an error code
+</code></pre></div></div><p>Several things stand out.</p><p><strong>The path is a view too.</strong> <code>proven_u8str_view_from_cstr("...")</code> — wherever the string came from, it is handled as a pointer and a length (chapter 111).</p><p><strong>Opening needs an allocator.</strong> The signature’s first argument is a <code>scratch</code> allocator, because temporary memory may be needed to turn the path into the form the operating system requires. Chapter 110’s rule is honestly kept here too — <strong>if it can allocate, it takes an allocator</strong>.</p><p><strong>What is read becomes a view.</strong> Bind the buffer and the number of bytes read and from then on all of chapter 111’s tools can be used. That is what the example used to divide the lines, and copying never happened once.</p><div class="dev antipattern"><p class="dev-label">Counter-example.<span style="white-space: pre-wrap">&#x20;&#x20;</span>Trusting <code>size</code> and assuming that much was read</p><div class="dev-body"><pre><code data-lang="c">proven_result_size_t sz <strong><span class="tok-x">=</span></strong> <strong>proven_fs_size</strong><strong><span class="tok-x">(</span></strong><strong>f</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+proven_byte_t <strong><span class="tok-x">*</span></strong>buf <strong><span class="tok-x">=</span></strong> <strong>malloc</strong><strong><span class="tok-x">(</span></strong><strong>sz</strong><strong><span class="tok-x">.</span></strong><strong>value</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span><strong>proven_fs_read</strong><strong><span class="tok-x">(</span></strong><strong>f</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong>proven_mem_mut_t</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">{</span></strong><strong> buf</strong><strong><span class="tok-x">,</span></strong><strong> sz</strong><strong><span class="tok-x">.</span></strong><strong>value</strong><strong> </strong><strong><span class="tok-x">}</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<strong>process</strong><strong><span class="tok-x">(</span></strong><strong>buf</strong><strong><span class="tok-x">,</span></strong><strong> sz</strong><strong><span class="tok-x">.</span></strong><strong>value</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>      <em><span class="tok-c">/*</span></em><em><span class="tok-c"> was that much really read? </span></em><em><span class="tok-c">*/</span></em></code></pre><p>A file’s size and <strong>the amount this read brought</strong> are different. From pipes, terminals and networks it comes a little at a time, and even a file may end in the middle. The number <code>read</code> returned must be used, and that is why this library returns the read result as a bundle. The fact chapter 26 stated — “input is not a keyboard but a stream” — becomes a practical rule here.</p></div></div><h3 id="s114-2">114.2 Streams — reading and writing with a buffer<a class="plink" href="#s114-2" aria-label="Link to this section" title="Link to this section">#</a></h3><div></div><p>System calls are expensive. Call <code>write</code> one byte at a time and that cost accumulates as it stands. So standard C’s <code>FILE*</code> kept a buffer (chapter 9’s story of line buffering), and proven puts a <strong>stream</strong> in the same place — differing in two ways.</p><ul><li><strong>The caller gives the buffer.</strong> The stream does not allocate in secret.</li><li><span id="idx-entry-305"></span><strong>The failure of a flush comes as a value.</strong> It is not quietly swallowed on closing.</li></ul><p>These two aim at the same problem. In buffered writing the real failure shows itself not in <code>write</code> but in the <strong>flush</strong>, and missing that failure creates data that “was believed successful but is not on the disk”. It is also the place databases and file systems are most careful about (the reason <code>proven_fs_sync</code> exists separately).</p><h3 id="s114-3">114.3 Time — two different clocks<a class="plink" href="#s114-3" aria-label="Link to this section" title="Link to this section">#</a></h3><div></div><p>Two different things are mixed together in what we call time.</p><ul><li><strong>Calendar time</strong> — a time a human reads, like “5 August 2026, 09:00”. It is what you show to users and write into records. Time zones, leap seconds and summer time are entangled in it.</li><li><strong>Monotonic time</strong> — a scale that does not go backwards. It is used for measuring <strong>elapsed time</strong>.</li></ul><p>Mix the two and you get a well-known bug. Measure elapsed time with a calendar clock and the moment the system sets the clock back — or, if you measure in local time, the moment summer time ends — <strong>a negative elapsed time</strong> comes out. Let that value into a timeout calculation and the wait either never ends or expires at once.</p><p>Date formatting uses the format syntax seen in chapter 112 unchanged — named placeholders with width and fill specified, as in <code>"{year}-{month:0>2}-{day:0>2}"</code>. The difference from <code>strftime</code>’s <code>%Y-%m-%d</code> is that <strong>there is no need to memorise what symbol means what</strong>.</p><div class="dev misconception"><p class="dev-label">A common misconception. <strong>“Time is just a number, so adding and subtracting is fine”</strong></p><div class="dev-body">Not in calendar time. A day is not always 86400 seconds (a summer-time transition day is 23 or 25 hours), the lengths of months differ, and time zones change by political decision. “A month later” is not arithmetic but a calendar rule. The difference between two <strong>monotonic</strong> times, on the other hand, may be handled as a plain number — that is one more reason to use a monotonic clock for measuring elapsed time.</div></div><h3 id="s114-4">114.4 Random numbers — the purpose decides the generator<a class="plink" href="#s114-4" aria-label="Link to this section" title="Link to this section">#</a></h3><div></div><p>Few tools are as much “the same name, different demands” as random numbers. The library does not hide this but divides it into three.</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/proven-world/rng.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">proven.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> Reproducible random numbers: the same seed = the same sequence. For tests and simulations </span></em><em><span class="tok-c">*/</span></em>
+    proven_xoshiro256ss_t g<span class="tok-x">;</span>
+    <strong>proven_xoshiro256ss_seed</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>g</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">12345</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    proven_rng_t rng <strong><span class="tok-x">=</span></strong> <strong>proven_xoshiro256ss_rng</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>g</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">seeded run 1:</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> <span class="tok-n">5</span><span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-s">%llu</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">unsigned</span></strong><strong> </strong><strong><span class="tok-t">long</span></strong><strong> </strong><strong><span class="tok-t">long</span></strong><strong><span class="tok-x">)</span></strong><strong>proven_rng_below</strong><strong><span class="tok-x">(</span></strong><strong>rng</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">100</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>proven_xoshiro256ss_seed</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>g</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">12345</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>          <em><span class="tok-c">/*</span></em><em><span class="tok-c"> rewound with the same seed </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">seeded run 2:</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> <span class="tok-n">5</span><span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-s">%llu</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">unsigned</span></strong><strong> </strong><strong><span class="tok-t">long</span></strong><strong> </strong><strong><span class="tok-t">long</span></strong><strong><span class="tok-x">)</span></strong><strong>proven_rng_below</strong><strong><span class="tok-x">(</span></strong><strong>rng</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">100</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> a number in a range: the bounds are included </span></em><em><span class="tok-c">*/</span></em>
+    <strong>proven_xoshiro256ss_seed</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>g</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">7</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">dice        :</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> <span class="tok-n">8</span><span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-s">%lld</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">long</span></strong><strong> </strong><strong><span class="tok-t">long</span></strong><strong><span class="tok-x">)</span></strong><strong>proven_rng_range</strong><strong><span class="tok-x">(</span></strong><strong>rng</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">6</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> randomness for secrets is not taken from here — the OS has its own source </span></em><em><span class="tok-c">*/</span></em>
+    proven_byte_t key<span class="tok-x">[</span><span class="tok-n">16</span><span class="tok-x">]</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">bool</span></strong> ok <strong><span class="tok-x">=</span></strong> <strong>proven_random_bytes</strong><strong><span class="tok-x">(</span></strong><strong>key</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> key</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">os entropy  : </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s"> (</span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> bytes requested)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> ok </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">available</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">unavailable</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> key</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>seeded run 1: 74 13 96 4 55
+seeded run 2: 74 13 96 4 55
+dice        : 5 2 6 6 6 6 1 1
+os entropy  : available (16 bytes requested)
+</code></pre></div></div><p><strong>Reproducible random numbers</strong> (<code>proven_xoshiro256ss_t</code>) are for simulation, games and testing. The same seed gives the same sequence — the very reason the example’s two lines are identical, and also the property that lets a failed test be reproduced. They are fast but <strong>predictable</strong>, so they are never used for secrets.</p><p><strong>Random numbers for secrets</strong> (<code>proven_random_bytes</code>) come from the operating system’s cryptographic source of randomness. They are used for values <strong>an attacker must not guess</strong> — keys, tokens, session identifiers. When one 64-bit value is needed, use <code>proven_random_u64_checked</code>. It returns false when there is no source of randomness. The similarly named <code>proven_random_u64</code> returns 0 then, so it is not used for secrets.</p><p>The third is the compromise between the two, <code>proven_chacha_rng_t</code>, which takes a seed once from the OS source of randomness and then continues a cryptographically secure sequence quickly.</p><div class="dev realcase"><p class="dev-label">In practice.<span style="white-space: pre-wrap">&#x20;&#x20;</span>The accidents predictable random numbers made</p><div class="dev-body">Accidents breaking this distinction have happened repeatedly. Typical cases are an online card game whose hands were predicted because it used the time as a seed, a case where session identifiers made with a fast random generator let one into somebody else’s account, and, above all, the 2008 incident in which Debian’s OpenSSL patch<sup class="fnref" id="ch114-fnref-1"><a href="#ch114-fn-1" aria-label="Notes 1">1</a></sup> deleted the entropy-gathering code so that <strong>the number of generable keys shrank to a few tens of thousands</strong>. The last required every key already made to be discarded. The lesson is summed up in one line of the library’s documentation — <strong>random numbers for secrets come only from a cryptographic source of randomness.</strong></div></div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> What becomes of random numbers for secrets if there is no operating system?</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> They cannot be obtained, so <code>proven_random_bytes</code> <strong>returns false</strong> — and this is an important design decision. Many libraries slip back to the time or an address value in this situation, and then you have the worst state of “believed safe but predictable”. This library does not fall back; it declares failure. If the board has a real source of entropy (a hardware random number generator) it can be registered and used. <strong>Rather than quietly give something bad, say there is none</strong> — another face of the principle met continually in this part.</p></div></div><h3 id="s114-5">114.5 Memory mapping<a class="plink" href="#s114-5" aria-label="Link to this section" title="Link to this section">#</a></h3><div></div><p>There is one more way of reading a file. Hanging the file whole <strong>in the address space</strong> and accessing it with a pointer — <code>proven_mmap_*</code> is that window. It is advantageous when reading a large file by roaming randomly over it, and it is used when several processes share the same file.</p><p>The price is clear too. If the file is truncated while the mapped region is being touched, the program can receive a signal and die, and portability is lower than the file API’s. So this tool is not “what is used by default” but “what is chosen when there is a reason”.</p><div class="dev recap"><p class="dev-label">Recap</p><div class="dev-body"><p>The outside world in summary.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>what it does</strong></th><th><strong>API</strong></th><th><strong>to beware of</strong></th></tr><tr><td>open and close</td><td><code>proven_fs_open/close</code></td><td>needs a scratch allocator</td></tr><tr><td>reading</td><td><code>proven_fs_read</code></td><td>amount requested ≠ amount read</td></tr><tr><td>writing</td><td><code>proven_fs_write</code> / <code>_write_all</code></td><td>partial writes</td></tr><tr><td>nailing it to the disk</td><td><code>proven_fs_sync</code></td><td>flush ≠ sync</td></tr><tr><td>buffered I/O</td><td><code>proven_stream_*</code></td><td>the caller gives the buffer</td></tr><tr><td>the current time</td><td><code>proven_time_now_datetime</code></td><td>not used for measuring elapsed time</td></tr><tr><td>date formatting</td><td><code>proven_time_u8_fmt</code></td><td>named placeholders such as <code>{year}</code></td></tr><tr><td>reproducible random</td><td><code>proven_xoshiro256ss_*</code></td><td>not used for secrets</td></tr><tr><td>reading whole</td><td><code>proven_fs_read_all</code> / <code>_bounded</code></td><td>give a ceiling to a path from outside</td></tr><tr><td>random for secrets</td><td><code>proven_random_bytes</code> / <code>_u64_checked</code></td><td>false if absent — it does not fall back</td></tr><tr><td>memory mapping</td><td><code>proven_mmap_*</code></td><td>only when there is a reason</td></tr></table></div><span id="doc-float-564"></span><p class="float-caption">Table 114.4 — The APIs of the outside world and what to watch</p></figure></div></div><p>What remains now are the boundaries — running several things at once, and the place with no operating system at all. The next chapter covers those boundaries, and the one after it closes this part.</p><section class="chapter-notes" role="doc-endnotes"><h2>Notes</h2><ol><li id="ch114-fn-1">DSA-1571-1 openssl — predictable random number generator (CVE-2008-0166). 2008. Debian Security Advisory, 2008-05-13. <a href="https://lists.debian.org/debian-security-announce/2008/msg00152.html"><code>lists.debian.org/debian-security-announce/2008/msg00152.html</code></a> <a class="fnback" href="#ch114-fnref-1" aria-label="back to text" title="back to text">&#8617;</a></li></ol></section>
+<div class="nav"><a href="ch113.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch115.html">Next →</a></div>
+</div></main>
+<script>(function(){var b=document.querySelector('.menu-btn'),p=document.getElementById('here-panel');function open(o){if(!p)return;p.hidden=!o;if(b)b.setAttribute('aria-expanded',o);}if(b)b.addEventListener('click',function(){open(p.hidden);});if(p)p.addEventListener('click',function(e){if(e.target.tagName==='A'&&e.target.getAttribute('href').charAt(0)==='#')open(false);});document.addEventListener('keydown',function(e){if(e.key==='Escape'&&p&&!p.hidden){open(false);if(b)b.focus();}});document.addEventListener('click',function(e){if(p&&!p.hidden&&!p.contains(e.target)&&!(b&&b.contains(e.target)))open(false);});var bk=document.querySelector('.bar .back');if(bk)bk.addEventListener('click',function(e){if(history.length>1&&document.referrer){e.preventDefault();history.back();}});var box=document.getElementById('setbox');if(!box)return;var r=document.documentElement;function load(){try{return JSON.parse(localStorage.getItem('doc-read')||'{}');}catch(e){return {};}}function save(s){try{localStorage.setItem('doc-read',JSON.stringify(s));}catch(e){}}function css(n){return getComputedStyle(r).getPropertyValue(n).trim();}function paint(){var s=load();var t=s.theme||'auto',w=s.width==='fit'?'fit':'960';[].forEach.call(box.querySelectorAll('.segb[data-theme]'),function(x){x.setAttribute('aria-pressed',x.dataset.theme===t);});[].forEach.call(box.querySelectorAll('.segb[data-width]'),function(x){x.setAttribute('aria-pressed',x.dataset.width===w);});var ly=s.layout||'auto';[].forEach.call(box.querySelectorAll('.segb[data-layout]'),function(x){x.setAttribute('aria-pressed',x.dataset.layout===ly);});document.getElementById('s-fg').value=s.fg||hex(css('--fg'));document.getElementById('s-bg').value=s.bg||hex(css('--bg'));document.getElementById('s-link').value=s.link||hex(css('--link'));}function hex(v){var m=v.match(/^rgba?\((\d+)[ ,]+(\d+)[ ,]+(\d+)/);if(!m)return v.charAt(0)==='#'?v:'#000000';return '#'+[1,2,3].map(function(i){return ('0'+parseInt(m[i],10).toString(16)).slice(-2);}).join('');}paint();[].forEach.call(box.querySelectorAll('.segb[data-width]'),function(x){x.addEventListener('click',function(){var s=load();if(x.dataset.width==='fit'){s.width='fit';r.setAttribute('data-measure','fit');}else{delete s.width;r.removeAttribute('data-measure');}save(s);setTimeout(paint,0);});});[].forEach.call(box.querySelectorAll('.segb[data-layout]'),function(x){x.addEventListener('click',function(){var s=load(),v=x.dataset.layout;if(v==='auto'){delete s.layout;r.removeAttribute('data-layout');}else{s.layout=v;r.setAttribute('data-layout',v);}save(s);var m=document.querySelector('meta[name=viewport]');var want=v==='desktop'?'width=1100':'width=device-width, initial-scale=1';if(m&&m.getAttribute('content')!==want)location.reload();else setTimeout(paint,0);});});[].forEach.call(box.querySelectorAll('.segb[data-theme]'),function(x){x.addEventListener('click',function(){var s=load();s.theme=x.dataset.theme;delete s.fg;delete s.bg;delete s.link;save(s);['--fg','--bg','--link'].forEach(function(n){r.style.removeProperty(n);});if(s.theme==='auto')r.removeAttribute('data-theme');else r.setAttribute('data-theme',s.theme);setTimeout(paint,0);});});[['s-fg','--fg','fg'],['s-bg','--bg','bg'],['s-link','--link','link']].forEach(function(a){document.getElementById(a[0]).addEventListener('input',function(){var s=load();s[a[2]]=this.value;save(s);r.style.setProperty(a[1],this.value);});});})();</script><script>
+(function(){
+  var q=document.getElementById('q'), out=document.getElementById('qr');
+  if(!q||!out) return;
+  var data=null, NONE="Nothing found";
+  function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+  function run(){
+    var v=q.value.trim().toLowerCase();
+    out.innerHTML='';
+    if(!v||!data) return;
+    var hits=[];
+    for(var i=0;i<data.length && hits.length<40;i++){
+      if(data[i][0].toLowerCase().indexOf(v)>=0) hits.push(data[i]);
+    }
+    if(!hits.length){ out.innerHTML='<li>'+NONE+'</li>'; return; }
+    out.innerHTML=hits.map(function(h){
+      return '<li><a href="'+h[1]+'">'+esc(h[0])+'</a>'+
+             (h[2]?'<span class="where">'+esc(h[2])+'</span>':'')+'</li>';
+    }).join('');
+  }
+  q.addEventListener('input',function(){
+    if(data){ run(); return; }
+    fetch('search-index.json').then(function(r){return r.json();})
+      .then(function(j){ data=j; run(); })
+      .catch(function(){ out.innerHTML='<li>'+NONE+'</li>'; });
+  });
+})();
+</script></body></html>

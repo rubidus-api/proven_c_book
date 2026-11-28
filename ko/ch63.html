@@ -1,0 +1,635 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>63 이름의 세계 — 네 이름 공간과 세 축 — Proven C Book</title><style>@font-face { font-family:"Doc Serif"; src:url("../fonts/serif.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-italic.woff2") format("woff2");
+  font-weight:400; font-style:italic; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-kr.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-kr-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans-kr.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans-kr-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Mono"; src:url("../fonts/mono.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Mono"; src:url("../fonts/mono-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+:root { color-scheme: light dark; --bg:#fafaf8; --bg2:#f2f2f0; --bg3:#e6e6e3; --fg:#141414; --muted:#555555; --line:#c9c9c9; --line-strong:#8a8a8a; --accent:#1a4f8a; --accent-fg:#ffffff; --accent2:#96530f; --honey:#f2b04a; --honey-fg:#2b1d00; --honey-text:#855400; --honey-soft:#fbebc6; --danger:#9b1b30; --ok:#1d6e37; --warn:#855400; --select:#d4dde8;
+  --rule:var(--line); --box-bg:var(--bg2); --code-bg:var(--bg2); --box-rule:var(--line); --link:var(--accent);
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg:#121314; --bg2:#1c1e20; --bg3:#2a2c2f; --fg:#e8e8e8; --muted:#a6a6a6; --line:#3a3d40; --line-strong:#75787c; --accent:#8ab4e8; --accent-fg:#121314; --accent2:#d4883b; --honey:#f2b04a; --honey-fg:#121314; --honey-text:#f2b04a; --honey-soft:#3b311e; --danger:#f07a8c; --ok:#7bcb95; --warn:#f2b04a; --select:#2f3d52;
+    --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+:root[data-theme="dark"] { color-scheme: dark; --bg:#121314; --bg2:#1c1e20; --bg3:#2a2c2f; --fg:#e8e8e8; --muted:#a6a6a6; --line:#3a3d40; --line-strong:#75787c; --accent:#8ab4e8; --accent-fg:#121314; --accent2:#d4883b; --honey:#f2b04a; --honey-fg:#121314; --honey-text:#f2b04a; --honey-soft:#3b311e; --danger:#f07a8c; --ok:#7bcb95; --warn:#f2b04a; --select:#2f3d52;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; }
+:root[data-theme="light"] { color-scheme: light; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Doc Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.here-head { display:flex; align-items:center; gap:.8rem; padding:.2rem 0 .5rem;
+  border-bottom:1px solid var(--rule,#ddd); margin-bottom:.5rem; }
+.here-head .sp { flex:1; }
+.here-all { margin-left:auto; font-size:.9rem; }
+.here-x { font:inherit; font-size:.9rem; cursor:pointer; background:none;
+  border:1px solid var(--line-strong); padding:.05rem .45rem;
+  color:inherit; }
+.here-body a, .tf-secs a { display:block; text-decoration:none; padding:.12rem 0;
+  line-height:1.45; }
+.here-body a:hover, .tf-secs a:hover { text-decoration:underline; }
+.here-body a.lv4, .tf-secs a.lv4 { padding-left:1.6rem; font-size:.94rem;
+  color:var(--muted,#555); }
+.tf-no { display:inline-block; min-width:3.2rem; color:var(--muted,#666);
+  font-variant-numeric:tabular-nums; }
+.toc-full .tf-ch { margin:.9rem 0 .15rem; font-weight:700; }
+.toc-full .tf-secs { margin:0 0 .5rem .2rem; border-left:2px solid var(--rule,#e2e2e2);
+  padding-left:.7rem; }
+.toc-full h4.toc-part { margin-top:1.8rem; }
+.toc a.toc-detail { font-weight:700; }
+@media print { .here-btn, .here-panel { display:none; } }
+.bar { position:sticky; top:0; z-index:20; display:flex; flex-wrap:nowrap; gap:.25rem; align-items:center;
+       min-height:44px; padding:0 clamp(.4rem,2vw,1.6rem); background:var(--bg2);
+       border-bottom:1px solid var(--line); font-size:.9rem;
+       font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--fg); text-decoration:none; } .bar a:hover { text-decoration:none; }
+.bar .sp { display:none; }
+main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
+.wrap { width:100%; }
+main .wrap { max-width:960px; margin-inline:auto; }
+:root[data-measure="fit"] main .wrap { max-width:none; margin:0; }
+h1,h2,h3,h4 { font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35;
+  padding-bottom:.18rem; border-bottom:1px solid var(--rule); }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem;
+     padding-bottom:.22rem; border-bottom:1.5px solid var(--fg); }
+p { margin:.9rem 0; } a { color:var(--link); }
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+.src-note { font-size: .86em; color: var(--muted, #666); }
+.src-note code { font-size: .95em; }
+sup.fnref { font-size: .72em; line-height: 0; vertical-align: super; }
+sup.fnref a { text-decoration: none; padding: 0 .1em; }
+sup.fnref a::before { content: "["; }
+sup.fnref a::after  { content: "]"; }
+.chapter-notes { margin: 3rem 0 1rem; padding-top: .9rem;
+                 border-top: 2px solid var(--rule, #333); }
+.chapter-notes h2 { font-size: 1.05rem; margin: 0 0 .6rem; }
+.chapter-notes ol { margin: 0; padding-left: 1.6em; }
+.chapter-notes li { font-size: .92em; margin: .35em 0; text-indent: 0; }
+.chapter-notes a.fnback { text-decoration: none; }
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
+pre,code,kbd { font-family:"Doc Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
+pre code { background:none; padding:0; }
+.tblwrap { overflow-x:auto; text-align:center; }
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.float-list { list-style:none; padding-left:0; }
+.float-list li { margin:.12rem 0; }
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"Doc Mono","D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"Doc Mono","D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"Doc Mono","D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+.dev { margin:1.15rem 0; padding:0; background:none; border:none; border-radius:0; }
+.dev > .dev-label { border-left:4px solid var(--fg);
+  padding:.1rem .8rem .25rem .8rem; margin:0 0 .34rem; }
+.dev > .dev-body { border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem .35rem .8rem; margin:0; }
+.dev > .dev-body > *:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child { margin-bottom:0; }
+.float-caption { text-align:center; font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+.dev.open { border:none; border-radius:0; background:none;
+  padding:0; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
+  text-indent:0; border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+.dev.open > .open-body { margin:0; padding:.35rem .8rem;
+  border-left:2px solid var(--box-rule); }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+.dev.open .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.06rem 0 .06rem .7rem; margin:.32rem 0 0; }
+.prereq .dev-label, .deepqa .dev-label, .why .dev-label,
+.organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+.qa-box { border:none; margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:0; background:none; }
+.qa-box .qa-q { border-left:4px solid var(--fg);
+  padding:.1rem .8rem .25rem .8rem; margin:0; }
+.qa-box .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem; margin:.34rem 0 0; }
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:0; }
+.dev.recap { border:none; background:none; padding:0; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
+  text-indent:0; border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > .dev-body > p, .dev.recap > .dev-body > div:not(.demo),
+.dev.recap > .dev-body > figure { margin:.3rem 0; padding:0; }
+.dev > .dev-body > .demo { margin:.7rem 0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:none; border-radius:0; background:none; padding:0; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem; text-indent:0;
+  border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
+.dev > .dev-body > figure, .dev > .open-body > p {
+  margin:.35rem 0; padding:0; }
+.bar .menu-btn { flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center;
+  min-width:38px; min-height:38px; padding:0; font:inherit; font-size:1.25rem; line-height:1;
+  color:var(--fg); background:none; border:0; cursor:pointer; text-decoration:none; }
+.bar .back, .bar .bar-nav .nb { flex:0 0 auto; display:inline-flex; align-items:center; gap:.3em;
+  min-height:32px; padding:0 .65rem; border:1px solid var(--line); background:var(--bg);
+  color:var(--fg); font-weight:600; white-space:nowrap; text-decoration:none; }
+.bar .menu-btn[aria-expanded="true"] { background:var(--bg3); }
+.bar .place { flex:1 1 auto; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
+  padding:0 .35rem; }
+.bar .place strong a { color:var(--honey-text); }
+.bar .place .cur { color:var(--fg); }
+.bar .bar-nav { flex:0 0 auto; display:flex; gap:.3rem; align-items:center; white-space:nowrap; }
+.bar .bar-nav .off { color:var(--muted); border-color:var(--line); opacity:.45; }
+.bar .back:hover, .bar .menu-btn:hover, .bar .bar-nav a.nb:hover, .bar .place a:hover { background:var(--bg3); }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+.dev.antipattern > .dev-label { border-left-style:solid; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.2rem; }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em;
+            padding-bottom:0; border-bottom:none; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
+.toc { columns:24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.toc > .toc-part:first-child, .toc > .toc-keep:first-child > .toc-part, .toc-full > .toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
+.toc-group { padding-left:.85rem; }
+.toc-keep, .toc a { break-inside:avoid; }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+code.style-name { font-family:"Doc Mono","D2Coding",ui-monospace,monospace;
+  font-size:.72em; color:var(--muted); background:var(--rule);
+  padding:.05em .35em; border-radius:3px; white-space:nowrap;
+  font-weight:400; letter-spacing:0; }
+.dev.open > .dev-label { padding-top:.42rem; padding-bottom:.42rem; }
+.dev.open > .open-body { padding-top:.4rem; padding-bottom:.4rem; }
+.dev.open > .open-body > p { margin:.6rem 0; }
+.dev > .dev-body { padding-top:.5rem; padding-bottom:.5rem; }
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
+.dev > .dev-body > figure { margin:.55rem 0; }
+main { line-height:1.85; }
+p { margin:1.15rem 0; }
+h2 { margin-top:2.4rem; }
+h3 { margin-top:2rem; }
+li { margin:.3rem 0; }
+h1, h2, h3, h4 { border-bottom-color:var(--box-rule) !important; }
+.toc { line-height:1.45; }
+.toc a { padding:.16rem 0; }
+.toc-part { margin:.85rem 0 .2rem; }
+.metalist { line-height:1.45; gap:.2rem 1.2rem; }
+.metalist dt, .metalist dd { margin:0; }
+.demo { border-color:var(--box-rule); }
+.demo > .demo-head { border-bottom-color:var(--box-rule); }
+.dev > .dev-label,
+.dev.open > .dev-label,
+.qa-box .qa-q,
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  border-left-color:var(--box-rule); }
+.dev > .dev-body,
+.dev > .open-body,
+.dev.open .qa-a,
+.qa-box .qa-a,
+.deepqa .qa-a { border-left-color:var(--box-rule); }
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div {
+  border-color:var(--box-rule); }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+.dev.open > .open-body,
+.dev.open > .qa-a,
+.dev.open .qa-a,
+.dev.deepqa .qa-a,
+.qa-box > .qa-a,
+.qa-box > .qa-q { border-left-color:var(--box-rule); }
+.bar .bar-toc { font-size:1.15em; line-height:1; text-decoration:none; }
+.dev, .dev-body, .open-body, .qa-box, .qa-q, .qa-a, .dev-label,
+.toc-full, .toc-full .tf-secs { line-height:inherit; font-size:1rem; }
+.dev > .dev-body > p, .dev > .open-body > p,
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:1.15rem 0; }
+.dev > .dev-body > *:first-child, .dev > .open-body > *:first-child,
+.qa-box .qa-q > p:first-child, .qa-box .qa-a > p:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child, .dev > .open-body > *:last-child,
+.qa-box .qa-q > p:last-child, .qa-box .qa-a > p:last-child { margin-bottom:0; }
+.dev > .dev-label, .dev.open > .dev-label { font-size:.98rem; line-height:1.4; }
+h1,h2,h3,h4 { padding-bottom:.34rem; }
+h1 { margin:.2rem 0 1.3rem; }
+h2 { padding-bottom:.42rem; margin-bottom:1.15rem; }
+h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
+.dev.open > .open-body > * { margin:.3rem 0; }
+.dev.open > .open-body > p { margin:.5rem 0; }
+.dev.open > .open-body > div { margin:.15rem 0; }
+.dev.open ul, .dev.open ol { margin:.3rem 0; }
+.dev.open li, .dev.open ol.qlist li { margin:0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open .qa-a > p { margin:.35rem 0; }
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div { border-color:var(--box-rule); }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+a:focus-visible, button:focus-visible, summary:focus-visible, input:focus-visible {
+  outline:2px solid var(--accent2); outline-offset:2px; }
+:target, h1, h2, h3, h4, [id] { scroll-margin-top:4.2rem; }
+.skip { position:absolute; left:-9999px; top:0; z-index:30;
+        background:var(--bg); color:var(--fg); border:1px solid var(--fg);
+        padding:.5rem .8rem; font-size:.9rem; text-decoration:none; }
+.skip:focus { left:.5rem; top:.5rem; }
+.here-panel { position:fixed; top:46px; left:clamp(.2rem,1vw,1rem); z-index:19;
+  width:min(32rem, calc(100vw - .4rem)); max-height:calc(100vh - 54px); overflow:auto;
+  padding:.7rem .9rem .9rem; border:1px solid var(--line); --k:var(--line-strong);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-size:.9rem; line-height:1.4;
+  background:
+    linear-gradient(var(--k),var(--k)) left top / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) left top / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) right top / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) right top / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) left bottom / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) left bottom / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) right bottom / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) right bottom / 3px 8px no-repeat,
+    color-mix(in srgb, var(--bg) 97%, transparent); }
+.here-panel .tools { display:flex; flex-wrap:wrap; gap:.3rem .4rem; align-items:center;
+  margin-bottom:.6rem; }
+.tool, .segb { font:inherit; font-size:.88rem; color:var(--fg); background:none;
+  border:1px solid var(--line-strong); padding:0 .6rem; min-height:30px;
+  display:inline-flex; align-items:center; text-decoration:none; cursor:pointer; white-space:nowrap; }
+.tool:hover, .segb:hover, .nav a:hover, .here-panel .here-body a:hover { background:var(--bg3); }
+.segb[aria-pressed="true"] { background:var(--select); border-color:var(--accent); font-weight:700; }
+.tool, .segb, .bar a, .bar button, .nav a, .here-panel a { transition:background-color .08s; }
+@media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
+main a { text-decoration:underline; text-decoration-color:var(--box-rule);
+  text-underline-offset:2px; }
+main a:hover { background:var(--box-bg); text-decoration-color:var(--link); }
+main .toc a, main .toc-full a, main .here-body a { text-decoration:none; }
+main .toc a:hover, main .toc-full a:hover { background:var(--box-bg); text-decoration:underline; }
+.setbox { margin:0 0 .6rem; }
+.setrow { display:flex; flex-wrap:wrap; gap:.4rem .5rem; align-items:center; margin:.35rem 0; }
+.setlbl { min-width:4.2rem; font-size:.82rem; font-weight:700; }
+.seg { display:inline-flex; flex-wrap:wrap; gap:.25rem; }
+.col { display:inline-flex; align-items:center; gap:.3rem; }
+.col input[type=color] { width:2rem; height:1.4rem; padding:0; border:1px solid var(--line-strong);
+  background:none; cursor:pointer; }
+.setnote { margin:.5rem 0 0; font-size:.82rem; }
+.here-panel .ver { font-size:.82rem; color:var(--muted); padding:.2rem .45rem .2rem 0;
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; white-space:nowrap; }
+.demo pre, .demo pre code {
+  white-space:pre-wrap; overflow-wrap:anywhere; word-break:break-word; }
+.demo > .demo-body { overflow-x:visible; }
+.plink {
+  margin-left: .4em; font-weight: 400; text-decoration: none;
+  color: var(--muted, #888); opacity: 0;
+}
+h3:hover > .plink, h4:hover > .plink,
+h3 > .plink:focus, h4 > .plink:focus { opacity: 1; }
+@media (hover: none) { .plink { opacity: .45; } }
+.searchbox { margin:.6em 0 0; }
+.searchbox input[type=search] {
+  width: 100%; padding: .45em .6em; font: inherit;
+  border: 1px solid var(--line-strong);
+  background: var(--bg); color: var(--fg);
+}
+.search-hint { color: var(--muted, #777); font-size: .85em; margin:.3em 0 0; }
+.search-results { list-style: none; padding: 0; margin: .5em 0 0; }
+.search-results li { margin: .15em 0; }
+.search-results .where { color: var(--muted, #777); font-size: .85em; margin-left: .4em; }
+@media (max-width: 900px), (orientation: portrait) {
+  :root:not([data-layout="desktop"]) .bar .place .cur { display:none; }
+  :root:not([data-layout="desktop"]) .bar .back,
+  :root:not([data-layout="desktop"]) .bar .bar-nav .nb { min-height:40px; padding:0 .5rem; }
+}
+@media (max-width: 480px) {
+  :root:not([data-layout="desktop"]) .bar .bar-nav .prev .lbl,
+  :root:not([data-layout="desktop"]) .bar .bar-nav .next .lbl { display:none; }
+  :root:not([data-layout="desktop"]) .bar .bar-nav .nb { min-width:44px; justify-content:center; }
+  :root:not([data-layout="desktop"]) .bar { gap:.2rem; }
+}
+:root[data-layout="mobile"] .bar .place .cur { display:none; }
+:root[data-layout="mobile"] .bar .back, :root[data-layout="mobile"] .bar .bar-nav .nb { min-height:40px; padding:0 .5rem; }
+:root[data-layout="mobile"] main .wrap { max-width:34rem; }
+@media (pointer: coarse), (max-width: 900px) {
+  .bar .menu-btn { min-width:44px; min-height:44px; }
+  .tool, .segb { min-height:38px; }
+}
+@media print { .bar, .here-panel { display:none; } }
+
+body { font-family:"Doc Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Doc Sans","Noto Sans CJK KR","Noto Sans KR",system-ui,sans-serif; }
+pre,code,kbd { font-family:"Doc Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+</style>
+<script>(function(){try{var L=localStorage,o='pcb-read';if(o&&o!=='doc-read'&&L.getItem(o)!==null&&L.getItem('doc-read')===null){var v=JSON.parse(L.getItem(o)||'{}');delete v.width;L.setItem('doc-read',JSON.stringify(v));L.removeItem(o);}var s=JSON.parse(L.getItem('doc-read')||'{}');var r=document.documentElement;if(s.theme&&s.theme!=='auto')r.setAttribute('data-theme',s.theme);if(s.fg)r.style.setProperty('--fg',s.fg);if(s.bg)r.style.setProperty('--bg',s.bg);if(s.link)r.style.setProperty('--link',s.link);if(s.width==='fit')r.setAttribute('data-measure','fit');if(s.layout==='desktop'||s.layout==='mobile')r.setAttribute('data-layout',s.layout);if(s.layout==='desktop'){var m=document.querySelector('meta[name=viewport]');if(m)m.setAttribute('content','width=1100');}}catch(e){}})();</script></head>
+<body>
+<a class="skip" href="#content">본문으로 건너뛰기</a>
+<div class="bar"><button class="menu-btn" id="set-open" type="button" aria-expanded="false" aria-controls="here-panel" aria-label="메뉴" title="메뉴">☰</button><a class="back" href="index.html" title="뒤로">← <span class="lbl">뒤로</span></a><span class="place"><strong><a href="index.html">Proven C Book</a></strong><span class="cur"> › 63장</span></span><span class="bar-nav"><a class="nb prev" href="ch62.html">‹ <span class="lbl">이전</span></a><a class="nb toc" href="index.html"><span class="lbl">목차</span></a><a class="nb next" href="ch64.html"><span class="lbl">다음</span> ›</a></span></div><div id="here-panel" class="here-panel" hidden><div class="setbox" id="setbox"><div class="setrow"><span class="setlbl">언어</span><span class="seg"><a class="segb" href="../en/ch63.html">English</a></span></div><div class="setrow"><span class="setlbl">본문 폭</span><span class="seg" id="s-width"><button type="button" class="segb" data-width="960">960</button><button type="button" class="segb" data-width="fit">창에 맞춤</button></span></div><div class="setrow"><span class="setlbl">배치</span><span class="seg" id="s-layout"><button type="button" class="segb" data-layout="auto">자동</button><button type="button" class="segb" data-layout="desktop">PC</button><button type="button" class="segb" data-layout="mobile">모바일</button></span></div><div class="setrow"><span class="setlbl">테마</span><span class="seg"><button type="button" class="segb" data-theme="auto">시스템</button><button type="button" class="segb" data-theme="light">밝게</button><button type="button" class="segb" data-theme="dark">어둡게</button></span></div><div class="setrow"><span class="setlbl">색</span><label class="col"><span>글자</span><input type="color" id="s-fg"></label><label class="col"><span>배경</span><input type="color" id="s-bg"></label><label class="col"><span>링크</span><input type="color" id="s-link"></label></div><p class="setnote">설정은 이 브라우저에만 저장된다.</p></div><div class="tools"><span class="ver">v0.110.2</span><a class="tool" href="toc.html">▤ 상세 차례</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book/releases/download/v0.110.2/proven_c_book-v0.110.2-ko.pdf">⤓ PDF</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book" title="이 책의 GitHub 저장소">Git</a><a class="tool" href="https://rubidus-api.github.io/" title="rubidus-api.github.io --- 공개된 모든 프로젝트">⌂ 전체 사이트</a><a class="tool" href="https://github.com/rubidus-api" title="github.com/rubidus-api --- 모든 저장소">≡ 저장소 목록</a></div><div class="here-head"><strong>이 장의 차례</strong></div><div class="here-body"><a class="lv3" href="#s63-1"><span class="tf-no">63.1</span>「C에는 이름 공간이 없다」는 말의 진실</a><a class="lv3" href="#s63-2"><span class="tf-no">63.2</span>네 이름 공간</a><a class="lv3" href="#s63-3"><span class="tf-no">63.3</span>세 축 — 스코프·연결·이름 공간</a><a class="lv3" href="#s63-4"><span class="tf-no">63.4</span>태그가 따로 사는 덕분에 생긴 관행</a><a class="lv4" href="#s63-4-1"><span class="tf-no">63.4.1</span>typedef struct node node;</a><a class="lv4" href="#s63-4-2"><span class="tf-no">63.4.2</span>그런데 typedef를 쓰지 말라는 규약도 있다</a><a class="lv3" href="#s63-5"><span class="tf-no">63.5</span>열거 상수는 보통 식별자다</a><a class="lv3" href="#s63-6"><span class="tf-no">63.6</span>가림(shadowing)</a><a class="lv3" href="#s63-7"><span class="tf-no">63.7</span>써서는 안 되는 이름 — 표준과 구현이 예약한 이름</a></div></div>
+<main id="content"><div class="wrap">
+<h2>63 이름의 세계 — 네 이름 공간과 세 축</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>62장 이름이 쓰일 수 있는 범위 — 스코프 · 스코프 — 이름이 보이는 범위</div><div>60장 여러 파일로 나누어 짓기 · 연결 — 이름이 파일 경계를 넘는가</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p><p>60장에서 이름에는 스코프 말고 <strong>연결</strong>이라는 성질이 또 있다고 했다. 그러면 다음 코드는 왜 컴파일되는가? <code>struct node</code>와 <code>node</code>가 같은 철자인데도 서로 부딪히지 않는다.</p><pre><code data-lang="c"><strong><span class="tok-t">typedef</span></strong> <strong><span class="tok-t">struct</span></strong> node <strong><span class="tok-t">node</span></strong><span class="tok-x">;</span></code></pre></p><div class="qa-a"><p><p><span class="dev-label">답.</span> 스코프도 연결도 아닌 <strong>세 번째 성질</strong>이 있기 때문이다 — <strong>이름 공간</strong> (name space). <code>struct</code> 뒤에 오는 이름과 그냥 쓰이는 이름은 컴파일러가 <strong>서로 다른 목록</strong>에서 찾는다. 같은 철자라도 찾는 목록이 다르니 충돌하지 않는다.</p><p>이 장은 그 목록이 몇 개이고 무엇인지, 그리고 스코프·연결과 어떻게 다른지를 정면으로 다룬다.</p></p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">파일을 쪼개자마자 이름이 부딪히기 시작한다. 그래서 이름 공간을 연결(60장)과 스코프(62장) 다음에 둔다 — 한 파일 안에서는 스코프만 알면 됐지만, 경계를 넘는 순간 연결이라는 축이 하나 더 생기기 때문이다. 여기에 이 장의 이름 공간까지 더해 축이 셋으로 늘어난 지금이 그 셋을 한 번에 세울 자리다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body"><span id="idx-entry-225"></span>「C에는 이름 공간이 없다」는 말을 자주 듣는다. 절반만 맞는 말이다 — 표준은 이름 공간을 <strong>네 개</strong> 정의한다. 없는 것은 <strong>사용자가 새로 만드는</strong> 이름 공간이다. 이 장에서 그 넷을 세우고, 스코프·연결과 함께 세 축으로 묶고, 가림과 예약 이름까지 정리한다. 다음 장이 그 위에서 「그래서 충돌을 어떻게 막는가」를 다룬다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>매크로는 어느 이름 공간에 사는가?</li><li>태그와 멤버에는 왜 연결이 없는가?</li><li>그러면 <code>-Wshadow</code>를 늘 켜야 하는가?</li></ol></div></div><div></div><h3 id="s63-1">63.1 「C에는 이름 공간이 없다」는 말의 진실<a class="plink" href="#s63-1" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>이 말은 널리 쓰이고, 널리 오해를 부른다. 표준의 문장은 반대에 가깝다.</p><span id="idx-entry-226"></span><p>표준 §6.2.3 은 「한 번역 단위 안에서 같은 식별자의 선언이 여럿 보이면 <strong>문법적 문맥</strong>이 그것들을 가른다. 따라서 식별자의 범주마다 <strong>별개의 이름 공간</strong> (separate name spaces)이 있다」고 적는다.</p><p>즉 C에는 이름 공간이 <strong>있다.</strong> 없는 것은 <code>namespace app { … }</code>처럼 프로그래머가 새 마당을 파는 기능이다(이 장은 이름 공간 하나를 이름들이 사는 <strong>마당</strong>이라고도 부른다). 이 구별을 흐리면 다음 두 문장이 둘 다 사실이라는 것을 설명할 수 없다.</p><ul><li><code>typedef struct node node;</code>는 합법이다 — 서로 다른 이름 공간이니까.</li><li>두 라이브러리가 <code>init</code>이라는 함수를 각각 내보내면 링크가 깨진다 — 둘 다 <strong>같은</strong> 이름 공간에 있으니까.</li></ul><div class="dev misconception"><p class="dev-label">흔한 오해. <strong>“C에는 이름 공간 개념 자체가 없다”</strong></p><div class="dev-body"><p>표준이 §6.2.3 에서 네 개를 명시한다. 정확한 말은 <strong>「사용자가 정의하는 이름 공간이 없다」</strong>이다.</p><p>이 오해는 실무에서 대가를 치르게 한다. 「없다」고 알고 있으면 <code>struct stat</code>과 함수 <code>stat</code>이 공존하는 POSIX 헤더를 읽을 때 무슨 일이 벌어지는지 설명하지 못하고, 열거 상수가 왜 변수와 충돌하는지도 설명하지 못한다. 「넷이 있고, 내가 새로 만들 수는 없다」가 정확한 길잡이다.</p></div></div><h3 id="s63-2">63.2 네 이름 공간<a class="plink" href="#s63-2" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>표준이 가르는 넷은 이렇다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>이름 공간</strong></th><th><strong>여기 사는 이름</strong></th><th><strong>어느 문법 자리에서 찾는가</strong></th></tr><tr><td>① 레이블</td><td><code>goto</code>의 표적</td><td><code>goto</code> 뒤, 그리고 문장 앞의 <code>이름:</code></td></tr><tr><td>② 태그</td><td><code>struct</code>·<code>union</code>·<code>enum</code> 뒤의 이름</td><td><code>struct</code>/<code>union</code>/<code>enum</code> 키워드 바로 뒤</td></tr><tr><td>③ 멤버</td><td>구조체·공용체의 멤버 — <strong>타입마다 따로</strong></td><td><code>.</code>과 <code>-></code> 뒤</td></tr><tr><td>④ 보통 식별자</td><td>변수·함수·<code>typedef</code> 이름·열거 상수·매개변수</td><td>그 밖의 모든 자리</td></tr></table></div><span id="doc-float-313"></span><p class="float-caption">표 63.1 — 네 이름 공간과 거기 사는 이름</p></figure><p>세 가지를 특히 새겨 둔다.</p><ul><li><strong>멤버는 타입마다 마당이 따로다.</strong> <code>struct point</code>의 <code>x</code>와 <code>struct vec</code>의 <code>x</code>는 아무 관계도 없다. 구조체가 많아도 멤버 이름이 짧을 수 있는 이유다.</li><li><strong>태그 마당은 하나다.</strong> <code>struct</code>·<code>union</code>·<code>enum</code>이 <strong>셋이서 한 마당을 나눠 쓴다.</strong> 그래서 <code>enum status</code>가 있으면 <code>struct status</code>는 만들 수 없다.</li><li><strong>열거 상수는 태그가 아니라 ④에 산다.</strong> 이것이 실무에서 가장 자주 부딪히는 자리다.</li></ul><div class="demo demo-src"><p class="demo-head"><code>examples/name-spaces/four_spaces.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> 같은 철자 x 를 네 이름 공간에 동시에 둔다 — 표준 §6.2.3.</span></em>
+<em><span class="tok-c">   합법이고 컴파일된다. 읽기 좋은가는 별개의 문제다. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> ② 태그 이름 공간 — struct/union/enum 뒤에 오는 이름 </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">struct</span></strong> x <span class="tok-x">{</span>
+    <strong><span class="tok-t">int</span></strong> x<span class="tok-x">;</span>        <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ③ 멤버 이름 공간 — struct x 만의 마당 </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">int</span></strong> y<span class="tok-x">;</span>
+<span class="tok-x">}</span><span class="tok-x">;</span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> 다른 구조체의 멤버는 또 다른 마당이라 같은 철자를 다시 써도 된다 </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">struct</span></strong> point <span class="tok-x">{</span> <strong><span class="tok-t">int</span></strong> x<span class="tok-x">;</span> <strong><span class="tok-t">int</span></strong> y<span class="tok-x">;</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> ④ 보통 식별자 — 변수·함수·typedef 이름·열거 상수가 모두 여기에 산다.</span></em>
+<em><span class="tok-c">      태그 x 와 철자가 같지만 다른 이름 공간이라 공존한다. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">typedef</span></strong> <strong><span class="tok-t">struct</span></strong> x <strong><span class="tok-t">x</span></strong><span class="tok-x">;</span>
+
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">int</span></strong> <strong>show</strong><span class="tok-x">(</span>x v<span class="tok-x">,</span> <strong><span class="tok-t">struct</span></strong> point p<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ① 레이블 이름 공간 — goto 의 표적. 이것도 x 라 지을 수 있다 </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>v<span class="tok-x">.</span>x <strong><span class="tok-x">&lt;</span></strong> <span class="tok-n">0</span><span class="tok-x">)</span> <strong><span class="tok-k">goto</span></strong> x<span class="tok-x">;</span>
+
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">struct x  : x=</span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s"> y=</span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> v</strong><strong><span class="tok-x">.</span></strong><strong>x</strong><strong><span class="tok-x">,</span></strong><strong> v</strong><strong><span class="tok-x">.</span></strong><strong>y</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">struct point: x=</span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s"> y=</span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> p</strong><strong><span class="tok-x">.</span></strong><strong>x</strong><strong><span class="tok-x">,</span></strong><strong> p</strong><strong><span class="tok-x">.</span></strong><strong>y</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+
+x<span class="tok-x">:</span>  <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 레이블 x </span></em><em><span class="tok-c">*/</span></em>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">negative, so we came to label x</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 네 이름 공간에 x 가 하나씩 있는 상태에서 전부 쓴다 </span></em><em><span class="tok-c">*/</span></em>
+    x       a <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-x">.</span>x <strong><span class="tok-x">=</span></strong> <span class="tok-n">10</span><span class="tok-x">,</span> <span class="tok-x">.</span>y <strong><span class="tok-x">=</span></strong> <span class="tok-n">20</span> <span class="tok-x">}</span><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> typedef 이름 x </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">struct</span></strong> x b <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-x">.</span>x <strong><span class="tok-x">=</span></strong> <strong><span class="tok-x">-</span></strong><span class="tok-n">1</span><span class="tok-x">,</span> <span class="tok-x">.</span>y <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span> <span class="tok-x">}</span><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 태그 x </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">struct</span></strong> point p <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-x">.</span>x <strong><span class="tok-x">=</span></strong> <span class="tok-n">3</span><span class="tok-x">,</span> <span class="tok-x">.</span>y <strong><span class="tok-x">=</span></strong> <span class="tok-n">4</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">[the same spelling x lives in four name spaces at once]</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  ① label x   ② tag struct x   ③ member x   ④ typedef name x</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span><strong>show</strong><strong><span class="tok-x">(</span></strong><strong>a</strong><strong><span class="tok-x">,</span></strong><strong> p</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span><strong>show</strong><strong><span class="tok-x">(</span></strong><strong>b</strong><strong><span class="tok-x">,</span></strong><strong> p</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 이름을 찾는 자리(문법적 문맥)가 이름 공간을 고른다.</span></em>
+<em><span class="tok-c">       struct 뒤 → 태그, . 뒤 → 멤버, goto 뒤 → 레이블, 그 밖 → 보통 식별자. </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">sizeof(x) = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s">, sizeof(struct x) = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s">  (the same type)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong>x</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> x</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>[the same spelling x lives in four name spaces at once]
+  ① label x   ② tag struct x   ③ member x   ④ typedef name x
+
+struct x  : x=10 y=20
+struct point: x=3 y=4
+negative, so we came to label x
+
+sizeof(x) = 8, sizeof(struct x) = 8  (the same type)
+</code></pre></div></div><p>같은 철자 <code>x</code>가 네 마당에 동시에 살아도 컴파일되고 돌아간다. 컴파일러가 <strong>문법적 문맥</strong>으로 어느 마당을 뒤질지 고르기 때문이다 — <code>goto</code> 뒤면 레이블, <code>struct</code> 뒤면 태그, <code>.</code> 뒤면 멤버, 그 밖이면 보통 식별자.</p><p>물론 이렇게 쓰라는 뜻이 아니다. <strong>언어가 허용하는 범위</strong>와 <strong>사람이 읽을 수 있는 범위</strong>는 다르고, 이 예제는 전자를 보이려고 일부러 극단으로 간 것이다.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 매크로는 어느 이름 공간에 사는가?</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> 어디에도 살지 않는다. 매크로는 <strong>언어의 이름이 아니라 전처리기의 이름</strong>이고, 전처리기는 C의 문법을 모른다(65장). 그래서 매크로 이름은 네 마당을 전부 무시하고 토큰 열을 갈아치운다.</p><pre><code data-lang="c"><strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><span class="tok-p">max</span><span class="tok-p"> </span><span class="tok-n">100</span>
+<strong><span class="tok-t">struct</span></strong> max <span class="tok-x">{</span> <strong><span class="tok-t">int</span></strong> x<span class="tok-x">;</span> <span class="tok-x">}</span><span class="tok-x">;</span>     <em><span class="tok-c">//</span></em><em><span class="tok-c"> struct 뒤인데도 100 으로 치환된다 → 오류</span></em></code></pre><p>이름 공간이 지켜 주지 못하는 유일한 자리라서, 매크로 이름을 <strong>대문자로</strong> 짓는 관행이 그토록 굳어진 것이다. 문법이 못 지키는 담장을 표기법으로 대신 세운다.</p></p></div></div><h3 id="s63-3">63.3 세 축 — 스코프·연결·이름 공간<a class="plink" href="#s63-3" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>이제 셋을 나란히 놓는다. 헷갈리는 이유는 셋이 <strong>같은 이름에 동시에 붙는</strong> 성질인데도 저마다 다른 질문에 답하기 때문이다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>축</strong></th><th><strong>무엇을 정하는가</strong></th><th><strong>값</strong></th><th><strong>무엇으로 정해지는가</strong></th></tr><tr><td>스코프(62장)</td><td><strong>어디서</strong> 보이는가</td><td>블록 / 파일 / 함수 / 함수 원형</td><td>선언을 어디에 썼는가</td></tr><tr><td>연결(60장)</td><td>다른 번역 단위의 같은 철자와 <strong>같은 것인가</strong></td><td>외부 / 내부 / 없음</td><td><code>static</code>·<code>extern</code>과 선언 위치</td></tr><tr><td>이름 공간(이 장)</td><td><strong>어느 목록</strong>에서 찾는가</td><td>레이블 / 태그 / 멤버 / 보통</td><td>문법 자리</td></tr></table></div><span id="doc-float-314"></span><p class="float-caption">표 63.2 — 이름을 정하는 세 축</p></figure><p>세 축은 서로 <strong>다른 질문</strong>에 답한다 — 그래서 셋을 따로 물어야 한다. 다만 셋이 서로 독립은 아니다. 선언 위치가 스코프와 연결을 함께 정한다 — 파일 수준의 <code>int n;</code> 을 블록 안으로 옮기면 스코프는 파일에서 블록으로, 연결은 외부에서 없음으로 함께 바뀐다. 또 태그 · 멤버 · 레이블에는 연결이 아예 없다. 보기 하나로 셋을 따로 읽어 둔다 — 파일 수준의 <code>struct node</code> 태그는 「파일 스코프 + 연결 없음(태그에는 연결이 없다) + 태그 이름 공간」이고, 그 안의 멤버 <code>next</code>는 「파일 스코프 + 연결 없음 + 멤버 이름 공간」이다. 둘은 스코프와 연결이 같고 이름 공간만 다르다 — <code>next</code> 를 <code>.</code>·<code>-></code> 뒤에서만 찾는 것은 셋째 축의 몫이다.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 태그와 멤버에는 왜 연결이 없는가?</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> 연결은 <strong>링커가 이름을 잇는 일</strong>에 대한 성질인데, 태그와 멤버는 링커에 도달하지 않기 때문이다. 타입의 이름과 그 속의 멤버 이름은 컴파일이 끝나면 사라진다 — 기계어에 남는 것은 오프셋(48장)이지 이름이 아니다.</p><p>그래서 두 파일이 <code>struct point</code>를 각각 선언해도 링크는 멀쩡하다. 대신 <strong>두 선언이 다르면 아무도 말해 주지 않는다</strong>는 위험이 생긴다(60장의 헤더 규율이 그래서 중요하다).</p></p></div></div><h3 id="s63-4">63.4 태그가 따로 사는 덕분에 생긴 관행<a class="plink" href="#s63-4" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>태그와 보통 식별자가 다른 마당이라는 사실이 C 코드의 겉모습을 크게 바꿔 놓았다.</p><div class="demo demo-src"><p class="demo-head"><code>examples/name-spaces/tag_typedef.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> 태그와 typedef 가 갈리는 자리, 그리고 열거 상수가 '보통 식별자'라서</span></em>
+<em><span class="tok-c">   생기는 충돌. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> 태그 이름 공간과 보통 식별자 이름 공간이 달라서</span></em>
+<em><span class="tok-c">   "같은 철자"로 태그와 typedef 이름을 둘 다 만들 수 있다 </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">typedef</span></strong> <strong><span class="tok-t">struct</span></strong> node <span class="tok-x">{</span>
+    <strong><span class="tok-t">int</span></strong>          value<span class="tok-x">;</span>
+    <strong><span class="tok-t">struct</span></strong> node <strong><span class="tok-x">*</span></strong>next<span class="tok-x">;</span>      <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 태그가 있어야 자기 자신을 가리킬 수 있다 </span></em><em><span class="tok-c">*/</span></em>
+<span class="tok-x">}</span> <strong><span class="tok-t">node</span></strong><span class="tok-x">;</span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> 열거 상수는 태그가 아니라 *보통 식별자* 다.</span></em>
+<em><span class="tok-c">   그래서 아래 red 는 int 변수 red 와 같은 마당에 산다 — 충돌한다. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">enum</span></strong> color <span class="tok-x">{</span> red<span class="tok-x">,</span> green<span class="tok-x">,</span> blue <span class="tok-x">}</span><span class="tok-x">;</span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> 이렇게 쓰면 컴파일 오류다(주석으로만 보인다):</span></em>
+<em><span class="tok-c">       int red;        // error: 'red' redeclared as different kind of symbol</span></em>
+<em><span class="tok-c">   그래서 실무는 열거 상수에 접두어를 붙인다. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">enum</span></strong> status <span class="tok-x">{</span> STATUS_OK<span class="tok-x">,</span> STATUS_BUSY<span class="tok-x">,</span> STATUS_FAIL <span class="tok-x">}</span><span class="tok-x">;</span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> 반대로 태그는 보통 식별자와 절대 충돌하지 않는다.</span></em>
+<em><span class="tok-c">   단, struct/union/enum 은 태그 마당을 *셋이서 함께 쓴다* — 그래서</span></em>
+<em><span class="tok-c">       struct status { int code; };</span></em>
+<em><span class="tok-c">   는 위의 enum status 와 충돌한다("defined as wrong kind of tag").</span></em>
+<em><span class="tok-c">   태그 마당은 넷 중 하나이지, 키워드마다 하나가 아니다. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">struct</span></strong> handle <span class="tok-x">{</span> <strong><span class="tok-t">int</span></strong> code<span class="tok-x">;</span> <span class="tok-x">}</span><span class="tok-x">;</span>     <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 다른 철자를 쓴다 </span></em><em><span class="tok-c">*/</span></em>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> 반면 보통 식별자 마당은 태그와 완전히 별개다 — 같은 철자를 써도 된다 </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">int</span></strong> status <strong><span class="tok-x">=</span></strong> <span class="tok-n">42</span><span class="tok-x">;</span>          <em><span class="tok-c">/*</span></em><em><span class="tok-c"> enum status 태그와 공존한다 </span></em><em><span class="tok-c">*/</span></em>
+
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong><strong>name_of</strong><span class="tok-x">(</span><strong><span class="tok-t">enum</span></strong> color c<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-k">switch</span></strong> <span class="tok-x">(</span>c<span class="tok-x">)</span> <span class="tok-x">{</span>
+    <strong><span class="tok-k">case</span></strong> red<span class="tok-x">:</span>   <strong><span class="tok-k">return</span></strong> <span class="tok-s">"</span><span class="tok-s">red</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">case</span></strong> green<span class="tok-x">:</span> <strong><span class="tok-k">return</span></strong> <span class="tok-s">"</span><span class="tok-s">green</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">case</span></strong> blue<span class="tok-x">:</span>  <strong><span class="tok-k">return</span></strong> <span class="tok-s">"</span><span class="tok-s">blue</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-s">"</span><span class="tok-s">?</span><span class="tok-s">"</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    node b <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-x">.</span>value <strong><span class="tok-x">=</span></strong> <span class="tok-n">2</span><span class="tok-x">,</span> <span class="tok-x">.</span>next <strong><span class="tok-x">=</span></strong> nullptr <span class="tok-x">}</span><span class="tok-x">;</span>
+    node a <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-x">.</span>value <strong><span class="tok-x">=</span></strong> <span class="tok-n">1</span><span class="tok-x">,</span> <span class="tok-x">.</span>next <strong><span class="tok-x">=</span></strong> <strong><span class="tok-x">&amp;</span></strong>b <span class="tok-x">}</span><span class="tok-x">;</span>
+
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">[tags and typedef names are different name spaces, so the spelling can be shared]</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span>node <strong><span class="tok-x">*</span></strong>p <strong><span class="tok-x">=</span></strong> <strong><span class="tok-x">&amp;</span></strong>a<span class="tok-x">;</span> p<span class="tok-x">;</span> p <strong><span class="tok-x">=</span></strong> p<span class="tok-x">-></span>next<span class="tok-x">)</span>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  node </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> p</strong><strong><span class="tok-x">-></span></strong><strong>value</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">[enumeration constants are ordinary identifiers - the same space as variables]</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  enum color: </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>name_of</strong><strong><span class="tok-x">(</span></strong><strong>red</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>name_of</strong><strong><span class="tok-x">(</span></strong><strong>green</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>name_of</strong><strong><span class="tok-x">(</span></strong><strong>blue</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  which is why int red; is a compile error - hence the habit of prefixes (STATUS_OK)</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">[struct, union and enum share one tag space - there is only one]</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-t">struct</span></strong> handle h <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-x">.</span>code <strong><span class="tok-x">=</span></strong> <span class="tok-n">7</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">enum</span></strong>   status e <strong><span class="tok-x">=</span></strong> STATUS_BUSY<span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  struct handle.code = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">, enum status = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> h</strong><strong><span class="tok-x">.</span></strong><strong>code</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong>e</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  you cannot declare struct status - enum status already took that tag</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">[but ordinary identifiers live in a different space from tags]</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  the variable status = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s"> lives beside the tag status</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> status</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>[tags and typedef names are different name spaces, so the spelling can be shared]
+  node 1
+  node 2
+
+[enumeration constants are ordinary identifiers - the same space as variables]
+  enum color: red green blue
+  which is why int red; is a compile error - hence the habit of prefixes (STATUS_OK)
+
+[struct, union and enum share one tag space - there is only one]
+  struct handle.code = 7, enum status = 1
+  you cannot declare struct status - enum status already took that tag
+
+[but ordinary identifiers live in a different space from tags]
+  the variable status = 42 lives beside the tag status
+</code></pre></div></div><h4 id="s63-4-1">63.4.1 <code>typedef struct node node;</code><a class="plink" href="#s63-4-1" aria-label="이 절의 주소" title="이 절의 주소">#</a></h4><div></div><p>가장 흔한 관용구다. 태그 <code>node</code>와 typedef 이름 <code>node</code>가 다른 마당이니 같은 철자를 쓸 수 있고, 그 덕에 쓰는 쪽은 <code>struct</code>를 매번 적지 않아도 된다. 자기 자신을 가리키는 포인터에는 태그가 반드시 필요하다는 점도 함께 본다 — <code>struct node *next;</code>를 쓸 시점에는 typedef 이름이 아직 완성되지 않았다.</p><h4 id="s63-4-2">63.4.2 그런데 <code>typedef</code>를 쓰지 말라는 규약도 있다<a class="plink" href="#s63-4-2" aria-label="이 절의 주소" title="이 절의 주소">#</a></h4><div></div><p>리눅스 커널의 코딩 스타일이 대표적이다. 근거는 <strong><code>typedef</code> 가 정보를 감춘다</strong>는 것이다 — <code>node n;</code>만 보면 그것이 구조체인지 포인터인지 정수인지 알 수 없지만, <code>struct node n;</code>은 읽는 즉시 드러난다. 큰 코드를 여럿이 읽을 때는 타이핑 몇 글자보다 그 정보가 더 귀하다는 판단이다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>방침</strong></th><th><strong>근거</strong></th><th><strong>이런 곳에서 쓴다</strong></th></tr><tr><td>태그와 typedef 를 같은 철자로</td><td>쓰는 쪽이 짧아진다</td><td>공개 라이브러리 API (SQLite·SDL 등)</td></tr><tr><td><code>typedef</code>를 쓰지 않는다</td><td><code>struct</code>가 보이면 정체가 드러난다</td><td>리눅스 커널, 커널 계열 프로젝트</td></tr><tr><td>불투명 타입만 <code>typedef</code></td><td>속을 감출 때는 감추고, 열 때는 연다</td><td>핸들을 넘기는 API (<code>FILE *</code>가 그 원형)</td></tr></table></div><span id="doc-float-315"></span><p class="float-caption">표 63.3 — 이름 짓기 방침과 그 근거</p></figure><p>셋 중 무엇이 옳은지는 정해져 있지 않다. <strong>정하고 지키는 것</strong>이 옳다.</p><h3 id="s63-5">63.5 열거 상수는 보통 식별자다<a class="plink" href="#s63-5" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p><code>enum color { red, green, blue };</code>를 쓰면 <code>red</code>·<code>green</code>·<code>blue</code>는 태그 마당이 아니라 ④ 보통 식별자 마당에 들어간다. 즉 <strong>변수·함수와 같은 마당</strong>이다.</p><pre><code data-lang="c"><strong><span class="tok-t">enum</span></strong> color <span class="tok-x">{</span> red<span class="tok-x">,</span> green<span class="tok-x">,</span> blue <span class="tok-x">}</span><span class="tok-x">;</span>
+<strong><span class="tok-t">int</span></strong> red<span class="tok-x">;</span>                 <em><span class="tok-c">//</span></em><em><span class="tok-c"> 오류: 'red' redeclared as different kind of symbol</span></em></code></pre><p>그래서 실무의 규약은 열거 상수에 접두어를 붙이는 것이다 — <code>STATUS_OK</code>, <code>GTK_ALIGN_FILL</code>, <code>SDL_QUIT</code>. 이름이 길어 보여도, 변수 · 함수 · 열거 상수가 한 마당을 나눠 쓰는 세계에서는 그것이 담장이다.</p><div class="dev platform"><p class="dev-label">플랫폼 노트.<span style="white-space: pre-wrap">&#x20;&#x20;</span>C++ 의 <code>enum class</code></p><div class="dev-body"><p>C++11 은 이 자리에서 갈라섰다. <code>enum class color { red };</code>로 선언하면 상수가 바깥 마당으로 새지 않고 <code>color::red</code>로만 쓰인다 — 「열거체마다 마당을 하나」 라는 뜻이다.</p><p>C23 은 열거체의 <strong>밑타입</strong>을 지정하는 문법(<code>enum color : unsigned char { … }</code>)을 들여왔지만, 상수가 사는 마당은 그대로 두었다. 두 기능은 이름이 비슷해 보여도 푸는 문제가 다르다 — 하나는 크기, 하나는 이름이다.</p></div></div><h3 id="s63-6">63.6 가림(shadowing)<a class="plink" href="#s63-6" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>안쪽 스코프에 같은 철자를 다시 선언하면 바깥 것이 <strong>가려진다.</strong> 합법이고, 가끔은 유용하며, 자주 사고의 자리다.</p><pre><code data-lang="c"><strong><span class="tok-t">int</span></strong> count <strong><span class="tok-x">=</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>                    <em><span class="tok-c">//</span></em><em><span class="tok-c"> 전역</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">int</span></strong> <strong>f</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> count<span class="tok-x">)</span> <span class="tok-x">{</span>         <em><span class="tok-c">//</span></em><em><span class="tok-c"> 매개변수가 전역을 가린다</span></em>
+    <span class="tok-x">{</span> <strong><span class="tok-t">int</span></strong> x <strong><span class="tok-x">=</span></strong> count<span class="tok-x">;</span> <span class="tok-x">{</span> <strong><span class="tok-t">int</span></strong> x <strong><span class="tok-x">=</span></strong> <span class="tok-n">2</span><span class="tok-x">;</span> <strong><span class="tok-k">return</span></strong> x<span class="tok-x">;</span> <span class="tok-x">}</span> <span class="tok-x">}</span>   <em><span class="tok-c">//</span></em><em><span class="tok-c"> 안쪽 x 가 바깥 x 를 가린다</span></em>
+<span class="tok-x">}</span></code></pre><p>문제는 <strong>경고가 기본으로 켜져 있지 않다</strong>는 것이다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>옵션</strong></th><th><strong>실측 결과(GCC 14)</strong></th></tr><tr><td><code>-Wall -Wextra</code></td><td>가림은 한 건도 잡지 않는다(쓰이지 않는 변수만 지적)</td></tr><tr><td><code>-Wshadow</code></td><td>두 건 모두 잡는다 — 전역을 가리는 매개변수, 그리고 바깥 지역 변수를 가리는 안쪽 지역 변수</td></tr></table></div><span id="doc-float-316"></span><p class="float-caption">표 63.4 — 가림을 잡는 옵션과 실측</p></figure><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 그러면 <code>-Wshadow</code>를 늘 켜야 하는가?</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> 새 코드라면 켜는 쪽을 권한다. 오래된 코드에 처음 켜면 경고가 쏟아지는데, 그때 쓰는 절충이 있다.</p><ul><li>GCC 의 <code>-Wshadow=local</code>(지역이 지역을 가리는 것만) 또는 <code>-Wshadow=compatible-local</code>(타입까지 같을 때만).</li><li>전역을 가리는 경우만 잡고 싶다면 <code>-Wshadow=global</code>.</li><li>이 셋은 GCC 의 옵션이다. Clang 22.1 은 <code>-Wshadow=local</code> 을 「모르는 경고 옵션」이라 하고, 대신 <code>-Wshadow</code> 와 더 넓게 잡는 <code>-Wshadow-all</code> 을 둔다.</li></ul><p>근본 처방은 따로 있다 — <strong>전역을 줄이는 것</strong>이다. 가릴 전역이 없으면 가림 사고도 없다. 다음 장의 「내보낼 것만 내보낸다」가 같은 처방의 다른 얼굴이다.</p></p></div></div><div class="dev antipattern"><p class="dev-label">반례.<span style="white-space: pre-wrap">&#x20;&#x20;</span>루프 변수를 안쪽에서 다시 선언하기</p><div class="dev-body"><pre><code data-lang="c"><strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> n<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> m<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span> <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 바깥 i 를 잃었다 </span></em><em><span class="tok-c">*/</span></em> <span class="tok-x">}</span>
+<span class="tok-x">}</span></code></pre><p>컴파일은 된다. 그러나 안쪽 블록에서 바깥 <code>i</code>를 참조할 방법이 없고, 나중에 누군가 안쪽 루프의 몸통을 함수로 빼낼 때 조용히 뜻이 바뀐다. <code>-Wshadow</code>가 잡아 주는 대표적인 패턴이다.</p></div></div><h3 id="s63-7">63.7 써서는 안 되는 이름 — 표준과 구현이 예약한 이름<a class="plink" href="#s63-7" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>이름 공간이 넷뿐인 세계에서, 표준 라이브러리와 구현은 <strong>미리 자리를 예약</strong>해 두었다. 그 자리를 침범하면 오늘은 돌아가도 다음 버전에서 깨진다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>무엇이 예약되어 있나</strong></th><th><strong>범위</strong></th><th><strong>예</strong></th></tr><tr><td>밑줄 + 대문자, 밑줄 두 개</td><td><strong>모든 용도로</strong> 언제나</td><td><code>_Value</code>, <code>__x</code>, <code>_Atomic</code></td></tr><tr><td>밑줄 하나 + 소문자</td><td>파일 스코프의 보통 식별자와 태그</td><td><code>_helper</code>(전역이면 안 됨)</td></tr><tr><td><code>str</code>·<code>mem</code>·<code>wcs</code> + 소문자</td><td><code>&lt;string.h></code> 계열이 가져간다</td><td><code>strdup</code>, <code>memcpy2</code></td></tr><tr><td><code>is</code>·<code>to</code> + 소문자</td><td><code>&lt;ctype.h></code> 계열</td><td><code>isodd</code>, <code>tolower2</code></td></tr><tr><td><code>E</code> + 대문자·숫자</td><td><code>&lt;errno.h></code></td><td><code>EMYERROR</code></td></tr><tr><td><code>LC_</code> + 대문자</td><td><code>&lt;locale.h></code></td><td><code>LC_MINE</code></td></tr><tr><td><code>SIG</code>·<code>SIG_</code> + 대문자</td><td><code>&lt;signal.h></code></td><td><code>SIGMINE</code></td></tr><tr><td><code>PRI</code>·<code>SCN</code> + 소문자</td><td><code>&lt;inttypes.h></code></td><td><code>PRIxmine</code></td></tr><tr><td><code>_t</code> 접미사</td><td>POSIX 가 예약(표준 C 아님)</td><td><code>mytype_t</code> — 회색지대(13장)</td></tr></table></div><span id="doc-float-317"></span><p class="float-caption">표 63.5 — 예약된 이름의 범위</p></figure><p>근거는 표준 §7.1.3 이고, 더 자세한 사연은 97장에서 다시 본다.</p><p>★ C23 이 이 자리에 눈금을 하나 더 그었다 — <strong>잠재적으로 예약된 이름</strong>이다. 표준이 「선택 사항」으로 적어 둔 것들(구현이 제공할 수도, 안 할 수도 있는 이름들)은 <strong>제공되기 전까지는 예약이 아니지만</strong>, 구현이나 다음 판이 언제든 가져갈 수 있는 자리다. 그전까지는 예약이냐 아니냐가 흐릿해 정의되지 않은 동작으로 미끄러지기 쉬웠는데, C23 이 이름을 붙여 갈래를 갈랐다.</p><p>실무의 뜻은 하나다 — 그런 이름을 쓰면 <strong>오늘은 되고 내일은 안 될 수 있다.</strong> 표준은 구현에게 「그런 이름을 쓰면 알려 주라」고 권하기까지 한다(§7.1.3).</p><div class="dev realcase"><p class="dev-label">실제 사례.<span style="white-space: pre-wrap">&#x20;&#x20;</span><code>_t</code> 접미사는 왜 회색지대인가</p><div class="dev-body"><p><code>size_t</code>·<code>uint32_t</code>처럼 표준 타입이 <code>_t</code>로 끝나니 자기 타입에도 붙이고 싶어진다. 그런데 <strong>표준 C는 <code>_t</code>를 예약하지 않았고, POSIX는 예약했다.</strong></p><p>그래서 상황이 이렇게 갈린다. 순수 표준 C 프로그램에서 <code>mytype_t</code>는 합법이다. 같은 코드가 POSIX 시스템의 헤더와 만나면, 언젠가 POSIX가 그 이름을 쓰기 시작할 때 부딪힐 수 있다 — 실제로 그런 충돌이 여러 번 있었다.</p><p>13장의 사다리대로 하면 판단은 간단해진다. 혼자 쓰는 코드면 주석 한 줄로 족하고, 여러 플랫폼으로 나가는 라이브러리라면 접두어를 앞에 붙여 <code>prov_str_t</code>처럼 <strong>자기 접두어 아래에서</strong> 쓴다. 큰 프로젝트들이 대체로 후자를 택한 이유다.</p></div></div><p>이름의 규칙을 알았다. 그런데 규칙을 다 지켜도 두 라이브러리가 같은 철자를 내보내면 부딪힌다 — C에는 새 마당을 팔 방법이 없으니까. 다음 장이 그 문제다: 충돌을 어떻게 막고, C++ 는 이 자리를 어떻게 풀었는가.</p>
+<div class="nav"><a href="ch62.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch64.html">다음 →</a></div>
+</div></main>
+<script>(function(){var b=document.querySelector('.menu-btn'),p=document.getElementById('here-panel');function open(o){if(!p)return;p.hidden=!o;if(b)b.setAttribute('aria-expanded',o);}if(b)b.addEventListener('click',function(){open(p.hidden);});if(p)p.addEventListener('click',function(e){if(e.target.tagName==='A'&&e.target.getAttribute('href').charAt(0)==='#')open(false);});document.addEventListener('keydown',function(e){if(e.key==='Escape'&&p&&!p.hidden){open(false);if(b)b.focus();}});document.addEventListener('click',function(e){if(p&&!p.hidden&&!p.contains(e.target)&&!(b&&b.contains(e.target)))open(false);});var bk=document.querySelector('.bar .back');if(bk)bk.addEventListener('click',function(e){if(history.length>1&&document.referrer){e.preventDefault();history.back();}});var box=document.getElementById('setbox');if(!box)return;var r=document.documentElement;function load(){try{return JSON.parse(localStorage.getItem('doc-read')||'{}');}catch(e){return {};}}function save(s){try{localStorage.setItem('doc-read',JSON.stringify(s));}catch(e){}}function css(n){return getComputedStyle(r).getPropertyValue(n).trim();}function paint(){var s=load();var t=s.theme||'auto',w=s.width==='fit'?'fit':'960';[].forEach.call(box.querySelectorAll('.segb[data-theme]'),function(x){x.setAttribute('aria-pressed',x.dataset.theme===t);});[].forEach.call(box.querySelectorAll('.segb[data-width]'),function(x){x.setAttribute('aria-pressed',x.dataset.width===w);});var ly=s.layout||'auto';[].forEach.call(box.querySelectorAll('.segb[data-layout]'),function(x){x.setAttribute('aria-pressed',x.dataset.layout===ly);});document.getElementById('s-fg').value=s.fg||hex(css('--fg'));document.getElementById('s-bg').value=s.bg||hex(css('--bg'));document.getElementById('s-link').value=s.link||hex(css('--link'));}function hex(v){var m=v.match(/^rgba?\((\d+)[ ,]+(\d+)[ ,]+(\d+)/);if(!m)return v.charAt(0)==='#'?v:'#000000';return '#'+[1,2,3].map(function(i){return ('0'+parseInt(m[i],10).toString(16)).slice(-2);}).join('');}paint();[].forEach.call(box.querySelectorAll('.segb[data-width]'),function(x){x.addEventListener('click',function(){var s=load();if(x.dataset.width==='fit'){s.width='fit';r.setAttribute('data-measure','fit');}else{delete s.width;r.removeAttribute('data-measure');}save(s);setTimeout(paint,0);});});[].forEach.call(box.querySelectorAll('.segb[data-layout]'),function(x){x.addEventListener('click',function(){var s=load(),v=x.dataset.layout;if(v==='auto'){delete s.layout;r.removeAttribute('data-layout');}else{s.layout=v;r.setAttribute('data-layout',v);}save(s);var m=document.querySelector('meta[name=viewport]');var want=v==='desktop'?'width=1100':'width=device-width, initial-scale=1';if(m&&m.getAttribute('content')!==want)location.reload();else setTimeout(paint,0);});});[].forEach.call(box.querySelectorAll('.segb[data-theme]'),function(x){x.addEventListener('click',function(){var s=load();s.theme=x.dataset.theme;delete s.fg;delete s.bg;delete s.link;save(s);['--fg','--bg','--link'].forEach(function(n){r.style.removeProperty(n);});if(s.theme==='auto')r.removeAttribute('data-theme');else r.setAttribute('data-theme',s.theme);setTimeout(paint,0);});});[['s-fg','--fg','fg'],['s-bg','--bg','bg'],['s-link','--link','link']].forEach(function(a){document.getElementById(a[0]).addEventListener('input',function(){var s=load();s[a[2]]=this.value;save(s);r.style.setProperty(a[1],this.value);});});})();</script><script>
+(function(){
+  var q=document.getElementById('q'), out=document.getElementById('qr');
+  if(!q||!out) return;
+  var data=null, NONE="\ucc3e\uc740 \uac83\uc774 \uc5c6\ub2e4";
+  function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+  function run(){
+    var v=q.value.trim().toLowerCase();
+    out.innerHTML='';
+    if(!v||!data) return;
+    var hits=[];
+    for(var i=0;i<data.length && hits.length<40;i++){
+      if(data[i][0].toLowerCase().indexOf(v)>=0) hits.push(data[i]);
+    }
+    if(!hits.length){ out.innerHTML='<li>'+NONE+'</li>'; return; }
+    out.innerHTML=hits.map(function(h){
+      return '<li><a href="'+h[1]+'">'+esc(h[0])+'</a>'+
+             (h[2]?'<span class="where">'+esc(h[2])+'</span>':'')+'</li>';
+    }).join('');
+  }
+  q.addEventListener('input',function(){
+    if(data){ run(); return; }
+    fetch('search-index.json').then(function(r){return r.json();})
+      .then(function(j){ data=j; run(); })
+      .catch(function(){ out.innerHTML='<li>'+NONE+'</li>'; });
+  });
+})();
+</script></body></html>

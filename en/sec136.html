@@ -1,0 +1,526 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Appendix L — How a machine boots: BIOS, UEFI, and bootloaders — Proven C Book</title><style>@font-face { font-family:"Doc Serif"; src:url("../fonts/serif.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-italic.woff2") format("woff2");
+  font-weight:400; font-style:italic; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-kr.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-kr-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans-kr.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans-kr-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Mono"; src:url("../fonts/mono.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Mono"; src:url("../fonts/mono-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+:root { color-scheme: light dark; --bg:#fafaf8; --bg2:#f2f2f0; --bg3:#e6e6e3; --fg:#141414; --muted:#555555; --line:#c9c9c9; --line-strong:#8a8a8a; --accent:#1a4f8a; --accent-fg:#ffffff; --accent2:#96530f; --honey:#f2b04a; --honey-fg:#2b1d00; --honey-text:#855400; --honey-soft:#fbebc6; --danger:#9b1b30; --ok:#1d6e37; --warn:#855400; --select:#d4dde8;
+  --rule:var(--line); --box-bg:var(--bg2); --code-bg:var(--bg2); --box-rule:var(--line); --link:var(--accent);
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg:#121314; --bg2:#1c1e20; --bg3:#2a2c2f; --fg:#e8e8e8; --muted:#a6a6a6; --line:#3a3d40; --line-strong:#75787c; --accent:#8ab4e8; --accent-fg:#121314; --accent2:#d4883b; --honey:#f2b04a; --honey-fg:#121314; --honey-text:#f2b04a; --honey-soft:#3b311e; --danger:#f07a8c; --ok:#7bcb95; --warn:#f2b04a; --select:#2f3d52;
+    --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+:root[data-theme="dark"] { color-scheme: dark; --bg:#121314; --bg2:#1c1e20; --bg3:#2a2c2f; --fg:#e8e8e8; --muted:#a6a6a6; --line:#3a3d40; --line-strong:#75787c; --accent:#8ab4e8; --accent-fg:#121314; --accent2:#d4883b; --honey:#f2b04a; --honey-fg:#121314; --honey-text:#f2b04a; --honey-soft:#3b311e; --danger:#f07a8c; --ok:#7bcb95; --warn:#f2b04a; --select:#2f3d52;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; }
+:root[data-theme="light"] { color-scheme: light; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Doc Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.here-head { display:flex; align-items:center; gap:.8rem; padding:.2rem 0 .5rem;
+  border-bottom:1px solid var(--rule,#ddd); margin-bottom:.5rem; }
+.here-head .sp { flex:1; }
+.here-all { margin-left:auto; font-size:.9rem; }
+.here-x { font:inherit; font-size:.9rem; cursor:pointer; background:none;
+  border:1px solid var(--line-strong); padding:.05rem .45rem;
+  color:inherit; }
+.here-body a, .tf-secs a { display:block; text-decoration:none; padding:.12rem 0;
+  line-height:1.45; }
+.here-body a:hover, .tf-secs a:hover { text-decoration:underline; }
+.here-body a.lv4, .tf-secs a.lv4 { padding-left:1.6rem; font-size:.94rem;
+  color:var(--muted,#555); }
+.tf-no { display:inline-block; min-width:3.2rem; color:var(--muted,#666);
+  font-variant-numeric:tabular-nums; }
+.toc-full .tf-ch { margin:.9rem 0 .15rem; font-weight:700; }
+.toc-full .tf-secs { margin:0 0 .5rem .2rem; border-left:2px solid var(--rule,#e2e2e2);
+  padding-left:.7rem; }
+.toc-full h4.toc-part { margin-top:1.8rem; }
+.toc a.toc-detail { font-weight:700; }
+@media print { .here-btn, .here-panel { display:none; } }
+.bar { position:sticky; top:0; z-index:20; display:flex; flex-wrap:nowrap; gap:.25rem; align-items:center;
+       min-height:44px; padding:0 clamp(.4rem,2vw,1.6rem); background:var(--bg2);
+       border-bottom:1px solid var(--line); font-size:.9rem;
+       font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--fg); text-decoration:none; } .bar a:hover { text-decoration:none; }
+.bar .sp { display:none; }
+main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
+.wrap { width:100%; }
+main .wrap { max-width:960px; margin-inline:auto; }
+:root[data-measure="fit"] main .wrap { max-width:none; margin:0; }
+h1,h2,h3,h4 { font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35;
+  padding-bottom:.18rem; border-bottom:1px solid var(--rule); }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem;
+     padding-bottom:.22rem; border-bottom:1.5px solid var(--fg); }
+p { margin:.9rem 0; } a { color:var(--link); }
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+.src-note { font-size: .86em; color: var(--muted, #666); }
+.src-note code { font-size: .95em; }
+sup.fnref { font-size: .72em; line-height: 0; vertical-align: super; }
+sup.fnref a { text-decoration: none; padding: 0 .1em; }
+sup.fnref a::before { content: "["; }
+sup.fnref a::after  { content: "]"; }
+.chapter-notes { margin: 3rem 0 1rem; padding-top: .9rem;
+                 border-top: 2px solid var(--rule, #333); }
+.chapter-notes h2 { font-size: 1.05rem; margin: 0 0 .6rem; }
+.chapter-notes ol { margin: 0; padding-left: 1.6em; }
+.chapter-notes li { font-size: .92em; margin: .35em 0; text-indent: 0; }
+.chapter-notes a.fnback { text-decoration: none; }
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
+pre,code,kbd { font-family:"Doc Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
+pre code { background:none; padding:0; }
+.tblwrap { overflow-x:auto; text-align:center; }
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.float-list { list-style:none; padding-left:0; }
+.float-list li { margin:.12rem 0; }
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"Doc Mono","D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"Doc Mono","D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"Doc Mono","D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+.dev { margin:1.15rem 0; padding:0; background:none; border:none; border-radius:0; }
+.dev > .dev-label { border-left:4px solid var(--fg);
+  padding:.1rem .8rem .25rem .8rem; margin:0 0 .34rem; }
+.dev > .dev-body { border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem .35rem .8rem; margin:0; }
+.dev > .dev-body > *:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child { margin-bottom:0; }
+.float-caption { text-align:center; font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+.dev.open { border:none; border-radius:0; background:none;
+  padding:0; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
+  text-indent:0; border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+.dev.open > .open-body { margin:0; padding:.35rem .8rem;
+  border-left:2px solid var(--box-rule); }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+.dev.open .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.06rem 0 .06rem .7rem; margin:.32rem 0 0; }
+.prereq .dev-label, .deepqa .dev-label, .why .dev-label,
+.organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+.qa-box { border:none; margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:0; background:none; }
+.qa-box .qa-q { border-left:4px solid var(--fg);
+  padding:.1rem .8rem .25rem .8rem; margin:0; }
+.qa-box .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem; margin:.34rem 0 0; }
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:0; }
+.dev.recap { border:none; background:none; padding:0; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
+  text-indent:0; border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > .dev-body > p, .dev.recap > .dev-body > div:not(.demo),
+.dev.recap > .dev-body > figure { margin:.3rem 0; padding:0; }
+.dev > .dev-body > .demo { margin:.7rem 0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:none; border-radius:0; background:none; padding:0; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem; text-indent:0;
+  border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
+.dev > .dev-body > figure, .dev > .open-body > p {
+  margin:.35rem 0; padding:0; }
+.bar .menu-btn { flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center;
+  min-width:38px; min-height:38px; padding:0; font:inherit; font-size:1.25rem; line-height:1;
+  color:var(--fg); background:none; border:0; cursor:pointer; text-decoration:none; }
+.bar .back, .bar .bar-nav .nb { flex:0 0 auto; display:inline-flex; align-items:center; gap:.3em;
+  min-height:32px; padding:0 .65rem; border:1px solid var(--line); background:var(--bg);
+  color:var(--fg); font-weight:600; white-space:nowrap; text-decoration:none; }
+.bar .menu-btn[aria-expanded="true"] { background:var(--bg3); }
+.bar .place { flex:1 1 auto; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
+  padding:0 .35rem; }
+.bar .place strong a { color:var(--honey-text); }
+.bar .place .cur { color:var(--fg); }
+.bar .bar-nav { flex:0 0 auto; display:flex; gap:.3rem; align-items:center; white-space:nowrap; }
+.bar .bar-nav .off { color:var(--muted); border-color:var(--line); opacity:.45; }
+.bar .back:hover, .bar .menu-btn:hover, .bar .bar-nav a.nb:hover, .bar .place a:hover { background:var(--bg3); }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+.dev.antipattern > .dev-label { border-left-style:solid; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.2rem; }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em;
+            padding-bottom:0; border-bottom:none; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
+.toc { columns:24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.toc > .toc-part:first-child, .toc > .toc-keep:first-child > .toc-part, .toc-full > .toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
+.toc-group { padding-left:.85rem; }
+.toc-keep, .toc a { break-inside:avoid; }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+code.style-name { font-family:"Doc Mono","D2Coding",ui-monospace,monospace;
+  font-size:.72em; color:var(--muted); background:var(--rule);
+  padding:.05em .35em; border-radius:3px; white-space:nowrap;
+  font-weight:400; letter-spacing:0; }
+.dev.open > .dev-label { padding-top:.42rem; padding-bottom:.42rem; }
+.dev.open > .open-body { padding-top:.4rem; padding-bottom:.4rem; }
+.dev.open > .open-body > p { margin:.6rem 0; }
+.dev > .dev-body { padding-top:.5rem; padding-bottom:.5rem; }
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
+.dev > .dev-body > figure { margin:.55rem 0; }
+main { line-height:1.85; }
+p { margin:1.15rem 0; }
+h2 { margin-top:2.4rem; }
+h3 { margin-top:2rem; }
+li { margin:.3rem 0; }
+h1, h2, h3, h4 { border-bottom-color:var(--box-rule) !important; }
+.toc { line-height:1.45; }
+.toc a { padding:.16rem 0; }
+.toc-part { margin:.85rem 0 .2rem; }
+.metalist { line-height:1.45; gap:.2rem 1.2rem; }
+.metalist dt, .metalist dd { margin:0; }
+.demo { border-color:var(--box-rule); }
+.demo > .demo-head { border-bottom-color:var(--box-rule); }
+.dev > .dev-label,
+.dev.open > .dev-label,
+.qa-box .qa-q,
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  border-left-color:var(--box-rule); }
+.dev > .dev-body,
+.dev > .open-body,
+.dev.open .qa-a,
+.qa-box .qa-a,
+.deepqa .qa-a { border-left-color:var(--box-rule); }
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div {
+  border-color:var(--box-rule); }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+.dev.open > .open-body,
+.dev.open > .qa-a,
+.dev.open .qa-a,
+.dev.deepqa .qa-a,
+.qa-box > .qa-a,
+.qa-box > .qa-q { border-left-color:var(--box-rule); }
+.bar .bar-toc { font-size:1.15em; line-height:1; text-decoration:none; }
+.dev, .dev-body, .open-body, .qa-box, .qa-q, .qa-a, .dev-label,
+.toc-full, .toc-full .tf-secs { line-height:inherit; font-size:1rem; }
+.dev > .dev-body > p, .dev > .open-body > p,
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:1.15rem 0; }
+.dev > .dev-body > *:first-child, .dev > .open-body > *:first-child,
+.qa-box .qa-q > p:first-child, .qa-box .qa-a > p:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child, .dev > .open-body > *:last-child,
+.qa-box .qa-q > p:last-child, .qa-box .qa-a > p:last-child { margin-bottom:0; }
+.dev > .dev-label, .dev.open > .dev-label { font-size:.98rem; line-height:1.4; }
+h1,h2,h3,h4 { padding-bottom:.34rem; }
+h1 { margin:.2rem 0 1.3rem; }
+h2 { padding-bottom:.42rem; margin-bottom:1.15rem; }
+h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
+.dev.open > .open-body > * { margin:.3rem 0; }
+.dev.open > .open-body > p { margin:.5rem 0; }
+.dev.open > .open-body > div { margin:.15rem 0; }
+.dev.open ul, .dev.open ol { margin:.3rem 0; }
+.dev.open li, .dev.open ol.qlist li { margin:0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open .qa-a > p { margin:.35rem 0; }
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div { border-color:var(--box-rule); }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+a:focus-visible, button:focus-visible, summary:focus-visible, input:focus-visible {
+  outline:2px solid var(--accent2); outline-offset:2px; }
+:target, h1, h2, h3, h4, [id] { scroll-margin-top:4.2rem; }
+.skip { position:absolute; left:-9999px; top:0; z-index:30;
+        background:var(--bg); color:var(--fg); border:1px solid var(--fg);
+        padding:.5rem .8rem; font-size:.9rem; text-decoration:none; }
+.skip:focus { left:.5rem; top:.5rem; }
+.here-panel { position:fixed; top:46px; left:clamp(.2rem,1vw,1rem); z-index:19;
+  width:min(32rem, calc(100vw - .4rem)); max-height:calc(100vh - 54px); overflow:auto;
+  padding:.7rem .9rem .9rem; border:1px solid var(--line); --k:var(--line-strong);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-size:.9rem; line-height:1.4;
+  background:
+    linear-gradient(var(--k),var(--k)) left top / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) left top / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) right top / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) right top / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) left bottom / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) left bottom / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) right bottom / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) right bottom / 3px 8px no-repeat,
+    color-mix(in srgb, var(--bg) 97%, transparent); }
+.here-panel .tools { display:flex; flex-wrap:wrap; gap:.3rem .4rem; align-items:center;
+  margin-bottom:.6rem; }
+.tool, .segb { font:inherit; font-size:.88rem; color:var(--fg); background:none;
+  border:1px solid var(--line-strong); padding:0 .6rem; min-height:30px;
+  display:inline-flex; align-items:center; text-decoration:none; cursor:pointer; white-space:nowrap; }
+.tool:hover, .segb:hover, .nav a:hover, .here-panel .here-body a:hover { background:var(--bg3); }
+.segb[aria-pressed="true"] { background:var(--select); border-color:var(--accent); font-weight:700; }
+.tool, .segb, .bar a, .bar button, .nav a, .here-panel a { transition:background-color .08s; }
+@media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
+main a { text-decoration:underline; text-decoration-color:var(--box-rule);
+  text-underline-offset:2px; }
+main a:hover { background:var(--box-bg); text-decoration-color:var(--link); }
+main .toc a, main .toc-full a, main .here-body a { text-decoration:none; }
+main .toc a:hover, main .toc-full a:hover { background:var(--box-bg); text-decoration:underline; }
+.setbox { margin:0 0 .6rem; }
+.setrow { display:flex; flex-wrap:wrap; gap:.4rem .5rem; align-items:center; margin:.35rem 0; }
+.setlbl { min-width:4.2rem; font-size:.82rem; font-weight:700; }
+.seg { display:inline-flex; flex-wrap:wrap; gap:.25rem; }
+.col { display:inline-flex; align-items:center; gap:.3rem; }
+.col input[type=color] { width:2rem; height:1.4rem; padding:0; border:1px solid var(--line-strong);
+  background:none; cursor:pointer; }
+.setnote { margin:.5rem 0 0; font-size:.82rem; }
+.here-panel .ver { font-size:.82rem; color:var(--muted); padding:.2rem .45rem .2rem 0;
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; white-space:nowrap; }
+.demo pre, .demo pre code {
+  white-space:pre-wrap; overflow-wrap:anywhere; word-break:break-word; }
+.demo > .demo-body { overflow-x:visible; }
+.plink {
+  margin-left: .4em; font-weight: 400; text-decoration: none;
+  color: var(--muted, #888); opacity: 0;
+}
+h3:hover > .plink, h4:hover > .plink,
+h3 > .plink:focus, h4 > .plink:focus { opacity: 1; }
+@media (hover: none) { .plink { opacity: .45; } }
+.searchbox { margin:.6em 0 0; }
+.searchbox input[type=search] {
+  width: 100%; padding: .45em .6em; font: inherit;
+  border: 1px solid var(--line-strong);
+  background: var(--bg); color: var(--fg);
+}
+.search-hint { color: var(--muted, #777); font-size: .85em; margin:.3em 0 0; }
+.search-results { list-style: none; padding: 0; margin: .5em 0 0; }
+.search-results li { margin: .15em 0; }
+.search-results .where { color: var(--muted, #777); font-size: .85em; margin-left: .4em; }
+@media (max-width: 900px), (orientation: portrait) {
+  :root:not([data-layout="desktop"]) .bar .place .cur { display:none; }
+  :root:not([data-layout="desktop"]) .bar .back,
+  :root:not([data-layout="desktop"]) .bar .bar-nav .nb { min-height:40px; padding:0 .5rem; }
+}
+@media (max-width: 480px) {
+  :root:not([data-layout="desktop"]) .bar .bar-nav .prev .lbl,
+  :root:not([data-layout="desktop"]) .bar .bar-nav .next .lbl { display:none; }
+  :root:not([data-layout="desktop"]) .bar .bar-nav .nb { min-width:44px; justify-content:center; }
+  :root:not([data-layout="desktop"]) .bar { gap:.2rem; }
+}
+:root[data-layout="mobile"] .bar .place .cur { display:none; }
+:root[data-layout="mobile"] .bar .back, :root[data-layout="mobile"] .bar .bar-nav .nb { min-height:40px; padding:0 .5rem; }
+:root[data-layout="mobile"] main .wrap { max-width:34rem; }
+@media (pointer: coarse), (max-width: 900px) {
+  .bar .menu-btn { min-width:44px; min-height:44px; }
+  .tool, .segb { min-height:38px; }
+}
+@media print { .bar, .here-panel { display:none; } }
+
+body { font-family:"Doc Serif","Noto Serif",Georgia,"Noto Serif CJK KR",serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans",system-ui,"Noto Sans CJK KR",sans-serif; }
+pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
+</style>
+<script>(function(){try{var L=localStorage,o='pcb-read';if(o&&o!=='doc-read'&&L.getItem(o)!==null&&L.getItem('doc-read')===null){var v=JSON.parse(L.getItem(o)||'{}');delete v.width;L.setItem('doc-read',JSON.stringify(v));L.removeItem(o);}var s=JSON.parse(L.getItem('doc-read')||'{}');var r=document.documentElement;if(s.theme&&s.theme!=='auto')r.setAttribute('data-theme',s.theme);if(s.fg)r.style.setProperty('--fg',s.fg);if(s.bg)r.style.setProperty('--bg',s.bg);if(s.link)r.style.setProperty('--link',s.link);if(s.width==='fit')r.setAttribute('data-measure','fit');if(s.layout==='desktop'||s.layout==='mobile')r.setAttribute('data-layout',s.layout);if(s.layout==='desktop'){var m=document.querySelector('meta[name=viewport]');if(m)m.setAttribute('content','width=1100');}}catch(e){}})();</script></head>
+<body>
+<a class="skip" href="#content">Skip to content</a>
+<div class="bar"><button class="menu-btn" id="set-open" type="button" aria-expanded="false" aria-controls="here-panel" aria-label="Menu" title="Menu">☰</button><a class="back" href="index.html" title="Back">← <span class="lbl">Back</span></a><span class="place"><strong><a href="index.html">Proven C Book</a></strong><span class="cur"> › app. L</span></span><span class="bar-nav"><a class="nb prev" href="sec135.html">‹ <span class="lbl">Prev</span></a><a class="nb toc" href="index.html"><span class="lbl">TOC</span></a><a class="nb next" href="sec137.html"><span class="lbl">Next</span> ›</a></span></div><div id="here-panel" class="here-panel" hidden><div class="setbox" id="setbox"><div class="setrow"><span class="setlbl">Language</span><span class="seg"><a class="segb" href="../ko/">한국어</a></span></div><div class="setrow"><span class="setlbl">Text width</span><span class="seg" id="s-width"><button type="button" class="segb" data-width="960">960</button><button type="button" class="segb" data-width="fit">Fit the window</button></span></div><div class="setrow"><span class="setlbl">Layout</span><span class="seg" id="s-layout"><button type="button" class="segb" data-layout="auto">Auto</button><button type="button" class="segb" data-layout="desktop">PC</button><button type="button" class="segb" data-layout="mobile">Mobile</button></span></div><div class="setrow"><span class="setlbl">Theme</span><span class="seg"><button type="button" class="segb" data-theme="auto">System</button><button type="button" class="segb" data-theme="light">Light</button><button type="button" class="segb" data-theme="dark">Dark</button></span></div><div class="setrow"><span class="setlbl">Colours</span><label class="col"><span>Text</span><input type="color" id="s-fg"></label><label class="col"><span>Background</span><input type="color" id="s-bg"></label><label class="col"><span>Link</span><input type="color" id="s-link"></label></div><p class="setnote">Settings are kept in this browser only.</p></div><div class="tools"><span class="ver">v0.110.2</span><a class="tool" href="toc.html">▤ Detailed contents</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book/releases/download/v0.110.2/proven_c_book-v0.110.2-en.pdf">⤓ PDF</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book" title="This book on GitHub">Git</a><a class="tool" href="https://rubidus-api.github.io/" title="rubidus-api.github.io --- every published project">⌂ All projects</a><a class="tool" href="https://github.com/rubidus-api" title="github.com/rubidus-api --- every repository">≡ All repos</a></div><div class="here-head"><strong>Contents of this chapter</strong></div><div class="here-body"><a class="lv3" href="#sx1"><span class="tf-no"></span>When the power comes on</a><a class="lv3" href="#sx2"><span class="tf-no"></span>The BIOS era — 512 bytes was all there was</a><a class="lv3" href="#sx3"><span class="tf-no"></span>The layout of the disk — from MBR to GPT</a><a class="lv3" href="#sx4"><span class="tf-no"></span>UEFI — the firmware reads a filesystem</a><a class="lv3" href="#sx5"><span class="tf-no"></span>What a bootloader actually does</a><a class="lv4" href="#sx6"><span class="tf-no"></span>Why several stages — the shadow of 440 bytes</a><a class="lv4" href="#sx7"><span class="tf-no"></span>The UEFI path — found by name and by variable</a><a class="lv4" href="#sx8"><span class="tf-no"></span>Without a bootloader — the Linux EFI stub</a><a class="lv4" href="#sx9"><span class="tf-no"></span>Embedded — U-Boot and MCUboot</a><a class="lv4" href="#sx10"><span class="tf-no"></span>What is handed over at the handover</a><a class="lv4" href="#sx11"><span class="tf-no"></span>When it will not boot — telling links apart by symptom</a><a class="lv3" href="#sx12"><span class="tf-no"></span>By operating system — what happens after that</a><a class="lv4" href="#sx13"><span class="tf-no"></span>MS-DOS</a><a class="lv4" href="#sx14"><span class="tf-no"></span>Windows</a><a class="lv4" href="#sx15"><span class="tf-no"></span>Linux</a><a class="lv4" href="#sx16"><span class="tf-no"></span>RTOSes and small machines</a><a class="lv3" href="#sx17"><span class="tf-no"></span>The chain is a chain of trust</a><a class="lv3" href="#sx18"><span class="tf-no"></span>What to take from this</a></div></div>
+<main id="content"><div class="wrap">
+<h2>Appendix L — How a machine boots: BIOS, UEFI, and bootloaders</h2><div></div><p>chapter 59 asked “who calls <code>main</code>”, and the answer was the operating system. Then <strong>who calls the operating system?</strong> This appendix follows that question down to the power switch.</p><p>The details differ by machine and there is no need to know them all. Hold on to one sentence instead and any machine’s boot can be read. <strong>Booting is a chain, and every link does the same work — find the next thing, load it, check it, hand over control.</strong></p><p>★ <strong>One question for a first reading:</strong> From power-on to the operating system that calls <code>main</code>, how does each stage of the boot chain hand control to the next? (The real-mode details can wait for a second reading.)</p><figure class="fig"><img src="figures/boot-chain.svg" alt="boot-chain" loading="lazy"><span id="doc-float-762"></span><p class="float-caption">Figure 121.1 — The chain of booting — the machines differ; the work of each link does not.</p></figure><div class="dev platform"><p class="dev-label">Platform note. what this appendix rests on</p><div class="dev-body">What is written here comes from the opening pages of each document (the UEFI specification, which also defines GPT; the Linux kernel documentation; and each bootloader’s own documentation). <strong>This machine’s boot configuration was not captured</strong> — instead the appendix builds boot code and shows a BIOS booting it on an emulated PC.</div></div><h3 id="sx1">When the power comes on<a class="plink" href="#sx1" aria-label="Link to this section" title="Link to this section">#</a></h3><div></div><p>The CPU wakes knowing nothing. Memory holds rubbish, devices are uninitialised, and the very notion of “a program” does not exist yet. The CPU knows one thing — <strong>read a fixed address and start executing there.</strong> That is the reset vector seen in the appendix on C without an operating system.</p><p>At that fixed place a ROM is usually wired, and the program in it is called <strong>firmware</strong>. On a PC that is the BIOS or the UEFI firmware; on a small chip it is a boot ROM the manufacturer put there.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>What</strong></th><th><strong>Why</strong></th></tr><tr><td>self-test (POST) and memory initialisation</td><td>DRAM must be configured before it can be used — until then there is next to no memory</td></tr><tr><td>waking the minimum of devices</td><td>because the next stage has to be read from a disk or USB</td></tr><tr><td>finding the next stage</td><td>which place on which device to read is exactly “the boot order”</td></tr><tr><td>checking what was read</td><td>a signature check (secure boot<span id="idx-entry-346"></span>), or, in the older unsigned way, the last two bytes of the first sector</td></tr><tr><td>handing over control</td><td>and having handed over, it usually disappears</td></tr></table></div><span id="doc-float-763"></span><p class="float-caption">Table 121.1 — What the firmware does</p></figure><h3 id="sx2">The BIOS era — 512 bytes was all there was<a class="plink" href="#sx2" aria-label="Link to this section" title="Link to this section">#</a></h3><div></div><p>The old PC’s way is startlingly simple. The BIOS loads <strong>the first 512-byte sector</strong> of the boot device at address 0x7C00, checks that its last two bytes are <code>0x55 0xAA</code>, and if so jumps there. That is all. Those 512 bytes are the <strong>boot sector</strong>, and the first sector of the whole disk is the <strong>MBR</strong> (master boot record).</p><p>Building a boot sector and letting a BIOS boot it shows where the space goes. This demonstration builds the same boot code twice. The build for this machine runs on a small program that plays the BIOS and prints each command the boot code gives (read a sector, jump). The other build is 16-bit real-mode code (real mode: the 8086-compatible mode an x86 CPU is in right after power-on), booted by a real BIOS on the PC that the emulator QEMU models. There is one copy of the boot code; only the bodies of the few functions that touch the machine differ between the two builds.</p><div class="dev platform"><p class="dev-label">Platform note. what this demonstration does and does not do</p><div class="dev-body"><p>The disks are not real devices but <strong>image files in a temporary directory</strong>. The partition tables are written by sfdisk, Linux’s partitioning tool, and this book’s code goes only into the 440 bytes in front of the table (the MBR’s code area) and into the first sector of the first partition. The boot code <strong>only reads</strong> the disk. No step anywhere writes to sector 0 of a device — code that can destroy somebody’s machine does not go into this book.</p><p>The boot was run on QEMU 10.0.13’s PC machine with its firmware, SeaBIOS 1.16.3. The disk is read with the extended read (AH=42h) of <code>int 13h</code>, the BIOS’s disk service, and characters go out of the first serial port (COM1). It was not run on a real PC’s firmware.</p></div></div><div class="demo demo-src"><p class="demo-head"><code>examples-en/apx-boot/mbr_boot/mbr.c (excerpt)</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-t">void</span></strong> <strong>mbr_main</strong><span class="tok-x">(</span><strong><span class="tok-t">uint8_t</span></strong> drive<span class="tok-x">,</span> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">struct</span></strong> part <strong><span class="tok-x">*</span></strong>table<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> find: the first entry marked 0x80 </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">struct</span></strong> part <strong><span class="tok-x">*</span></strong>active <strong><span class="tok-x">=</span></strong> nullptr<span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> <span class="tok-n">4</span><span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span>
+        <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>table<span class="tok-x">[</span>i<span class="tok-x">]</span><span class="tok-x">.</span>boot <strong><span class="tok-x">==</span></strong> <span class="tok-x">0x</span><span class="tok-n">80</span><span class="tok-x">)</span> <span class="tok-x">{</span> active <strong><span class="tok-x">=</span></strong> <strong><span class="tok-x">&amp;</span></strong>table<span class="tok-x">[</span>i<span class="tok-x">]</span><span class="tok-x">;</span> <strong><span class="tok-k">break</span></strong><span class="tok-x">;</span> <span class="tok-x">}</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong>active<span class="tok-x">)</span> <span class="tok-x">{</span> <strong>say</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">MBR: no active partition</span></strong><strong><span class="tok-n">\r</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <strong>stop</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <span class="tok-x">}</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> load: that partition's first sector at 0x7c00 </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">uint8_t</span></strong> <strong><span class="tok-x">*</span></strong>vbr <strong><span class="tok-x">=</span></strong> <strong>load_area</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong>disk_read</strong><strong><span class="tok-x">(</span></strong><strong>drive</strong><strong><span class="tok-x">,</span></strong><strong> active</strong><strong><span class="tok-x">-></span></strong><strong>lba</strong><strong><span class="tok-x">,</span></strong><strong> vbr</strong><strong><span class="tok-x">)</span></strong> <strong><span class="tok-x">!=</span></strong> <span class="tok-n">0</span><span class="tok-x">)</span>
+        <span class="tok-x">{</span> <strong>say</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">MBR: read failed</span></strong><strong><span class="tok-n">\r</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <strong>stop</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <span class="tok-x">}</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> check: the BIOS's check once more </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>vbr<span class="tok-x">[</span><span class="tok-n">510</span><span class="tok-x">]</span> <strong><span class="tok-x">!=</span></strong> <span class="tok-x">0x</span><span class="tok-n">55</span> <strong><span class="tok-x">||</span></strong> vbr<span class="tok-x">[</span><span class="tok-n">511</span><span class="tok-x">]</span> <strong><span class="tok-x">!=</span></strong> <span class="tok-x">0x</span><span class="tok-n">aa</span><span class="tok-x">)</span> <span class="tok-x">{</span> <strong>say</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">MBR: no 55 aa</span></strong><strong><span class="tok-n">\r</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <strong>stop</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <span class="tok-x">}</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> hand over: DL = drive, SI = that entry </span></em><em><span class="tok-c">*/</span></em>
+    <strong>chain</strong><strong><span class="tok-x">(</span></strong><strong>drive</strong><strong><span class="tok-x">,</span></strong><strong> active</strong><strong><span class="tok-x">,</span></strong><strong> vbr</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<span class="tok-x">}</span></code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>(no sfdisk here: no disk image, so nothing was built or run)
+</code></pre></div></div><p>The three disks in the output have the same or similar tables, and the boot code is the same on all three. The first disk gets to the end. The second has the same table as the first but nothing written at the start of its partition, and the third is a GPT disk. The demonstration shows two links of the boot chain as they are.</p><ol><li><strong>The BIOS loads sector 0.</strong> The BIOS loads the disk’s first sector at 0x7C00, checks that its last two bytes are <code>55 aa</code>, puts the drive number in the DL register (<code>0x80</code> for the first hard disk) and jumps there. All three disks get past this point — sfdisk wrote <code>55 aa</code> at the end of each.</li><li><strong>The MBR makes room.</strong> The next stage must also be loaded at 0x7C00, so the MBR first moves its own 512 bytes to 0x0600 and carries on there. It sets up the segments and the stack at the same time — apart from the drive number, the BIOS promises nothing about the registers.</li><li><strong>The MBR finds the next thing, loads it, checks it and hands over.</strong> That is the excerpt above. It finds the first of the four table entries marked <code>0x80</code>, reads that partition’s first sector — the VBR (volume boot record, the boot sector each partition has) — at 0x7C00, checks <code>55 aa</code> once more and jumps. DL is left as it is, and SI gets the address of the entry it found (<code>07be</code>). The second disk stops at this check with “<code>MBR: no 55 aa</code>”.</li><li><strong>The VBR checks what it was given.</strong> From the entry SI points to, the VBR reads where its partition starts (LBA 2048) and how big it is, then reads the disk’s sector 0 again and prints the table sfdisk wrote, byte for byte.</li></ol><p>The code with which the MBR makes room is assembly, not C. Calling a C function needs a stack, and setting up that stack is this code’s job.</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/apx-boot/mbr_boot/start.S (excerpt)</code></p><div class="demo-body"><pre><code data-lang="c">    cli                     <em><span class="tok-c">/*</span></em><em><span class="tok-c"> no interrupts while the stack changes </span></em><em><span class="tok-c">*/</span></em>
+    xor   <strong><span class="tok-x">%</span></strong>ax<span class="tok-x">,</span> <strong><span class="tok-x">%</span></strong>ax
+    mov   <strong><span class="tok-x">%</span></strong>ax<span class="tok-x">,</span> <strong><span class="tok-x">%</span></strong>ds          <em><span class="tok-c">/*</span></em><em><span class="tok-c"> all segments 0: address = offset </span></em><em><span class="tok-c">*/</span></em>
+    mov   <strong><span class="tok-x">%</span></strong>ax<span class="tok-x">,</span> <strong><span class="tok-x">%</span></strong>es
+    mov   <strong><span class="tok-x">%</span></strong>ax<span class="tok-x">,</span> <strong><span class="tok-x">%</span></strong>ss
+    mov   $<span class="tok-x">0x</span><span class="tok-n">7c00</span><span class="tok-x">,</span> <strong><span class="tok-x">%</span></strong>sp      <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the stack grows down from just below the code </span></em><em><span class="tok-c">*/</span></em>
+    cld
+    mov   $<span class="tok-x">0x</span><span class="tok-n">7c00</span><span class="tok-x">,</span> <strong><span class="tok-x">%</span></strong>si      <em><span class="tok-c">/*</span></em><em><span class="tok-c"> move our own 512 bytes to 0x0600 --- </span></em><em><span class="tok-c">*/</span></em>
+    mov   $<span class="tok-x">0x</span><span class="tok-n">0600</span><span class="tok-x">,</span> <strong><span class="tok-x">%</span></strong>di      <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 0x7c00 is for the next stage, the partition's sector 0 </span></em><em><span class="tok-c">*/</span></em>
+    mov   $<span class="tok-n">256</span><span class="tok-x">,</span> <strong><span class="tok-x">%</span></strong>cx
+    rep <strong>movsw</strong>
+    ljmp  $<span class="tok-n">0</span><span class="tok-x">,</span> $<span class="tok-n">1</span><strong><span class="tok-t">f</span></strong>           <em><span class="tok-c">/*</span></em><em><span class="tok-c"> jump into the moved copy (linked at 0x0600) </span></em><em><span class="tok-c">*/</span></em>
+<span class="tok-n">1</span><strong><span class="tok-x">:</span></strong>  sti
+    movzbl <strong><span class="tok-x">%</span></strong>dl<span class="tok-x">,</span> <strong><span class="tok-x">%</span></strong>eax        <em><span class="tok-c">/*</span></em><em><span class="tok-c"> mbr_main(drive number, the moved partition table) </span></em><em><span class="tok-c">*/</span></em>
+    mov   $<span class="tok-x">0x</span><span class="tok-n">07be</span><span class="tok-x">,</span> <strong><span class="tok-x">%</span></strong>edx
+    calll <strong>mbr_main</strong></code></pre></div></div><p>Read the first entry of the table the VBR printed, <code>80 20 21 00 83 61 21 00 00 08 00 00 00 10 00 00</code>. The leading <code>80</code> is the boot flag, and the fifth byte, <code>83</code>, is the type (Linux). The three bytes between them and the three after the type are old CHS (cylinder, head, sector) addresses, which boot code no longer reads. What is really used is the two 4-byte numbers at the end. Little-endian, <code>00 08 00 00</code> is 0x800 = 2048 and <code>00 10 00 00</code> is 0x1000 = 4096 — the starting LBA and the sector count. The <code>50524f56</code> just before the table is the <strong>disk signature</strong> sfdisk wrote at 0x1B8. That is why the boot code has 440 bytes, not 446, and why the demonstration’s script stops if the MBR code is over 440 bytes and compares the code area after sfdisk has written the table. The MBR code built with this machine’s GCC was 437 bytes.</p><p>What you get from this is not “which field is at which byte”. It is one number: <strong>440 bytes</strong>. That narrow space explains everything that follows.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Offset</strong></th><th><strong>Size</strong></th><th><strong>What</strong></th></tr><tr><td><code>0x000</code></td><td>440 bytes</td><td>bootstrap code — only the <strong>first piece</strong> of a bootloader fits</td></tr><tr><td><code>0x1B8</code></td><td>4 bytes + 2 bytes</td><td>the disk signature (a disk number the partitioning tool writes) and two bytes that are usually 0</td></tr><tr><td><code>0x1BE</code></td><td>16 bytes × 4</td><td>the partition table — which is why there were only four primary partitions</td></tr><tr><td><code>0x1FE</code></td><td>2 bytes</td><td><code>0x55 0xAA</code> — without it this is not a boot sector</td></tr></table></div><span id="doc-float-764"></span><p class="float-caption">Table 121.2 — How the MBR’s 512 bytes divide up</p></figure><p>Code that loads an operating system cannot possibly fit in 440 bytes. So every old bootloader was split into <strong>several stages</strong> — the first piece knows only where the second is, the second knows how to read a filesystem, and the one after that loads the kernel.</p><div class="dev misconception"><p class="dev-label">A common misconception. <strong>the MBR is the partition table</strong></p><div class="dev-body">The MBR is <strong>the whole first sector</strong>, and the partition table is 64 bytes inside it. “The MBR is gone” means very different things depending on which of the two is meant. Damage the bootstrap code and the data is intact; damage the partition table and the data is there but you have lost where it begins.</div></div><h3 id="sx3">The layout of the disk — from MBR to GPT<a class="plink" href="#sx3" aria-label="Link to this section" title="Link to this section">#</a></h3><div></div><p>Four partitions and a 32-bit LBA (the 2 TiB limit) soon grew tight. GPT (the GUID Partition Table) took that place, and the third disk of the demonstration above showed the start of that story.</p><ul><li>The first sector still holds an MBR. But a single partition of type <code>0xEE</code> covers the whole disk — the <strong>protective MBR</strong>. It exists to stop old tools that do not know GPT from taking the disk for empty and overwriting it. It is also why the old-style MBR code stopped on the third disk with “<code>MBR: no active partition</code>” — the <code>0xEE</code> entry carries no boot flag. This is the reason GRUB, booting a GPT disk from a BIOS, keeps a separate <strong>BIOS boot partition</strong>.</li><li>The real layout is in the GPT header in the second sector (LBA 1). Its signature is <code>EFI PART</code>, it carries <strong>a CRC32 of itself</strong>, and a second copy of the same table sits at the very end of the disk. Code that really checks that CRC, and reads the copy at the end instead of a broken primary header, is in the bootloader demonstration of the appendix on partition tables.</li></ul><p>The individual fields of both schemes, and the filesystems inside the partitions, are covered in tables in the appendix on partition tables. Here we look only as far as the chain story needs.</p><p>★ The difference between the old way and the new comes down to two words: <strong>checking and copies</strong>. A CRC takes over the “is this right” that two bytes of <code>0x55 0xAA</code> used to do, and a table that existed once now exists twice. Reliability design is largely a repetition of those two.</p><h3 id="sx4">UEFI — the firmware reads a filesystem<a class="plink" href="#sx4" aria-label="Link to this section" title="Link to this section">#</a></h3><div></div><p>UEFI removes the “512 bytes” constraint altogether. The firmware <strong>knows how to read a FAT filesystem</strong>, finds an <strong>executable</strong> in one partition of the disk (the ESP, the EFI System Partition), and simply runs it.</p><p>Here this appendix meets the appendix on executable file formats. <strong>That executable is in PE format</strong> — the same clothes as a Windows executable, with only the subsystem field in the header saying “UEFI application”. The filename is agreed too: with no configuration at all, the firmware looks for <code>\EFI\BOOT\BOOTX64.EFI</code>.</p><figure class="tbl"><div class="tblwrap"><table><tr><th></th><th><strong>BIOS</strong></th><th><strong>UEFI</strong></th></tr><tr><td>how the next stage is found</td><td>it reads the whole first sector</td><td>it reads a <strong>file</strong> from the ESP</td></tr><tr><td>size limit</td><td>512 bytes</td><td>effectively none</td></tr><tr><td>format</td><td>raw bytes</td><td>a PE executable (<code>.efi</code>)</td></tr><tr><td>execution mode</td><td>16-bit real mode</td><td>64-bit — the <code>.efi</code> runs in it from the start (x64 firmware)</td></tr><tr><td>what is handed over</td><td>almost nothing</td><td>the memory map and services for reaching devices (boot services)</td></tr><tr><td>verification</td><td><code>0x55 0xAA</code></td><td>a signature (secure boot) — or it is turned off</td></tr></table></div><span id="doc-float-765"></span><p class="float-caption">Table 121.3 — The BIOS way and the UEFI way</p></figure><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> If UEFI can run a file, why is a bootloader still needed?</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> It is not strictly needed. The Linux kernel can be <strong>an <code>.efi</code> executable itself</strong> (the EFI stub), and then the firmware starts the kernel directly. Bootloaders survive for “choosing” and “handing over” — something has to decide which of several kernels or operating systems to start, and with which command line and which initramfs.</p></div></div><h3 id="sx5">What a bootloader actually does<a class="plink" href="#sx5" aria-label="Link to this section" title="Link to this section">#</a></h3><div></div><p>The names vary; the work is the latter part of Table 121.1. How that “same work” gets done differs quite a lot from one bootloader to another, though, and most of the trouble met in practice comes from those differences. The sections below take them one at a time.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Name</strong></th><th><strong>Where</strong></th><th><strong>Character</strong></th></tr><tr><td>GRUB</td><td>the default in Linux distributions</td><td>several stages, reads filesystems, menus and configuration</td></tr><tr><td>systemd-boot</td><td>UEFI only</td><td>very thin — the firmware already reads files, so it merely sits on top</td></tr><tr><td>Windows <code>bootmgr</code></td><td>Windows</td><td>reads a configuration store called BCD and chooses</td></tr><tr><td>U-Boot</td><td>embedded Linux</td><td>SPL (a small first piece) then the body; hands a device tree to the kernel</td></tr><tr><td>MCUboot</td><td>microcontrollers</td><td>signature checking, two slots, rollback on failure</td></tr><tr><td>the EFI stub</td><td>the Linux kernel itself</td><td>the kernel <strong>is</strong> the <code>.efi</code> — it starts with no bootloader</td></tr></table></div><span id="doc-float-766"></span><p class="float-caption">Table 121.4 — Bootloaders commonly met</p></figure><h4 id="sx6">Why several stages — the shadow of 440 bytes<a class="plink" href="#sx6" aria-label="Link to this section" title="Link to this section">#</a></h4><div></div><p>In the old BIOS way the first piece is allowed 440 bytes — what is left of 512 after the disk signature, the partition table and the closing signature (the full layout table is in the disk appendix). Code that reads a filesystem cannot fit there. So the bootloader splits.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Stage</strong></th><th><strong>Where it lives</strong></th><th><strong>Size</strong></th><th><strong>What it does</strong></th></tr><tr><td><code>boot.img</code></td><td>the first 440 bytes of the MBR</td><td>440 bytes</td><td>knows only <strong>one sector number</strong> for the next piece, reads it and jumps</td></tr><tr><td><code>core.img</code></td><td>the empty space after the MBR (the MBR gap), or GPT’s <strong>BIOS boot partition</strong></td><td>tens of KiB</td><td>decompresses itself, loads filesystem modules and becomes able to read <code>/boot</code></td></tr><tr><td>modules and <code>grub.cfg</code></td><td>usually <code>/boot/grub</code> (inside a real filesystem)</td><td>a few MiB</td><td>draws the menu, chooses and loads a kernel and initramfs</td></tr></table></div><span id="doc-float-767"></span><p class="float-caption">Table 121.5 — GRUB’s stages (the old BIOS way)</p></figure><p>★ The <code>core.img</code> row is the point. <code>boot.img</code> cannot find the next piece by filename — it knows no filesystem. It embeds a <strong>sector number</strong> instead. Which is why there must be “empty space outside any filesystem” for <code>core.img</code> to sit in.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Disk scheme</strong></th><th><strong>The place</strong></th><th><strong>Size</strong></th></tr><tr><td>MBR (modern alignment)</td><td>LBA 1 to 2047 — the space before the first partition (the “MBR gap”)</td><td>about 1 MiB</td></tr><tr><td>MBR (old 63-sector alignment)</td><td>LBA 1 to 62</td><td>about 31 KiB — <strong>and it did run short</strong></td></tr><tr><td>GPT</td><td>a <strong>BIOS boot partition</strong> of type GUID <code>21686148-…</code></td><td>usually 1 MiB</td></tr></table></div><span id="doc-float-768"></span><p class="float-caption">Table 121.6 — Where <code>core.img</code> lives</p></figure><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Why does a GPT disk need an empty “BIOS boot partition”?</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> GPT uses LBA 1 through 33 for its own tables. The old MBR gap is gone. But booting from an old BIOS still needs <code>core.img</code> to sit <strong>outside any filesystem</strong>. So a 1 MiB partition “that nobody formats” is created and it goes in there. It is reached by <strong>sector</strong>, not as a file, which is why looking empty inside is normal.</p></div></div><div class="dev antipattern"><p class="dev-label">Counter-example. pointing at the kernel with a block list</p><div class="dev-body">Embedding a file’s sector numbers somewhere (a block list) <strong>breaks the moment the file moves.</strong> A filesystem is free to move files during defragmentation or an update. So use it only where there is no alternative, as in the first piece, and after that always find things <strong>by filename</strong>.</div></div><h4 id="sx7">The UEFI path — found by name and by variable<a class="plink" href="#sx7" aria-label="Link to this section" title="Link to this section">#</a></h4><div></div><p>In UEFI all this indirection disappears. Because the firmware can read FAT, the bootloader is simply <strong>a file</strong> (see the ESP entry in the disk appendix).</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Step</strong></th><th><strong>What it looks at</strong></th><th><strong>Note</strong></th></tr><tr><td>1</td><td>the <code>BootOrder</code> variable in NVRAM</td><td><code>Boot0001</code>, <code>Boot0003</code> … the order to try</td></tr><tr><td>2</td><td>each <code>BootXXXX</code> variable</td><td>holds “which file on which device” (for example <code>\EFI\ubuntu\shimx64.efi</code> on the ESP)</td></tr><tr><td>3</td><td>the fallback, if absent or all failed</td><td><code>\EFI\BOOT\BOOTX64.EFI</code> on the ESP — <strong>the agreed name</strong></td></tr></table></div><span id="doc-float-769"></span><p class="float-caption">Table 121.7 — The order in which UEFI firmware looks for the next thing</p></figure><p>★ So on a UEFI machine, “the boot order vanished” means the <strong>variables on the mainboard</strong> were cleared, not anything on the disk. That is why the fallback name exists — and it is that agreement that lets one USB stick boot any machine.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Step</strong></th><th><strong>What</strong></th><th><strong>Signed by</strong></th></tr><tr><td>1</td><td><code>shimx64.efi</code></td><td>Microsoft — which is why most firmware trusts it</td></tr><tr><td>2</td><td><code>grubx64.efi</code></td><td>the distribution — shim checks it with its own keyring</td></tr><tr><td>3</td><td>the kernel</td><td>the distribution. Modules you build yourself must be signed with a key you enrol as a MOK (machine owner key)</td></tr></table></div><span id="doc-float-770"></span><p class="float-caption">Table 121.8 — How Linux starts with secure boot enabled</p></figure><h4 id="sx8">Without a bootloader — the Linux EFI stub<a class="plink" href="#sx8" aria-label="Link to this section" title="Link to this section">#</a></h4><div></div><p>A Linux kernel image can be built as <strong>a PE executable in its own right</strong>. Then the firmware runs the kernel directly. Thin and fast, at a price — there is no menu, and who supplies the command line and the initramfs becomes a question (embedded in a firmware variable, or built into the kernel).</p><h4 id="sx9">Embedded — U-Boot and MCUboot<a class="plink" href="#sx9" aria-label="Link to this section" title="Link to this section">#</a></h4><div></div><p>On a small machine you start from a place where <strong>there is not even RAM yet</strong>.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Stage</strong></th><th><strong>Where it runs</strong></th><th><strong>Size</strong></th><th><strong>What it does</strong></th></tr><tr><td>the boot ROM</td><td>ROM inside the chip</td><td>fixed</td><td>reads the next piece from a fixed device. It cannot be changed — <strong>the root of trust</strong></td></tr><tr><td>SPL</td><td>on-chip SRAM (tens of KiB)</td><td>small</td><td><strong>initialises the DDR.</strong> Only then can anything large be loaded</td></tr><tr><td>U-Boot proper</td><td>DDR</td><td>hundreds of KiB</td><td>reads its environment (<code>bootcmd</code>), loads the kernel, device tree and initramfs, and hands over</td></tr></table></div><span id="doc-float-771"></span><p class="float-caption">Table 121.9 — The stages of the U-Boot family</p></figure><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Mechanism</strong></th><th><strong>What</strong></th><th><strong>Why</strong></th></tr><tr><td>two slots</td><td>the running image and the new one, each in its own place</td><td>the old one survives a failed update</td></tr><tr><td>an image header</td><td>magic, version, size</td><td>“there is a real image here”</td></tr><tr><td>trailers (TLVs)</td><td>a hash and a signature</td><td>the bootloader checks <strong>before</strong> running it</td></tr><tr><td>a test boot</td><td>“just this once” with the new image</td><td>if the new image cannot confirm itself, the next boot goes back</td></tr></table></div><span id="doc-float-772"></span><p class="float-caption">Table 121.10 — How MCUboot makes an update safe</p></figure><h4 id="sx10">What is handed over at the handover<a class="plink" href="#sx10" aria-label="Link to this section" title="Link to this section">#</a></h4><div></div><p>Each link of the chain leaves luggage for the next before it disappears. <strong>The list of that luggage is the contract.</strong></p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>From → to</strong></th><th><strong>Where</strong></th><th><strong>What</strong></th><th><strong>Note</strong></th></tr><tr><td>BIOS → boot sector</td><td>a register</td><td>the drive number booted from</td><td>that is all. The memory map has to be asked for separately</td></tr><tr><td>bootloader → Linux kernel</td><td>an agreed struct</td><td>the command line, the address and size of the initramfs, the memory map</td><td>called “the boot protocol”</td></tr><tr><td>UEFI → an <code>.efi</code> application</td><td>two arguments</td><td>the image handle and the system table (the list of services)</td><td>call <code>ExitBootServices</code> and the boot services end</td></tr><tr><td>U-Boot → kernel</td><td>a register</td><td>the address of the device tree</td><td>“what is attached to this machine” is inside it</td></tr><tr><td>MCUboot → application</td><td>the vector table</td><td>the start address of the image to run</td><td>the stack pointer and the entry point</td></tr></table></div><span id="doc-float-773"></span><p class="float-caption">Table 121.11 — What passes across at each change of stage</p></figure><p>★ Look closely at <code>ExitBootServices</code> in the UEFI row. Until that call the firmware handles disk, screen and network on your behalf. After it those services are all gone and only <strong>a copy of the memory map</strong> remains. “The moment the operating system takes over the machine” is pinned down exactly, by one function call.</p><h4 id="sx11">When it will not boot — telling links apart by symptom<a class="plink" href="#sx11" aria-label="Link to this section" title="Link to this section">#</a></h4><div></div><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Symptom</strong></th><th><strong>Which link</strong></th><th><strong>What happened</strong></th><th><strong>What to look at first</strong></th></tr><tr><td>nothing on the screen</td><td>the firmware</td><td>it could not even finish POST</td><td>memory, power, display connection. Beep codes</td></tr><tr><td>“no boot device”</td><td>firmware → next link</td><td>it could not find a boot sector or <code>.efi</code></td><td>boot order, whether the disk is seen, whether an ESP exists</td></tr><tr><td>a <code>grub rescue></code> prompt</td><td><code>core.img</code> → modules</td><td>it started but cannot read <code>/boot</code></td><td>whether partition numbers changed, whether <code>/boot</code> is intact</td></tr><tr><td>the menu appears but no kernel starts</td><td>bootloader → kernel</td><td>the file is missing or the signature does not match</td><td>the kernel and initramfs files, secure boot</td></tr><tr><td>“secure boot violation”</td><td>the firmware’s check</td><td>no signature, or an unknown key</td><td>shim/MOK enrolment, or turning secure boot off</td></tr><tr><td><code>VFS: Unable to mount root</code></td><td>kernel → root</td><td>the initramfs could not open the root</td><td><code>root=</code> on the command line, whether the driver is in the initramfs</td></tr><tr><td>dropped into an <code>initramfs</code> shell</td><td>inside the initramfs</td><td>the root device is not visible yet</td><td>whether the UUID matches, whether the disk appears late</td></tr></table></div><span id="doc-float-774"></span><p class="float-caption">Table 121.12 — Symptom → which link of the chain</p></figure><h3 id="sx12">By operating system — what happens after that<a class="plink" href="#sx12" aria-label="Link to this section" title="Link to this section">#</a></h3><div></div><h4 id="sx13">MS-DOS<a class="plink" href="#sx13" aria-label="Link to this section" title="Link to this section">#</a></h4><div></div><p>The boot sector reads <code>IO.SYS</code>, which loads <code>MSDOS.SYS</code> (the kernel proper), then <code>CONFIG.SYS</code> is read to load device drivers, and finally <code>COMMAND.COM</code> starts. Then <code>AUTOEXEC.BAT</code> runs. The chain is laid bare as filenames, which is why users of that era could <strong>edit their boot process</strong>.</p><h4 id="sx14">Windows<a class="plink" href="#sx14" aria-label="Link to this section" title="Link to this section">#</a></h4><div></div><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Era</strong></th><th><strong>Chain</strong></th></tr><tr><td>NT, 2000, XP</td><td><code>NTLDR</code> → choosing via <code>boot.ini</code> → <code>ntoskrnl.exe</code> + <code>hal.dll</code> + boot drivers</td></tr><tr><td>Vista onwards (7, 8, 10, 11)</td><td><code>bootmgr</code> → BCD (the configuration store) → <code>winload.efi</code> → <code>ntoskrnl.exe</code></td></tr><tr><td>common (after the kernel)</td><td><code>smss.exe</code> (the session manager) → <code>csrss.exe</code> and <code>winlogon.exe</code> → <code>services.exe</code></td></tr></table></div><span id="doc-float-775"></span><p class="float-caption">Table 121.13 — The Windows boot chain</p></figure><p>What changed is where “choosing” lives. A text file (<code>boot.ini</code>) became a binary store (BCD), and the loader became a <code>.efi</code> executable. What did not change is the shape of the chain.</p><h4 id="sx15">Linux<a class="plink" href="#sx15" aria-label="Link to this section" title="Link to this section">#</a></h4><div></div><ol><li>The bootloader loads the kernel image (<code>vmlinuz</code>) and the initramfs into memory and hands over a command line.</li><li>The front of the kernel image is <strong>code that unpacks itself</strong>. It decompresses and jumps to the real kernel.</li><li>The kernel builds its own data structures and takes the initramfs as a temporary root filesystem.</li><li><code>/init</code> inside the initramfs loads <strong>the drivers needed to find the real root</strong>.</li><li>Having switched to the real root (<code>switch_root</code>), it runs <code>init</code> (usually systemd these days) as PID 1.</li></ol><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Why does the initramfs exist?</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> Because of a chicken-and-egg problem. Build a kernel without knowing which disk, which filesystem or which encryption the root sits on, and the driver to read it is not in the kernel either. Nor can every driver in the world be built in. So a <strong>small root already in memory</strong> is given first, and from there only the needed drivers are loaded to open the real root.</p></div></div><h4 id="sx16">RTOSes and small machines<a class="plink" href="#sx16" aria-label="Link to this section" title="Link to this section">#</a></h4><div></div><p>Small machines — the places where an RTOS (real-time operating system) is used — usually have no stage that “loads an operating system”, because <strong>the kernel is linked together with the application into one image</strong>. FreeRTOS, Zephyr and NuttX are like this. Startup code runs from the reset vector, <code>main</code> is called, and starting the scheduler there sets the tasks running.</p><p>That does not mean there is no bootloader. If anything, a bootloader’s <strong>original job</strong> is clearest here.</p><div class="dev realcase"><p class="dev-label">In practice. when the power fails during an update</p><div class="dev-body">A machine in the field cannot be fixed by hand. So a bootloader like MCUboot keeps images in <strong>two places (A/B slots)</strong>, receives a new one, checks its signature, and boots it “just this once”. If the new image cannot mark itself as having started well, the next boot returns to the old one. It is the contract story of chapter 55 carried down to the power switch.</div></div><h3 id="sx17">The chain is a chain of trust<a class="plink" href="#sx17" aria-label="Link to this section" title="Link to this section">#</a></h3><div></div><p>As noted earlier, each link <strong>checks</strong> the next. Make that check a signature and the whole chain becomes a chain of trust — the firmware checks the bootloader’s signature, the bootloader the kernel’s, the kernel the modules’. Secure boot and embedded signed boot are the same story.</p><p>★ One property of this structure is worth stating. <strong>A chain can only create trust at its head.</strong> The first link (code inside ROM) must be unchangeable, which is why that place is called the root of trust. Shake the root and every check behind it means nothing — the checking code itself could have been swapped.</p><h3 id="sx18">What to take from this<a class="plink" href="#sx18" aria-label="Link to this section" title="Link to this section">#</a></h3><div></div><div class="dev recap"><p class="dev-label">Recap</p><div class="dev-body"><ul><li>Booting is a chain, and each link finds, loads, checks and hands over.</li><li>The BIOS read 512 bytes whole; UEFI reads a PE executable from a filesystem.</li><li>The MBR’s layout (440 + 6 + 64 + 2) explains why old bootloaders had several stages.</li><li>GPT rebuilt the same job out of checking (a CRC) and copies (a second table at the end).</li><li>Linux’s initramfs breaks the circle of “the driver that opens the root is inside the root”.</li><li>On a small machine the kernel is one image with the application, and the bootloader’s job becomes <strong>safe updating</strong>.</li><li>Make the check a signature and the chain becomes a chain of trust, whose root must be a place that cannot be changed.</li></ul></div></div>
+<div class="nav"><a href="sec135.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="sec137.html">Next →</a></div>
+</div></main>
+<script>(function(){var b=document.querySelector('.menu-btn'),p=document.getElementById('here-panel');function open(o){if(!p)return;p.hidden=!o;if(b)b.setAttribute('aria-expanded',o);}if(b)b.addEventListener('click',function(){open(p.hidden);});if(p)p.addEventListener('click',function(e){if(e.target.tagName==='A'&&e.target.getAttribute('href').charAt(0)==='#')open(false);});document.addEventListener('keydown',function(e){if(e.key==='Escape'&&p&&!p.hidden){open(false);if(b)b.focus();}});document.addEventListener('click',function(e){if(p&&!p.hidden&&!p.contains(e.target)&&!(b&&b.contains(e.target)))open(false);});var bk=document.querySelector('.bar .back');if(bk)bk.addEventListener('click',function(e){if(history.length>1&&document.referrer){e.preventDefault();history.back();}});var box=document.getElementById('setbox');if(!box)return;var r=document.documentElement;function load(){try{return JSON.parse(localStorage.getItem('doc-read')||'{}');}catch(e){return {};}}function save(s){try{localStorage.setItem('doc-read',JSON.stringify(s));}catch(e){}}function css(n){return getComputedStyle(r).getPropertyValue(n).trim();}function paint(){var s=load();var t=s.theme||'auto',w=s.width==='fit'?'fit':'960';[].forEach.call(box.querySelectorAll('.segb[data-theme]'),function(x){x.setAttribute('aria-pressed',x.dataset.theme===t);});[].forEach.call(box.querySelectorAll('.segb[data-width]'),function(x){x.setAttribute('aria-pressed',x.dataset.width===w);});var ly=s.layout||'auto';[].forEach.call(box.querySelectorAll('.segb[data-layout]'),function(x){x.setAttribute('aria-pressed',x.dataset.layout===ly);});document.getElementById('s-fg').value=s.fg||hex(css('--fg'));document.getElementById('s-bg').value=s.bg||hex(css('--bg'));document.getElementById('s-link').value=s.link||hex(css('--link'));}function hex(v){var m=v.match(/^rgba?\((\d+)[ ,]+(\d+)[ ,]+(\d+)/);if(!m)return v.charAt(0)==='#'?v:'#000000';return '#'+[1,2,3].map(function(i){return ('0'+parseInt(m[i],10).toString(16)).slice(-2);}).join('');}paint();[].forEach.call(box.querySelectorAll('.segb[data-width]'),function(x){x.addEventListener('click',function(){var s=load();if(x.dataset.width==='fit'){s.width='fit';r.setAttribute('data-measure','fit');}else{delete s.width;r.removeAttribute('data-measure');}save(s);setTimeout(paint,0);});});[].forEach.call(box.querySelectorAll('.segb[data-layout]'),function(x){x.addEventListener('click',function(){var s=load(),v=x.dataset.layout;if(v==='auto'){delete s.layout;r.removeAttribute('data-layout');}else{s.layout=v;r.setAttribute('data-layout',v);}save(s);var m=document.querySelector('meta[name=viewport]');var want=v==='desktop'?'width=1100':'width=device-width, initial-scale=1';if(m&&m.getAttribute('content')!==want)location.reload();else setTimeout(paint,0);});});[].forEach.call(box.querySelectorAll('.segb[data-theme]'),function(x){x.addEventListener('click',function(){var s=load();s.theme=x.dataset.theme;delete s.fg;delete s.bg;delete s.link;save(s);['--fg','--bg','--link'].forEach(function(n){r.style.removeProperty(n);});if(s.theme==='auto')r.removeAttribute('data-theme');else r.setAttribute('data-theme',s.theme);setTimeout(paint,0);});});[['s-fg','--fg','fg'],['s-bg','--bg','bg'],['s-link','--link','link']].forEach(function(a){document.getElementById(a[0]).addEventListener('input',function(){var s=load();s[a[2]]=this.value;save(s);r.style.setProperty(a[1],this.value);});});})();</script><script>
+(function(){
+  var q=document.getElementById('q'), out=document.getElementById('qr');
+  if(!q||!out) return;
+  var data=null, NONE="Nothing found";
+  function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+  function run(){
+    var v=q.value.trim().toLowerCase();
+    out.innerHTML='';
+    if(!v||!data) return;
+    var hits=[];
+    for(var i=0;i<data.length && hits.length<40;i++){
+      if(data[i][0].toLowerCase().indexOf(v)>=0) hits.push(data[i]);
+    }
+    if(!hits.length){ out.innerHTML='<li>'+NONE+'</li>'; return; }
+    out.innerHTML=hits.map(function(h){
+      return '<li><a href="'+h[1]+'">'+esc(h[0])+'</a>'+
+             (h[2]?'<span class="where">'+esc(h[2])+'</span>':'')+'</li>';
+    }).join('');
+  }
+  q.addEventListener('input',function(){
+    if(data){ run(); return; }
+    fetch('search-index.json').then(function(r){return r.json();})
+      .then(function(j){ data=j; run(); })
+      .catch(function(){ out.innerHTML='<li>'+NONE+'</li>'; });
+  });
+})();
+</script></body></html>

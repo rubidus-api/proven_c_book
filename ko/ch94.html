@@ -1,0 +1,707 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>94 갈래를 나누어 돌리기 — &lt;threads.h&gt; — Proven C Book</title><style>@font-face { font-family:"Doc Serif"; src:url("../fonts/serif.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-italic.woff2") format("woff2");
+  font-weight:400; font-style:italic; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-kr.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-kr-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans-kr.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans-kr-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Mono"; src:url("../fonts/mono.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Mono"; src:url("../fonts/mono-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+:root { color-scheme: light dark; --bg:#fafaf8; --bg2:#f2f2f0; --bg3:#e6e6e3; --fg:#141414; --muted:#555555; --line:#c9c9c9; --line-strong:#8a8a8a; --accent:#1a4f8a; --accent-fg:#ffffff; --accent2:#96530f; --honey:#f2b04a; --honey-fg:#2b1d00; --honey-text:#855400; --honey-soft:#fbebc6; --danger:#9b1b30; --ok:#1d6e37; --warn:#855400; --select:#d4dde8;
+  --rule:var(--line); --box-bg:var(--bg2); --code-bg:var(--bg2); --box-rule:var(--line); --link:var(--accent);
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg:#121314; --bg2:#1c1e20; --bg3:#2a2c2f; --fg:#e8e8e8; --muted:#a6a6a6; --line:#3a3d40; --line-strong:#75787c; --accent:#8ab4e8; --accent-fg:#121314; --accent2:#d4883b; --honey:#f2b04a; --honey-fg:#121314; --honey-text:#f2b04a; --honey-soft:#3b311e; --danger:#f07a8c; --ok:#7bcb95; --warn:#f2b04a; --select:#2f3d52;
+    --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+:root[data-theme="dark"] { color-scheme: dark; --bg:#121314; --bg2:#1c1e20; --bg3:#2a2c2f; --fg:#e8e8e8; --muted:#a6a6a6; --line:#3a3d40; --line-strong:#75787c; --accent:#8ab4e8; --accent-fg:#121314; --accent2:#d4883b; --honey:#f2b04a; --honey-fg:#121314; --honey-text:#f2b04a; --honey-soft:#3b311e; --danger:#f07a8c; --ok:#7bcb95; --warn:#f2b04a; --select:#2f3d52;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; }
+:root[data-theme="light"] { color-scheme: light; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Doc Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.here-head { display:flex; align-items:center; gap:.8rem; padding:.2rem 0 .5rem;
+  border-bottom:1px solid var(--rule,#ddd); margin-bottom:.5rem; }
+.here-head .sp { flex:1; }
+.here-all { margin-left:auto; font-size:.9rem; }
+.here-x { font:inherit; font-size:.9rem; cursor:pointer; background:none;
+  border:1px solid var(--line-strong); padding:.05rem .45rem;
+  color:inherit; }
+.here-body a, .tf-secs a { display:block; text-decoration:none; padding:.12rem 0;
+  line-height:1.45; }
+.here-body a:hover, .tf-secs a:hover { text-decoration:underline; }
+.here-body a.lv4, .tf-secs a.lv4 { padding-left:1.6rem; font-size:.94rem;
+  color:var(--muted,#555); }
+.tf-no { display:inline-block; min-width:3.2rem; color:var(--muted,#666);
+  font-variant-numeric:tabular-nums; }
+.toc-full .tf-ch { margin:.9rem 0 .15rem; font-weight:700; }
+.toc-full .tf-secs { margin:0 0 .5rem .2rem; border-left:2px solid var(--rule,#e2e2e2);
+  padding-left:.7rem; }
+.toc-full h4.toc-part { margin-top:1.8rem; }
+.toc a.toc-detail { font-weight:700; }
+@media print { .here-btn, .here-panel { display:none; } }
+.bar { position:sticky; top:0; z-index:20; display:flex; flex-wrap:nowrap; gap:.25rem; align-items:center;
+       min-height:44px; padding:0 clamp(.4rem,2vw,1.6rem); background:var(--bg2);
+       border-bottom:1px solid var(--line); font-size:.9rem;
+       font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--fg); text-decoration:none; } .bar a:hover { text-decoration:none; }
+.bar .sp { display:none; }
+main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
+.wrap { width:100%; }
+main .wrap { max-width:960px; margin-inline:auto; }
+:root[data-measure="fit"] main .wrap { max-width:none; margin:0; }
+h1,h2,h3,h4 { font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35;
+  padding-bottom:.18rem; border-bottom:1px solid var(--rule); }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem;
+     padding-bottom:.22rem; border-bottom:1.5px solid var(--fg); }
+p { margin:.9rem 0; } a { color:var(--link); }
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+.src-note { font-size: .86em; color: var(--muted, #666); }
+.src-note code { font-size: .95em; }
+sup.fnref { font-size: .72em; line-height: 0; vertical-align: super; }
+sup.fnref a { text-decoration: none; padding: 0 .1em; }
+sup.fnref a::before { content: "["; }
+sup.fnref a::after  { content: "]"; }
+.chapter-notes { margin: 3rem 0 1rem; padding-top: .9rem;
+                 border-top: 2px solid var(--rule, #333); }
+.chapter-notes h2 { font-size: 1.05rem; margin: 0 0 .6rem; }
+.chapter-notes ol { margin: 0; padding-left: 1.6em; }
+.chapter-notes li { font-size: .92em; margin: .35em 0; text-indent: 0; }
+.chapter-notes a.fnback { text-decoration: none; }
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
+pre,code,kbd { font-family:"Doc Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
+pre code { background:none; padding:0; }
+.tblwrap { overflow-x:auto; text-align:center; }
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.float-list { list-style:none; padding-left:0; }
+.float-list li { margin:.12rem 0; }
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"Doc Mono","D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"Doc Mono","D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"Doc Mono","D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+.dev { margin:1.15rem 0; padding:0; background:none; border:none; border-radius:0; }
+.dev > .dev-label { border-left:4px solid var(--fg);
+  padding:.1rem .8rem .25rem .8rem; margin:0 0 .34rem; }
+.dev > .dev-body { border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem .35rem .8rem; margin:0; }
+.dev > .dev-body > *:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child { margin-bottom:0; }
+.float-caption { text-align:center; font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+.dev.open { border:none; border-radius:0; background:none;
+  padding:0; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
+  text-indent:0; border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+.dev.open > .open-body { margin:0; padding:.35rem .8rem;
+  border-left:2px solid var(--box-rule); }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+.dev.open .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.06rem 0 .06rem .7rem; margin:.32rem 0 0; }
+.prereq .dev-label, .deepqa .dev-label, .why .dev-label,
+.organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+.qa-box { border:none; margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:0; background:none; }
+.qa-box .qa-q { border-left:4px solid var(--fg);
+  padding:.1rem .8rem .25rem .8rem; margin:0; }
+.qa-box .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem; margin:.34rem 0 0; }
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:0; }
+.dev.recap { border:none; background:none; padding:0; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
+  text-indent:0; border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > .dev-body > p, .dev.recap > .dev-body > div:not(.demo),
+.dev.recap > .dev-body > figure { margin:.3rem 0; padding:0; }
+.dev > .dev-body > .demo { margin:.7rem 0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:none; border-radius:0; background:none; padding:0; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem; text-indent:0;
+  border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
+.dev > .dev-body > figure, .dev > .open-body > p {
+  margin:.35rem 0; padding:0; }
+.bar .menu-btn { flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center;
+  min-width:38px; min-height:38px; padding:0; font:inherit; font-size:1.25rem; line-height:1;
+  color:var(--fg); background:none; border:0; cursor:pointer; text-decoration:none; }
+.bar .back, .bar .bar-nav .nb { flex:0 0 auto; display:inline-flex; align-items:center; gap:.3em;
+  min-height:32px; padding:0 .65rem; border:1px solid var(--line); background:var(--bg);
+  color:var(--fg); font-weight:600; white-space:nowrap; text-decoration:none; }
+.bar .menu-btn[aria-expanded="true"] { background:var(--bg3); }
+.bar .place { flex:1 1 auto; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
+  padding:0 .35rem; }
+.bar .place strong a { color:var(--honey-text); }
+.bar .place .cur { color:var(--fg); }
+.bar .bar-nav { flex:0 0 auto; display:flex; gap:.3rem; align-items:center; white-space:nowrap; }
+.bar .bar-nav .off { color:var(--muted); border-color:var(--line); opacity:.45; }
+.bar .back:hover, .bar .menu-btn:hover, .bar .bar-nav a.nb:hover, .bar .place a:hover { background:var(--bg3); }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+.dev.antipattern > .dev-label { border-left-style:solid; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.2rem; }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em;
+            padding-bottom:0; border-bottom:none; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
+.toc { columns:24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.toc > .toc-part:first-child, .toc > .toc-keep:first-child > .toc-part, .toc-full > .toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
+.toc-group { padding-left:.85rem; }
+.toc-keep, .toc a { break-inside:avoid; }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+code.style-name { font-family:"Doc Mono","D2Coding",ui-monospace,monospace;
+  font-size:.72em; color:var(--muted); background:var(--rule);
+  padding:.05em .35em; border-radius:3px; white-space:nowrap;
+  font-weight:400; letter-spacing:0; }
+.dev.open > .dev-label { padding-top:.42rem; padding-bottom:.42rem; }
+.dev.open > .open-body { padding-top:.4rem; padding-bottom:.4rem; }
+.dev.open > .open-body > p { margin:.6rem 0; }
+.dev > .dev-body { padding-top:.5rem; padding-bottom:.5rem; }
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
+.dev > .dev-body > figure { margin:.55rem 0; }
+main { line-height:1.85; }
+p { margin:1.15rem 0; }
+h2 { margin-top:2.4rem; }
+h3 { margin-top:2rem; }
+li { margin:.3rem 0; }
+h1, h2, h3, h4 { border-bottom-color:var(--box-rule) !important; }
+.toc { line-height:1.45; }
+.toc a { padding:.16rem 0; }
+.toc-part { margin:.85rem 0 .2rem; }
+.metalist { line-height:1.45; gap:.2rem 1.2rem; }
+.metalist dt, .metalist dd { margin:0; }
+.demo { border-color:var(--box-rule); }
+.demo > .demo-head { border-bottom-color:var(--box-rule); }
+.dev > .dev-label,
+.dev.open > .dev-label,
+.qa-box .qa-q,
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  border-left-color:var(--box-rule); }
+.dev > .dev-body,
+.dev > .open-body,
+.dev.open .qa-a,
+.qa-box .qa-a,
+.deepqa .qa-a { border-left-color:var(--box-rule); }
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div {
+  border-color:var(--box-rule); }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+.dev.open > .open-body,
+.dev.open > .qa-a,
+.dev.open .qa-a,
+.dev.deepqa .qa-a,
+.qa-box > .qa-a,
+.qa-box > .qa-q { border-left-color:var(--box-rule); }
+.bar .bar-toc { font-size:1.15em; line-height:1; text-decoration:none; }
+.dev, .dev-body, .open-body, .qa-box, .qa-q, .qa-a, .dev-label,
+.toc-full, .toc-full .tf-secs { line-height:inherit; font-size:1rem; }
+.dev > .dev-body > p, .dev > .open-body > p,
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:1.15rem 0; }
+.dev > .dev-body > *:first-child, .dev > .open-body > *:first-child,
+.qa-box .qa-q > p:first-child, .qa-box .qa-a > p:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child, .dev > .open-body > *:last-child,
+.qa-box .qa-q > p:last-child, .qa-box .qa-a > p:last-child { margin-bottom:0; }
+.dev > .dev-label, .dev.open > .dev-label { font-size:.98rem; line-height:1.4; }
+h1,h2,h3,h4 { padding-bottom:.34rem; }
+h1 { margin:.2rem 0 1.3rem; }
+h2 { padding-bottom:.42rem; margin-bottom:1.15rem; }
+h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
+.dev.open > .open-body > * { margin:.3rem 0; }
+.dev.open > .open-body > p { margin:.5rem 0; }
+.dev.open > .open-body > div { margin:.15rem 0; }
+.dev.open ul, .dev.open ol { margin:.3rem 0; }
+.dev.open li, .dev.open ol.qlist li { margin:0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open .qa-a > p { margin:.35rem 0; }
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div { border-color:var(--box-rule); }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+a:focus-visible, button:focus-visible, summary:focus-visible, input:focus-visible {
+  outline:2px solid var(--accent2); outline-offset:2px; }
+:target, h1, h2, h3, h4, [id] { scroll-margin-top:4.2rem; }
+.skip { position:absolute; left:-9999px; top:0; z-index:30;
+        background:var(--bg); color:var(--fg); border:1px solid var(--fg);
+        padding:.5rem .8rem; font-size:.9rem; text-decoration:none; }
+.skip:focus { left:.5rem; top:.5rem; }
+.here-panel { position:fixed; top:46px; left:clamp(.2rem,1vw,1rem); z-index:19;
+  width:min(32rem, calc(100vw - .4rem)); max-height:calc(100vh - 54px); overflow:auto;
+  padding:.7rem .9rem .9rem; border:1px solid var(--line); --k:var(--line-strong);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-size:.9rem; line-height:1.4;
+  background:
+    linear-gradient(var(--k),var(--k)) left top / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) left top / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) right top / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) right top / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) left bottom / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) left bottom / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) right bottom / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) right bottom / 3px 8px no-repeat,
+    color-mix(in srgb, var(--bg) 97%, transparent); }
+.here-panel .tools { display:flex; flex-wrap:wrap; gap:.3rem .4rem; align-items:center;
+  margin-bottom:.6rem; }
+.tool, .segb { font:inherit; font-size:.88rem; color:var(--fg); background:none;
+  border:1px solid var(--line-strong); padding:0 .6rem; min-height:30px;
+  display:inline-flex; align-items:center; text-decoration:none; cursor:pointer; white-space:nowrap; }
+.tool:hover, .segb:hover, .nav a:hover, .here-panel .here-body a:hover { background:var(--bg3); }
+.segb[aria-pressed="true"] { background:var(--select); border-color:var(--accent); font-weight:700; }
+.tool, .segb, .bar a, .bar button, .nav a, .here-panel a { transition:background-color .08s; }
+@media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
+main a { text-decoration:underline; text-decoration-color:var(--box-rule);
+  text-underline-offset:2px; }
+main a:hover { background:var(--box-bg); text-decoration-color:var(--link); }
+main .toc a, main .toc-full a, main .here-body a { text-decoration:none; }
+main .toc a:hover, main .toc-full a:hover { background:var(--box-bg); text-decoration:underline; }
+.setbox { margin:0 0 .6rem; }
+.setrow { display:flex; flex-wrap:wrap; gap:.4rem .5rem; align-items:center; margin:.35rem 0; }
+.setlbl { min-width:4.2rem; font-size:.82rem; font-weight:700; }
+.seg { display:inline-flex; flex-wrap:wrap; gap:.25rem; }
+.col { display:inline-flex; align-items:center; gap:.3rem; }
+.col input[type=color] { width:2rem; height:1.4rem; padding:0; border:1px solid var(--line-strong);
+  background:none; cursor:pointer; }
+.setnote { margin:.5rem 0 0; font-size:.82rem; }
+.here-panel .ver { font-size:.82rem; color:var(--muted); padding:.2rem .45rem .2rem 0;
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; white-space:nowrap; }
+.demo pre, .demo pre code {
+  white-space:pre-wrap; overflow-wrap:anywhere; word-break:break-word; }
+.demo > .demo-body { overflow-x:visible; }
+.plink {
+  margin-left: .4em; font-weight: 400; text-decoration: none;
+  color: var(--muted, #888); opacity: 0;
+}
+h3:hover > .plink, h4:hover > .plink,
+h3 > .plink:focus, h4 > .plink:focus { opacity: 1; }
+@media (hover: none) { .plink { opacity: .45; } }
+.searchbox { margin:.6em 0 0; }
+.searchbox input[type=search] {
+  width: 100%; padding: .45em .6em; font: inherit;
+  border: 1px solid var(--line-strong);
+  background: var(--bg); color: var(--fg);
+}
+.search-hint { color: var(--muted, #777); font-size: .85em; margin:.3em 0 0; }
+.search-results { list-style: none; padding: 0; margin: .5em 0 0; }
+.search-results li { margin: .15em 0; }
+.search-results .where { color: var(--muted, #777); font-size: .85em; margin-left: .4em; }
+@media (max-width: 900px), (orientation: portrait) {
+  :root:not([data-layout="desktop"]) .bar .place .cur { display:none; }
+  :root:not([data-layout="desktop"]) .bar .back,
+  :root:not([data-layout="desktop"]) .bar .bar-nav .nb { min-height:40px; padding:0 .5rem; }
+}
+@media (max-width: 480px) {
+  :root:not([data-layout="desktop"]) .bar .bar-nav .prev .lbl,
+  :root:not([data-layout="desktop"]) .bar .bar-nav .next .lbl { display:none; }
+  :root:not([data-layout="desktop"]) .bar .bar-nav .nb { min-width:44px; justify-content:center; }
+  :root:not([data-layout="desktop"]) .bar { gap:.2rem; }
+}
+:root[data-layout="mobile"] .bar .place .cur { display:none; }
+:root[data-layout="mobile"] .bar .back, :root[data-layout="mobile"] .bar .bar-nav .nb { min-height:40px; padding:0 .5rem; }
+:root[data-layout="mobile"] main .wrap { max-width:34rem; }
+@media (pointer: coarse), (max-width: 900px) {
+  .bar .menu-btn { min-width:44px; min-height:44px; }
+  .tool, .segb { min-height:38px; }
+}
+@media print { .bar, .here-panel { display:none; } }
+
+body { font-family:"Doc Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Doc Sans","Noto Sans CJK KR","Noto Sans KR",system-ui,sans-serif; }
+pre,code,kbd { font-family:"Doc Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+</style>
+<script>(function(){try{var L=localStorage,o='pcb-read';if(o&&o!=='doc-read'&&L.getItem(o)!==null&&L.getItem('doc-read')===null){var v=JSON.parse(L.getItem(o)||'{}');delete v.width;L.setItem('doc-read',JSON.stringify(v));L.removeItem(o);}var s=JSON.parse(L.getItem('doc-read')||'{}');var r=document.documentElement;if(s.theme&&s.theme!=='auto')r.setAttribute('data-theme',s.theme);if(s.fg)r.style.setProperty('--fg',s.fg);if(s.bg)r.style.setProperty('--bg',s.bg);if(s.link)r.style.setProperty('--link',s.link);if(s.width==='fit')r.setAttribute('data-measure','fit');if(s.layout==='desktop'||s.layout==='mobile')r.setAttribute('data-layout',s.layout);if(s.layout==='desktop'){var m=document.querySelector('meta[name=viewport]');if(m)m.setAttribute('content','width=1100');}}catch(e){}})();</script></head>
+<body>
+<a class="skip" href="#content">본문으로 건너뛰기</a>
+<div class="bar"><button class="menu-btn" id="set-open" type="button" aria-expanded="false" aria-controls="here-panel" aria-label="메뉴" title="메뉴">☰</button><a class="back" href="index.html" title="뒤로">← <span class="lbl">뒤로</span></a><span class="place"><strong><a href="index.html">Proven C Book</a></strong><span class="cur"> › 94장</span></span><span class="bar-nav"><a class="nb prev" href="ch93.html">‹ <span class="lbl">이전</span></a><a class="nb toc" href="index.html"><span class="lbl">목차</span></a><a class="nb next" href="ch95.html"><span class="lbl">다음</span> ›</a></span></div><div id="here-panel" class="here-panel" hidden><div class="setbox" id="setbox"><div class="setrow"><span class="setlbl">언어</span><span class="seg"><a class="segb" href="../en/ch94.html">English</a></span></div><div class="setrow"><span class="setlbl">본문 폭</span><span class="seg" id="s-width"><button type="button" class="segb" data-width="960">960</button><button type="button" class="segb" data-width="fit">창에 맞춤</button></span></div><div class="setrow"><span class="setlbl">배치</span><span class="seg" id="s-layout"><button type="button" class="segb" data-layout="auto">자동</button><button type="button" class="segb" data-layout="desktop">PC</button><button type="button" class="segb" data-layout="mobile">모바일</button></span></div><div class="setrow"><span class="setlbl">테마</span><span class="seg"><button type="button" class="segb" data-theme="auto">시스템</button><button type="button" class="segb" data-theme="light">밝게</button><button type="button" class="segb" data-theme="dark">어둡게</button></span></div><div class="setrow"><span class="setlbl">색</span><label class="col"><span>글자</span><input type="color" id="s-fg"></label><label class="col"><span>배경</span><input type="color" id="s-bg"></label><label class="col"><span>링크</span><input type="color" id="s-link"></label></div><p class="setnote">설정은 이 브라우저에만 저장된다.</p></div><div class="tools"><span class="ver">v0.110.2</span><a class="tool" href="toc.html">▤ 상세 차례</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book/releases/download/v0.110.2/proven_c_book-v0.110.2-ko.pdf">⤓ PDF</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book" title="이 책의 GitHub 저장소">Git</a><a class="tool" href="https://rubidus-api.github.io/" title="rubidus-api.github.io --- 공개된 모든 프로젝트">⌂ 전체 사이트</a><a class="tool" href="https://github.com/rubidus-api" title="github.com/rubidus-api --- 모든 저장소">≡ 저장소 목록</a></div><div class="here-head"><strong>이 장의 차례</strong></div><div class="here-body"><a class="lv3" href="#s94-1"><span class="tf-no">94.1</span>왜 표준에 스레드가 들어왔나</a><a class="lv3" href="#s94-2"><span class="tf-no">94.2</span>첫 갈래 — 만들고 기다리기</a><a class="lv3" href="#s94-3"><span class="tf-no">94.3</span>그런데 값이 어긋난다</a><a class="lv3" href="#s94-4"><span class="tf-no">94.4</span>상호 배제 — mtx_*</a><a class="lv3" href="#s94-5"><span class="tf-no">94.5</span>기다리기 — cnd_*</a><a class="lv3" href="#s94-6"><span class="tf-no">94.6</span>한 번만 — call_once</a><a class="lv3" href="#s94-7"><span class="tf-no">94.7</span>갈래마다 따로 — thread_local 과 tss_*</a><a class="lv3" href="#s94-8"><span class="tf-no">94.8</span>★ 그런데 왜 실무는 pthread 를 쓰는가</a><a class="lv3" href="#s94-9"><span class="tf-no">94.9</span>쓸 자리와 쓰지 않을 자리</a></div></div>
+<main id="content"><div class="wrap">
+<h2>94 갈래를 나누어 돌리기 — <code>&lt;threads.h></code></h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>13장 속도의 기계장치 · 클록의 한계가 부른 멀티코어</div><div>45장 수명과 저장 기간 · 무엇이 공유되고 무엇이 갈래마다 따로인가</div><div>59장 <code>main</code>의 세 얼굴 · 프로그램이 시작하고 끝나는 자리</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>13장에서 클록을 더 올릴 수 없게 되자 코어를 여럿 두는 쪽으로 갔다고 했다. 그런데 지금까지 이 책의 모든 프로그램은 실행의 갈래, 곧 스레드(thread)가 <strong>하나</strong>였다. 코어가 여덟 개인 기계에서 그 프로그램은 무엇을 하고 있었는가?</p><div class="qa-a"><p><span class="dev-label">답.</span> <strong>일곱 개를 놀리고 있었다.</strong> 그리고 그것이 잘못은 아니다 — 갈래를 늘리는 순간 치러야 할 비용이 생기기 때문이다. 이 장이 그 비용을 보여 준다. 갈래를 만드는 일 자체는 함수 두 개면 되는데, <strong>같은 기억을 둘이 만지는 순간</strong> 이제까지 배운 「읽고 계산하고 쓴다」가 통째로 흔들린다. 그 흔들림을 눈으로 확인하는 것이 이 장의 절반이고, 나머지 절반은 잠금과 조건 변수로 그것을 다시 세우는 일이다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">12부의 다른 장들이 <strong>이미 쓰고 있던 것</strong>을 정독했다면 이 장은 <strong>한 번도 쓰지 않은 것</strong>을 연다. 그런데도 여기 있는 이유는 다음 장 때문이다 — 95장의 원자적 연산은 「갈래가 여럿일 때」라야 뜻이 있는데, 갈래를 만들 줄 모르면 그 장의 시연이 남의 이야기가 된다. 그래서 <strong>만드는 법</strong>을 앞에, <strong>공유를 안전하게 하는 법</strong>을 뒤에 둔다. 바닥은 이미 깔려 있다 — 13장에서 멀티코어를, 45장에서 「무엇이 공유되는가」를, 12장에서 코어마다 따로인 캐시를 세워 두었다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">갈래(스레드)를 만들고, 기다리고, 값을 돌려받는 법을 익힌다. 그다음 보호 없이 같은 칸을 만졌을 때 <strong>무슨 일이 실제로 일어나는지</strong>를 실측으로 본다. 잠금(<code>mtx_*</code>), 조건 변수(<code>cnd_*</code>), 한 번만 실행(<code>call_once</code>), 갈래마다 따로인 저장소까지 갖추면 표준이 정한 동시성 어휘가 완성된다. 마지막으로 <strong>왜 실무는 여전히 <code>pthread</code> 를 쓰는가</strong>를 짚는다 — 93장의 부속서 K 에 이은, 「표준에 들어갔다고 이기는 것은 아니다」의 두 번째 사례다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>그런데 이 헤더는 <strong>없어도 되는</strong> 헤더라고 들었다.</li><li>그러면 이 장은 왜 배우는가?</li></ol></div></div><div></div><h3 id="s94-1">94.1 왜 표준에 스레드가 들어왔나<a class="plink" href="#s94-1" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>C89 에도 C99 에도 스레드가 없었다. 갈래를 나누고 싶으면 운영체제에 부탁해야 했고, 그 부탁의 말이 유닉스에서는 <code>pthread</code>, 윈도우에서는 <code>CreateThread</code> 였다. 같은 프로그램을 두 곳에서 돌리려면 두 벌을 쓰거나 자기만의 껍질을 씌워야 했다.</p><p>13장에서 본 그대로다 — 2000년대 중반 클록이 벽에 부딪히자 성능은 코어 수로 왔고, 그러자 「갈래를 나눈다」가 특수한 기술에서 <strong>평범한 필요</strong>가 되었다. C11 이 <code>&lt;threads.h></code> 를 들인 것이 그 대답이다. 같은 판에서 <code>&lt;stdatomic.h></code>(95장)도 함께 들어왔다 — 갈래를 만드는 어휘와 공유를 다스리는 어휘를 한꺼번에 준 셈이다.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 그런데 이 헤더는 <strong>없어도 되는</strong> 헤더라고 들었다.</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> 그렇다. 표준이 그렇게 적어 두었다 — 구현이 <code>__STDC_NO_THREADS__</code> 를 정의하면 <code>&lt;threads.h></code> 를 주지 않아도 적합하다. 이 책의 예제가 그 매크로를 먼저 살피는 이유가 그것이다.</p><p>★ 이것이 이 장 끝에서 다룰 논지의 씨앗이다. <strong>표준이 스스로 「없어도 좋다」고 적은 기능은 라이브러리가 기대기 어렵다.</strong> 있는 곳에서만 도는 코드를 쓸 수는 없으니, 결국 조건부 컴파일을 하거나 — 그냥 <code>pthread</code> 를 쓰게 된다.</p></p></div></div><h3 id="s94-2">94.2 첫 갈래 — 만들고 기다리기<a class="plink" href="#s94-2" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><div class="demo demo-src"><p class="demo-head"><code>examples/threads/threads_basic.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> 갈래를 나누어 돌리기 — 만들고, 기다리고, 그리고 값이 어긋나는 것을 본다. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdlib.h</span><span class="tok-s">></span>
+
+<strong><span class="tok-k">#ifdef</span></strong><span class="tok-p"> __STDC_NO_THREADS__</span>
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> 표준이 「없어도 적합」이라고 적어 둔 헤더다. 없는 구현에서도 이 파일은 컴파일된다. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span> <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">this implementation does not provide &lt;threads.h></span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> <span class="tok-x">}</span>
+<strong><span class="tok-k">#else</span></strong>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">threads.h</span><span class="tok-s">></span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── 스레드 함수의 꼴은 하나뿐이다: int (*)(void *) ───────────── </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">int</span></strong> <strong>greet</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong> <strong><span class="tok-x">*</span></strong>arg<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>who <strong><span class="tok-x">=</span></strong> arg<span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  hello from </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> who</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">7</span><span class="tok-x">;</span>                       <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 이 값은 thrd_join 이 받아 간다 </span></em><em><span class="tok-c">*/</span></em>
+<span class="tok-x">}</span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── 경쟁을 재현한다 — 보호 없이 같은 칸을 만진다 ─────────────────</span></em>
+<em><span class="tok-c">   ★ volatile 을 붙인 이유는 「고치려고」가 아니다. 붙이지 않으면 컴파일러가</span></em>
+<em><span class="tok-c">   루프 전체를 레지스터 하나로 접어 버려서 *경쟁이 일어날 틈이 없어진다*</span></em>
+<em><span class="tok-c">   (실제로 그렇게 되어 아무것도 잃지 않았다). volatile 은 매 반복을 진짜</span></em>
+<em><span class="tok-c">   읽기-쓰기로 만들 뿐, 갱신을 안전하게 하지 않는다 — 다음 장이 그 이야기다. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><span class="tok-p">BUMPS</span><span class="tok-p"> </span><span class="tok-n">200000</span>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">volatile</span></strong> <strong><span class="tok-t">long</span></strong> shared<span class="tok-x">;</span>
+
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">int</span></strong> <strong>bump</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong> <strong><span class="tok-x">*</span></strong>arg<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>arg<span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> BUMPS<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> shared <strong><span class="tok-x">+=</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 읽고 · 더하고 · 쓴다 </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">[1] one thread, one return value</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    thrd_t t<span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong>thrd_create</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>t</strong><strong><span class="tok-x">,</span></strong><strong> greet</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">the worker</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong> <strong><span class="tok-x">!=</span></strong> thrd_success<span class="tok-x">)</span> <span class="tok-x">{</span>
+        <strong>fputs</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">thrd_create failed</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> stderr</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong><span class="tok-k">return</span></strong> EXIT_FAILURE<span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+    <strong><span class="tok-t">int</span></strong> rc <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+    <strong>thrd_join</strong><strong><span class="tok-x">(</span></strong><strong>t</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>rc</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>                   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 끝날 때까지 기다리고 값을 받는다 </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  the worker returned </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> rc</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">[2] four threads bumping one counter, unprotected</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-t">enum</span></strong> <span class="tok-x">{</span> N <strong><span class="tok-x">=</span></strong> <span class="tok-n">4</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+    thrd_t w<span class="tok-x">[</span>N<span class="tok-x">]</span><span class="tok-x">;</span>
+    shared <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> N<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> <strong>thrd_create</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>w</strong><strong><span class="tok-x">[</span></strong><strong>i</strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">,</span></strong><strong> bump</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">NULL</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> N<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> <strong>thrd_join</strong><strong><span class="tok-x">(</span></strong><strong>w</strong><strong><span class="tok-x">[</span></strong><strong>i</strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">NULL</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong><span class="tok-t">long</span></strong> expected <strong><span class="tok-x">=</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">long</span></strong><span class="tok-x">)</span>N <strong><span class="tok-x">*</span></strong> BUMPS<span class="tok-x">,</span> got <strong><span class="tok-x">=</span></strong> shared<span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  expected </span></strong><strong><span class="tok-s">%ld</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> expected</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  actual   </span></strong><strong><span class="tok-s">%ld</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> got</strong><strong><span class="tok-x">,</span></strong><strong> got </strong><strong><span class="tok-x">==</span></strong><strong> expected </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">   &lt;- this run lost updates</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  (a data race: the value is not defined and may differ between runs)</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+<strong><span class="tok-k">#endif</span></strong>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>[1] one thread, one return value
+  hello from the worker
+  the worker returned 7
+
+[2] four threads bumping one counter, unprotected
+  expected 800000
+  actual   334252   &lt;- this run lost updates
+  (a data race: the value is not defined and may differ between runs)
+</code></pre></div></div><p>출력의 첫 묶음이 만들고 기다리는 데 필요한 어휘의 전부다 — <code>thrd_create</code> 와 <code>thrd_join</code> 두 함수다.</p><p><strong>스레드 함수의 꼴은 하나뿐이다</strong> — <code>int (*)(void *)</code>. 인자도 반환도 하나씩이고, 넘기고 싶은 것이 여럿이면 구조체를 하나 만들어 그 주소를 준다(47장). 반환한 <code>int</code>는 <code>thrd_join</code> 의 둘째 인자로 나온다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>함수</strong></th><th><strong>하는 일</strong></th><th><strong>알아 둘 것</strong></th></tr><tr><td><code>thrd_create(&amp;t, fn, arg)</code></td><td>갈래를 만들어 곧바로 <code>fn(arg)</code> 를 돌린다</td><td><code>thrd_success</code>·<code>thrd_nomem</code>·<code>thrd_error</code> 중 하나를 돌려준다 — <strong>확인해야 한다</strong></td></tr><tr><td><code>thrd_join(t, &amp;rc)</code></td><td>끝날 때까지 기다리고 반환값을 받는다</td><td><code>rc</code> 가 필요 없으면 널을 준다</td></tr><tr><td><code>thrd_detach(t)</code></td><td>기다리지 않겠다고 선언한다</td><td>떼어 낸 갈래는 <code>join</code> 할 수 없다</td></tr><tr><td><code>thrd_current()</code></td><td>지금 갈래의 손잡이</td><td><code>thrd_equal</code> 로만 견준다 — 정수가 아니다</td></tr><tr><td><code>thrd_yield()</code></td><td>다른 갈래에 실행 차례를 양보한다</td><td>보장이 아니라 힌트다</td></tr><tr><td><code>thrd_sleep(&amp;dur, &amp;rem)</code></td><td>지금 갈래를 <code>dur</code> 동안 재운다</td><td><code>struct timespec</code> 두 개(89장)</td></tr><tr><td><code>thrd_exit(res)</code></td><td>지금 갈래만 끝낸다</td><td><code>main</code> 에서 부르면 <strong>프로그램이 끝나지 않는다</strong> — 다른 갈래를 기다린다</td></tr></table></div><span id="doc-float-488"></span><p class="float-caption">표 94.1 — <code>&lt;threads.h></code> 함수</p></figure><p>★ <code>thrd_t</code> 를 정수처럼 다루지 않는다. 표준은 그것이 무엇인지 정해 주지 않았고, 비교는 <code>thrd_equal</code> 로만 한다. 인쇄할 방법도 표준에는 없다.</p><h3 id="s94-3">94.3 그런데 값이 어긋난다<a class="plink" href="#s94-3" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>예제의 둘째 묶음이 이 장에서 가장 중요한 화면이다. 갈래 넷이 각각 20만 번씩 <code>shared += 1</code> 을 했으니 80만이어야 하는데, 이 책이 다섯 번 돌려 얻은 값은 23만~29만이었다. <strong>셋 중 둘꼴로 사라졌다.</strong></p><p>원인은 한 줄이 한 걸음이 아니기 때문이다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong><code>shared += 1</code> 이 실제로 하는 일</strong></th><th><strong>두 갈래가 겹치면</strong></th></tr><tr><td>① 기억에서 값을 읽는다</td><td>둘 다 100 을 읽고</td></tr><tr><td>② 1 을 더한다</td><td>둘 다 101 을 만들고</td></tr><tr><td>③ 기억에 쓴다</td><td>둘 다 101 을 쓴다 — <strong>두 번 더했는데 하나만 늘었다</strong></td></tr></table></div><span id="doc-float-489"></span><p class="float-caption">표 94.2 — <code>shared += 1</code> 이 실제로 하는 일</p></figure><div class="dev misconception"><p class="dev-label">흔한 오해. <strong>“<code>+= 1</code> 은 한 번에 일어나니 안전하다”</strong></p><div class="dev-body"><p>소스에서 한 줄이라는 것과 기계에서 한 걸음이라는 것은 별개다(14장). 게다가 <strong>한 걸음이라 해도 안전하지 않다</strong> — 코어마다 자기 캐시를 들고 있어서(12장) 「누가 먼저 썼는가」조차 정해지지 않는다.</p><p>★ 표준의 낱말로는 이것이 <span id="idx-entry-298"></span><strong>데이터 경쟁</strong>(data race)이고, 데이터 경쟁은 미정의 동작이다. 「값이 좀 틀린다」가 아니라 <strong>무엇이든 일어날 수 있다</strong>는 뜻이다(56장).</p></div></div><div class="dev realcase"><p class="dev-label">실제 사례.<span style="white-space: pre-wrap">&#x20;&#x20;</span>경쟁을 재현하려다 알게 된 것 — 컴파일러가 먼저 지웠다</p><div class="dev-body"><p>이 예제를 처음 썼을 때 <strong>한 번도 값이 어긋나지 않았다.</strong> 다섯 번 돌려 다섯 번 다 정확히 800000 이었다.</p><p>까닭은 경쟁이 없어서가 아니라 <strong>경쟁할 틈이 없어서</strong>였다. 컴파일러가 20만 번의 루프를 레지스터 하나에 접어 「한 번에 200000 더하기」로 바꿔 버린 것이다(14장). 각 갈래가 기억을 만지는 것은 사실상 한 번뿐이니 겹칠 일이 없었다.</p><p>그래서 예제의 <code>shared</code> 에 <code>volatile</code> 을 붙였다. ★ <strong>고치려고 붙인 것이 아니다</strong> — 매 반복을 진짜 읽기·쓰기로 만들어 <strong>경쟁이 일어나도록</strong> 붙인 것이다. <code>volatile</code> 은 갱신을 안전하게 하지 않는다. 왜 그런지가 바로 다음 장의 첫 절이다.</p></div></div><h3 id="s94-4">94.4 상호 배제 — <code>mtx_*</code><a class="plink" href="#s94-4" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><div class="demo demo-src"><p class="demo-head"><code>examples/threads/threads_sync.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> 재우고 깨우기 — 상호 배제, 조건 변수, 한 번만, 갈래마다 따로. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdlib.h</span><span class="tok-s">></span>
+
+<strong><span class="tok-k">#ifdef</span></strong><span class="tok-p"> __STDC_NO_THREADS__</span>
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span> <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">this implementation does not provide &lt;threads.h></span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> <span class="tok-x">}</span>
+<strong><span class="tok-k">#else</span></strong>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">threads.h</span><span class="tok-s">></span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> 만들기 · 기다리기 · 준비 가운데 하나라도 실패하면 여기서 멈춘다.</span></em>
+<em><span class="tok-c">   아래에 찍는 「기대한 값」은 모두 성공했을 때의 이야기다. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong>must</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> rc<span class="tok-x">,</span> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>what<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>rc <strong><span class="tok-x">!=</span></strong> thrd_success<span class="tok-x">)</span> <span class="tok-x">{</span>
+        <strong>fprintf</strong><strong><span class="tok-x">(</span></strong><strong>stderr</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s"> failed</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> what</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong>exit</strong><strong><span class="tok-x">(</span></strong><strong>EXIT_FAILURE</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+<span class="tok-x">}</span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── ① 상호 배제 — 앞 예제의 경쟁을 잠금으로 막는다 ───────────── </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><span class="tok-p">BUMPS</span><span class="tok-p"> </span><span class="tok-n">200000</span>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">long</span></strong> guarded<span class="tok-x">;</span>                 <em><span class="tok-c">/*</span></em><em><span class="tok-c"> volatile 이 필요 없다 — 잠금이 순서를 준다 </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> mtx_t lock<span class="tok-x">;</span>
+
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">int</span></strong> <strong>bump_guarded</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong> <strong><span class="tok-x">*</span></strong>arg<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>arg<span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> BUMPS<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+        <strong>mtx_lock</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>lock</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        guarded <strong><span class="tok-x">+=</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+        <strong>mtx_unlock</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>lock</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── ② 조건 변수 — 「생길 때까지 기다린다」 ────────────────────── </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> mtx_t qlock<span class="tok-x">;</span>
+<strong><span class="tok-k">static</span></strong> cnd_t not_empty<span class="tok-x">;</span>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">int</span></strong> items<span class="tok-x">;</span>                    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 아주 작은 큐: 개수만 센다 </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">bool</span></strong> closed<span class="tok-x">;</span>
+
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">int</span></strong> <strong>consumer</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong> <strong><span class="tok-x">*</span></strong>arg<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>taken <strong><span class="tok-x">=</span></strong> arg<span class="tok-x">;</span>
+    <strong>mtx_lock</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>qlock</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><span class="tok-x">;</span><span class="tok-x">;</span><span class="tok-x">)</span> <span class="tok-x">{</span>
+        <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ★ while 이지 if 가 아니다 — 깨어났다고 조건이 참인 것은 아니다 </span></em><em><span class="tok-c">*/</span></em>
+        <strong><span class="tok-k">while</span></strong> <span class="tok-x">(</span>items <strong><span class="tok-x">==</span></strong> <span class="tok-n">0</span> <strong><span class="tok-x">&amp;&amp;</span></strong> <strong><span class="tok-x">!</span></strong>closed<span class="tok-x">)</span>
+            <strong>cnd_wait</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>not_empty</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>qlock</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>items <strong><span class="tok-x">==</span></strong> <span class="tok-n">0</span> <strong><span class="tok-x">&amp;&amp;</span></strong> closed<span class="tok-x">)</span> <strong><span class="tok-k">break</span></strong><span class="tok-x">;</span>
+        items <strong><span class="tok-x">-=</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+        <strong><span class="tok-x">*</span></strong>taken <strong><span class="tok-x">+=</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+    <strong>mtx_unlock</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>qlock</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── ③ 한 번만 — 게으른 초기화 ────────────────────────────────── </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> once_flag once <strong><span class="tok-x">=</span></strong> ONCE_FLAG_INIT<span class="tok-x">;</span>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">int</span></strong> init_count<span class="tok-x">;</span>
+
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong>init_table</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span> init_count <strong><span class="tok-x">+=</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span> <span class="tok-x">}</span>
+
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">int</span></strong> <strong>touch</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong> <strong><span class="tok-x">*</span></strong>arg<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>arg<span class="tok-x">;</span>
+    <strong>call_once</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>once</strong><strong><span class="tok-x">,</span></strong><strong> init_table</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── ④ 갈래마다 따로 ──────────────────────────────────────────── </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> thread_local <strong><span class="tok-t">int</span></strong> mine<span class="tok-x">;</span>        <em><span class="tok-c">/*</span></em><em><span class="tok-c"> C23 의 키워드 (97장) </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">int</span></strong> <strong>per_thread</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong> <strong><span class="tok-x">*</span></strong>arg<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    mine <strong><span class="tok-x">=</span></strong> <strong><span class="tok-x">*</span></strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong><span class="tok-x">)</span>arg<span class="tok-x">;</span>              <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 갈래마다 제 몫이 따로 있다 </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">return</span></strong> mine<span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">enum</span></strong> <span class="tok-x">{</span> N <strong><span class="tok-x">=</span></strong> <span class="tok-n">4</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+    thrd_t w<span class="tok-x">[</span>N<span class="tok-x">]</span><span class="tok-x">;</span>
+
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">[1] the same counter, now guarded by a mutex</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>must</strong><strong><span class="tok-x">(</span></strong><strong>mtx_init</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>lock</strong><strong><span class="tok-x">,</span></strong><strong> mtx_plain</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">mtx_init</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    guarded <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> N<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> <strong>must</strong><strong><span class="tok-x">(</span></strong><strong>thrd_create</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>w</strong><strong><span class="tok-x">[</span></strong><strong>i</strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">,</span></strong><strong> bump_guarded</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">NULL</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">thrd_create</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> N<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> <strong>must</strong><strong><span class="tok-x">(</span></strong><strong>thrd_join</strong><strong><span class="tok-x">(</span></strong><strong>w</strong><strong><span class="tok-x">[</span></strong><strong>i</strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">NULL</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">thrd_join</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  expected </span></strong><strong><span class="tok-s">%ld</span></strong><strong><span class="tok-s">, actual </span></strong><strong><span class="tok-s">%ld</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">long</span></strong><strong><span class="tok-x">)</span></strong><strong>N </strong><strong><span class="tok-x">*</span></strong><strong> BUMPS</strong><strong><span class="tok-x">,</span></strong><strong> guarded</strong><strong><span class="tok-x">,</span></strong>
+<strong>           guarded </strong><strong><span class="tok-x">==</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">long</span></strong><strong><span class="tok-x">)</span></strong><strong>N </strong><strong><span class="tok-x">*</span></strong><strong> BUMPS </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">   &lt;- nothing lost (the mutex guarantees it)</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">   &lt;- lost</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>mtx_destroy</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>lock</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">[2] a condition variable: wait until there is something</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>must</strong><strong><span class="tok-x">(</span></strong><strong>mtx_init</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>qlock</strong><strong><span class="tok-x">,</span></strong><strong> mtx_plain</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">mtx_init</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>must</strong><strong><span class="tok-x">(</span></strong><strong>cnd_init</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>not_empty</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">cnd_init</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-t">int</span></strong> taken <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+    thrd_t c<span class="tok-x">;</span>
+    <strong>must</strong><strong><span class="tok-x">(</span></strong><strong>thrd_create</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>c</strong><strong><span class="tok-x">,</span></strong><strong> consumer</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>taken</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">thrd_create</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> <span class="tok-n">5</span><span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+        <strong>mtx_lock</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>qlock</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        items <strong><span class="tok-x">+=</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+        <strong>cnd_signal</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>not_empty</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>       <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 잠금을 쥔 채 알린다 </span></em><em><span class="tok-c">*/</span></em>
+        <strong>mtx_unlock</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>qlock</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+    <strong>mtx_lock</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>qlock</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    closed <strong><span class="tok-x">=</span></strong> <span class="tok-n">true</span><span class="tok-x">;</span>
+    <strong>cnd_broadcast</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>not_empty</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>        <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 끝났음을 모두에게 </span></em><em><span class="tok-c">*/</span></em>
+    <strong>mtx_unlock</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>qlock</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>must</strong><strong><span class="tok-x">(</span></strong><strong>thrd_join</strong><strong><span class="tok-x">(</span></strong><strong>c</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">NULL</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">thrd_join</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  produced 5, consumer took </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> taken</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>cnd_destroy</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>not_empty</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>mtx_destroy</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>qlock</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">[3] call_once: four threads, one initialization</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> N<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> <strong>must</strong><strong><span class="tok-x">(</span></strong><strong>thrd_create</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>w</strong><strong><span class="tok-x">[</span></strong><strong>i</strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">,</span></strong><strong> touch</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">NULL</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">thrd_create</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> N<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> <strong>must</strong><strong><span class="tok-x">(</span></strong><strong>thrd_join</strong><strong><span class="tok-x">(</span></strong><strong>w</strong><strong><span class="tok-x">[</span></strong><strong>i</strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">NULL</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">thrd_join</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  init ran </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s"> time(s)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> init_count</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">[4] thread_local: each thread has its own</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-t">int</span></strong> vals<span class="tok-x">[</span>N<span class="tok-x">]</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">int</span></strong> got<span class="tok-x">[</span>N<span class="tok-x">]</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> N<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span> vals<span class="tok-x">[</span>i<span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">(</span>i <strong><span class="tok-x">+</span></strong> <span class="tok-n">1</span><span class="tok-x">)</span> <strong><span class="tok-x">*</span></strong> <span class="tok-n">10</span><span class="tok-x">;</span> <strong>must</strong><strong><span class="tok-x">(</span></strong><strong>thrd_create</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>w</strong><strong><span class="tok-x">[</span></strong><strong>i</strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">,</span></strong><strong> per_thread</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>vals</strong><strong><span class="tok-x">[</span></strong><strong>i</strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">thrd_create</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <span class="tok-x">}</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> N<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> <strong>must</strong><strong><span class="tok-x">(</span></strong><strong>thrd_join</strong><strong><span class="tok-x">(</span></strong><strong>w</strong><strong><span class="tok-x">[</span></strong><strong>i</strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>got</strong><strong><span class="tok-x">[</span></strong><strong>i</strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">thrd_join</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  each thread saw:</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> N<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> got</strong><strong><span class="tok-x">[</span></strong><strong>i</strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">  main's own copy is still </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> mine</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+<strong><span class="tok-k">#endif</span></strong>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>[1] the same counter, now guarded by a mutex
+  expected 800000, actual 800000   &lt;- nothing lost (the mutex guarantees it)
+
+[2] a condition variable: wait until there is something
+  produced 5, consumer took 5
+
+[3] call_once: four threads, one initialization
+  init ran 1 time(s)
+
+[4] thread_local: each thread has its own
+  each thread saw: 10 20 30 40
+  main's own copy is still 0
+</code></pre></div></div><p>이 예제 출력의 첫 묶음이 앞에서 어긋난 값에 대한 답이다. 같은 셈을 잠금(<strong>뮤텍스</strong>, mutex — 상호 배제 mutual exclusion의 줄임)으로 감싸니 80만이 나왔다. 갈래의 생성과 합류가 모두 성공했다면 <strong>몇 번을 돌려도 어긋나지 않는다</strong> — 예제가 그 성공을 하나하나 확인하는 까닭이다.</p><pre><code data-lang="c"><strong>mtx_lock</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>lock</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+guarded <strong><span class="tok-x">+=</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+<strong>mtx_unlock</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>lock</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span></code></pre><p>잠금이 하는 일은 「한 번에 하나만」이다. 그리고 잠금은 부수적으로 <strong>순서도 준다</strong> — 잠금을 푼 갈래가 쓴 값은 다음에 같은 잠금을 얻은 갈래에게 그대로 보인다. 그래서 <code>guarded</code> 에는 <code>volatile</code> 이 필요 없다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>종류</strong></th><th><strong>무엇이 다른가</strong></th><th><strong>언제</strong></th></tr><tr><td><code>mtx_plain</code></td><td>보통 잠금</td><td>기본값. 대개 이것</td></tr><tr><td><code>mtx_timed</code></td><td><code>mtx_timedlock</code> 으로 기다리는 시간에 한도를 둘 수 있다</td><td>무한정 막히면 곤란할 때</td></tr><tr><td><code>mtx_plain | mtx_recursive</code></td><td>같은 갈래가 여러 번 잠글 수 있다</td><td>★ 대개 <strong>설계가 꼬였다는 신호</strong>다</td></tr><tr><td><code>mtx_timed | mtx_recursive</code></td><td>둘 다</td><td></td></tr></table></div><span id="doc-float-490"></span><p class="float-caption">표 94.3 — 뮤텍스의 종류와 쓰는 자리</p></figure><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>함수</strong></th><th><strong>알아 둘 것</strong></th></tr><tr><td><code>mtx_init(&amp;m, type)</code></td><td>쓰기 전에 반드시. 정적 초기화 방법이 <strong>표준에는 없다</strong>(POSIX 의 <code>PTHREAD_MUTEX_INITIALIZER</code> 같은 것)</td></tr><tr><td><code>mtx_lock(&amp;m)</code></td><td>잠글 때까지 기다린다</td></tr><tr><td><code>mtx_trylock(&amp;m)</code></td><td>이미 잠겼으면 기다리지 않고 <code>thrd_busy</code> 를 돌려준다</td></tr><tr><td><code>mtx_timedlock(&amp;m, &amp;ts)</code></td><td><code>mtx_timed</code> 로 만든 것에만. 시각은 <strong>절대 시각</strong>이다</td></tr><tr><td><code>mtx_unlock(&amp;m)</code></td><td>★ <strong>잠근 갈래가</strong> 푼다</td></tr><tr><td><code>mtx_destroy(&amp;m)</code></td><td>다 쓰면</td></tr></table></div><span id="doc-float-491"></span><p class="float-caption">표 94.4 — 뮤텍스 함수</p></figure><div class="dev antipattern"><p class="dev-label">반례.<span style="white-space: pre-wrap">&#x20;&#x20;</span>잠금 안에서 되돌아 나오기</p><div class="dev-body"><pre><code data-lang="c"><strong>mtx_lock</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>m</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>bad<span class="tok-x">)</span> <strong><span class="tok-k">return</span></strong> <strong><span class="tok-x">-</span></strong><span class="tok-n">1</span><span class="tok-x">;</span>        <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ★ 잠긴 채로 나간다 --- 아무도 다시 못 들어온다 </span></em><em><span class="tok-c">*/</span></em>
+<strong>mtx_unlock</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>m</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span></code></pre><p>42장의 <code>goto cleanup</code> 패턴이 여기서 빛을 발한다. 나가는 길이 여럿이면 <strong>푸는 자리를 한 군데로 모은다.</strong> C 에는 다른 언어의 자동 해제 장치가 없으므로 이것은 사람이 지켜야 하는 규율이다 — 108장의 정리 패턴이 같은 문제를 다룬다.</p></div></div><h3 id="s94-5">94.5 기다리기 — <code>cnd_*</code><a class="plink" href="#s94-5" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>잠금은 「한 번에 하나」를 준다. 그런데 자주 필요한 것은 다른 것이다 — 「<strong>생길 때까지</strong> 기다린다」. 그 자리가 조건 변수다.</p><p>예제의 둘째 묶음이 아주 작은 큐다. 소비자는 물건이 없으면 자고, 생산자가 넣으면서 깨운다.</p><pre><code data-lang="c"><strong>mtx_lock</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>qlock</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<strong><span class="tok-k">while</span></strong> <span class="tok-x">(</span>items <strong><span class="tok-x">==</span></strong> <span class="tok-n">0</span> <strong><span class="tok-x">&amp;&amp;</span></strong> <strong><span class="tok-x">!</span></strong>closed<span class="tok-x">)</span>      <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ★ if 가 아니라 while </span></em><em><span class="tok-c">*/</span></em>
+    <strong>cnd_wait</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>not_empty</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>qlock</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span></code></pre><p>★ <strong><code>while</code> 인 것이 이 절의 핵심이다.</strong> <code>cnd_wait</code> 이 돌아왔다고 조건이 참이라는 보장이 없다. 이유가 둘이다.</p><ol><li><strong>다른 갈래가 먼저 가져갔을 수 있다.</strong> 깨어난 뒤 잠금을 다시 얻기까지 틈이 있다.</li><li><strong>가짜 깨어남</strong>(spurious wakeup)이 표준적으로 허용된다 — 아무도 알리지 않았는데 깨어날 수 있다.</li></ol><p>그래서 규칙은 하나다: <strong>조건은 깨어난 뒤 다시 확인한다.</strong></p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>함수</strong></th><th><strong>알아 둘 것</strong></th></tr><tr><td><code>cnd_wait(&amp;c, &amp;m)</code></td><td>잠금을 <strong>풀고</strong> 잔다. 깨어나면 잠금을 <strong>다시 얻은 뒤</strong> 돌아온다 — 부를 때 잠금을 쥐고 있어야 한다</td></tr><tr><td><code>cnd_timedwait(&amp;c, &amp;m, &amp;ts)</code></td><td>시한이 지나면 <code>thrd_timedout</code>. 시각은 절대 시각</td></tr><tr><td><code>cnd_signal(&amp;c)</code></td><td>기다리는 것 <strong>하나</strong>를 깨운다</td></tr><tr><td><code>cnd_broadcast(&amp;c)</code></td><td>기다리는 것 <strong>전부</strong>를 깨운다. 끝났음을 알릴 때</td></tr><tr><td><code>cnd_init</code>·<code>cnd_destroy</code></td><td>잠금과 같다</td></tr></table></div><span id="doc-float-492"></span><p class="float-caption">표 94.5 — 조건 변수 함수</p></figure><h3 id="s94-6">94.6 한 번만 — <code>call_once</code><a class="plink" href="#s94-6" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>게으른 초기화는 동시성에서 고전적인 함정이다. 「아직 안 만들었으면 만든다」를 소박하게 쓰면 둘이 동시에 「아직 안 만들었다」를 보고 둘 다 만든다.</p><pre><code data-lang="c"><strong><span class="tok-k">static</span></strong> once_flag once <strong><span class="tok-x">=</span></strong> ONCE_FLAG_INIT<span class="tok-x">;</span>
+<strong>call_once</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>once</strong><strong><span class="tok-x">,</span></strong><strong> init_table</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>        <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 몇 갈래가 불러도 init_table 은 한 번 </span></em><em><span class="tok-c">*/</span></em></code></pre><p>예제의 셋째 묶음이 그것을 확인한다 — 갈래 넷이 불렀는데 초기화는 <strong>한 번</strong> 돌았다. 넘길 함수는 인자도 반환도 없어야 한다(<code>void (*)(void)</code>).</p><h3 id="s94-7">94.7 갈래마다 따로 — <code>thread_local</code> 과 <code>tss_*</code><a class="plink" href="#s94-7" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>45장에서 저장 기간을 넷으로 갈랐고 그중 하나가 <strong>스레드 저장 기간</strong>이었다. 여기가 그것을 실제로 쓰는 자리다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>방법</strong></th><th><strong>꼴</strong></th><th><strong>언제</strong></th></tr><tr><td><code>thread_local</code></td><td><code>static thread_local int mine;</code></td><td>★ 대개 이쪽. 언어 기능이라 값싸고 읽기 쉽다(97장)</td></tr><tr><td><code>tss_*</code></td><td><code>tss_create(&amp;key, dtor)</code> 로 열쇠를 만들고 <code>tss_get</code>·<code>tss_set</code></td><td><strong>소멸자가 필요할 때</strong> — 갈래가 끝날 때 정리할 것이 있으면</td></tr></table></div><span id="doc-float-493"></span><p class="float-caption">표 94.6 — 갈래마다 따로인 저장소의 두 꼴</p></figure><p>예제의 넷째 묶음에서 갈래 넷이 각각 10·20·30·40 을 보았고, <code>main</code> 의 몫은 0 그대로 였다. 이름은 하나인데 실체가 갈래 수만큼 있는 것이다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong><code>tss_*</code> 함수</strong></th><th><strong>알아 둘 것</strong></th></tr><tr><td><code>tss_create(&amp;key, dtor)</code></td><td><code>dtor</code> 는 널일 수 있다. 갈래가 끝날 때 널 아닌 값에 대해 불린다</td></tr><tr><td><code>tss_get(key)</code> / <code>tss_set(key, p)</code></td><td>값은 <code>void *</code> 하나뿐</td></tr><tr><td><code>tss_delete(key)</code></td><td>열쇠를 버린다 — <strong>남은 값의 소멸자는 불리지 않는다</strong></td></tr><tr><td><code>TSS_DTOR_ITERATIONS</code></td><td>소멸자가 다시 값을 넣으면 몇 번까지 되풀이하는가</td></tr></table></div><span id="doc-float-494"></span><p class="float-caption">표 94.7 — 스레드 지역 저장 함수</p></figure><h3 id="s94-8">94.8 ★ 그런데 왜 실무는 <code>pthread</code> 를 쓰는가<a class="plink" href="#s94-8" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p><code>&lt;threads.h></code> 가 표준에 들어간 지 십수 년인데, 실제 C 코드는 여전히 <code>pthread</code> 나 Win32 를 쓴다. 이 장을 단순한 API 소개로 끝내지 않으려면 이 물음에 답해야 한다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>이유</strong></th><th><strong>근거</strong></th></tr><tr><td><strong>① 표준이 「없어도 좋다」고 했다</strong></td><td><code>__STDC_NO_THREADS__</code>. 있는지 확인하고 갈라 쓰는 부담을 라이브러리 저자에게 떠넘긴다</td></tr><tr><td><strong>② 도착이 늦었다</strong></td><td>C11 은 2011년인데 glibc 는 <strong>2018년 2.28</strong> 에야 넣었다<sup class="fnref" id="ch94-fnref-1"><a href="#ch94-fn-1" aria-label="주 1">1</a></sup> — 그 7년 사이에 사람들은 이미 <code>pthread</code> 로 다 짰다</td></tr><tr><td><strong>③ ★ 있어야 할 곳에 없다</strong></td><td>macOS 는 <code>&lt;threads.h></code> 를 주지 않는다. Clang 22.1 로 macOS 대상을 전처리해 보면 <code>__STDC_NO_THREADS__</code> 는 정의되어 탐지는 된다(애플 실기는 확인하지 못했다) — 그래도 <strong>주요 운영체제 하나에서 표준 스레드를 쓸 수 없으니</strong> 이식할 코드는 결국 <code>pthread</code> 로 짠다</td></tr><tr><td><strong>④ 기능이 얇다</strong></td><td>취소, 속성, 읽기-쓰기 잠금, 배리어, 우선순위 — <code>pthread</code> 에 있는 것들이 없다. 이미 <code>pthread</code> 를 쓰는 쪽에는 옮겨 갈 이유가 없다</td></tr></table></div><span id="doc-float-495"></span><p class="float-caption">표 94.8 — C11 스레드가 덜 쓰이는 이유</p></figure><div class="dev realcase"><p class="dev-label">실제 사례.<span style="white-space: pre-wrap">&#x20;&#x20;</span>이 기계에서는 잘 돈다 — 그리고 그것이 함정이다</p><div class="dev-body"><p>이 책의 검증 환경(glibc 2.41)에서 <code>__STDC_NO_THREADS__</code> 는 정의되어 있지 않고, 예제는 아무 특별한 옵션 없이 컴파일되고 돈다. <code>thrd_t</code> 는 8바이트, <code>mtx_t</code> 는 40바이트, <code>cnd_t</code> 는 48바이트, <code>once_flag</code> 는 4바이트였다.</p><p>★ 그런데 <strong>잘 도는 것이 이식성의 증거가 아니다.</strong> 표 94.8의 ③이 그 예다 — 같은 코드를 macOS 에서 빌드하면 헤더부터 없다. <code>__STDC_NO_THREADS__</code> 로 갈라 두지 않았다면 컴파일은 거기서 멈춘다 — 그 매크로를 확인하는 줄은 이 기계에서는 한 번도 일을 하지 않으므로, 빠져 있어도 아무도 모른다. 「내 기계에서 되니까」가 가장 위험한 자리 가운데 하나다(13장의 회색지대).</p></div></div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 그러면 이 장은 왜 배우는가?</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> 세 가지 때문이다.</p><p><strong>첫째, 이것이 표준이 정한 최소 어휘다.</strong> <code>pthread</code> 든 Win32 든 하는 일은 같다 — 만들기·기다리기·잠그기·기다렸다 깨어나기. 이 넷을 표준의 이름으로 익혀 두면 다른 API 는 <strong>같은 것의 다른 철자</strong>로 읽힌다. 실제로 대응이 거의 일대일이다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>C11</strong></th><th><strong>POSIX</strong></th><th><strong>Win32</strong></th></tr><tr><td><code>thrd_create</code></td><td><code>pthread_create</code></td><td><code>CreateThread</code></td></tr><tr><td><code>thrd_join</code></td><td><code>pthread_join</code></td><td><code>WaitForSingleObject</code></td></tr><tr><td><code>mtx_lock</code></td><td><code>pthread_mutex_lock</code></td><td><code>EnterCriticalSection</code></td></tr><tr><td><code>cnd_wait</code></td><td><code>pthread_cond_wait</code></td><td><code>SleepConditionVariableCS</code></td></tr><tr><td><code>call_once</code></td><td><code>pthread_once</code></td><td><code>InitOnceExecuteOnce</code></td></tr><tr><td><code>thread_local</code></td><td><code>pthread_key_*</code></td><td><code>__declspec(thread)</code></td></tr></table></div><span id="doc-float-496"></span><p class="float-caption">표 94.9 — C11·POSIX·Win32 스레드 API 대조</p></figure><p><strong>둘째, 다음 장이 여기 기댄다.</strong> 원자적 연산은 갈래가 있어야 뜻이 있다.</p><p><strong>셋째, ★ 이것이 93장의 부속서 K 와 같은 이야기의 두 번째 판이다.</strong> 표준에 들어갔다는 것과 세상이 쓴다는 것은 별개다. 무엇이 그 둘을 가르는가 — 도착 시점, 기존 자산, 그리고 「없어도 된다」는 단서. <strong>표준을 읽을 때 조문만이 아니라 이 세 가지를 함께 보는 눈</strong>이 이 책이 기르려는 것이다.</p></p></div></div><h3 id="s94-9">94.9 쓸 자리와 쓰지 않을 자리<a class="plink" href="#s94-9" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>상황</strong></th><th><strong>권고</strong></th></tr><tr><td>혼자 쓰는 작은 도구, 이식 걱정 없음</td><td><code>&lt;threads.h></code> 로 충분하다 — 표준만으로 된다</td></tr><tr><td>리눅스·macOS·BSD 를 함께 겨냥</td><td>★ <code>pthread</code>. macOS 사정이 결정적이다</td></tr><tr><td>윈도우까지</td><td>얇은 껍질을 직접 쓰거나 이미 있는 것을 쓴다</td></tr><tr><td>갈래가 정말 필요한가부터</td><td>★ 대개 <strong>아니다.</strong> 겹쳐 돌리는 다른 방법(코루틴·이벤트 루프)이 더 쌀 때가 많다(115장)</td></tr><tr><td>공유를 줄일 수 있다면</td><td>줄인다. 공유하지 않는 것이 가장 싼 동기화다</td></tr></table></div><span id="doc-float-497"></span><p class="float-caption">표 94.10 — 상황별 스레드 권고</p></figure><div class="dev recap"><p class="dev-label">복습 정리</p><div class="dev-body"><ul><li>스레드 함수의 꼴은 <code>int (*)(void *)</code> 하나뿐이고, 반환값은 <code>thrd_join</code> 이 받는다.</li><li>보호 없이 같은 칸을 만진 실행에서 <strong>실제로</strong> 값이 사라졌다 — 이 책이 돌린 실행의 관찰이다. 표준의 낱말로는 데이터 경쟁이고, 그것은 미정의 동작이라 어떤 값이 나와도 그 실행은 정당하지 않다.</li><li><code>mtx_*</code> 는 「한 번에 하나」와 <strong>순서</strong>를 함께 준다. 나가는 길이 여럿이면 푸는 자리를 한 군데로 모은다.</li><li><code>cnd_wait</code> 뒤의 조건 검사는 <code>if</code> 가 아니라 <strong><code>while</code></strong> 이다.</li><li>★ 표준에 있다고 쓸 수 있는 것은 아니다 — macOS 는 헤더를 주지 않는다(탐지 매크로는 정의된다). 이식이 필요하면 <code>pthread</code> 를 본다.</li></ul></div></div><section class="chapter-notes" role="doc-endnotes"><h2>주</h2><ol><li id="ch94-fn-1">glibc 2.28 NEWS: “Support for ISO C threads (ISO/IEC 9899:2011) has been added.” <a href="https://sourceware.org/git/?p=glibc.git;a=blob_plain;f=NEWS;hb=refs/tags/glibc-2.28"><code>sourceware.org</code> glibc NEWS</a> <a class="fnback" href="#ch94-fnref-1" aria-label="본문으로 돌아가기" title="본문으로 돌아가기">&#8617;</a></li></ol></section>
+<div class="nav"><a href="ch93.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch95.html">다음 →</a></div>
+</div></main>
+<script>(function(){var b=document.querySelector('.menu-btn'),p=document.getElementById('here-panel');function open(o){if(!p)return;p.hidden=!o;if(b)b.setAttribute('aria-expanded',o);}if(b)b.addEventListener('click',function(){open(p.hidden);});if(p)p.addEventListener('click',function(e){if(e.target.tagName==='A'&&e.target.getAttribute('href').charAt(0)==='#')open(false);});document.addEventListener('keydown',function(e){if(e.key==='Escape'&&p&&!p.hidden){open(false);if(b)b.focus();}});document.addEventListener('click',function(e){if(p&&!p.hidden&&!p.contains(e.target)&&!(b&&b.contains(e.target)))open(false);});var bk=document.querySelector('.bar .back');if(bk)bk.addEventListener('click',function(e){if(history.length>1&&document.referrer){e.preventDefault();history.back();}});var box=document.getElementById('setbox');if(!box)return;var r=document.documentElement;function load(){try{return JSON.parse(localStorage.getItem('doc-read')||'{}');}catch(e){return {};}}function save(s){try{localStorage.setItem('doc-read',JSON.stringify(s));}catch(e){}}function css(n){return getComputedStyle(r).getPropertyValue(n).trim();}function paint(){var s=load();var t=s.theme||'auto',w=s.width==='fit'?'fit':'960';[].forEach.call(box.querySelectorAll('.segb[data-theme]'),function(x){x.setAttribute('aria-pressed',x.dataset.theme===t);});[].forEach.call(box.querySelectorAll('.segb[data-width]'),function(x){x.setAttribute('aria-pressed',x.dataset.width===w);});var ly=s.layout||'auto';[].forEach.call(box.querySelectorAll('.segb[data-layout]'),function(x){x.setAttribute('aria-pressed',x.dataset.layout===ly);});document.getElementById('s-fg').value=s.fg||hex(css('--fg'));document.getElementById('s-bg').value=s.bg||hex(css('--bg'));document.getElementById('s-link').value=s.link||hex(css('--link'));}function hex(v){var m=v.match(/^rgba?\((\d+)[ ,]+(\d+)[ ,]+(\d+)/);if(!m)return v.charAt(0)==='#'?v:'#000000';return '#'+[1,2,3].map(function(i){return ('0'+parseInt(m[i],10).toString(16)).slice(-2);}).join('');}paint();[].forEach.call(box.querySelectorAll('.segb[data-width]'),function(x){x.addEventListener('click',function(){var s=load();if(x.dataset.width==='fit'){s.width='fit';r.setAttribute('data-measure','fit');}else{delete s.width;r.removeAttribute('data-measure');}save(s);setTimeout(paint,0);});});[].forEach.call(box.querySelectorAll('.segb[data-layout]'),function(x){x.addEventListener('click',function(){var s=load(),v=x.dataset.layout;if(v==='auto'){delete s.layout;r.removeAttribute('data-layout');}else{s.layout=v;r.setAttribute('data-layout',v);}save(s);var m=document.querySelector('meta[name=viewport]');var want=v==='desktop'?'width=1100':'width=device-width, initial-scale=1';if(m&&m.getAttribute('content')!==want)location.reload();else setTimeout(paint,0);});});[].forEach.call(box.querySelectorAll('.segb[data-theme]'),function(x){x.addEventListener('click',function(){var s=load();s.theme=x.dataset.theme;delete s.fg;delete s.bg;delete s.link;save(s);['--fg','--bg','--link'].forEach(function(n){r.style.removeProperty(n);});if(s.theme==='auto')r.removeAttribute('data-theme');else r.setAttribute('data-theme',s.theme);setTimeout(paint,0);});});[['s-fg','--fg','fg'],['s-bg','--bg','bg'],['s-link','--link','link']].forEach(function(a){document.getElementById(a[0]).addEventListener('input',function(){var s=load();s[a[2]]=this.value;save(s);r.style.setProperty(a[1],this.value);});});})();</script><script>
+(function(){
+  var q=document.getElementById('q'), out=document.getElementById('qr');
+  if(!q||!out) return;
+  var data=null, NONE="\ucc3e\uc740 \uac83\uc774 \uc5c6\ub2e4";
+  function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+  function run(){
+    var v=q.value.trim().toLowerCase();
+    out.innerHTML='';
+    if(!v||!data) return;
+    var hits=[];
+    for(var i=0;i<data.length && hits.length<40;i++){
+      if(data[i][0].toLowerCase().indexOf(v)>=0) hits.push(data[i]);
+    }
+    if(!hits.length){ out.innerHTML='<li>'+NONE+'</li>'; return; }
+    out.innerHTML=hits.map(function(h){
+      return '<li><a href="'+h[1]+'">'+esc(h[0])+'</a>'+
+             (h[2]?'<span class="where">'+esc(h[2])+'</span>':'')+'</li>';
+    }).join('');
+  }
+  q.addEventListener('input',function(){
+    if(data){ run(); return; }
+    fetch('search-index.json').then(function(r){return r.json();})
+      .then(function(j){ data=j; run(); })
+      .catch(function(){ out.innerHTML='<li>'+NONE+'</li>'; });
+  });
+})();
+</script></body></html>

@@ -1,0 +1,624 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>37 널 — 삼형제의 정식 취급 — Proven C Book</title><style>@font-face { font-family:"Doc Serif"; src:url("../fonts/serif.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-italic.woff2") format("woff2");
+  font-weight:400; font-style:italic; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-kr.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-kr-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans-kr.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans-kr-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Mono"; src:url("../fonts/mono.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Mono"; src:url("../fonts/mono-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+:root { color-scheme: light dark; --bg:#fafaf8; --bg2:#f2f2f0; --bg3:#e6e6e3; --fg:#141414; --muted:#555555; --line:#c9c9c9; --line-strong:#8a8a8a; --accent:#1a4f8a; --accent-fg:#ffffff; --accent2:#96530f; --honey:#f2b04a; --honey-fg:#2b1d00; --honey-text:#855400; --honey-soft:#fbebc6; --danger:#9b1b30; --ok:#1d6e37; --warn:#855400; --select:#d4dde8;
+  --rule:var(--line); --box-bg:var(--bg2); --code-bg:var(--bg2); --box-rule:var(--line); --link:var(--accent);
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg:#121314; --bg2:#1c1e20; --bg3:#2a2c2f; --fg:#e8e8e8; --muted:#a6a6a6; --line:#3a3d40; --line-strong:#75787c; --accent:#8ab4e8; --accent-fg:#121314; --accent2:#d4883b; --honey:#f2b04a; --honey-fg:#121314; --honey-text:#f2b04a; --honey-soft:#3b311e; --danger:#f07a8c; --ok:#7bcb95; --warn:#f2b04a; --select:#2f3d52;
+    --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+:root[data-theme="dark"] { color-scheme: dark; --bg:#121314; --bg2:#1c1e20; --bg3:#2a2c2f; --fg:#e8e8e8; --muted:#a6a6a6; --line:#3a3d40; --line-strong:#75787c; --accent:#8ab4e8; --accent-fg:#121314; --accent2:#d4883b; --honey:#f2b04a; --honey-fg:#121314; --honey-text:#f2b04a; --honey-soft:#3b311e; --danger:#f07a8c; --ok:#7bcb95; --warn:#f2b04a; --select:#2f3d52;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; }
+:root[data-theme="light"] { color-scheme: light; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Doc Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.here-head { display:flex; align-items:center; gap:.8rem; padding:.2rem 0 .5rem;
+  border-bottom:1px solid var(--rule,#ddd); margin-bottom:.5rem; }
+.here-head .sp { flex:1; }
+.here-all { margin-left:auto; font-size:.9rem; }
+.here-x { font:inherit; font-size:.9rem; cursor:pointer; background:none;
+  border:1px solid var(--line-strong); padding:.05rem .45rem;
+  color:inherit; }
+.here-body a, .tf-secs a { display:block; text-decoration:none; padding:.12rem 0;
+  line-height:1.45; }
+.here-body a:hover, .tf-secs a:hover { text-decoration:underline; }
+.here-body a.lv4, .tf-secs a.lv4 { padding-left:1.6rem; font-size:.94rem;
+  color:var(--muted,#555); }
+.tf-no { display:inline-block; min-width:3.2rem; color:var(--muted,#666);
+  font-variant-numeric:tabular-nums; }
+.toc-full .tf-ch { margin:.9rem 0 .15rem; font-weight:700; }
+.toc-full .tf-secs { margin:0 0 .5rem .2rem; border-left:2px solid var(--rule,#e2e2e2);
+  padding-left:.7rem; }
+.toc-full h4.toc-part { margin-top:1.8rem; }
+.toc a.toc-detail { font-weight:700; }
+@media print { .here-btn, .here-panel { display:none; } }
+.bar { position:sticky; top:0; z-index:20; display:flex; flex-wrap:nowrap; gap:.25rem; align-items:center;
+       min-height:44px; padding:0 clamp(.4rem,2vw,1.6rem); background:var(--bg2);
+       border-bottom:1px solid var(--line); font-size:.9rem;
+       font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--fg); text-decoration:none; } .bar a:hover { text-decoration:none; }
+.bar .sp { display:none; }
+main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
+.wrap { width:100%; }
+main .wrap { max-width:960px; margin-inline:auto; }
+:root[data-measure="fit"] main .wrap { max-width:none; margin:0; }
+h1,h2,h3,h4 { font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35;
+  padding-bottom:.18rem; border-bottom:1px solid var(--rule); }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem;
+     padding-bottom:.22rem; border-bottom:1.5px solid var(--fg); }
+p { margin:.9rem 0; } a { color:var(--link); }
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+.src-note { font-size: .86em; color: var(--muted, #666); }
+.src-note code { font-size: .95em; }
+sup.fnref { font-size: .72em; line-height: 0; vertical-align: super; }
+sup.fnref a { text-decoration: none; padding: 0 .1em; }
+sup.fnref a::before { content: "["; }
+sup.fnref a::after  { content: "]"; }
+.chapter-notes { margin: 3rem 0 1rem; padding-top: .9rem;
+                 border-top: 2px solid var(--rule, #333); }
+.chapter-notes h2 { font-size: 1.05rem; margin: 0 0 .6rem; }
+.chapter-notes ol { margin: 0; padding-left: 1.6em; }
+.chapter-notes li { font-size: .92em; margin: .35em 0; text-indent: 0; }
+.chapter-notes a.fnback { text-decoration: none; }
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
+pre,code,kbd { font-family:"Doc Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
+pre code { background:none; padding:0; }
+.tblwrap { overflow-x:auto; text-align:center; }
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.float-list { list-style:none; padding-left:0; }
+.float-list li { margin:.12rem 0; }
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"Doc Mono","D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"Doc Mono","D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"Doc Mono","D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+.dev { margin:1.15rem 0; padding:0; background:none; border:none; border-radius:0; }
+.dev > .dev-label { border-left:4px solid var(--fg);
+  padding:.1rem .8rem .25rem .8rem; margin:0 0 .34rem; }
+.dev > .dev-body { border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem .35rem .8rem; margin:0; }
+.dev > .dev-body > *:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child { margin-bottom:0; }
+.float-caption { text-align:center; font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+.dev.open { border:none; border-radius:0; background:none;
+  padding:0; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
+  text-indent:0; border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+.dev.open > .open-body { margin:0; padding:.35rem .8rem;
+  border-left:2px solid var(--box-rule); }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+.dev.open .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.06rem 0 .06rem .7rem; margin:.32rem 0 0; }
+.prereq .dev-label, .deepqa .dev-label, .why .dev-label,
+.organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+.qa-box { border:none; margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:0; background:none; }
+.qa-box .qa-q { border-left:4px solid var(--fg);
+  padding:.1rem .8rem .25rem .8rem; margin:0; }
+.qa-box .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem; margin:.34rem 0 0; }
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:0; }
+.dev.recap { border:none; background:none; padding:0; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
+  text-indent:0; border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > .dev-body > p, .dev.recap > .dev-body > div:not(.demo),
+.dev.recap > .dev-body > figure { margin:.3rem 0; padding:0; }
+.dev > .dev-body > .demo { margin:.7rem 0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:none; border-radius:0; background:none; padding:0; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem; text-indent:0;
+  border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
+.dev > .dev-body > figure, .dev > .open-body > p {
+  margin:.35rem 0; padding:0; }
+.bar .menu-btn { flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center;
+  min-width:38px; min-height:38px; padding:0; font:inherit; font-size:1.25rem; line-height:1;
+  color:var(--fg); background:none; border:0; cursor:pointer; text-decoration:none; }
+.bar .back, .bar .bar-nav .nb { flex:0 0 auto; display:inline-flex; align-items:center; gap:.3em;
+  min-height:32px; padding:0 .65rem; border:1px solid var(--line); background:var(--bg);
+  color:var(--fg); font-weight:600; white-space:nowrap; text-decoration:none; }
+.bar .menu-btn[aria-expanded="true"] { background:var(--bg3); }
+.bar .place { flex:1 1 auto; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
+  padding:0 .35rem; }
+.bar .place strong a { color:var(--honey-text); }
+.bar .place .cur { color:var(--fg); }
+.bar .bar-nav { flex:0 0 auto; display:flex; gap:.3rem; align-items:center; white-space:nowrap; }
+.bar .bar-nav .off { color:var(--muted); border-color:var(--line); opacity:.45; }
+.bar .back:hover, .bar .menu-btn:hover, .bar .bar-nav a.nb:hover, .bar .place a:hover { background:var(--bg3); }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+.dev.antipattern > .dev-label { border-left-style:solid; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.2rem; }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em;
+            padding-bottom:0; border-bottom:none; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
+.toc { columns:24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.toc > .toc-part:first-child, .toc > .toc-keep:first-child > .toc-part, .toc-full > .toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
+.toc-group { padding-left:.85rem; }
+.toc-keep, .toc a { break-inside:avoid; }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+code.style-name { font-family:"Doc Mono","D2Coding",ui-monospace,monospace;
+  font-size:.72em; color:var(--muted); background:var(--rule);
+  padding:.05em .35em; border-radius:3px; white-space:nowrap;
+  font-weight:400; letter-spacing:0; }
+.dev.open > .dev-label { padding-top:.42rem; padding-bottom:.42rem; }
+.dev.open > .open-body { padding-top:.4rem; padding-bottom:.4rem; }
+.dev.open > .open-body > p { margin:.6rem 0; }
+.dev > .dev-body { padding-top:.5rem; padding-bottom:.5rem; }
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
+.dev > .dev-body > figure { margin:.55rem 0; }
+main { line-height:1.85; }
+p { margin:1.15rem 0; }
+h2 { margin-top:2.4rem; }
+h3 { margin-top:2rem; }
+li { margin:.3rem 0; }
+h1, h2, h3, h4 { border-bottom-color:var(--box-rule) !important; }
+.toc { line-height:1.45; }
+.toc a { padding:.16rem 0; }
+.toc-part { margin:.85rem 0 .2rem; }
+.metalist { line-height:1.45; gap:.2rem 1.2rem; }
+.metalist dt, .metalist dd { margin:0; }
+.demo { border-color:var(--box-rule); }
+.demo > .demo-head { border-bottom-color:var(--box-rule); }
+.dev > .dev-label,
+.dev.open > .dev-label,
+.qa-box .qa-q,
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  border-left-color:var(--box-rule); }
+.dev > .dev-body,
+.dev > .open-body,
+.dev.open .qa-a,
+.qa-box .qa-a,
+.deepqa .qa-a { border-left-color:var(--box-rule); }
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div {
+  border-color:var(--box-rule); }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+.dev.open > .open-body,
+.dev.open > .qa-a,
+.dev.open .qa-a,
+.dev.deepqa .qa-a,
+.qa-box > .qa-a,
+.qa-box > .qa-q { border-left-color:var(--box-rule); }
+.bar .bar-toc { font-size:1.15em; line-height:1; text-decoration:none; }
+.dev, .dev-body, .open-body, .qa-box, .qa-q, .qa-a, .dev-label,
+.toc-full, .toc-full .tf-secs { line-height:inherit; font-size:1rem; }
+.dev > .dev-body > p, .dev > .open-body > p,
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:1.15rem 0; }
+.dev > .dev-body > *:first-child, .dev > .open-body > *:first-child,
+.qa-box .qa-q > p:first-child, .qa-box .qa-a > p:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child, .dev > .open-body > *:last-child,
+.qa-box .qa-q > p:last-child, .qa-box .qa-a > p:last-child { margin-bottom:0; }
+.dev > .dev-label, .dev.open > .dev-label { font-size:.98rem; line-height:1.4; }
+h1,h2,h3,h4 { padding-bottom:.34rem; }
+h1 { margin:.2rem 0 1.3rem; }
+h2 { padding-bottom:.42rem; margin-bottom:1.15rem; }
+h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
+.dev.open > .open-body > * { margin:.3rem 0; }
+.dev.open > .open-body > p { margin:.5rem 0; }
+.dev.open > .open-body > div { margin:.15rem 0; }
+.dev.open ul, .dev.open ol { margin:.3rem 0; }
+.dev.open li, .dev.open ol.qlist li { margin:0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open .qa-a > p { margin:.35rem 0; }
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div { border-color:var(--box-rule); }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+a:focus-visible, button:focus-visible, summary:focus-visible, input:focus-visible {
+  outline:2px solid var(--accent2); outline-offset:2px; }
+:target, h1, h2, h3, h4, [id] { scroll-margin-top:4.2rem; }
+.skip { position:absolute; left:-9999px; top:0; z-index:30;
+        background:var(--bg); color:var(--fg); border:1px solid var(--fg);
+        padding:.5rem .8rem; font-size:.9rem; text-decoration:none; }
+.skip:focus { left:.5rem; top:.5rem; }
+.here-panel { position:fixed; top:46px; left:clamp(.2rem,1vw,1rem); z-index:19;
+  width:min(32rem, calc(100vw - .4rem)); max-height:calc(100vh - 54px); overflow:auto;
+  padding:.7rem .9rem .9rem; border:1px solid var(--line); --k:var(--line-strong);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-size:.9rem; line-height:1.4;
+  background:
+    linear-gradient(var(--k),var(--k)) left top / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) left top / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) right top / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) right top / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) left bottom / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) left bottom / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) right bottom / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) right bottom / 3px 8px no-repeat,
+    color-mix(in srgb, var(--bg) 97%, transparent); }
+.here-panel .tools { display:flex; flex-wrap:wrap; gap:.3rem .4rem; align-items:center;
+  margin-bottom:.6rem; }
+.tool, .segb { font:inherit; font-size:.88rem; color:var(--fg); background:none;
+  border:1px solid var(--line-strong); padding:0 .6rem; min-height:30px;
+  display:inline-flex; align-items:center; text-decoration:none; cursor:pointer; white-space:nowrap; }
+.tool:hover, .segb:hover, .nav a:hover, .here-panel .here-body a:hover { background:var(--bg3); }
+.segb[aria-pressed="true"] { background:var(--select); border-color:var(--accent); font-weight:700; }
+.tool, .segb, .bar a, .bar button, .nav a, .here-panel a { transition:background-color .08s; }
+@media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
+main a { text-decoration:underline; text-decoration-color:var(--box-rule);
+  text-underline-offset:2px; }
+main a:hover { background:var(--box-bg); text-decoration-color:var(--link); }
+main .toc a, main .toc-full a, main .here-body a { text-decoration:none; }
+main .toc a:hover, main .toc-full a:hover { background:var(--box-bg); text-decoration:underline; }
+.setbox { margin:0 0 .6rem; }
+.setrow { display:flex; flex-wrap:wrap; gap:.4rem .5rem; align-items:center; margin:.35rem 0; }
+.setlbl { min-width:4.2rem; font-size:.82rem; font-weight:700; }
+.seg { display:inline-flex; flex-wrap:wrap; gap:.25rem; }
+.col { display:inline-flex; align-items:center; gap:.3rem; }
+.col input[type=color] { width:2rem; height:1.4rem; padding:0; border:1px solid var(--line-strong);
+  background:none; cursor:pointer; }
+.setnote { margin:.5rem 0 0; font-size:.82rem; }
+.here-panel .ver { font-size:.82rem; color:var(--muted); padding:.2rem .45rem .2rem 0;
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; white-space:nowrap; }
+.demo pre, .demo pre code {
+  white-space:pre-wrap; overflow-wrap:anywhere; word-break:break-word; }
+.demo > .demo-body { overflow-x:visible; }
+.plink {
+  margin-left: .4em; font-weight: 400; text-decoration: none;
+  color: var(--muted, #888); opacity: 0;
+}
+h3:hover > .plink, h4:hover > .plink,
+h3 > .plink:focus, h4 > .plink:focus { opacity: 1; }
+@media (hover: none) { .plink { opacity: .45; } }
+.searchbox { margin:.6em 0 0; }
+.searchbox input[type=search] {
+  width: 100%; padding: .45em .6em; font: inherit;
+  border: 1px solid var(--line-strong);
+  background: var(--bg); color: var(--fg);
+}
+.search-hint { color: var(--muted, #777); font-size: .85em; margin:.3em 0 0; }
+.search-results { list-style: none; padding: 0; margin: .5em 0 0; }
+.search-results li { margin: .15em 0; }
+.search-results .where { color: var(--muted, #777); font-size: .85em; margin-left: .4em; }
+@media (max-width: 900px), (orientation: portrait) {
+  :root:not([data-layout="desktop"]) .bar .place .cur { display:none; }
+  :root:not([data-layout="desktop"]) .bar .back,
+  :root:not([data-layout="desktop"]) .bar .bar-nav .nb { min-height:40px; padding:0 .5rem; }
+}
+@media (max-width: 480px) {
+  :root:not([data-layout="desktop"]) .bar .bar-nav .prev .lbl,
+  :root:not([data-layout="desktop"]) .bar .bar-nav .next .lbl { display:none; }
+  :root:not([data-layout="desktop"]) .bar .bar-nav .nb { min-width:44px; justify-content:center; }
+  :root:not([data-layout="desktop"]) .bar { gap:.2rem; }
+}
+:root[data-layout="mobile"] .bar .place .cur { display:none; }
+:root[data-layout="mobile"] .bar .back, :root[data-layout="mobile"] .bar .bar-nav .nb { min-height:40px; padding:0 .5rem; }
+:root[data-layout="mobile"] main .wrap { max-width:34rem; }
+@media (pointer: coarse), (max-width: 900px) {
+  .bar .menu-btn { min-width:44px; min-height:44px; }
+  .tool, .segb { min-height:38px; }
+}
+@media print { .bar, .here-panel { display:none; } }
+
+body { font-family:"Doc Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Doc Sans","Noto Sans CJK KR","Noto Sans KR",system-ui,sans-serif; }
+pre,code,kbd { font-family:"Doc Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+</style>
+<script>(function(){try{var L=localStorage,o='pcb-read';if(o&&o!=='doc-read'&&L.getItem(o)!==null&&L.getItem('doc-read')===null){var v=JSON.parse(L.getItem(o)||'{}');delete v.width;L.setItem('doc-read',JSON.stringify(v));L.removeItem(o);}var s=JSON.parse(L.getItem('doc-read')||'{}');var r=document.documentElement;if(s.theme&&s.theme!=='auto')r.setAttribute('data-theme',s.theme);if(s.fg)r.style.setProperty('--fg',s.fg);if(s.bg)r.style.setProperty('--bg',s.bg);if(s.link)r.style.setProperty('--link',s.link);if(s.width==='fit')r.setAttribute('data-measure','fit');if(s.layout==='desktop'||s.layout==='mobile')r.setAttribute('data-layout',s.layout);if(s.layout==='desktop'){var m=document.querySelector('meta[name=viewport]');if(m)m.setAttribute('content','width=1100');}}catch(e){}})();</script></head>
+<body>
+<a class="skip" href="#content">본문으로 건너뛰기</a>
+<div class="bar"><button class="menu-btn" id="set-open" type="button" aria-expanded="false" aria-controls="here-panel" aria-label="메뉴" title="메뉴">☰</button><a class="back" href="index.html" title="뒤로">← <span class="lbl">뒤로</span></a><span class="place"><strong><a href="index.html">Proven C Book</a></strong><span class="cur"> › 37장</span></span><span class="bar-nav"><a class="nb prev" href="ch36.html">‹ <span class="lbl">이전</span></a><a class="nb toc" href="index.html"><span class="lbl">목차</span></a><a class="nb next" href="ch38.html"><span class="lbl">다음</span> ›</a></span></div><div id="here-panel" class="here-panel" hidden><div class="setbox" id="setbox"><div class="setrow"><span class="setlbl">언어</span><span class="seg"><a class="segb" href="../en/ch37.html">English</a></span></div><div class="setrow"><span class="setlbl">본문 폭</span><span class="seg" id="s-width"><button type="button" class="segb" data-width="960">960</button><button type="button" class="segb" data-width="fit">창에 맞춤</button></span></div><div class="setrow"><span class="setlbl">배치</span><span class="seg" id="s-layout"><button type="button" class="segb" data-layout="auto">자동</button><button type="button" class="segb" data-layout="desktop">PC</button><button type="button" class="segb" data-layout="mobile">모바일</button></span></div><div class="setrow"><span class="setlbl">테마</span><span class="seg"><button type="button" class="segb" data-theme="auto">시스템</button><button type="button" class="segb" data-theme="light">밝게</button><button type="button" class="segb" data-theme="dark">어둡게</button></span></div><div class="setrow"><span class="setlbl">색</span><label class="col"><span>글자</span><input type="color" id="s-fg"></label><label class="col"><span>배경</span><input type="color" id="s-bg"></label><label class="col"><span>링크</span><input type="color" id="s-link"></label></div><p class="setnote">설정은 이 브라우저에만 저장된다.</p></div><div class="tools"><span class="ver">v0.110.2</span><a class="tool" href="toc.html">▤ 상세 차례</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book/releases/download/v0.110.2/proven_c_book-v0.110.2-ko.pdf">⤓ PDF</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book" title="이 책의 GitHub 저장소">Git</a><a class="tool" href="https://rubidus-api.github.io/" title="rubidus-api.github.io --- 공개된 모든 프로젝트">⌂ 전체 사이트</a><a class="tool" href="https://github.com/rubidus-api" title="github.com/rubidus-api --- 모든 저장소">≡ 저장소 목록</a></div><div class="here-head"><strong>이 장의 차례</strong></div><div class="here-body"><a class="lv3" href="#s37-1"><span class="tf-no">37.1</span>널이란 무엇인가 — 「아무것도 가리키지 않음」</a><a class="lv3" href="#s37-2"><span class="tf-no">37.2</span>nullptr — 비어 있음의 이름</a><a class="lv3" href="#s37-3"><span class="tf-no">37.3</span>어디까지 0을 써도 되는가 — 널 포인터 상수의 정확한 정의</a><a class="lv4" href="#s37-3-1"><span class="tf-no">37.3.1</span>널이 포인터에 담긴 뒤의 비트는 표기와 별개다</a><a class="lv3" href="#s37-4"><span class="tf-no">37.4</span>함정 — 표현을 0으로 가정하는 코드</a></div></div>
+<main id="content"><div class="wrap">
+<h2>37 널 — 삼형제의 정식 취급</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>4장 주소의 특수 지식 · 0번지의 특별함</div><div>36장 객체, 주소, 포인터 · 포인터는 무엇을 가리키는 값이다</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>4장에서 “널 포인터(null pointer)의 내부 표현은 0이 아닐 수 있다”는 역사(Prime 50, CDC Cyber 180)를 보았다. 그러면 소스 코드에서 <code>p == 0</code>이라는 비교는 — 그런 기계에서 깨지는가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 깨지지 않는다 — 그것이 표준의 약속이다. 소스의 정수 상수 0은 포인터 문맥에서 <strong>널 포인터 상수</strong>로 읽히고, 컴파일러가 그 기계의 실제 널 표현과 비교하도록 번역한다. 기호(소스의 0)와 표현(기계 속 비트)의 분리를 컴파일러가 지켜 주는 것이다. 깨지는 것은 다른 종류의 코드다 — “표현이 곧 0”이라고 <strong>비트 차원에서</strong> 가정하는 코드. 이 함정을 뒤에서 본다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">4장에서 얼굴만 익혀 둔 널 삼형제를 정식으로 취급한다. 포인터를 배운 바로 다음 자리인 것이 핵심이다 — 포인터를 손에 쥔 직후가 널 역참조 사고를 가장 처음 만나는 때이기 때문이다. 안전 수칙은 사고보다 먼저 와야 한다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">4장에서 얼굴만 익힌 널 삼형제 — 널 포인터, <code>NULL</code>/<code>nullptr</code>, NUL 문자 — 를 문법과 실무 규칙으로 정식 취급한다. “비어 있음”을 다루는 법은 포인터 안전 수칙의 첫 장이다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>NUL 문자(<code>'\0'</code>) 쪽은 정식 취급이 언제인가 — 삼형제 중 하나가 아직 남았다.</li></ol></div></div><div></div><h3 id="s37-1">37.1 널이란 무엇인가 — 「아무것도 가리키지 않음」<a class="plink" href="#s37-1" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>포인터는 객체의 자리를 담는 변수다(36장). 그런데 <strong>가리킬 것이 없는</strong> 때가 있다. 연결 목록의 마지막 마디에는 다음 마디가 없고, 찾기 함수는 찾는 것이 없을 수 있고, 할당은 실패할 수 있다. 이런 때 포인터에 무엇을 담을 것인가. 아무 주소나 담아 두면 그것이 진짜 자리인지 아닌지 구별할 수 없다. 그래서 <strong>「여기에는 아무것도 없다」를 뜻하는 특별한 값</strong>이 하나 필요하다. 그것이 <strong>널 포인터</strong>(null pointer)다.</p><p>표준의 정의는 짧고 정확하다.</p><p>“ 값이 0인 정수 상수식, 그런 식을 <code>void *</code> 로 캐스트한 것, 또는 미리 정의된 상수 <code>nullptr</code>를 <strong>널 포인터 상수</strong>라 한다. 널 포인터 상수를 포인터 타입으로 변환한 결과를 <strong>널 포인터</strong>라 하며, 그것은 <strong>어떤 객체나 함수를 가리키는 포인터와도 같지 않게 비교됨이 보장된다</strong>.<sup class="fnref" id="ch37-fnref-1"><a href="#ch37-fn-1" aria-label="주 1">1</a></sup> ”</p><p>정의의 마지막 구절이 널의 전부다. 널은 「0번지」가 아니라 <strong>「어떤 진짜 자리와도 같지 않은 값」</strong>이다. 그래서 <code>p == nullptr</code> 하나로 「가리키는 것이 있는가」를 물을 수 있다. 정의의 앞 절반은 <strong>소스에 적는 표기</strong>(널 포인터 상수)이고 뒤 절반은 <strong>실행 중의 값</strong>(널 포인터)이다 — 4장의 「널 삼형제」에서 이름이 비슷해 헷갈린다고 했던 바로 그 둘(그리고 셋째인 문자 <code>'\0'</code>)이다. 이 장은 그 구별을 C의 문법 위에서 정식으로 다룬다.</p><h3 id="s37-2">37.2 nullptr — 비어 있음의 이름<a class="plink" href="#s37-2" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>포인터 변수는 선언 즉시 무언가를 가리키게 하거나, 아직 대상이 없다면 <strong>비어 있음</strong>을 명시해야 한다(24장의 초기화 규칙이 포인터에서는 더욱 사활적이다 — 쓰레기 주소를 따라가는 것이 최악의 사고이므로). 비어 있음의 표기는 두 가지가 통용된다 — 전통의 <code>NULL</code> 매크로와, C23이 들여온 키워드 <code>nullptr</code>. 이 책은 <code>nullptr</code>를 쓴다: <code>NULL</code>은 역사적으로 정의가 구현마다 달라 미묘한 함정(가변 인자 등)이 있었고, <code>nullptr</code>는 타입까지 명확한 현대적 표기다.</p><div class="demo demo-src"><p class="demo-head"><code>examples/null/null.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>p <strong><span class="tok-x">=</span></strong> nullptr<span class="tok-x">;</span>           <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 아직 아무 데도 가리키지 않는다 </span></em><em><span class="tok-c">*/</span></em>
+
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>p <strong><span class="tok-x">==</span></strong> nullptr<span class="tok-x">)</span> <span class="tok-x">{</span>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">p is empty for now</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+
+    <strong><span class="tok-t">int</span></strong> n <strong><span class="tok-x">=</span></strong> <span class="tok-n">7</span><span class="tok-x">;</span>
+    p <strong><span class="tok-x">=</span></strong> <strong><span class="tok-x">&amp;</span></strong>n<span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>p <strong><span class="tok-x">!=</span></strong> nullptr<span class="tok-x">)</span> <span class="tok-x">{</span>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">now p points to </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong>p</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>p is empty for now
+now p points to 7
+</code></pre></div></div><p>수칙도 이 시연 그대로다 — <strong>포인터를 쓰기 전에 비어 있는지 확인한다.</strong> 비어 있는 포인터를 역참조하는 것(<code>*p</code>)은 계약 밖(정의되지 않은 동작)이고, 4장에서 배운 대로 보호 모드 환경에서는 대개 그 자리에서 프로그램이 붕괴한다 — 시끄럽게 죽는 것이 그나마 친절이라는 것도 4장의 이야기 그대로다.</p><div class="dev realcase"><p class="dev-label">실제 사례.<span style="white-space: pre-wrap">&#x20;&#x20;</span>십억 달러의 실수 — 널의 발명자가 남긴 사과</p><div class="dev-body">“비어 있음”이라는 값 자체가 논쟁의 역사를 가졌다. 널 참조를 1965년 ALGOL 계열 언어에 처음 도입한 토니 호어(Tony Hoare — 퀵소트 계열 알고리즘의 그 호어다)는 2009년의 강연에서 그것을 <strong>“나의 십억 달러짜리 실수”</strong>라 불렀다 — “구현하기 쉽다는 유혹을 참지 못했고, 그 뒤 40년간 널 역참조가 일으킨 붕괴와 취약점의 비용이 십억 달러를 넘을 것”이라는 자기 고발이다. 현대 언어들(Rust, Swift, Kotlin)이 “비어 있을 수 있음”을 타입으로 강제 검사하게 진화한 것은 이 반성의 직계 후손이다. C에는 그 강제가 없다 — 검사는 문화와 규율의 몫이고, 그래서 이 책은 검사를 관용구로 못박는다.</div></div><h3 id="s37-3">37.3 어디까지 0을 써도 되는가 — 널 포인터 상수의 정확한 정의<a class="plink" href="#s37-3" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>4장에서 「소스의 0은 기호」라고 했다. 그 기호의 자격을 표준이 정확히 정해 두었다. <strong>널 포인터 상수</strong>(null pointer constant)는 다음 둘 중 하나다.</p><ul><li>값이 0인 <strong>정수 상수식</strong></li><li>그런 식을 <code>void *</code>로 캐스트한 것</li></ul><p>여기에 C23이 키워드 <code>nullptr</code>를 더했다. 그래서 아래 다섯 가지는 모두 같은 뜻이다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>적는 법</strong></th><th><strong>널 포인터 상수인가</strong></th><th><strong>비고</strong></th></tr><tr><td><code>0</code></td><td>그렇다</td><td>가장 오래된 표기</td></tr><tr><td><code>0L</code>, <code>0u</code>, <code>'\0'</code></td><td>그렇다</td><td>값이 0인 정수 상수식이면 된다</td></tr><tr><td><code>(void *)0</code></td><td>그렇다</td><td><code>NULL</code>이 흔히 이렇게 정의된다</td></tr><tr><td><code>NULL</code></td><td>그렇다</td><td>구현이 위 둘 중 하나로 정의한 매크로</td></tr><tr><td><code>nullptr</code></td><td>그렇다</td><td>C23. 타입이 <code>nullptr_t</code>로 분명하다</td></tr><tr><td><code>const int zero = 0;</code> 의 <code>zero</code></td><td><strong>아니다</strong></td><td>상수식이 아니라 변수 — 컴파일 오류</td></tr><tr><td>실행 중에 0이 된 <code>int</code> 변수</td><td><strong>아니다</strong></td><td>정수를 포인터에 넣는 것은 별개의 이야기</td></tr></table></div><span id="doc-float-153"></span><p class="float-caption">표 37.1 — 널 포인터 상수로 인정되는 표기</p></figure><p>마지막 두 줄이 요점이다. 자격은 <strong>값이 0인지</strong>가 아니라 <strong>상수식인지</strong>에 달렸다. 그래서 <code>int *p = zero;</code>처럼 값이 0인 변수를 넘기는 것은 널 대입이 아니라 「정수를 포인터로」라는 전혀 다른 일이 되고, 오늘날의 컴파일러는 이것을 오류로 잡는다.</p><h4 id="s37-3-1">37.3.1 널이 포인터에 담긴 뒤의 비트는 표기와 별개다<a class="plink" href="#s37-3-1" aria-label="이 절의 주소" title="이 절의 주소">#</a></h4><div></div><p>표기가 같다고 표현까지 같은 것은 아니다. 여기서 4장의 복선이 회수된다.</p><div class="demo demo-src"><p class="demo-head"><code>examples/null/nullrep.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> 소스의 0 과 기억 속의 비트 — 널 포인터의 '표기'와 '표현'은 다른 층이다. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdlib.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">string.h</span><span class="tok-s">></span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> 포인터 하나의 바이트를 그대로 들여다본다 </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong>dump</strong><span class="tok-x">(</span><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>how<span class="tok-x">,</span> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">void</span></strong> <strong><span class="tok-x">*</span></strong>pobj<span class="tok-x">,</span> <strong><span class="tok-t">size_t</span></strong> n<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">unsigned</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>b <strong><span class="tok-x">=</span></strong> pobj<span class="tok-x">;</span>
+    <strong><span class="tok-t">int</span></strong> all_zero <strong><span class="tok-x">=</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  </span></strong><strong><span class="tok-s">%-22s</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> how</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> n<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-s">%02X</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> b</strong><strong><span class="tok-x">[</span></strong><strong>i</strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>b<span class="tok-x">[</span>i<span class="tok-x">]</span> <strong><span class="tok-x">!=</span></strong> <span class="tok-n">0</span><span class="tok-x">)</span> all_zero <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">   all bits zero: </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> all_zero </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">yes</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">no</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-t">struct</span></strong> node <span class="tok-x">{</span>
+    <strong><span class="tok-t">int</span></strong>          id<span class="tok-x">;</span>
+    <strong><span class="tok-t">struct</span></strong> node *next<span class="tok-x">;</span>      <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 포인터 멤버 </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">double</span></strong>       weight<span class="tok-x">;</span>    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 부동소수 멤버 </span></em><em><span class="tok-c">*/</span></em>
+<span class="tok-x">}</span><span class="tok-x">;</span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">pointer size on this implementation: </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> bytes</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ① 세 가지 표기는 모두 '널 포인터 상수'다 — 문법의 층 </span></em><em><span class="tok-c">*/</span></em>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">[the same null written three ways]</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>a <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>          <strong>dump</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">int *a = 0;</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong>       </strong><strong><span class="tok-x">&amp;</span></strong><strong>a</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> a</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>b <strong><span class="tok-x">=</span></strong> <span class="tok-n">NULL</span><span class="tok-x">;</span>       <strong>dump</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">int *b = NULL;</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong>    </strong><strong><span class="tok-x">&amp;</span></strong><strong>b</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> b</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>c <strong><span class="tok-x">=</span></strong> nullptr<span class="tok-x">;</span>    <strong>dump</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">int *c = nullptr;</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>c</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> c</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  are all three equal: </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-x">(</span></strong><strong>a </strong><strong><span class="tok-x">==</span></strong><strong> b </strong><strong><span class="tok-x">&amp;&amp;</span></strong><strong> b </strong><strong><span class="tok-x">==</span></strong><strong> c</strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">yes - the standard promises it</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">no</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 0L 과 (void *)0 도 널 포인터 상수다. 반면 '값이 0인 변수'는 아니다:</span></em>
+<em><span class="tok-c">         const int zero = 0;</span></em>
+<em><span class="tok-c">         int *p = zero;        ← 컴파일 오류. 상수식이 아니라 변수이기 때문. </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>d <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><strong><span class="tok-t">L</span></strong><span class="tok-x">;</span>         <strong>dump</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">int *d = 0L;</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong>        </strong><strong><span class="tok-x">&amp;</span></strong><strong>d</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> d</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>e <strong><span class="tok-x">=</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong> <strong><span class="tok-x">*</span></strong><span class="tok-x">)</span><span class="tok-n">0</span><span class="tok-x">;</span>  <strong>dump</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">int *e = (void *)0;</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>e</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> e</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ② 비교와 대입은 언제나 옳다 — 기계 속 표현이 무엇이든 </span></em><em><span class="tok-c">*/</span></em>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">[comparison holds whatever the representation]</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  a == 0      : </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> a </strong><strong><span class="tok-x">==</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong>       </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">true</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">false</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  a == NULL   : </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> a </strong><strong><span class="tok-x">==</span></strong><strong> </strong><strong><span class="tok-n">NULL</span></strong><strong>    </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">true</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">false</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  a == nullptr: </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> a </strong><strong><span class="tok-x">==</span></strong><strong> nullptr </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">true</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">false</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  !a          : </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">!</span></strong><strong>a           </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">true</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">false</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ③ 구조체를 0 으로 채우는 두 가지 방법 — 뜻이 다르다 </span></em><em><span class="tok-c">*/</span></em>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">[two ways to 'empty' a struct]</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-t">struct</span></strong> node x <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-n">0</span> <span class="tok-x">}</span><span class="tok-x">;</span>              <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 값의 층: 널 포인터와 0.0 을 약속 </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">struct</span></strong> node y<span class="tok-x">;</span>
+    <strong>memset</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>y</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> y</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>            <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 표현의 층: 모든 비트를 0 으로 </span></em><em><span class="tok-c">*/</span></em>
+
+    <strong>dump</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">next of { 0 }</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>x</strong><strong><span class="tok-x">.</span></strong><strong>next</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> x</strong><strong><span class="tok-x">.</span></strong><strong>next</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>dump</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">next of memset</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>y</strong><strong><span class="tok-x">.</span></strong><strong>next</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> y</strong><strong><span class="tok-x">.</span></strong><strong>next</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  x.next == nullptr : </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">   &lt;- the standard promises it</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           x</strong><strong><span class="tok-x">.</span></strong><strong>next</strong><strong> </strong><strong><span class="tok-x">==</span></strong><strong> nullptr </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">true</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">false</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  x.weight == 0.0   : </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">   &lt;- the standard promises it</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           x</strong><strong><span class="tok-x">.</span></strong><strong>weight</strong><strong> </strong><strong><span class="tok-x">==</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">0</span></strong><strong> </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">true</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">false</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  y.next == nullptr : </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">   &lt;- true on this implementation, that is all</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           y</strong><strong><span class="tok-x">.</span></strong><strong>next</strong><strong> </strong><strong><span class="tok-x">==</span></strong><strong> nullptr </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">true</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">false</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ④ calloc 도 '모든 비트 0' 쪽이다 </span></em><em><span class="tok-c">*/</span></em>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">[what calloc gives is all-bits-zero too]</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong><strong><span class="tok-x">*</span></strong>arr <strong><span class="tok-x">=</span></strong> <strong>calloc</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">4</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong>arr</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong>arr<span class="tok-x">)</span> <span class="tok-x">{</span> <strong>perror</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">calloc</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <strong><span class="tok-k">return</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span> <span class="tok-x">}</span>
+    <strong>dump</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">arr[0] of calloc</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>arr</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> arr</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  arr[0] == nullptr : </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">   &lt;- true on this implementation, that is all</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           arr</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong> </strong><strong><span class="tok-x">==</span></strong><strong> nullptr </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">true</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">false</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>free</strong><strong><span class="tok-x">(</span></strong><strong>arr</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">in short: the 0 you write in the source is *notation*; what lands in memory is *representation*.</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">        comparison and assignment live at the notation layer, so they are always right,</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">        while memset and calloc live at the representation layer and promise no null.</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>pointer size on this implementation: 8 bytes
+
+[the same null written three ways]
+  int *a = 0;            00 00 00 00 00 00 00 00   all bits zero: yes
+  int *b = NULL;         00 00 00 00 00 00 00 00   all bits zero: yes
+  int *c = nullptr;      00 00 00 00 00 00 00 00   all bits zero: yes
+  are all three equal: yes - the standard promises it
+  int *d = 0L;           00 00 00 00 00 00 00 00   all bits zero: yes
+  int *e = (void *)0;    00 00 00 00 00 00 00 00   all bits zero: yes
+
+[comparison holds whatever the representation]
+  a == 0      : true
+  a == NULL   : true
+  a == nullptr: true
+  !a          : true
+
+[two ways to 'empty' a struct]
+  next of { 0 }          00 00 00 00 00 00 00 00   all bits zero: yes
+  next of memset         00 00 00 00 00 00 00 00   all bits zero: yes
+  x.next == nullptr : true   &lt;- the standard promises it
+  x.weight == 0.0   : true   &lt;- the standard promises it
+  y.next == nullptr : true   &lt;- true on this implementation, that is all
+
+[what calloc gives is all-bits-zero too]
+  arr[0] of calloc       00 00 00 00 00 00 00 00   all bits zero: yes
+  arr[0] == nullptr : true   &lt;- true on this implementation, that is all
+
+in short: the 0 you write in the source is *notation*; what lands in memory is *representation*.
+        comparison and assignment live at the notation layer, so they are always right,
+        while memset and calloc live at the representation layer and promise no null.
+</code></pre></div></div><p>시연이 표기와 표현, 두 층을 나란히 보인다. 다섯 가지 표기가 전부 같은 값이 되고 (<code>a == b &amp;&amp; b == c</code>), 비교도 전부 참이다 — <strong>표기의 층은 표준이 약속한다.</strong> 반면 인쇄된 바이트는 <strong>이 구현이 그렇게 정했을 뿐</strong>이다. 4장의 Prime 50이나 CDC Cyber 180에서 같은 프로그램을 돌렸다면 비교는 그대로 참이지만 바이트는 0이 아니었을 것이다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>하는 일</strong></th><th><strong>어느 층인가</strong></th><th><strong>널을 약속하는가</strong></th></tr><tr><td><code>p = nullptr;</code> / <code>p = 0;</code></td><td>표기</td><td>★ 약속한다</td></tr><tr><td><code>p == nullptr</code> / <code>!p</code></td><td>표기</td><td>★ 약속한다</td></tr><tr><td><code>struct s x = { 0 };</code></td><td>값</td><td>★ 약속한다 — 포인터 멤버는 널, 실수 멤버는 0.0</td></tr><tr><td><code>memset(&amp;x, 0, sizeof x)</code></td><td>표현</td><td>약속하지 않는다</td></tr><tr><td><code>calloc(n, size)</code></td><td>표현</td><td>약속하지 않는다</td></tr><tr><td><code>memcmp(&amp;p, zeros, sizeof p)</code></td><td>표현</td><td>널인지 묻는 방법이 아니다</td></tr></table></div><span id="doc-float-154"></span><p class="float-caption">표 37.2 — 널을 다루는 층과 그 약속</p></figure><p>시연의 셋째·넷째 부분이 표의 셋째 다섯째 줄(<code>{ 0 }</code>·<code>memset</code>·<code>calloc</code>)을 실물로 보인다. <code>{ 0 }</code>으로 만든 구조체는 <strong>표준이</strong> 포인터 멤버를 널로, 실수 멤버를 0.0으로 약속하고, <code>memset</code>과 <code>calloc</code>은 <strong>이 기계에서 우연히</strong> 같은 결과를 낸다.</p><div class="dev platform"><p class="dev-label">플랫폼 노트.<span style="white-space: pre-wrap">&#x20;&#x20;</span>C++의 사정 — 같은 0, 다른 규칙</p><div class="dev-body"><p>널 포인터 상수는 C와 C++이 갈리는 유명한 지점이다. 뿌리는 하나다 — <strong>C++에는 <code>void *</code>에서 다른 포인터로의 암묵적 변환이 없다.</strong></p><p>그래서 C++의 <code>NULL</code>은 <code>((void *)0)</code>으로 정의될 수 없다. 정의하면 <code>int *p = NULL;</code>이 곧바로 오류가 되기 때문이다. 실제로 이 기계에서 확인해 보면 C의 <code>NULL</code>은 <code>((void *)0)</code>이고 g++의 <code>NULL</code>은 컴파일러 확장인 <code>__null</code>이다. 전통적인 C++ 구현은 그냥 <code>0</code>이나 <code>0L</code>로 정의했다.</p><p><code>0</code>을 널로 쓰는 데서 C++만의 사고가 생긴다. <strong>오버로딩</strong>이다.</p><pre><code data-lang="cpp"><strong><span class="tok-t">void</span></strong> <strong>f</strong><span class="tok-x">(</span>int<span class="tok-x">)</span><span class="tok-x">;</span>
+<strong><span class="tok-t">void</span></strong> <strong>f</strong><span class="tok-x">(</span><strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong><span class="tok-x">)</span><span class="tok-x">;</span>
+<strong>f</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">NULL</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>      <em><span class="tok-c">//</span></em><em><span class="tok-c"> NULL 이 0 이면 → f(int) 가 조용히 뽑힌다</span></em></code></pre><p>직접 돌려 보면 <code>NULL</code>을 <code>0</code>으로 정의했을 때 <code>f(int)</code>가 뽑히고, g++의 <code>__null</code>에서는 「모호하다」는 오류가 난다. 어느 쪽이든 원하던 <code>f(char *)</code>는 아니다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>무엇</strong></th><th><strong>C</strong></th><th><strong>C++</strong></th></tr><tr><td><code>(void *)0</code>을 다른 포인터에</td><td>된다</td><td>오류 — 캐스트가 필요하다</td></tr><tr><td><code>NULL</code>의 정의</td><td>대개 <code>((void *)0)</code></td><td><code>0</code>·<code>0L</code>·<code>__null</code></td></tr><tr><td>값이 0인 <code>const int</code> 변수</td><td>널 아님(상수식이 아니다)</td><td>C++03은 널, <strong>C++11부터 오류</strong></td></tr><tr><td>전용 키워드</td><td>C23의 <code>nullptr</code></td><td>C++11의 <code>nullptr</code>(타입 <code>std::nullptr_t</code>)</td></tr></table></div><span id="doc-float-155"></span><p class="float-caption">표 37.3 — 널을 두고 C 와 C++ 이 갈리는 자리</p></figure><p>셋째 줄의 변화가 흥미롭다. C++03의 정의는 「0으로 평가되는 정수 상수식」 이어서 <code>const int zero = 0;</code>의 <code>zero</code>도 널 포인터 상수였는데, C++11 뒤의 결함 수정(CWG 903, C++14 본문에 실렸다)이 「0인 정수 리터럴 또는 <code>std::nullptr_t</code> 값」으로 좁혔고 컴파일러는 이를 C++11 모드에도 적용한다. 같은 코드가 <code>-std=c++03</code>에서는 컴파일되고 <code>-std=c++11</code>에서는 오류가 되는 것을 이 책도 확인했다.</p><p>결론은 두 언어가 같다 — <strong><code>nullptr</code>를 쓴다.</strong> C++11이 먼저 들여왔고 C23이 뒤따랐으며, 오버로딩 사고도 「0인가 포인터인가」의 모호함도 이 한 낱말로 사라진다.</p></div></div><h3 id="s37-4">37.4 함정 — 표현을 0으로 가정하는 코드<a class="plink" href="#s37-4" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>장 첫머리 「돌아보기」에서 예고한 함정 — 널의 표현이 곧 0이라고 비트 차원에서 가정하는 코드 — 을 여기서 본다. 다음 두 코드는 뜻이 다르다:</p><pre><code data-lang="c"><strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>arr<span class="tok-x">[</span><span class="tok-n">8</span><span class="tok-x">]</span><span class="tok-x">;</span>
+<strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> <span class="tok-n">8</span><span class="tok-x">;</span> i <strong><span class="tok-x">+=</span></strong> <span class="tok-n">1</span><span class="tok-x">)</span> <span class="tok-x">{</span> arr<span class="tok-x">[</span>i<span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> nullptr<span class="tok-x">;</span> <span class="tok-x">}</span>  <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 올바르다 </span></em><em><span class="tok-c">*/</span></em>
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> memset(arr, 0, sizeof arr);     — 비트를 0으로 채운다: 다른 뜻! </span></em><em><span class="tok-c">*/</span></em></code></pre><p><code>for</code> 줄은 “널 포인터를 담아라”(표기의 세계 — 어떤 표현이든 컴파일러가 알아서). 주석의 memset은 “모든 비트를 0으로 채워라”(표현의 세계). 널 표현이 전부 0인 오늘의 주류 기계에서는 결과가 우연히 같지만, 4장의 역사가 보여 주듯 그 우연은 계약이 아니다. 실무에서 memset 방식을 흔히 보게 되는데(그리고 주류 플랫폼에서 실제로 동작하는데), <strong>이식성의 눈</strong>으로는 회색 지대임을 알고 쓰는 것과 모르고 쓰는 것이 다르다 — 이 책의 선택은 명시적 <code>nullptr</code> 대입이다.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> NUL 문자(<code>'\0'</code>) 쪽은 정식 취급이 언제인가 — 삼형제 중 하나가 아직 남았다.</p></div><div class="dev qa-a"><p><span class="dev-label">답.</span> 여섯 장 뒤다. NUL 문자는 포인터의 세계가 아니라 <strong>문자열의 세계</strong>에서 일하는 물건이라(끝 표시), 문자열을 정식으로 다루는 43장이 그 무대다. 기다리는 동안 구별만 다시 — <code>nullptr</code>는 “가리킬 곳 없음”(포인터 값), <code>'\0'</code>은 “여기가 글의 끝”(문자 값, 문자열 안에서 1바이트). 사는 세계가 다른 남남이다.</p></div></div><p>비어 있음을 다루는 법을 갖췄다. 다음 장은 포인터에 걸린 나머지 규칙들 — 4장의 정렬이 포인터 캐스트에 거는 제약과, 15장에서 예고한 프로버넌스 (출처 딱지)의 실무 감각이다.</p><section class="chapter-notes" role="doc-endnotes"><h2>주</h2><ol><li id="ch37-fn-1">ISO/IEC 9899 (C23) 6.3.2.3, 문단 3. <a class="fnback" href="#ch37-fnref-1" aria-label="본문으로 돌아가기" title="본문으로 돌아가기">&#8617;</a></li></ol></section>
+<div class="nav"><a href="ch36.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch38.html">다음 →</a></div>
+</div></main>
+<script>(function(){var b=document.querySelector('.menu-btn'),p=document.getElementById('here-panel');function open(o){if(!p)return;p.hidden=!o;if(b)b.setAttribute('aria-expanded',o);}if(b)b.addEventListener('click',function(){open(p.hidden);});if(p)p.addEventListener('click',function(e){if(e.target.tagName==='A'&&e.target.getAttribute('href').charAt(0)==='#')open(false);});document.addEventListener('keydown',function(e){if(e.key==='Escape'&&p&&!p.hidden){open(false);if(b)b.focus();}});document.addEventListener('click',function(e){if(p&&!p.hidden&&!p.contains(e.target)&&!(b&&b.contains(e.target)))open(false);});var bk=document.querySelector('.bar .back');if(bk)bk.addEventListener('click',function(e){if(history.length>1&&document.referrer){e.preventDefault();history.back();}});var box=document.getElementById('setbox');if(!box)return;var r=document.documentElement;function load(){try{return JSON.parse(localStorage.getItem('doc-read')||'{}');}catch(e){return {};}}function save(s){try{localStorage.setItem('doc-read',JSON.stringify(s));}catch(e){}}function css(n){return getComputedStyle(r).getPropertyValue(n).trim();}function paint(){var s=load();var t=s.theme||'auto',w=s.width==='fit'?'fit':'960';[].forEach.call(box.querySelectorAll('.segb[data-theme]'),function(x){x.setAttribute('aria-pressed',x.dataset.theme===t);});[].forEach.call(box.querySelectorAll('.segb[data-width]'),function(x){x.setAttribute('aria-pressed',x.dataset.width===w);});var ly=s.layout||'auto';[].forEach.call(box.querySelectorAll('.segb[data-layout]'),function(x){x.setAttribute('aria-pressed',x.dataset.layout===ly);});document.getElementById('s-fg').value=s.fg||hex(css('--fg'));document.getElementById('s-bg').value=s.bg||hex(css('--bg'));document.getElementById('s-link').value=s.link||hex(css('--link'));}function hex(v){var m=v.match(/^rgba?\((\d+)[ ,]+(\d+)[ ,]+(\d+)/);if(!m)return v.charAt(0)==='#'?v:'#000000';return '#'+[1,2,3].map(function(i){return ('0'+parseInt(m[i],10).toString(16)).slice(-2);}).join('');}paint();[].forEach.call(box.querySelectorAll('.segb[data-width]'),function(x){x.addEventListener('click',function(){var s=load();if(x.dataset.width==='fit'){s.width='fit';r.setAttribute('data-measure','fit');}else{delete s.width;r.removeAttribute('data-measure');}save(s);setTimeout(paint,0);});});[].forEach.call(box.querySelectorAll('.segb[data-layout]'),function(x){x.addEventListener('click',function(){var s=load(),v=x.dataset.layout;if(v==='auto'){delete s.layout;r.removeAttribute('data-layout');}else{s.layout=v;r.setAttribute('data-layout',v);}save(s);var m=document.querySelector('meta[name=viewport]');var want=v==='desktop'?'width=1100':'width=device-width, initial-scale=1';if(m&&m.getAttribute('content')!==want)location.reload();else setTimeout(paint,0);});});[].forEach.call(box.querySelectorAll('.segb[data-theme]'),function(x){x.addEventListener('click',function(){var s=load();s.theme=x.dataset.theme;delete s.fg;delete s.bg;delete s.link;save(s);['--fg','--bg','--link'].forEach(function(n){r.style.removeProperty(n);});if(s.theme==='auto')r.removeAttribute('data-theme');else r.setAttribute('data-theme',s.theme);setTimeout(paint,0);});});[['s-fg','--fg','fg'],['s-bg','--bg','bg'],['s-link','--link','link']].forEach(function(a){document.getElementById(a[0]).addEventListener('input',function(){var s=load();s[a[2]]=this.value;save(s);r.style.setProperty(a[1],this.value);});});})();</script><script>
+(function(){
+  var q=document.getElementById('q'), out=document.getElementById('qr');
+  if(!q||!out) return;
+  var data=null, NONE="\ucc3e\uc740 \uac83\uc774 \uc5c6\ub2e4";
+  function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+  function run(){
+    var v=q.value.trim().toLowerCase();
+    out.innerHTML='';
+    if(!v||!data) return;
+    var hits=[];
+    for(var i=0;i<data.length && hits.length<40;i++){
+      if(data[i][0].toLowerCase().indexOf(v)>=0) hits.push(data[i]);
+    }
+    if(!hits.length){ out.innerHTML='<li>'+NONE+'</li>'; return; }
+    out.innerHTML=hits.map(function(h){
+      return '<li><a href="'+h[1]+'">'+esc(h[0])+'</a>'+
+             (h[2]?'<span class="where">'+esc(h[2])+'</span>':'')+'</li>';
+    }).join('');
+  }
+  q.addEventListener('input',function(){
+    if(data){ run(); return; }
+    fetch('search-index.json').then(function(r){return r.json();})
+      .then(function(j){ data=j; run(); })
+      .catch(function(){ out.innerHTML='<li>'+NONE+'</li>'; });
+  });
+})();
+</script></body></html>

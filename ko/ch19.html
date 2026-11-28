@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>19 컴파일러의 지형 — 현역 C 컴파일러들 — Proven C Book</title><style>@font-face { font-family:"Doc Serif"; src:url("../fonts/serif.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-italic.woff2") format("woff2");
+  font-weight:400; font-style:italic; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-kr.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-kr-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans-kr.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans-kr-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Mono"; src:url("../fonts/mono.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Mono"; src:url("../fonts/mono-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+:root { color-scheme: light dark; --bg:#fafaf8; --bg2:#f2f2f0; --bg3:#e6e6e3; --fg:#141414; --muted:#555555; --line:#c9c9c9; --line-strong:#8a8a8a; --accent:#1a4f8a; --accent-fg:#ffffff; --accent2:#96530f; --honey:#f2b04a; --honey-fg:#2b1d00; --honey-text:#855400; --honey-soft:#fbebc6; --danger:#9b1b30; --ok:#1d6e37; --warn:#855400; --select:#d4dde8;
+  --rule:var(--line); --box-bg:var(--bg2); --code-bg:var(--bg2); --box-rule:var(--line); --link:var(--accent);
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg:#121314; --bg2:#1c1e20; --bg3:#2a2c2f; --fg:#e8e8e8; --muted:#a6a6a6; --line:#3a3d40; --line-strong:#75787c; --accent:#8ab4e8; --accent-fg:#121314; --accent2:#d4883b; --honey:#f2b04a; --honey-fg:#121314; --honey-text:#f2b04a; --honey-soft:#3b311e; --danger:#f07a8c; --ok:#7bcb95; --warn:#f2b04a; --select:#2f3d52;
+    --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+:root[data-theme="dark"] { color-scheme: dark; --bg:#121314; --bg2:#1c1e20; --bg3:#2a2c2f; --fg:#e8e8e8; --muted:#a6a6a6; --line:#3a3d40; --line-strong:#75787c; --accent:#8ab4e8; --accent-fg:#121314; --accent2:#d4883b; --honey:#f2b04a; --honey-fg:#121314; --honey-text:#f2b04a; --honey-soft:#3b311e; --danger:#f07a8c; --ok:#7bcb95; --warn:#f2b04a; --select:#2f3d52;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; }
+:root[data-theme="light"] { color-scheme: light; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Doc Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.here-head { display:flex; align-items:center; gap:.8rem; padding:.2rem 0 .5rem;
+  border-bottom:1px solid var(--rule,#ddd); margin-bottom:.5rem; }
+.here-head .sp { flex:1; }
+.here-all { margin-left:auto; font-size:.9rem; }
+.here-x { font:inherit; font-size:.9rem; cursor:pointer; background:none;
+  border:1px solid var(--line-strong); padding:.05rem .45rem;
+  color:inherit; }
+.here-body a, .tf-secs a { display:block; text-decoration:none; padding:.12rem 0;
+  line-height:1.45; }
+.here-body a:hover, .tf-secs a:hover { text-decoration:underline; }
+.here-body a.lv4, .tf-secs a.lv4 { padding-left:1.6rem; font-size:.94rem;
+  color:var(--muted,#555); }
+.tf-no { display:inline-block; min-width:3.2rem; color:var(--muted,#666);
+  font-variant-numeric:tabular-nums; }
+.toc-full .tf-ch { margin:.9rem 0 .15rem; font-weight:700; }
+.toc-full .tf-secs { margin:0 0 .5rem .2rem; border-left:2px solid var(--rule,#e2e2e2);
+  padding-left:.7rem; }
+.toc-full h4.toc-part { margin-top:1.8rem; }
+.toc a.toc-detail { font-weight:700; }
+@media print { .here-btn, .here-panel { display:none; } }
+.bar { position:sticky; top:0; z-index:20; display:flex; flex-wrap:nowrap; gap:.25rem; align-items:center;
+       min-height:44px; padding:0 clamp(.4rem,2vw,1.6rem); background:var(--bg2);
+       border-bottom:1px solid var(--line); font-size:.9rem;
+       font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--fg); text-decoration:none; } .bar a:hover { text-decoration:none; }
+.bar .sp { display:none; }
+main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
+.wrap { width:100%; }
+main .wrap { max-width:960px; margin-inline:auto; }
+:root[data-measure="fit"] main .wrap { max-width:none; margin:0; }
+h1,h2,h3,h4 { font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35;
+  padding-bottom:.18rem; border-bottom:1px solid var(--rule); }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem;
+     padding-bottom:.22rem; border-bottom:1.5px solid var(--fg); }
+p { margin:.9rem 0; } a { color:var(--link); }
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+.src-note { font-size: .86em; color: var(--muted, #666); }
+.src-note code { font-size: .95em; }
+sup.fnref { font-size: .72em; line-height: 0; vertical-align: super; }
+sup.fnref a { text-decoration: none; padding: 0 .1em; }
+sup.fnref a::before { content: "["; }
+sup.fnref a::after  { content: "]"; }
+.chapter-notes { margin: 3rem 0 1rem; padding-top: .9rem;
+                 border-top: 2px solid var(--rule, #333); }
+.chapter-notes h2 { font-size: 1.05rem; margin: 0 0 .6rem; }
+.chapter-notes ol { margin: 0; padding-left: 1.6em; }
+.chapter-notes li { font-size: .92em; margin: .35em 0; text-indent: 0; }
+.chapter-notes a.fnback { text-decoration: none; }
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
+pre,code,kbd { font-family:"Doc Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
+pre code { background:none; padding:0; }
+.tblwrap { overflow-x:auto; text-align:center; }
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.float-list { list-style:none; padding-left:0; }
+.float-list li { margin:.12rem 0; }
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"Doc Mono","D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"Doc Mono","D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"Doc Mono","D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+.dev { margin:1.15rem 0; padding:0; background:none; border:none; border-radius:0; }
+.dev > .dev-label { border-left:4px solid var(--fg);
+  padding:.1rem .8rem .25rem .8rem; margin:0 0 .34rem; }
+.dev > .dev-body { border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem .35rem .8rem; margin:0; }
+.dev > .dev-body > *:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child { margin-bottom:0; }
+.float-caption { text-align:center; font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+.dev.open { border:none; border-radius:0; background:none;
+  padding:0; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
+  text-indent:0; border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+.dev.open > .open-body { margin:0; padding:.35rem .8rem;
+  border-left:2px solid var(--box-rule); }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+.dev.open .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.06rem 0 .06rem .7rem; margin:.32rem 0 0; }
+.prereq .dev-label, .deepqa .dev-label, .why .dev-label,
+.organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+.qa-box { border:none; margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:0; background:none; }
+.qa-box .qa-q { border-left:4px solid var(--fg);
+  padding:.1rem .8rem .25rem .8rem; margin:0; }
+.qa-box .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem; margin:.34rem 0 0; }
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:0; }
+.dev.recap { border:none; background:none; padding:0; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
+  text-indent:0; border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > .dev-body > p, .dev.recap > .dev-body > div:not(.demo),
+.dev.recap > .dev-body > figure { margin:.3rem 0; padding:0; }
+.dev > .dev-body > .demo { margin:.7rem 0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:none; border-radius:0; background:none; padding:0; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem; text-indent:0;
+  border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
+.dev > .dev-body > figure, .dev > .open-body > p {
+  margin:.35rem 0; padding:0; }
+.bar .menu-btn { flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center;
+  min-width:38px; min-height:38px; padding:0; font:inherit; font-size:1.25rem; line-height:1;
+  color:var(--fg); background:none; border:0; cursor:pointer; text-decoration:none; }
+.bar .back, .bar .bar-nav .nb { flex:0 0 auto; display:inline-flex; align-items:center; gap:.3em;
+  min-height:32px; padding:0 .65rem; border:1px solid var(--line); background:var(--bg);
+  color:var(--fg); font-weight:600; white-space:nowrap; text-decoration:none; }
+.bar .menu-btn[aria-expanded="true"] { background:var(--bg3); }
+.bar .place { flex:1 1 auto; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
+  padding:0 .35rem; }
+.bar .place strong a { color:var(--honey-text); }
+.bar .place .cur { color:var(--fg); }
+.bar .bar-nav { flex:0 0 auto; display:flex; gap:.3rem; align-items:center; white-space:nowrap; }
+.bar .bar-nav .off { color:var(--muted); border-color:var(--line); opacity:.45; }
+.bar .back:hover, .bar .menu-btn:hover, .bar .bar-nav a.nb:hover, .bar .place a:hover { background:var(--bg3); }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+.dev.antipattern > .dev-label { border-left-style:solid; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.2rem; }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em;
+            padding-bottom:0; border-bottom:none; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
+.toc { columns:24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.toc > .toc-part:first-child, .toc > .toc-keep:first-child > .toc-part, .toc-full > .toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
+.toc-group { padding-left:.85rem; }
+.toc-keep, .toc a { break-inside:avoid; }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+code.style-name { font-family:"Doc Mono","D2Coding",ui-monospace,monospace;
+  font-size:.72em; color:var(--muted); background:var(--rule);
+  padding:.05em .35em; border-radius:3px; white-space:nowrap;
+  font-weight:400; letter-spacing:0; }
+.dev.open > .dev-label { padding-top:.42rem; padding-bottom:.42rem; }
+.dev.open > .open-body { padding-top:.4rem; padding-bottom:.4rem; }
+.dev.open > .open-body > p { margin:.6rem 0; }
+.dev > .dev-body { padding-top:.5rem; padding-bottom:.5rem; }
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
+.dev > .dev-body > figure { margin:.55rem 0; }
+main { line-height:1.85; }
+p { margin:1.15rem 0; }
+h2 { margin-top:2.4rem; }
+h3 { margin-top:2rem; }
+li { margin:.3rem 0; }
+h1, h2, h3, h4 { border-bottom-color:var(--box-rule) !important; }
+.toc { line-height:1.45; }
+.toc a { padding:.16rem 0; }
+.toc-part { margin:.85rem 0 .2rem; }
+.metalist { line-height:1.45; gap:.2rem 1.2rem; }
+.metalist dt, .metalist dd { margin:0; }
+.demo { border-color:var(--box-rule); }
+.demo > .demo-head { border-bottom-color:var(--box-rule); }
+.dev > .dev-label,
+.dev.open > .dev-label,
+.qa-box .qa-q,
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  border-left-color:var(--box-rule); }
+.dev > .dev-body,
+.dev > .open-body,
+.dev.open .qa-a,
+.qa-box .qa-a,
+.deepqa .qa-a { border-left-color:var(--box-rule); }
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div {
+  border-color:var(--box-rule); }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+.dev.open > .open-body,
+.dev.open > .qa-a,
+.dev.open .qa-a,
+.dev.deepqa .qa-a,
+.qa-box > .qa-a,
+.qa-box > .qa-q { border-left-color:var(--box-rule); }
+.bar .bar-toc { font-size:1.15em; line-height:1; text-decoration:none; }
+.dev, .dev-body, .open-body, .qa-box, .qa-q, .qa-a, .dev-label,
+.toc-full, .toc-full .tf-secs { line-height:inherit; font-size:1rem; }
+.dev > .dev-body > p, .dev > .open-body > p,
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:1.15rem 0; }
+.dev > .dev-body > *:first-child, .dev > .open-body > *:first-child,
+.qa-box .qa-q > p:first-child, .qa-box .qa-a > p:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child, .dev > .open-body > *:last-child,
+.qa-box .qa-q > p:last-child, .qa-box .qa-a > p:last-child { margin-bottom:0; }
+.dev > .dev-label, .dev.open > .dev-label { font-size:.98rem; line-height:1.4; }
+h1,h2,h3,h4 { padding-bottom:.34rem; }
+h1 { margin:.2rem 0 1.3rem; }
+h2 { padding-bottom:.42rem; margin-bottom:1.15rem; }
+h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
+.dev.open > .open-body > * { margin:.3rem 0; }
+.dev.open > .open-body > p { margin:.5rem 0; }
+.dev.open > .open-body > div { margin:.15rem 0; }
+.dev.open ul, .dev.open ol { margin:.3rem 0; }
+.dev.open li, .dev.open ol.qlist li { margin:0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open .qa-a > p { margin:.35rem 0; }
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div { border-color:var(--box-rule); }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+a:focus-visible, button:focus-visible, summary:focus-visible, input:focus-visible {
+  outline:2px solid var(--accent2); outline-offset:2px; }
+:target, h1, h2, h3, h4, [id] { scroll-margin-top:4.2rem; }
+.skip { position:absolute; left:-9999px; top:0; z-index:30;
+        background:var(--bg); color:var(--fg); border:1px solid var(--fg);
+        padding:.5rem .8rem; font-size:.9rem; text-decoration:none; }
+.skip:focus { left:.5rem; top:.5rem; }
+.here-panel { position:fixed; top:46px; left:clamp(.2rem,1vw,1rem); z-index:19;
+  width:min(32rem, calc(100vw - .4rem)); max-height:calc(100vh - 54px); overflow:auto;
+  padding:.7rem .9rem .9rem; border:1px solid var(--line); --k:var(--line-strong);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-size:.9rem; line-height:1.4;
+  background:
+    linear-gradient(var(--k),var(--k)) left top / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) left top / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) right top / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) right top / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) left bottom / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) left bottom / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) right bottom / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) right bottom / 3px 8px no-repeat,
+    color-mix(in srgb, var(--bg) 97%, transparent); }
+.here-panel .tools { display:flex; flex-wrap:wrap; gap:.3rem .4rem; align-items:center;
+  margin-bottom:.6rem; }
+.tool, .segb { font:inherit; font-size:.88rem; color:var(--fg); background:none;
+  border:1px solid var(--line-strong); padding:0 .6rem; min-height:30px;
+  display:inline-flex; align-items:center; text-decoration:none; cursor:pointer; white-space:nowrap; }
+.tool:hover, .segb:hover, .nav a:hover, .here-panel .here-body a:hover { background:var(--bg3); }
+.segb[aria-pressed="true"] { background:var(--select); border-color:var(--accent); font-weight:700; }
+.tool, .segb, .bar a, .bar button, .nav a, .here-panel a { transition:background-color .08s; }
+@media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
+main a { text-decoration:underline; text-decoration-color:var(--box-rule);
+  text-underline-offset:2px; }
+main a:hover { background:var(--box-bg); text-decoration-color:var(--link); }
+main .toc a, main .toc-full a, main .here-body a { text-decoration:none; }
+main .toc a:hover, main .toc-full a:hover { background:var(--box-bg); text-decoration:underline; }
+.setbox { margin:0 0 .6rem; }
+.setrow { display:flex; flex-wrap:wrap; gap:.4rem .5rem; align-items:center; margin:.35rem 0; }
+.setlbl { min-width:4.2rem; font-size:.82rem; font-weight:700; }
+.seg { display:inline-flex; flex-wrap:wrap; gap:.25rem; }
+.col { display:inline-flex; align-items:center; gap:.3rem; }
+.col input[type=color] { width:2rem; height:1.4rem; padding:0; border:1px solid var(--line-strong);
+  background:none; cursor:pointer; }
+.setnote { margin:.5rem 0 0; font-size:.82rem; }
+.here-panel .ver { font-size:.82rem; color:var(--muted); padding:.2rem .45rem .2rem 0;
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; white-space:nowrap; }
+.demo pre, .demo pre code {
+  white-space:pre-wrap; overflow-wrap:anywhere; word-break:break-word; }
+.demo > .demo-body { overflow-x:visible; }
+.plink {
+  margin-left: .4em; font-weight: 400; text-decoration: none;
+  color: var(--muted, #888); opacity: 0;
+}
+h3:hover > .plink, h4:hover > .plink,
+h3 > .plink:focus, h4 > .plink:focus { opacity: 1; }
+@media (hover: none) { .plink { opacity: .45; } }
+.searchbox { margin:.6em 0 0; }
+.searchbox input[type=search] {
+  width: 100%; padding: .45em .6em; font: inherit;
+  border: 1px solid var(--line-strong);
+  background: var(--bg); color: var(--fg);
+}
+.search-hint { color: var(--muted, #777); font-size: .85em; margin:.3em 0 0; }
+.search-results { list-style: none; padding: 0; margin: .5em 0 0; }
+.search-results li { margin: .15em 0; }
+.search-results .where { color: var(--muted, #777); font-size: .85em; margin-left: .4em; }
+@media (max-width: 900px), (orientation: portrait) {
+  :root:not([data-layout="desktop"]) .bar .place .cur { display:none; }
+  :root:not([data-layout="desktop"]) .bar .back,
+  :root:not([data-layout="desktop"]) .bar .bar-nav .nb { min-height:40px; padding:0 .5rem; }
+}
+@media (max-width: 480px) {
+  :root:not([data-layout="desktop"]) .bar .bar-nav .prev .lbl,
+  :root:not([data-layout="desktop"]) .bar .bar-nav .next .lbl { display:none; }
+  :root:not([data-layout="desktop"]) .bar .bar-nav .nb { min-width:44px; justify-content:center; }
+  :root:not([data-layout="desktop"]) .bar { gap:.2rem; }
+}
+:root[data-layout="mobile"] .bar .place .cur { display:none; }
+:root[data-layout="mobile"] .bar .back, :root[data-layout="mobile"] .bar .bar-nav .nb { min-height:40px; padding:0 .5rem; }
+:root[data-layout="mobile"] main .wrap { max-width:34rem; }
+@media (pointer: coarse), (max-width: 900px) {
+  .bar .menu-btn { min-width:44px; min-height:44px; }
+  .tool, .segb { min-height:38px; }
+}
+@media print { .bar, .here-panel { display:none; } }
+
+body { font-family:"Doc Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Doc Sans","Noto Sans CJK KR","Noto Sans KR",system-ui,sans-serif; }
+pre,code,kbd { font-family:"Doc Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+</style>
+<script>(function(){try{var L=localStorage,o='pcb-read';if(o&&o!=='doc-read'&&L.getItem(o)!==null&&L.getItem('doc-read')===null){var v=JSON.parse(L.getItem(o)||'{}');delete v.width;L.setItem('doc-read',JSON.stringify(v));L.removeItem(o);}var s=JSON.parse(L.getItem('doc-read')||'{}');var r=document.documentElement;if(s.theme&&s.theme!=='auto')r.setAttribute('data-theme',s.theme);if(s.fg)r.style.setProperty('--fg',s.fg);if(s.bg)r.style.setProperty('--bg',s.bg);if(s.link)r.style.setProperty('--link',s.link);if(s.width==='fit')r.setAttribute('data-measure','fit');if(s.layout==='desktop'||s.layout==='mobile')r.setAttribute('data-layout',s.layout);if(s.layout==='desktop'){var m=document.querySelector('meta[name=viewport]');if(m)m.setAttribute('content','width=1100');}}catch(e){}})();</script></head>
+<body>
+<a class="skip" href="#content">본문으로 건너뛰기</a>
+<div class="bar"><button class="menu-btn" id="set-open" type="button" aria-expanded="false" aria-controls="here-panel" aria-label="메뉴" title="메뉴">☰</button><a class="back" href="index.html" title="뒤로">← <span class="lbl">뒤로</span></a><span class="place"><strong><a href="index.html">Proven C Book</a></strong><span class="cur"> › 19장</span></span><span class="bar-nav"><a class="nb prev" href="ch18.html">‹ <span class="lbl">이전</span></a><a class="nb toc" href="index.html"><span class="lbl">목차</span></a><a class="nb next" href="ex03.html"><span class="lbl">다음</span> ›</a></span></div><div id="here-panel" class="here-panel" hidden><div class="setbox" id="setbox"><div class="setrow"><span class="setlbl">언어</span><span class="seg"><a class="segb" href="../en/ch19.html">English</a></span></div><div class="setrow"><span class="setlbl">본문 폭</span><span class="seg" id="s-width"><button type="button" class="segb" data-width="960">960</button><button type="button" class="segb" data-width="fit">창에 맞춤</button></span></div><div class="setrow"><span class="setlbl">배치</span><span class="seg" id="s-layout"><button type="button" class="segb" data-layout="auto">자동</button><button type="button" class="segb" data-layout="desktop">PC</button><button type="button" class="segb" data-layout="mobile">모바일</button></span></div><div class="setrow"><span class="setlbl">테마</span><span class="seg"><button type="button" class="segb" data-theme="auto">시스템</button><button type="button" class="segb" data-theme="light">밝게</button><button type="button" class="segb" data-theme="dark">어둡게</button></span></div><div class="setrow"><span class="setlbl">색</span><label class="col"><span>글자</span><input type="color" id="s-fg"></label><label class="col"><span>배경</span><input type="color" id="s-bg"></label><label class="col"><span>링크</span><input type="color" id="s-link"></label></div><p class="setnote">설정은 이 브라우저에만 저장된다.</p></div><div class="tools"><span class="ver">v0.110.2</span><a class="tool" href="toc.html">▤ 상세 차례</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book/releases/download/v0.110.2/proven_c_book-v0.110.2-ko.pdf">⤓ PDF</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book" title="이 책의 GitHub 저장소">Git</a><a class="tool" href="https://rubidus-api.github.io/" title="rubidus-api.github.io --- 공개된 모든 프로젝트">⌂ 전체 사이트</a><a class="tool" href="https://github.com/rubidus-api" title="github.com/rubidus-api --- 모든 저장소">≡ 저장소 목록</a></div><div class="here-head"><strong>이 장의 차례</strong></div><div class="here-body"><a class="lv3" href="#s19-1"><span class="tf-no">19.1</span>세상의 큰 셋 — GCC, Clang/LLVM, MSVC</a><a class="lv3" href="#s19-2"><span class="tf-no">19.2</span>성능을 파는 컴파일러들 — 벤더 컴파일러</a><a class="lv3" href="#s19-3"><span class="tf-no">19.3</span>임베디드 — 뒤에서 따로 볼 세계의 입구</a><a class="lv3" href="#s19-4"><span class="tf-no">19.4</span>곁다리 하나 — 윈도우의 단정한 대안, Pelles C</a><a class="lv4" href="#s19-4-1"><span class="tf-no">19.4.1</span>윈도 앱을 C로 짠다는 선택</a><a class="lv4" href="#s19-4-2"><span class="tf-no">19.4.2</span>한 묶음에 들어 있는 것 — 자원 편집기와 대화 상자 디자이너</a><a class="lv3" href="#s19-5"><span class="tf-no">19.5</span>그 밖에, 그리고 은퇴한 이름들</a><a class="lv3" href="#s19-6"><span class="tf-no">19.6</span>컴파일러별 공식 자료가 있는 곳</a></div></div>
+<main id="content"><div class="wrap">
+<h2>19 컴파일러의 지형 — 현역 C 컴파일러들</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>17장 일반적인 컴파일 과정 · 번역 과정</div><div>18장 개발환경 구축 · 도구를 갖추는 일</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>17장에서 컴파일이 전처리·번역·어셈블·링크의 네 걸음이고, 18장에서는 그 걸음을 대신 밟아 주는 도구로 gcc나 clang을 깔았다. 그러면 컴파일러가 다르면 무엇이 달라지는가 — 같은 표준 C인데?</p><div class="qa-a"><p><span class="dev-label">답.</span> 세 가지가 달라진다. 첫째, <strong>만들어 내는 기계어의 품질</strong>(속도와 크기)이다. 둘째, <strong>어떤 기계를 겨냥할 수 있는가</strong> — 세상의 CPU 중 gcc나 clang이 아예 모르는 것들이 있고, 그 자리는 그 칩을 만든 회사의 컴파일러가 채운다. 셋째, <strong>표준의 어느 판까지 지원하는가</strong>와 <strong>진단(경고)의 성격</strong>이다. 표준이 같아도 도구는 여럿이고, 각자 잘하는 자리가 다르다 — 그 지형을 그리는 것이 이 장이다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">도구를 갖춘 직후가 「그런데 다른 컴파일러도 있나」를 묻기 가장 좋은 때다. 더 일찍 놓으면 이름들의 나열일 뿐이고, 더 늦게 놓으면 이미 한 컴파일러에 굳은 뒤다. 여기서 지형을 한 번 그려 두면, 뒤에서 만날 「구현 정의」라는 말이 추상이 아니라 <strong>이 이름들 사이의 차이</strong>로 읽힌다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body"><span id="idx-entry-68"></span>18장에서 깐 gcc·clang 말고 세상에 어떤 C 컴파일러가 있는지, 그리고 각각이 어디에 쓰이는지 지형을 그린다. 데스크톱과 서버의 큰 셋, 성능을 파는 벤더 컴파일러들, 120장에서 자세히 볼 임베디드 세계의 입구, 그리고 곁다리로 윈도우의 작고 단정한 대안(Pelles C)까지. <strong>지금 현역인 것만</strong> 싣는다 — 은퇴한 이름과 은퇴 중인 이름도 함께 밝힌다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>하나만 골라 배워도 되는가?</li><li>그러면 이 책의 예제를 Pelles C로 따라가도 되는가?</li><li>컴파일러를 고르는 실무의 기준을 한 줄로 요약하면?</li></ol></div></div><div></div><p>이 장은 도구의 세계를 그리는 자리라 낯선 줄임말이 여럿 나온다. 먼저 풀어 둔다 — 외울 것은 없고, 뒤에서 만나면 여기로 돌아오면 된다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th>줄임말</th><th>원문</th><th>무엇인가</th></tr><tr><td><strong>API</strong></td><td>application programming interface</td><td>프로그램이 다른 프로그램에게 일을 시키는 창구 — 함수와 자료형의 목록이다</td></tr><tr><td><strong>SDK</strong></td><td>software development kit</td><td>어떤 기계나 플랫폼용으로 만들 때 필요한 도구·헤더·라이브러리를 한 벌로 묶은 것</td></tr><tr><td><strong>IDE</strong></td><td>integrated development environment</td><td>편집기·빌드·디버거를 한 창에 모아 놓은 프로그램</td></tr><tr><td><strong>UI</strong> · <strong>GUI</strong></td><td>user interface · graphical user interface</td><td>사람이 프로그램과 주고받는 면. 앞에 G 가 붙으면 창과 버튼이 있는 쪽이다</td></tr><tr><td><strong>CI</strong></td><td>continuous integration</td><td>코드를 올릴 때마다 서버가 자동으로 빌드하고 시험하는 관행</td></tr><tr><td><strong>SIMD</strong></td><td>single instruction, multiple data</td><td>한 명령으로 여러 값을 한꺼번에 계산하는 기계 명령(40장)</td></tr></table></div><span id="doc-float-73"></span><p class="float-caption">표 19.1 — 이 장에 나오는 줄임말</p></figure><h3 id="s19-1">19.1 세상의 큰 셋 — GCC, Clang/LLVM, MSVC<a class="plink" href="#s19-1" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>오늘날 데스크톱과 서버 C의 대부분은 이 셋 위에서 돈다.</p><p><strong>GCC</strong>(GNU Compiler Collection). 1987년부터 이어져 온 자유 소프트웨어 컴파일러이고, 리눅스 세계의 기본값이다. 겨냥할 수 있는 CPU가 압도적으로 많다. x86·Arm·RISC-V는 물론이고 AVR, MSP430, SuperH, PowerPC 같은 임베디드 칩까지 하나의 계보로 덮는다. 이것이 GCC의 가장 큰 강점이다. 임베디드 벤더들이 자기 도구의 속을 gcc로 채우는 일이 흔한 이유다(120장).</p><p><strong>Clang/LLVM</strong>. 2000년대에 나온 후발 주자로, 컴파일러를 <strong>부품으로 쓸 수 있게</strong> 설계한 LLVM 기반이다. 진단 메시지가 친절하다는 평판으로 자리를 잡았고, 오늘날에는 그 부품성 덕에 생태계 전체가 그 위에 섰다 — 정적 분석기 (<code>clang-tidy</code>), 서식 도구(<code>clang-format</code>), 편집기의 자동완성 서버(<code>clangd</code>), 그리고 여러 벤더의 새 컴파일러가 LLVM에서 갈라져 나왔다. macOS의 기본 컴파일러이기도 하다.</p><p><strong>MSVC</strong>(Microsoft Visual C++). 윈도우의 표준 도구다. 이름은 C++이지만 C도 컴파일하며, 오랫동안 C99조차 미완이라는 평을 들었으나 근래에는 C11·C17을 지원하고 C23으로 나아가는 중이다. 윈도우 API와 가장 잘 맞물리고, 그것이 MSVC의 존재 이유다.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 하나만 골라 배워도 되는가?</p></div><div class="dev qa-a"><p><span class="dev-label">답.</span> 배우는 것은 하나로 시작하되, <strong>가끔 다른 것으로도 컴파일해 보는</strong> 습관을 권한다. 컴파일러마다 잡아 주는 실수가 다르기 때문이다 — 한쪽이 지나친 코드를 다른 쪽이 경고로 잡는 일이 흔하다. 이 책의 예제도 그래서 두 컴파일러로 교차 검증한다(머리말). 무료이고 설치가 쉬우니, 리눅스·macOS 라면 gcc와 clang을, 윈도우라면 MSVC와 clang을 함께 두는 것이 좋다.</p></div></div><h3 id="s19-2">19.2 성능을 파는 컴파일러들 — 벤더 컴파일러<a class="plink" href="#s19-2" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>같은 소스라도 자기 회사 CPU에서 더 빨리 돌게 만들어 주는 것을 파는 컴파일러 들이 있다. 대형 계산(HPC)과 서버 쪽에서 주로 만난다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>이름</strong></th><th><strong>누가</strong></th><th><strong>지금 상태</strong></th></tr><tr><td><code>icx</code> (oneAPI DPC++/C++)</td><td>인텔</td><td>현역. LLVM 기반</td></tr><tr><td><code>icc</code> (C++ Compiler Classic)</td><td>인텔</td><td><strong>은퇴</strong> — oneAPI 2024.0에서 제거</td></tr><tr><td>AOCC</td><td>AMD</td><td>현역. LLVM 기반</td></tr><tr><td>NVIDIA HPC SDK (<code>nvc</code>)</td><td>엔비디아</td><td>현역. GPU 가속 코드와 함께</td></tr><tr><td>IBM Open XL C/C++</td><td>IBM</td><td>현역(AIX·z/OS). LLVM 기반으로 갈아탐</td></tr><tr><td>Cray/HPE CCE</td><td>HPE</td><td>현역(슈퍼컴퓨터)</td></tr></table></div><span id="doc-float-74"></span><p class="float-caption">표 19.2 — 벤더 성능 컴파일러의 지금</p></figure><p>표의 여러 줄에 흐름 하나가 보인다 — <strong>LLVM으로 모이는 것</strong>이다. 자기만의 컴파일러를 처음부터 유지하는 비용이 너무 커서, 앞단(문법 해석)과 최적화의 공통부는 LLVM에서 가져오고 자기 칩에 맞는 뒷단만 붙이는 방식이 흔해졌다. 인텔의 고전 <code>icc</code>가 물러나고 LLVM 기반 <code>icx</code>가 그 자리를 이은 것이 이 흐름의 가장 상징적인 장면이다.</p><div class="dev misconception"><p class="dev-label">흔한 오해. <strong><span id="idx-entry-69"></span>“인텔 컴파일러(icc)를 쓰면 코드가 빨라진다더라”</strong></p><div class="dev-body">오래 회자된 말이지만 두 겹으로 낡았다. 첫째, <strong>그 <code>icc</code>는 이제 없다.</strong> 인텔은 고전 컴파일러를 폐기 예고한 뒤 oneAPI 2024.0에서 제거했고, 지금 받는 것은 LLVM 기반의 <code>icx</code>다. 둘째, 격차 자체가 줄었다. 예전에는 인텔 컴파일러의 자동 벡터화가 크게 앞선 시기가 있었지만, 지금은 GCC와 Clang도 같은 일을 잘한다. <strong>컴파일러를 바꿔서 얻는 몇 %</strong>보다, 12장에서 본 기억의 사다리에 맞게 자료를 배치해 얻는 몇 배가 훨씬 크다는 사실은 변하지 않았다.</div></div><h3 id="s19-3">19.3 임베디드 — 뒤에서 따로 볼 세계의 입구<a class="plink" href="#s19-3" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>C 컴파일러의 가짓수로 보면 임베디드 쪽이 유난히 붐빈다. 칩을 만드는 회사마다 자기 컴파일러가 있고, 안전 인증(자동차·항공·의료)이 걸린 자리에는 그 인증을 함께 파는 전문 회사들이 있다. IAR, Arm의 Keil 계열, TI, 마이크로칩, 르네사스, 그린힐스, 윈드리버 — 그리고 8비트 칩을 위한 자유 소프트웨어 SDCC까지. 이 지형은 도구 전체(디버그 프로브, 온칩 디버깅, 정적 분석)와 함께 보아야 뜻이 서므로 책의 끝에서 따로 다룬다(120장).</p><h3 id="s19-4">19.4 곁다리 하나 — 윈도우의 단정한 대안, Pelles C<a class="plink" href="#s19-4" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>지금까지의 이름들이 “많이 쓰이는 것”이었다면, 이 절은 조금 다르다. 시장 점유로 보면 큰 자리를 차지하지 않지만 성격이 뚜렷해서 소개할 만한 도구다.</p><p><strong>Pelles C</strong>는 스웨덴의 펠레 오리니우스(Pelle Orinius)가 혼자 이어 온 윈도우 전용 프리웨어다. 편집기·컴파일러·어셈블러·링커·자원 편집기·디버거·설치 파일 생성기까지 한 묶음으로 들어 있고, 다운로드 하나로 끝난다. 이름은 만든 사람의 이름에서 왔다.</p><p>주목할 점은 <strong>표준 지원이 성실하다</strong>는 것이다. 이 책을 쓰는 시점의 최신판 (14.50, 2026년 7월)이 C99·C11·C17·C23을 지원한다고 밝히고 있다. 규모가 훨씬 큰 도구들보다 새 표준을 빨리 따라간 시기도 있었다.</p><p>혈통도 재미있다. Pelles C는 맨땅에서 나온 것이 아니라 <strong>LCC</strong>(프레이저와 핸슨이 만든 작고 이식성 높은 교육용 C 컴파일러)를 크게 손본 물건이다. 위키백과에도 독립 문서가 아니라 「LCC (compiler)」 항목의 한 절로 실려 있고, 거기서 “C11·C17·C23 지원, amd64 지원, 인라인 전개 같은 최적화, 그리고 IDE를 더한 LCC의 대폭 개작판”이라고 설명한다. 자료를 찾을 때 이 사실을 알아 두면 헛수고를 던다 — <strong>“Pelles C” 위키백과 문서를 찾으면 나오지 않는다.</strong></p><p>받는 곳은 공식 홈페이지 <a href="https://pellesc.se"><code>pellesc.se</code></a>이고, 질문과 배포 소식은 별도의 포럼(<a href="https://forum.pellesc.de"><code>forum.pellesc.de</code></a>)에 모인다. 만든 사람이 그 포럼에서 직접 답해 온 지 오래다.</p><p>사용자들의 평가를 모으면 대체로 이렇게 갈린다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>자주 언급되는 장점</strong></th><th><strong>자주 언급되는 한계</strong></th></tr><tr><td>설치가 한 번에 끝나고 용량이 작다</td><td>윈도우 전용 — 이식할 코드에는 맞지 않는다</td></tr><tr><td>컴파일이 빠르다</td><td>C++ 지원은 사실상 없다(C 전용 도구로 보는 편이 옳다)</td></tr><tr><td>C 표준 준수가 좋고 최신 판을 잘 따라간다</td><td>큰 IDE(Visual Studio)만큼 기능이 많지는 않다</td></tr><tr><td>윈도우 API·자원 편집이 매끄럽다</td><td>사용자 층이 얇아 검색으로 나오는 자료가 적다</td></tr><tr><td>초보자에게 진입 장벽이 낮다</td><td>빌드 시스템·외부 도구와의 통합은 약하다</td></tr></table></div><span id="doc-float-75"></span><p class="float-caption">표 19.3 — Pelles C 를 두고 자주 오가는 말</p></figure><h4 id="s19-4-1">19.4.1 윈도 앱을 C로 짠다는 선택<a class="plink" href="#s19-4-1" aria-label="이 절의 주소" title="이 절의 주소">#</a></h4><div></div><p>Pelles C 가 특히 잘 맞는 쓰임새가 하나 더 있다. <strong>윈도 API(Win32)로 데스크톱 앱을 짤 때</strong> 특히 잘 맞는다 — 자원 편집기와 링커가 한 묶음이고, 만들어지는 것이 런타임 의존성 없는 실행 파일 하나이기 때문이다.</p><p>「지금 시대에 왜 C로 윈도 앱을 짜는가」라는 물음이 자연스럽다. 근거를 과장 없이 적으면 이렇다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Win32의 강점</strong></th><th><strong>그 대가</strong></th></tr><tr><td>윈도의 <strong>바탕</strong> API다 — 위에 얹힌 UI 스택들이 세대교체를 반복해도 이것은 남는다</td><td>코드가 길다. 창 하나를 띄우는 데도 정형화된 준비 코드가 필요하다</td></tr><tr><td>하위 호환이 유별나다 — 20년 전에 빌드한 실행 파일이 오늘도 도는 일이 흔하다</td><td>고해상도(DPI)·다크 모드·접근성 같은 현대적 요구를 직접 챙겨야 한다</td></tr><tr><td>런타임·프레임워크 설치가 필요 없다</td><td>새 UI 기능 일부는 WinRT/WinUI 쪽에만 있다</td></tr><tr><td>문서와 예제가 방대하고, 마이크로소프트가 계속 유지한다</td><td>화면 구성 도구(디자이너)의 도움이 약하다</td></tr></table></div><span id="doc-float-76"></span><p class="float-caption">표 19.4 — Win32 의 강점과 그 대가</p></figure><h4 id="s19-4-2">19.4.2 한 묶음에 들어 있는 것 — 자원 편집기와 대화 상자 디자이너<a class="plink" href="#s19-4-2" aria-label="이 절의 주소" title="이 절의 주소">#</a></h4><div></div><p>이 도구가 Win32 개발에 잘 맞는 진짜 이유는 <strong>편집기들</strong>에 있다. 공식 사이트가 밝히는 구성은 이렇다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>갈래</strong></th><th><strong>들어 있는 것</strong></th></tr><tr><td>빌드 도구</td><td>최적화 C 컴파일러, 매크로 어셈블러, 링커, 자원 컴파일러, 메시지 컴파일러, make, 라이브러리 관리자</td></tr><tr><td>IDE</td><td>프로젝트 관리, 디버거, <strong>프로파일러</strong>, 소스 편집기</td></tr><tr><td>자원 편집기</td><td><strong>대화 상자</strong>, 메뉴, 문자열 표, 액셀러레이터 표, 비트맵, 아이콘, 커서, 애니메이션 커서, AVI, 버전 정보, 매니페스트</td></tr><tr><td>배포</td><td>코드 서명 도구, 설치 프로그램 빌더</td></tr><tr><td>대상</td><td>x64·x86·ARM64. C99·C11·C17·C23, OpenMP 3.1, SSE~AVX-512와 NEON 일부</td></tr></table></div><span id="doc-float-77"></span><p class="float-caption">표 19.5 — Pelles C 툴체인에 들어 있는 것</p></figure><p>여기서 <strong>대화 상자 편집기</strong>가 이른바 GUI 디자이너다. 창에 버튼과 입력란을 끌어다 놓고 배치를 정하면 <code>.rc</code> 자원 스크립트로 저장되고, 자원 컴파일러가 그것을 실행 파일 안에 넣는다. 코드에서는 <code>DialogBox</code>나 <code>CreateDialog</code>로 그 대화 상자를 띄우고, 컨트롤은 번호(ID)로 찾는다 — Win32의 오래된 작업 방식 그대로다.</p><div class="dev realcase"><p class="dev-label">실제 사례.<span style="white-space: pre-wrap">&#x20;&#x20;</span>Visual C++ 6.0 이 남긴 기대, 그리고 지금</p><div class="dev-body"><p>1990년대 후반 윈도 개발의 표준 도구는 <strong>Visual C++ 6.0</strong>(1998)이었다. 그 시절의 강점이 정확히 이것이었다 — 편집기·컴파일러·디버거·자원 편집기가 한 묶음이고, 대화 상자를 그려서 바로 띄울 수 있고, 설치가 끝나면 다른 준비가 필요 없었다. 「무겁지 않고, 켜면 바로 되는」 통합 환경의 기억이 여기서 왔다.</p><p>오늘의 Visual Studio 는 그때와 비교할 수 없이 강력하지만 대신 아주 커졌다. 설치 용량이 수십 기가바이트에 이르고, 처음 켜는 데 시간이 걸리며, C만 쓰는 사람에게는 대부분이 쓸 일 없는 기능이다.</p><p>Pelles C 가 사랑받는 자리가 그 사이다. <strong>VC6 이 주던 「작고 빠른 통합 환경」의 감각을 유지하면서, 컴파일러는 C23 까지 따라온</strong> 도구이기 때문이다. 다운로드가 하나이고, 자원 편집기가 붙어 있고, 만들어지는 것은 런타임 없는 실행 파일이다.</p><p>다만 공평하게 적어 두자. <strong>VC6 이 가졌고 Pelles C 에는 없는 것</strong>도 있다 — MFC 와 그 마법사(클래스 위저드)처럼 C++ 프레임워크에 얹힌 생산성 도구는 이쪽에 없다. 애초에 C 전용 도구이기 때문이다. 반대로 <strong>VC6 이 갖지 못한 것</strong>은 시대의 차이가 그대로다 — C99 이후의 표준, 64비트, ARM64, 최신 SIMD. VC6 은 오래전에 지원이 끝났고 지금 새 코드를 짜는 데 쓸 도구가 아니다.</p><p>정리하면, 「옛 VC6 처럼 가볍게 Win32 앱을 하나 만들고 싶다」는 요구에 오늘 가장 가까운 답이 이 도구다.</p></div></div><p><strong>마이크로소프트가 새 앱에 권하는 것은 Win32가 아니라 최신 스택(Windows App SDK·WinUI 3)이다</strong> — 이 점은 분명히 해 두자. 다만 윈도의 UI 스택은 MFC → WinForms → WPF → UWP → WinUI로 여러 번 갈아엎혔고, 그때마다 앞 세대는 「유지는 되지만 새로 권하지는 않는」 자리로 밀렸다. 그 변화 밖에서 바뀌지 않은 것이 Win32이고, <strong>오래 쓸 작은 도구</strong>라면 그 안정성이 곧 이득이다.</p><p>한 가지가 더 달라졌다. 표 19.4의 「코드가 길다」는 대가가 예전만큼 무겁지 않다 — <strong>정형화된 준비 코드는 지금 AI가 잘 만들어 내는 종류의 코드</strong>이기 때문이다. 창을 만들고 메시지 루프를 도는 껍데기는 어디서나 같은 모양이고, 사람이 손으로 외워 적을 이유가 줄었다. 다만 이 책의 태도는 여기서도 같다 — <strong>받아 온 코드도 읽을 줄 알아야 고칠 수 있다.</strong> 껍데기를 남이 써 주더라도, 그 안에서 도는 것이 무엇인지(메시지 루프, 핸들, 자원의 수명)는 결국 알아야 한다.</p><p>정리하면 이렇다 — Pelles C 는 <strong>윈도우에서 순수 C만, 가볍게 다루고 싶을 때</strong> 잘 맞는 도구다. 학습용으로, 작은 윈도우 유틸리티용으로, 그리고 “새 표준 문법이 실제로 되는지” 시험해 보는 용도로 쓰기 좋다. 반대로 여러 플랫폼으로 옮길 코드나, CMake 같은 빌드 도구와 CI에 얹을 프로젝트라면 앞의 큰 셋 쪽이 맞는다.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 그러면 이 책의 예제를 Pelles C로 따라가도 되는가?</p></div><div class="dev qa-a"><p><span class="dev-label">답.</span> 된다 — 이 책의 <strong>이식 가능한 예제</strong>는 표준 C만 쓰므로 C23을 지원하는 어느 컴파일러에서든 같은 결과가 나온다. POSIX·운영체제·컴파일러 확장 예제는 각 상자에서 필요한 환경을 따로 밝힌다. 다만 두 가지는 알아 두는 편이 좋다. 첫째, 이 책이 본문에서 쓰는 명령과 선택지 표기(<code>cc -Wall -Wextra …</code>)는 gcc·clang 계열의 것이라 Pelles C의 IDE에서는 대응되는 설정을 찾아야 한다. 둘째, 18장에서 본 새니타이저는 이쪽에 없다 — 검사 도구가 필요한 대목에서는 clang이나 리눅스 환경을 곁들이는 편이 좋다.</p></div></div><h3 id="s19-5">19.5 그 밖에, 그리고 은퇴한 이름들<a class="plink" href="#s19-5" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p><strong>작지만 살아 있는 것</strong> — <code>tcc</code>(Tiny C Compiler)는 몇백 KiB짜리 초소형 컴파일러로, C 소스를 즉석에서 컴파일해 바로 실행하는 용도로 여전히 쓰인다. <code>cproc</code>·<code>chibicc</code> 같은 작은 컴파일러들은 “컴파일러를 배우는 교재”로서 값이 있다. 실무의 주력은 아니다.</p><p><strong>이름은 유명하지만 이제 현역이 아닌 것</strong> — 오래된 교재나 인터넷 글에서 이 이름들을 만나면 <strong>시대를 감안해 읽어야 한다.</strong></p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>이름</strong></th><th><strong>사정</strong></th></tr><tr><td>Borland/Turbo C</td><td>1990년대 윈도우·DOS 시절의 강자. 그 시절 관행(<code>conio.h</code>, <code>void main()</code>)은 오늘의 표준 C가 아니다</td></tr><tr><td>왓콤(Watcom)</td><td>DOS·게임 개발의 강자였다. 오픈 소스판(Open Watcom)이 남아 있으나 사실상 정체</td></tr><tr><td>인텔 <code>icc</code></td><td>oneAPI 2024.0 에서 제거. 후계는 <code>icx</code></td></tr><tr><td>Dev-C++</td><td>블러드셰드(2005 무렵 중단) → 오웰 포크 → 2020년 엠바카데로 포크로 이어졌으나, 갱신이 매우 뜸하다</td></tr><tr><td>TDM-GCC</td><td>윈도우용 GCC 배포판. Dev-C++ 이 오래 함께 썼지만 판올림이 멈춰, 지금은 MSYS2/MinGW-w64 나 LLVM 쪽을 쓴다</td></tr></table></div><span id="doc-float-78"></span><p class="float-caption">표 19.6 — 컴파일러 이름에 얽힌 사정</p></figure><p>특히 <strong>Dev-C++ 과 TDM-GCC 조합</strong>은 한국의 학교와 학원에서 오래 쓰여 지금도 자료가 많이 남아 있다. 문제는 그 조합이 물고 있는 컴파일러가 몇 판 뒤처져 있다는 것이다 — C11 이후의 문법이나 C23 의 새 키워드(93장)가 통하지 않는 일이 흔하다. 지금 시작한다면 18장의 두 갈래(LLVM clang 또는 MSYS2 의 gcc)를 권한다. 옛 교재를 따라가다 “이 문법이 왜 안 되지?”라고 만나는 벽의 상당수가 도구의 나이 때문이다.</p><div class="dev realcase"><p class="dev-label">실제 사례.<span style="white-space: pre-wrap">&#x20;&#x20;</span>이 책이 두 컴파일러로 예제를 검증하는 이유</p><div class="dev-body">머리말에서 밝힌 대로 이 책의 예제는 gcc와 clang 양쪽으로 컴파일해 검증한다. 실제로 집필 중 여러 번, 한쪽만 잡아 준 실수가 있었다 — 서식 문자열의 잘림 가능성(<code>-Wformat-truncation</code>), <code>strncpy</code>의 잘림(<code>-Wstringop-truncation</code>), 부호 있는 값과 없는 값의 비교(<code>-Wsign-compare</code>), 배열 매개변수에 <code>sizeof</code>를 쓴 실수(<code>-Wsizeof-array-argument</code>) 같은 것들이다. 한 컴파일러의 침묵은 “이 코드가 옳다”는 증거가 아니다 — 그저 <strong>그 도구가 그 실수를 보는 눈을 갖고 있지 않다</strong>는 뜻일 수 있다. 도구를 하나 더 두는 것은 리뷰어를 하나 더 두는 것과 같다.</div></div><h3 id="s19-6">19.6 컴파일러별 공식 자료가 있는 곳<a class="plink" href="#s19-6" aria-label="이 절의 주소" title="이 절의 주소">#</a></h3><div></div><p>컴파일러 이야기는 판과 옵션에 매여 있어서, <strong>1차 자료를 직접 여는 습관</strong>이 특히 값지다. 이 책을 쓰는 시점에 살아 있는 주소를 모아 둔다(도메인만 적는다 — 경로는 바뀌어도 도메인은 오래간다).</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>무엇</strong></th><th><strong>공식 자료</strong></th><th><strong>영어 위키백과 항목</strong></th></tr><tr><td>GCC</td><td><a href="https://gcc.gnu.org"><code>gcc.gnu.org</code></a> — 매뉴얼·옵션·릴리스 노트</td><td><code>GNU Compiler Collection</code></td></tr><tr><td>Clang / LLVM</td><td><a href="https://clang.llvm.org"><code>clang.llvm.org</code></a> (프런트엔드), <a href="https://llvm.org"><code>llvm.org</code></a> (전체)</td><td><code>Clang</code>, <code>LLVM</code></td></tr><tr><td>MSVC</td><td><a href="https://visualstudio.microsoft.com"><code>visualstudio.microsoft.com</code></a> (설치), <a href="https://learn.microsoft.com/cpp"><code>learn.microsoft.com/cpp</code></a> (문서)</td><td><code>Microsoft Visual C++</code></td></tr><tr><td>Pelles C</td><td><a href="https://pellesc.se"><code>pellesc.se</code></a> (홈), <a href="https://forum.pellesc.de"><code>forum.pellesc.de</code></a> (포럼)</td><td>단독 문서 없음 — <code>LCC (compiler)</code> 항목의 절</td></tr><tr><td>tcc</td><td><a href="https://bellard.org/tcc"><code>bellard.org/tcc</code></a></td><td><code>Tiny C Compiler</code></td></tr></table></div><span id="doc-float-79"></span><p class="float-caption">표 19.7 — 컴파일러별 공식 자료</p></figure><p>세 가지만 덧붙인다. <strong>첫째, 옵션의 정확한 뜻은 그 컴파일러의 매뉴얼에만 있다</strong> — 18장에서 켜 둔 경고들이 무엇을 잡는지도 거기 적혀 있다. <strong>둘째, 릴리스 노트가 「이번 판에서 어느 표준 기능이 들어왔는가」를 알려 준다</strong> — C23 기능의 지원 현황을 확인하는 가장 빠른 길이다. <strong>셋째, 위키백과는 역사와 계보를 훑기에 좋고, 정확한 동작의 근거로는 공식 문서를 쓴다.</strong></p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 컴파일러를 고르는 실무의 기준을 한 줄로 요약하면?</p></div><div class="dev qa-a"><p><span class="dev-label">답.</span> <strong>대상 기계가 먼저 고르고, 나머지를 사람이 고른다.</strong> 겨냥할 칩이 정해지면 선택지는 대개 두어 개로 줄고(그 칩을 아는 컴파일러만 남으므로), 그 안에서 인증·가격·진단 품질·팀의 익숙함으로 정한다. 배우는 단계에서는 반대다 — 아무 데서나 도는 표준 C를 쓰고, 흔한 도구 둘로 검증하는 것으로 충분하다.</p></div></div><div class="dev recap"><p class="dev-label">복습 정리</p><div class="dev-body"><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>이름</strong></th><th><strong>한 줄</strong></th></tr><tr><td>GCC</td><td>자유 소프트웨어. 겨냥하는 칩이 가장 많다</td></tr><tr><td>Clang/LLVM</td><td>부품으로 쓰이는 컴파일러. 도구 생태계의 바탕</td></tr><tr><td>MSVC</td><td>윈도우의 표준. C11·C17 지원, C23 진행 중</td></tr><tr><td><code>icx</code>·AOCC·<code>nvc</code>·Open XL</td><td>벤더의 성능 컴파일러. 대부분 LLVM 기반</td></tr><tr><td>임베디드 계열</td><td>120장</td></tr><tr><td>Pelles C</td><td>윈도우 전용 프리웨어 한 묶음. C23까지 지원. 곁다리</td></tr><tr><td>은퇴한 이름</td><td><code>icc</code>, Turbo C, 왓콤, Dev-C++, TDM-GCC</td></tr></table></div><span id="doc-float-80"></span><p class="float-caption">표 19.8 — 이 장의 컴파일러 한 줄 정리</p></figure></div></div><p>마지막으로, 학습자에게 한마디. <strong>이 장에 나온 현역 컴파일러 중 무엇으로 공부해도 상관없다.</strong> 이 책의 <strong>이식 가능한 예제</strong>는 표준 C만 쓰므로 gcc·clang·MSVC·Pelles C 어디서든 같은 결과가 나온다. POSIX·운영체제·컴파일러 확장 예제는 필요한 환경을 각 상자에서 따로 밝힌다. 손에 익은 것, 설치가 편한 것, 학교나 회사가 쓰는 것 — 아무 기준으로 골라도 배우는 내용은 달라지지 않는다.</p><p>다만 하나는 권하지 않는다. <strong>Dev-C++ 은 설치가 간편해 지금도 널리 쓰이지만, 물고 있는 컴파일러가 너무 오래됐다.</strong> C11 이후의 문법이나 C23 의 새 키워드가 통하지 않아, “책대로 썼는데 왜 안 되지?”라는 벽을 만들기 쉽다. 같은 이유로 옛 교재의 Turbo C 화면도 따라 하지 않는 편이 좋다. 설치의 간편함이라면 18장의 두 갈래(LLVM clang 한 줄 설치, 또는 MSYS2 의 gcc)도 충분히 간편하고, 그쪽은 최신 표준과 검사 도구가 함께 온다.</p><p>컴파일러의 지형을 폈다. 이 지형의 가장 넓은 구역 — 임베디드의 컴파일러들과 그 곁의 연장들 — 은 도구 전체를 함께 보아야 뜻이 서므로 책의 끝에서 한 장을 따로 들여 다룬다(120장).</p><p>제3부가 끝났다. 첫 프로그램을 읽었고(16장), 그것이 실행 파일이 되는 릴레이를 보았고(17장), 도구를 갖췄고(18장), 세상의 컴파일러 지형을 폈다(19장). 다음 부부터 본격적인 언어 공부다 — 새 문법을 나열하는 것이 아니라, 16장의 헬로 월드 <strong>한 편을 완전히 읽어 내는 것</strong>이 제4부의 목표다.</p>
+<div class="nav"><a href="ch18.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ex03.html">다음 →</a></div>
+</div></main>
+<script>(function(){var b=document.querySelector('.menu-btn'),p=document.getElementById('here-panel');function open(o){if(!p)return;p.hidden=!o;if(b)b.setAttribute('aria-expanded',o);}if(b)b.addEventListener('click',function(){open(p.hidden);});if(p)p.addEventListener('click',function(e){if(e.target.tagName==='A'&&e.target.getAttribute('href').charAt(0)==='#')open(false);});document.addEventListener('keydown',function(e){if(e.key==='Escape'&&p&&!p.hidden){open(false);if(b)b.focus();}});document.addEventListener('click',function(e){if(p&&!p.hidden&&!p.contains(e.target)&&!(b&&b.contains(e.target)))open(false);});var bk=document.querySelector('.bar .back');if(bk)bk.addEventListener('click',function(e){if(history.length>1&&document.referrer){e.preventDefault();history.back();}});var box=document.getElementById('setbox');if(!box)return;var r=document.documentElement;function load(){try{return JSON.parse(localStorage.getItem('doc-read')||'{}');}catch(e){return {};}}function save(s){try{localStorage.setItem('doc-read',JSON.stringify(s));}catch(e){}}function css(n){return getComputedStyle(r).getPropertyValue(n).trim();}function paint(){var s=load();var t=s.theme||'auto',w=s.width==='fit'?'fit':'960';[].forEach.call(box.querySelectorAll('.segb[data-theme]'),function(x){x.setAttribute('aria-pressed',x.dataset.theme===t);});[].forEach.call(box.querySelectorAll('.segb[data-width]'),function(x){x.setAttribute('aria-pressed',x.dataset.width===w);});var ly=s.layout||'auto';[].forEach.call(box.querySelectorAll('.segb[data-layout]'),function(x){x.setAttribute('aria-pressed',x.dataset.layout===ly);});document.getElementById('s-fg').value=s.fg||hex(css('--fg'));document.getElementById('s-bg').value=s.bg||hex(css('--bg'));document.getElementById('s-link').value=s.link||hex(css('--link'));}function hex(v){var m=v.match(/^rgba?\((\d+)[ ,]+(\d+)[ ,]+(\d+)/);if(!m)return v.charAt(0)==='#'?v:'#000000';return '#'+[1,2,3].map(function(i){return ('0'+parseInt(m[i],10).toString(16)).slice(-2);}).join('');}paint();[].forEach.call(box.querySelectorAll('.segb[data-width]'),function(x){x.addEventListener('click',function(){var s=load();if(x.dataset.width==='fit'){s.width='fit';r.setAttribute('data-measure','fit');}else{delete s.width;r.removeAttribute('data-measure');}save(s);setTimeout(paint,0);});});[].forEach.call(box.querySelectorAll('.segb[data-layout]'),function(x){x.addEventListener('click',function(){var s=load(),v=x.dataset.layout;if(v==='auto'){delete s.layout;r.removeAttribute('data-layout');}else{s.layout=v;r.setAttribute('data-layout',v);}save(s);var m=document.querySelector('meta[name=viewport]');var want=v==='desktop'?'width=1100':'width=device-width, initial-scale=1';if(m&&m.getAttribute('content')!==want)location.reload();else setTimeout(paint,0);});});[].forEach.call(box.querySelectorAll('.segb[data-theme]'),function(x){x.addEventListener('click',function(){var s=load();s.theme=x.dataset.theme;delete s.fg;delete s.bg;delete s.link;save(s);['--fg','--bg','--link'].forEach(function(n){r.style.removeProperty(n);});if(s.theme==='auto')r.removeAttribute('data-theme');else r.setAttribute('data-theme',s.theme);setTimeout(paint,0);});});[['s-fg','--fg','fg'],['s-bg','--bg','bg'],['s-link','--link','link']].forEach(function(a){document.getElementById(a[0]).addEventListener('input',function(){var s=load();s[a[2]]=this.value;save(s);r.style.setProperty(a[1],this.value);});});})();</script><script>
+(function(){
+  var q=document.getElementById('q'), out=document.getElementById('qr');
+  if(!q||!out) return;
+  var data=null, NONE="\ucc3e\uc740 \uac83\uc774 \uc5c6\ub2e4";
+  function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+  function run(){
+    var v=q.value.trim().toLowerCase();
+    out.innerHTML='';
+    if(!v||!data) return;
+    var hits=[];
+    for(var i=0;i<data.length && hits.length<40;i++){
+      if(data[i][0].toLowerCase().indexOf(v)>=0) hits.push(data[i]);
+    }
+    if(!hits.length){ out.innerHTML='<li>'+NONE+'</li>'; return; }
+    out.innerHTML=hits.map(function(h){
+      return '<li><a href="'+h[1]+'">'+esc(h[0])+'</a>'+
+             (h[2]?'<span class="where">'+esc(h[2])+'</span>':'')+'</li>';
+    }).join('');
+  }
+  q.addEventListener('input',function(){
+    if(data){ run(); return; }
+    fetch('search-index.json').then(function(r){return r.json();})
+      .then(function(j){ data=j; run(); })
+      .catch(function(){ out.innerHTML='<li>'+NONE+'</li>'; });
+  });
+})();
+</script></body></html>

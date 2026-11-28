@@ -1,0 +1,508 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>38 The rules of pointers — alignment and provenance — Proven C Book</title><style>@font-face { font-family:"Doc Serif"; src:url("../fonts/serif.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-italic.woff2") format("woff2");
+  font-weight:400; font-style:italic; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-kr.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Serif"; src:url("../fonts/serif-kr-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans-kr.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Sans"; src:url("../fonts/sans-kr-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Mono"; src:url("../fonts/mono.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"Doc Mono"; src:url("../fonts/mono-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+:root { color-scheme: light dark; --bg:#fafaf8; --bg2:#f2f2f0; --bg3:#e6e6e3; --fg:#141414; --muted:#555555; --line:#c9c9c9; --line-strong:#8a8a8a; --accent:#1a4f8a; --accent-fg:#ffffff; --accent2:#96530f; --honey:#f2b04a; --honey-fg:#2b1d00; --honey-text:#855400; --honey-soft:#fbebc6; --danger:#9b1b30; --ok:#1d6e37; --warn:#855400; --select:#d4dde8;
+  --rule:var(--line); --box-bg:var(--bg2); --code-bg:var(--bg2); --box-rule:var(--line); --link:var(--accent);
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg:#121314; --bg2:#1c1e20; --bg3:#2a2c2f; --fg:#e8e8e8; --muted:#a6a6a6; --line:#3a3d40; --line-strong:#75787c; --accent:#8ab4e8; --accent-fg:#121314; --accent2:#d4883b; --honey:#f2b04a; --honey-fg:#121314; --honey-text:#f2b04a; --honey-soft:#3b311e; --danger:#f07a8c; --ok:#7bcb95; --warn:#f2b04a; --select:#2f3d52;
+    --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+:root[data-theme="dark"] { color-scheme: dark; --bg:#121314; --bg2:#1c1e20; --bg3:#2a2c2f; --fg:#e8e8e8; --muted:#a6a6a6; --line:#3a3d40; --line-strong:#75787c; --accent:#8ab4e8; --accent-fg:#121314; --accent2:#d4883b; --honey:#f2b04a; --honey-fg:#121314; --honey-text:#f2b04a; --honey-soft:#3b311e; --danger:#f07a8c; --ok:#7bcb95; --warn:#f2b04a; --select:#2f3d52;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; }
+:root[data-theme="light"] { color-scheme: light; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Doc Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.here-head { display:flex; align-items:center; gap:.8rem; padding:.2rem 0 .5rem;
+  border-bottom:1px solid var(--rule,#ddd); margin-bottom:.5rem; }
+.here-head .sp { flex:1; }
+.here-all { margin-left:auto; font-size:.9rem; }
+.here-x { font:inherit; font-size:.9rem; cursor:pointer; background:none;
+  border:1px solid var(--line-strong); padding:.05rem .45rem;
+  color:inherit; }
+.here-body a, .tf-secs a { display:block; text-decoration:none; padding:.12rem 0;
+  line-height:1.45; }
+.here-body a:hover, .tf-secs a:hover { text-decoration:underline; }
+.here-body a.lv4, .tf-secs a.lv4 { padding-left:1.6rem; font-size:.94rem;
+  color:var(--muted,#555); }
+.tf-no { display:inline-block; min-width:3.2rem; color:var(--muted,#666);
+  font-variant-numeric:tabular-nums; }
+.toc-full .tf-ch { margin:.9rem 0 .15rem; font-weight:700; }
+.toc-full .tf-secs { margin:0 0 .5rem .2rem; border-left:2px solid var(--rule,#e2e2e2);
+  padding-left:.7rem; }
+.toc-full h4.toc-part { margin-top:1.8rem; }
+.toc a.toc-detail { font-weight:700; }
+@media print { .here-btn, .here-panel { display:none; } }
+.bar { position:sticky; top:0; z-index:20; display:flex; flex-wrap:nowrap; gap:.25rem; align-items:center;
+       min-height:44px; padding:0 clamp(.4rem,2vw,1.6rem); background:var(--bg2);
+       border-bottom:1px solid var(--line); font-size:.9rem;
+       font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--fg); text-decoration:none; } .bar a:hover { text-decoration:none; }
+.bar .sp { display:none; }
+main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
+.wrap { width:100%; }
+main .wrap { max-width:960px; margin-inline:auto; }
+:root[data-measure="fit"] main .wrap { max-width:none; margin:0; }
+h1,h2,h3,h4 { font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35;
+  padding-bottom:.18rem; border-bottom:1px solid var(--rule); }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem;
+     padding-bottom:.22rem; border-bottom:1.5px solid var(--fg); }
+p { margin:.9rem 0; } a { color:var(--link); }
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+.src-note { font-size: .86em; color: var(--muted, #666); }
+.src-note code { font-size: .95em; }
+sup.fnref { font-size: .72em; line-height: 0; vertical-align: super; }
+sup.fnref a { text-decoration: none; padding: 0 .1em; }
+sup.fnref a::before { content: "["; }
+sup.fnref a::after  { content: "]"; }
+.chapter-notes { margin: 3rem 0 1rem; padding-top: .9rem;
+                 border-top: 2px solid var(--rule, #333); }
+.chapter-notes h2 { font-size: 1.05rem; margin: 0 0 .6rem; }
+.chapter-notes ol { margin: 0; padding-left: 1.6em; }
+.chapter-notes li { font-size: .92em; margin: .35em 0; text-indent: 0; }
+.chapter-notes a.fnback { text-decoration: none; }
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
+pre,code,kbd { font-family:"Doc Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
+pre code { background:none; padding:0; }
+.tblwrap { overflow-x:auto; text-align:center; }
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.float-list { list-style:none; padding-left:0; }
+.float-list li { margin:.12rem 0; }
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"Doc Mono","D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"Doc Mono","D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"Doc Mono","D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+.dev { margin:1.15rem 0; padding:0; background:none; border:none; border-radius:0; }
+.dev > .dev-label { border-left:4px solid var(--fg);
+  padding:.1rem .8rem .25rem .8rem; margin:0 0 .34rem; }
+.dev > .dev-body { border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem .35rem .8rem; margin:0; }
+.dev > .dev-body > *:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child { margin-bottom:0; }
+.float-caption { text-align:center; font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+.dev.open { border:none; border-radius:0; background:none;
+  padding:0; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
+  text-indent:0; border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+.dev.open > .open-body { margin:0; padding:.35rem .8rem;
+  border-left:2px solid var(--box-rule); }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+.dev.open .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.06rem 0 .06rem .7rem; margin:.32rem 0 0; }
+.prereq .dev-label, .deepqa .dev-label, .why .dev-label,
+.organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+.qa-box { border:none; margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:0; background:none; }
+.qa-box .qa-q { border-left:4px solid var(--fg);
+  padding:.1rem .8rem .25rem .8rem; margin:0; }
+.qa-box .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem; margin:.34rem 0 0; }
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:0; }
+.dev.recap { border:none; background:none; padding:0; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
+  text-indent:0; border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > .dev-body > p, .dev.recap > .dev-body > div:not(.demo),
+.dev.recap > .dev-body > figure { margin:.3rem 0; padding:0; }
+.dev > .dev-body > .demo { margin:.7rem 0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:none; border-radius:0; background:none; padding:0; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem; text-indent:0;
+  border-left:4px solid var(--fg);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
+.dev > .dev-body > figure, .dev > .open-body > p {
+  margin:.35rem 0; padding:0; }
+.bar .menu-btn { flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center;
+  min-width:38px; min-height:38px; padding:0; font:inherit; font-size:1.25rem; line-height:1;
+  color:var(--fg); background:none; border:0; cursor:pointer; text-decoration:none; }
+.bar .back, .bar .bar-nav .nb { flex:0 0 auto; display:inline-flex; align-items:center; gap:.3em;
+  min-height:32px; padding:0 .65rem; border:1px solid var(--line); background:var(--bg);
+  color:var(--fg); font-weight:600; white-space:nowrap; text-decoration:none; }
+.bar .menu-btn[aria-expanded="true"] { background:var(--bg3); }
+.bar .place { flex:1 1 auto; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
+  padding:0 .35rem; }
+.bar .place strong a { color:var(--honey-text); }
+.bar .place .cur { color:var(--fg); }
+.bar .bar-nav { flex:0 0 auto; display:flex; gap:.3rem; align-items:center; white-space:nowrap; }
+.bar .bar-nav .off { color:var(--muted); border-color:var(--line); opacity:.45; }
+.bar .back:hover, .bar .menu-btn:hover, .bar .bar-nav a.nb:hover, .bar .place a:hover { background:var(--bg3); }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+.dev.antipattern > .dev-label { border-left-style:solid; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.2rem; }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em;
+            padding-bottom:0; border-bottom:none; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
+.toc { columns:24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.toc > .toc-part:first-child, .toc > .toc-keep:first-child > .toc-part, .toc-full > .toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
+.toc-group { padding-left:.85rem; }
+.toc-keep, .toc a { break-inside:avoid; }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+code.style-name { font-family:"Doc Mono","D2Coding",ui-monospace,monospace;
+  font-size:.72em; color:var(--muted); background:var(--rule);
+  padding:.05em .35em; border-radius:3px; white-space:nowrap;
+  font-weight:400; letter-spacing:0; }
+.dev.open > .dev-label { padding-top:.42rem; padding-bottom:.42rem; }
+.dev.open > .open-body { padding-top:.4rem; padding-bottom:.4rem; }
+.dev.open > .open-body > p { margin:.6rem 0; }
+.dev > .dev-body { padding-top:.5rem; padding-bottom:.5rem; }
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
+.dev > .dev-body > figure { margin:.55rem 0; }
+main { line-height:1.85; }
+p { margin:1.15rem 0; }
+h2 { margin-top:2.4rem; }
+h3 { margin-top:2rem; }
+li { margin:.3rem 0; }
+h1, h2, h3, h4 { border-bottom-color:var(--box-rule) !important; }
+.toc { line-height:1.45; }
+.toc a { padding:.16rem 0; }
+.toc-part { margin:.85rem 0 .2rem; }
+.metalist { line-height:1.45; gap:.2rem 1.2rem; }
+.metalist dt, .metalist dd { margin:0; }
+.demo { border-color:var(--box-rule); }
+.demo > .demo-head { border-bottom-color:var(--box-rule); }
+.dev > .dev-label,
+.dev.open > .dev-label,
+.qa-box .qa-q,
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  border-left-color:var(--box-rule); }
+.dev > .dev-body,
+.dev > .open-body,
+.dev.open .qa-a,
+.qa-box .qa-a,
+.deepqa .qa-a { border-left-color:var(--box-rule); }
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div {
+  border-color:var(--box-rule); }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+.dev.open > .open-body,
+.dev.open > .qa-a,
+.dev.open .qa-a,
+.dev.deepqa .qa-a,
+.qa-box > .qa-a,
+.qa-box > .qa-q { border-left-color:var(--box-rule); }
+.bar .bar-toc { font-size:1.15em; line-height:1; text-decoration:none; }
+.dev, .dev-body, .open-body, .qa-box, .qa-q, .qa-a, .dev-label,
+.toc-full, .toc-full .tf-secs { line-height:inherit; font-size:1rem; }
+.dev > .dev-body > p, .dev > .open-body > p,
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:1.15rem 0; }
+.dev > .dev-body > *:first-child, .dev > .open-body > *:first-child,
+.qa-box .qa-q > p:first-child, .qa-box .qa-a > p:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child, .dev > .open-body > *:last-child,
+.qa-box .qa-q > p:last-child, .qa-box .qa-a > p:last-child { margin-bottom:0; }
+.dev > .dev-label, .dev.open > .dev-label { font-size:.98rem; line-height:1.4; }
+h1,h2,h3,h4 { padding-bottom:.34rem; }
+h1 { margin:.2rem 0 1.3rem; }
+h2 { padding-bottom:.42rem; margin-bottom:1.15rem; }
+h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
+.dev.open > .open-body > * { margin:.3rem 0; }
+.dev.open > .open-body > p { margin:.5rem 0; }
+.dev.open > .open-body > div { margin:.15rem 0; }
+.dev.open ul, .dev.open ol { margin:.3rem 0; }
+.dev.open li, .dev.open ol.qlist li { margin:0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open .qa-a > p { margin:.35rem 0; }
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div { border-color:var(--box-rule); }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+a:focus-visible, button:focus-visible, summary:focus-visible, input:focus-visible {
+  outline:2px solid var(--accent2); outline-offset:2px; }
+:target, h1, h2, h3, h4, [id] { scroll-margin-top:4.2rem; }
+.skip { position:absolute; left:-9999px; top:0; z-index:30;
+        background:var(--bg); color:var(--fg); border:1px solid var(--fg);
+        padding:.5rem .8rem; font-size:.9rem; text-decoration:none; }
+.skip:focus { left:.5rem; top:.5rem; }
+.here-panel { position:fixed; top:46px; left:clamp(.2rem,1vw,1rem); z-index:19;
+  width:min(32rem, calc(100vw - .4rem)); max-height:calc(100vh - 54px); overflow:auto;
+  padding:.7rem .9rem .9rem; border:1px solid var(--line); --k:var(--line-strong);
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; font-size:.9rem; line-height:1.4;
+  background:
+    linear-gradient(var(--k),var(--k)) left top / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) left top / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) right top / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) right top / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) left bottom / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) left bottom / 3px 8px no-repeat,
+    linear-gradient(var(--k),var(--k)) right bottom / 8px 3px no-repeat,
+    linear-gradient(var(--k),var(--k)) right bottom / 3px 8px no-repeat,
+    color-mix(in srgb, var(--bg) 97%, transparent); }
+.here-panel .tools { display:flex; flex-wrap:wrap; gap:.3rem .4rem; align-items:center;
+  margin-bottom:.6rem; }
+.tool, .segb { font:inherit; font-size:.88rem; color:var(--fg); background:none;
+  border:1px solid var(--line-strong); padding:0 .6rem; min-height:30px;
+  display:inline-flex; align-items:center; text-decoration:none; cursor:pointer; white-space:nowrap; }
+.tool:hover, .segb:hover, .nav a:hover, .here-panel .here-body a:hover { background:var(--bg3); }
+.segb[aria-pressed="true"] { background:var(--select); border-color:var(--accent); font-weight:700; }
+.tool, .segb, .bar a, .bar button, .nav a, .here-panel a { transition:background-color .08s; }
+@media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
+main a { text-decoration:underline; text-decoration-color:var(--box-rule);
+  text-underline-offset:2px; }
+main a:hover { background:var(--box-bg); text-decoration-color:var(--link); }
+main .toc a, main .toc-full a, main .here-body a { text-decoration:none; }
+main .toc a:hover, main .toc-full a:hover { background:var(--box-bg); text-decoration:underline; }
+.setbox { margin:0 0 .6rem; }
+.setrow { display:flex; flex-wrap:wrap; gap:.4rem .5rem; align-items:center; margin:.35rem 0; }
+.setlbl { min-width:4.2rem; font-size:.82rem; font-weight:700; }
+.seg { display:inline-flex; flex-wrap:wrap; gap:.25rem; }
+.col { display:inline-flex; align-items:center; gap:.3rem; }
+.col input[type=color] { width:2rem; height:1.4rem; padding:0; border:1px solid var(--line-strong);
+  background:none; cursor:pointer; }
+.setnote { margin:.5rem 0 0; font-size:.82rem; }
+.here-panel .ver { font-size:.82rem; color:var(--muted); padding:.2rem .45rem .2rem 0;
+  font-family:"Doc Sans","Noto Sans CJK KR",system-ui,sans-serif; white-space:nowrap; }
+.demo pre, .demo pre code {
+  white-space:pre-wrap; overflow-wrap:anywhere; word-break:break-word; }
+.demo > .demo-body { overflow-x:visible; }
+.plink {
+  margin-left: .4em; font-weight: 400; text-decoration: none;
+  color: var(--muted, #888); opacity: 0;
+}
+h3:hover > .plink, h4:hover > .plink,
+h3 > .plink:focus, h4 > .plink:focus { opacity: 1; }
+@media (hover: none) { .plink { opacity: .45; } }
+.searchbox { margin:.6em 0 0; }
+.searchbox input[type=search] {
+  width: 100%; padding: .45em .6em; font: inherit;
+  border: 1px solid var(--line-strong);
+  background: var(--bg); color: var(--fg);
+}
+.search-hint { color: var(--muted, #777); font-size: .85em; margin:.3em 0 0; }
+.search-results { list-style: none; padding: 0; margin: .5em 0 0; }
+.search-results li { margin: .15em 0; }
+.search-results .where { color: var(--muted, #777); font-size: .85em; margin-left: .4em; }
+@media (max-width: 900px), (orientation: portrait) {
+  :root:not([data-layout="desktop"]) .bar .place .cur { display:none; }
+  :root:not([data-layout="desktop"]) .bar .back,
+  :root:not([data-layout="desktop"]) .bar .bar-nav .nb { min-height:40px; padding:0 .5rem; }
+}
+@media (max-width: 480px) {
+  :root:not([data-layout="desktop"]) .bar .bar-nav .prev .lbl,
+  :root:not([data-layout="desktop"]) .bar .bar-nav .next .lbl { display:none; }
+  :root:not([data-layout="desktop"]) .bar .bar-nav .nb { min-width:44px; justify-content:center; }
+  :root:not([data-layout="desktop"]) .bar { gap:.2rem; }
+}
+:root[data-layout="mobile"] .bar .place .cur { display:none; }
+:root[data-layout="mobile"] .bar .back, :root[data-layout="mobile"] .bar .bar-nav .nb { min-height:40px; padding:0 .5rem; }
+:root[data-layout="mobile"] main .wrap { max-width:34rem; }
+@media (pointer: coarse), (max-width: 900px) {
+  .bar .menu-btn { min-width:44px; min-height:44px; }
+  .tool, .segb { min-height:38px; }
+}
+@media print { .bar, .here-panel { display:none; } }
+
+body { font-family:"Doc Serif","Noto Serif",Georgia,"Noto Serif CJK KR",serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans",system-ui,"Noto Sans CJK KR",sans-serif; }
+pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
+</style>
+<script>(function(){try{var L=localStorage,o='pcb-read';if(o&&o!=='doc-read'&&L.getItem(o)!==null&&L.getItem('doc-read')===null){var v=JSON.parse(L.getItem(o)||'{}');delete v.width;L.setItem('doc-read',JSON.stringify(v));L.removeItem(o);}var s=JSON.parse(L.getItem('doc-read')||'{}');var r=document.documentElement;if(s.theme&&s.theme!=='auto')r.setAttribute('data-theme',s.theme);if(s.fg)r.style.setProperty('--fg',s.fg);if(s.bg)r.style.setProperty('--bg',s.bg);if(s.link)r.style.setProperty('--link',s.link);if(s.width==='fit')r.setAttribute('data-measure','fit');if(s.layout==='desktop'||s.layout==='mobile')r.setAttribute('data-layout',s.layout);if(s.layout==='desktop'){var m=document.querySelector('meta[name=viewport]');if(m)m.setAttribute('content','width=1100');}}catch(e){}})();</script></head>
+<body>
+<a class="skip" href="#content">Skip to content</a>
+<div class="bar"><button class="menu-btn" id="set-open" type="button" aria-expanded="false" aria-controls="here-panel" aria-label="Menu" title="Menu">☰</button><a class="back" href="index.html" title="Back">← <span class="lbl">Back</span></a><span class="place"><strong><a href="index.html">Proven C Book</a></strong><span class="cur"> › ch. 38</span></span><span class="bar-nav"><a class="nb prev" href="ch37.html">‹ <span class="lbl">Prev</span></a><a class="nb toc" href="index.html"><span class="lbl">TOC</span></a><a class="nb next" href="ch39.html"><span class="lbl">Next</span> ›</a></span></div><div id="here-panel" class="here-panel" hidden><div class="setbox" id="setbox"><div class="setrow"><span class="setlbl">Language</span><span class="seg"><a class="segb" href="../ko/ch38.html">한국어</a></span></div><div class="setrow"><span class="setlbl">Text width</span><span class="seg" id="s-width"><button type="button" class="segb" data-width="960">960</button><button type="button" class="segb" data-width="fit">Fit the window</button></span></div><div class="setrow"><span class="setlbl">Layout</span><span class="seg" id="s-layout"><button type="button" class="segb" data-layout="auto">Auto</button><button type="button" class="segb" data-layout="desktop">PC</button><button type="button" class="segb" data-layout="mobile">Mobile</button></span></div><div class="setrow"><span class="setlbl">Theme</span><span class="seg"><button type="button" class="segb" data-theme="auto">System</button><button type="button" class="segb" data-theme="light">Light</button><button type="button" class="segb" data-theme="dark">Dark</button></span></div><div class="setrow"><span class="setlbl">Colours</span><label class="col"><span>Text</span><input type="color" id="s-fg"></label><label class="col"><span>Background</span><input type="color" id="s-bg"></label><label class="col"><span>Link</span><input type="color" id="s-link"></label></div><p class="setnote">Settings are kept in this browser only.</p></div><div class="tools"><span class="ver">v0.110.2</span><a class="tool" href="toc.html">▤ Detailed contents</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book/releases/download/v0.110.2/proven_c_book-v0.110.2-en.pdf">⤓ PDF</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book" title="This book on GitHub">Git</a><a class="tool" href="https://rubidus-api.github.io/" title="rubidus-api.github.io --- every published project">⌂ All projects</a><a class="tool" href="https://github.com/rubidus-api" title="github.com/rubidus-api --- every repository">≡ All repos</a></div><div class="here-head"><strong>Contents of this chapter</strong></div><div class="here-body"><a class="lv3" href="#s38-1"><span class="tf-no">38.1</span>Alignment and casts — the privilege of char*</a><a class="lv4" href="#s38-1-1"><span class="tf-no">38.1.1</span>The privileges of void * and char * side by side</a><a class="lv3" href="#s38-2"><span class="tf-no">38.2</span>Provenance — the same number, a different origin</a><a class="lv4" href="#s38-2-1"><span class="tf-no">38.2.1</span>Provenance — a word that is not in the standard yet</a><a class="lv4" href="#s38-2-2"><span class="tf-no">38.2.2</span>Where was the gap — two neighbouring variables</a><a class="lv4" href="#s38-2-3"><span class="tf-no">38.2.3</span>Where the word “provenance” was born — DR260</a><a class="lv4" href="#s38-2-4"><span class="tf-no">38.2.4</span>Writing provenance down — from a questionnaire to a technical specification</a><a class="lv4" href="#s38-2-5"><span class="tf-no">38.2.5</span>What changes if the provenance model lands</a><a class="lv4" href="#s38-2-6"><span class="tf-no">38.2.6</span>Machines that carry the origin in hardware</a></div></div>
+<main id="content"><div class="wrap">
+<h2>38 The rules of pointers — alignment and provenance</h2><div></div><div class="dev open prereq"><p class="dev-label">What to know first</p><div class="open-body"><div>chapter 36, Objects, addresses, pointers · what a pointer is</div><div>chapter 4, Address zero, alignment, and low bits · alignment and the low bits</div><div>chapter 15, And so C is an abstract language · the contract of the abstract machine</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 4 taught the alignment rule that “a four-byte load goes at a multiple of four.” But a pointer is merely a variable holding a number — why can it not hold any number at all?</p><div class="qa-a"><p><span class="dev-label">A.</span> Holding it is often not blocked at all — the accident happens <strong>when it is followed</strong>. Dereferencing through an <code>int*</code> means “read four bytes at that address through int’s eye” (chapter 36), and if that address breaks int’s alignment (a multiple of four) then chapter 4’s consequences follow — slowness, or on some machines a bus fault on the spot. In the standard’s eye, <strong>the cast to a type with stricter alignment is already outside the contract</strong>. A pointer’s type is both an eye and a contract.</p></div></div></div><div class="dev open why"><p class="dev-label">The need for this chapter, and its context</p><div class="open-body">The syntax of pointers is learned; now the <strong>contract</strong>. There is a reason this comes before arrays (chapter 39): the moment you start moving between arrays and pointers, alignment and provenance start to matter in earnest. The two threads flagged in chapter 4 (alignment) and chapter 15 (the abstract machine) are tied together here.</div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body">Two deep rules that bind pointers — the constraint chapter 4’s alignment places on pointer casts (and the privilege belonging to <code>char*</code> alone), and a practical feel for the provenance (the tag of origin) foreshadowed in chapter 15. The latter section is a rare place where this book treats something <strong>not yet in the standard’s text</strong> — why such a concept became necessary, how far it has been settled, what changes if it lands, and that machines enforcing it in hardware already exist. The most “contract-like” of this part’s safety rules.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>Is it not common for code that breaks these rules to “run fine on my computer”?</li><li>If it is all settled, why not simply put it in the standard?</li><li>So is this rule really preparation for special machines like CHERI?</li></ol></div></div><div></div><h3 id="s38-1">38.1 Alignment and casts — the privilege of char*<a class="plink" href="#s38-1" aria-label="Link to this section" title="Link to this section">#</a></h3><div></div><p>Pointer casts (viewing an address through another type) are grammatically free but narrow by contract. In practical terms — <strong>a cast to a type demanding stricter alignment is dangerous whenever the address does not satisfy that alignment.</strong> Converting an unaligned <code>char*</code> into an <code>int*</code> (alignment 4) and following it is the typical violation; converting back a pointer that originally came from a properly aligned <code>int</code> object is fully defined. The opposite direction is safe — and here lies a privilege C intended: <strong>a pointer to a character type (<code>char*</code>, <code>signed char*</code> and <code>unsigned char*</code>) may look at any object byte by byte.</strong> With alignment 1 it can point anywhere, and the standard explicitly permits that “the representation of any object may be read through the eye of bytes” (chapter 14’s strict aliasing has this exception carved into it too). The official channel for the perspective of chapter 3, “inside a slot it is only bits”, is <code>unsigned char*</code>.</p><p>Ask <code>alignof</code> for the alignment requirement of each type (a C23 keyword):</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/pointer-rules/align.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">alignof(char)   = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>alignof</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">char</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">alignof(int)    = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>alignof</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">alignof(double) = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>alignof</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">double</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>alignof(char)   = 1
+alignof(int)    = 4
+alignof(double) = 8
+</code></pre></div></div><h4 id="s38-1-1">38.1.1 The privileges of <code>void *</code> and <code>char *</code> side by side<a class="plink" href="#s38-1-1" aria-label="Link to this section" title="Link to this section">#</a></h4><div></div><p>Here we tidy up the two channels announced in chapter 36 — <code>void *</code> and <code>char *</code>. They do different work.</p><figure class="tbl"><div class="tblwrap"><table><tr><th></th><th><strong><code>void *</code></strong></th><th><strong>the <code>char *</code> family</strong></th></tr><tr><td>what it forgets</td><td>it forgets the <strong>type</strong> pointed at</td><td>it forgets nothing — it sees the representation as it is</td></tr><tr><td>dereference</td><td>no (it does not know the size)</td><td>yes — one byte at a time</td></tr><tr><td>arithmetic</td><td>no (by the standard)</td><td>yes — in bytes</td></tr><tr><td>aliasing</td><td>not applicable</td><td><strong>it may read the representation of any object</strong> (the aliasing exception)</td></tr><tr><td>round trip</td><td>object pointer ↔ <code>void *</code> returns the original value</td><td>reading bytes and recovering a pointer are different matters</td></tr></table></div><span id="doc-float-156"></span><p class="float-caption">Table 38.1 — The privileges of <code>void *</code> and the character pointers</p></figure><p>This is why <code>memcpy</code> takes <code>void *</code> in its prototype and copies bytes inside — <strong>it forgets the type on the way in and looks at bytes on the way through.</strong> That the standard requires <code>void *</code> and the character-type pointers to share a representation is for exactly this combination (chapter 36’s word-addressed machines).</p><div class="dev misconception"><p class="dev-label">A common misconception. <strong>“Since <code>char *</code> can pick an object apart, a pointer may be built out of the bytes”</strong></p><div class="dev-body"><p>Two things are mixed up here. <strong>Reading</strong> is permitted — the representation of any object may be read byte by byte through <code>unsigned char *</code>. But assembling those bytes back into a pointer and <strong>making it point at another object</strong> is a separate matter, because the provenance attached to that pointer belongs to the original object — which is exactly the subject of the next section.</p><p>The practical conclusion is simple. To move a representation, move the <strong>value</strong> with <code>memcpy</code>; if a pointer is needed, obtain it again from the original object. An address assembled out of bytes mostly works on x86-64, but on a machine where pointers carry permissions, such as CHERI (capability hardware enhanced RISC instructions), it is stopped on the spot (chapter 36).</p></div></div><h3 id="s38-2">38.2 Provenance — the same number, a different origin<a class="plink" href="#s38-2" aria-label="Link to this section" title="Link to this section">#</a></h3><div></div><p>Here the provenance foreshadowed in chapter 15 turns into practical instinct. In the naive picture a pointer is only a number, so if the number is right it should be followable however it was made — but the contract of modern C is not like that. <strong>A pointer has an origin (provenance)</strong>: an invisible tag saying which object it derived from. Here are three practical rules.</p><ul><li><strong>Pointer arithmetic stays inside the object it was born in.</strong> Taking a pointer that started from one object’s address and pushing it (chapter 39) onto another</li></ul><span id="idx-entry-106"></span><p>object — even if the number really does coincide with that object — is outside the contract.</p><ul><li><span id="idx-entry-107"></span><strong>One past the end is permitted.</strong> Pointing at the slot “after” the end of an array (one-past-the-end) is legal (as long as you do not follow it). It is so useful in a loop’s ending condition that the standard carved out this place specially (in action in chapter 39).</li><li><strong>To treat it as a number, use the official channel.</strong> Converting a pointer to an integer to store or compute with it (such as chapter 4’s tagged pointers) has a road provided by the contract: going through the dedicated type <code>uintptr_t</code>.</li></ul><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Is it not common for code that breaks these rules to “run fine on my computer”?</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> It is common — and that is why these rules are dangerous. What collects the price of a violation is not the machine but <strong>the compiler’s optimisation</strong> (chapter 14): it rearranges and caches on the premise that “a pointer does not point outside its origin”, so violating code <strong>silently</strong> behaves differently when the optimisation level or the compiler version changes. That “it ran just now” is not evidence of keeping the contract — that the criterion is chapter 15’s “is it correct on the abstract machine” — is this chapter’s conclusion, and chapter 56 shows the whole of this subject.</p></div></div><h4 id="s38-2-1">38.2.1 Provenance — a word that is not in the standard yet<a class="plink" href="#s38-2-1" aria-label="Link to this section" title="Link to this section">#</a></h4><div></div><p>One thing must be said honestly here. <strong>Provenance is not a term of the C23 standard text.</strong> Search C23 from cover to cover and there is no clause defining that word. This book still spends a section on it for three reasons.</p><ol><li>Compilers <strong>already</strong> optimise on this concept. That it is absent from the standard does not mean it may be kept or ignored at will.</li><li>The committee has finished writing it down, in a separate technical specification (ISO/IEC TS 6010, 2025). What remains is folding it into the main text.</li><li>What that specification does is not to pile on new rules but to <strong>fill the gaps between rules that already existed and make them fit together</strong>.</li></ol><p>The third is the heart of this section. Even when the concept enters the standard, there is no new syntax to learn. The rules you must keep stay the same — but for the first time the standard will explain, in one word, <strong>why</strong>.</p><h4 id="s38-2-2">38.2.2 Where was the gap — two neighbouring variables<a class="plink" href="#s38-2-2" aria-label="Link to this section" title="Link to this section">#</a></h4><div></div><p>Look at just one place where the explanation breaks down without this concept. Two variables laid side by side at file scope.</p><pre><code data-lang="c"><strong><span class="tok-t">int</span></strong> y <strong><span class="tok-x">=</span></strong> <span class="tok-n">2</span><span class="tok-x">,</span> x <strong><span class="tok-x">=</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+<strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>p <strong><span class="tok-x">=</span></strong> <strong><span class="tok-x">&amp;</span></strong>x <strong><span class="tok-x">+</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>      <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the slot "one past" x — making it is legal </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>q <strong><span class="tok-x">=</span></strong> <strong><span class="tok-x">&amp;</span></strong>y<span class="tok-x">;</span>
+<strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>p <strong><span class="tok-x">==</span></strong> q<span class="tok-x">)</span>           <em><span class="tok-c">/*</span></em><em><span class="tok-c"> this can be true </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-x">*</span></strong>p <strong><span class="tok-x">=</span></strong> <span class="tok-n">11</span><span class="tok-x">;</span>          <em><span class="tok-c">/*</span></em><em><span class="tok-c"> but what about this line? </span></em><em><span class="tok-c">*/</span></em></code></pre><p>The question splits in two. <strong>Can <code>p == q</code> be true?</strong> It can. If the two variables really are placed next to each other the addresses coincide, and how the comparison then comes out is not fixed by the standard (unspecified). <strong>Then, inside that true branch, may <code>y</code> be modified through <code>*p</code>?</strong> No. <code>p</code> was born from <code>x</code>, and the one-past-the-end slot is legal to point at, not to follow.</p><p>This is where the naive picture collapses. “Two pointers that answered <strong>equal</strong> cannot be used interchangeably” is a self-contradiction in the <strong>pointer = number</strong> picture. And it is the real compilers that take the contradictory side — with optimisation on, GCC and Clang alike move and delete code on the premise that “<code>p</code> and <code>q</code> came from different objects, so they cannot overlap.” The code above therefore leaves <code>y</code> at 11 or at 2 depending on the compiler and the optimisation level. It matters, too, that this is separate from chapter 14’s strict aliasing — <code>-fno-strict-aliasing</code> does not make this premise go away.</p><p>The standard’s text was silent about the situation. As a result three parties have been talking past each other for twenty years. The text reads as “a pointer is a value”, the compiler optimises as “different origin, different thing”, and the programmer says “it ran on my machine.” With no referee, one cannot even decide whether the compiler produced a bug or the program broke the contract.</p><h4 id="s38-2-3">38.2.3 Where the word “provenance” was born — DR260<a class="plink" href="#s38-2-3" aria-label="Link to this section" title="Link to this section">#</a></h4><div></div><p>The word first appears in an official document in 2004, in the committee’s response to Defect Report 260. The gist can be summed up in two sentences.</p><p>“ An implementation may track the <strong>origins</strong> of a bit pattern. Pointers with different origins may be treated as distinct even when they are bitwise identical. ”</p><p>Permission was granted. But that permission never reached the standard’s text. There was no definition, and no boundary of what was allowed. In that state the compilers went ahead and built <strong>provenance-based alias analysis</strong> on the response.</p><span id="idx-entry-108"></span><p>What happens when an undefined concept becomes the basis of optimisation — that is the lesson of this story. Nobody can settle which idiom is legal. Half of the old low-level code sinks into a grey zone.</p><h4 id="s38-2-4">38.2.4 Writing provenance down — from a questionnaire to a technical specification<a class="plink" href="#s38-2-4" aria-label="Link to this section" title="Link to this section">#</a></h4><div></div><p>It is worth noting that the work began in an unusual way. What came first was not drafting clauses but <strong>asking</strong>. Researchers at Cambridge circulated a survey on pointers and object representation, gathering what working C programmers and implementers actually take to be legal, and the analysis went to the committee as documents.<sup class="fnref" id="ch38-fnref-1"><a href="#ch38-fn-1" aria-label="Notes 1">1</a></sup> Only then were the open issues distilled into twenty questions (Q1–Q20) and put to the committee as “ought this to be legal?”<sup class="fnref" id="ch38-fnref-2"><a href="#ch38-fn-2" aria-label="Notes 2">2</a></sup> Measuring <strong>what reality does</strong> before changing the standard.</p><p>A model was built on top of that. Its name is PNVI-ae-udi; the name is not worth memorising, and in practice it is three lines.</p><ol><li>Every object (allocation) carries one invisible <strong>tag of origin</strong>. A pointer value is the pair «origin + address».</li><li>Casting a pointer to an integer <strong>exposes</strong> that object’s address (address exposed).</li><li>Casting an integer back to a pointer looks among the objects <strong>whose addresses have been exposed</strong> for one holding that address and revives its origin. If none was ever exposed, there is no origin to revive — such a pointer cannot be followed.</li></ol><p>In a single line: <strong>only an object whose address was once handed out as an integer can be recovered from that integer.</strong> Why a <code>uintptr_t</code> round trip is the official channel, and why an address assembled out of bytes is not, both fall out of that one line — the two rules are not separate decrees but consequences of one model. That is what “tidying up” means here.</p><p>The result of the work is <strong>ISO/IEC TS 6010</strong> (2025), “a provenance-aware memory object model for C”.<sup class="fnref" id="ch38-fnref-3"><a href="#ch38-fn-3" aria-label="Notes 3">3</a></sup> It came out not as the standard’s text but as a separate Technical Specification, and it defines itself in those terms — <strong>not a complete specification of the language, but a document that constrains and clarifies the memory object model implicit in ISO/IEC 9899:2018.</strong> A conforming implementation must behave “as if these indicated differences to ISO/IEC 9899:2018 had been integrated into ISO/IEC 9899”.</p><p>It also marks its own boundary: <strong>this specification does not address subobject provenance.</strong> How far a pointer to a structure member may walk is still an open question.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> If it is all settled, why not simply put it in the standard?</p></div><div class="dev qa-a"><p><p><span class="dev-label">A.</span> Because <strong>changing the text without implementation experience is risky.</strong> The specification records the circumstance itself: WG14 and the corresponding C++ subgroup both <strong>approved the overall direction, subject to implementation experience</strong>. Around the same time the proposal was discussed with the Clang/LLVM and GCC communities at EuroLLVM and the GNU Tools Cauldron.</p><p>Publishing separately first gives compiler writers time to implement it and to measure how much real code it breaks. Chapter 1’s answer to “why is standardisation this slow” is here in full — <strong>because what is nailed down once lasts thirty years.</strong></p></p></div></div><p>The numbers and names are not for memorising. One thing is worth keeping: <strong>pointer provenance is not anyone’s taste but a concept set down in a document through the standardisation process, and a candidate for the next revision’s text.</strong></p><h4 id="s38-2-5">38.2.5 What changes if the provenance model lands<a class="plink" href="#s38-2-5" aria-label="Link to this section" title="Link to this section">#</a></h4><div></div><p>To answer the most important part first — <strong>nothing happens to most code.</strong> No new keyword, no new syntax, no reason to rebuild. What changes is how much is grey. The idioms now stuck in the grey zone separate into black and white.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>idiom</strong></th><th><strong>today (by the text)</strong></th><th><strong>with the provenance model</strong></th></tr><tr><td><code>uintptr_t</code> round trip</td><td>guaranteed, but on hazy grounds</td><td>legal — the cast to an integer is itself the “exposure”</td></tr><tr><td>copying a pointer representation with <code>memcpy</code></td><td>grey</td><td>legal — the origin travels along</td></tr><tr><td>tagged pointers (chapter 4)</td><td>grey</td><td>legal if the round-trip channel is respected</td></tr><tr><td>XOR linked lists</td><td>grey</td><td><strong>illegal</strong> — a value mixing two origins has none</td></tr><tr><td>a pointer pushed outside its object</td><td>illegal (via the array clause)</td><td>illegal — with the reason unified as “origin”</td></tr><tr><td>an address assembled from bytes or I/O</td><td>grey</td><td><strong>illegal</strong> — an origin never exposed cannot be revived</td></tr></table></div><span id="doc-float-157"></span><p class="float-caption">Table 38.2 — Idioms that separate once the provenance model lands</p></figure><p>What to read in the table is not the individual verdicts but the fact that <strong>verdicts became possible.</strong> Today those cells could only say “probably”. The other changes are these.</p><ul><li><strong>The compiler gains a clear basis.</strong> Today’s provenance-based optimisation leans on a single twenty-year-old defect response. With the model in the text, which rearrangement is legal can be decided mechanically — meaning there is finally a referee between a compiler’s bug and a program’s violation.</li><li><strong>Tools become precise.</strong> A sanitiser (chapter 18) catches “a bad address” today but is poor at “an address with the wrong origin”. Once the rules are written down, a diagnostic can say “the origin was lost here”, and formal verification tools gain a basis for proving C programs correct.</li><li><strong>Teaching and documentation change.</strong> Explanations that ended at “that is UB (undefined behaviour)” become “that pointer was not born from this object”. Which is exactly the shape of the explanation this book is giving now.</li><li><strong>This is not C’s problem alone.</strong> Rust settled the same problem first at library level — APIs such as <code>with_addr</code>, which swaps only the address, <code>expose_provenance</code>, which makes exposure explicit, and <code>with_exposed_provenance</code>, which turns an address back into a pointer; they were stabilised in release 1.84 in January 2025.<sup class="fnref" id="ch38-fnref-4"><a href="#ch38-fn-4" aria-label="Notes 4">4</a></sup> The same discussion runs through LLVM’s intermediate representation. That several languages converge on the same conclusion says this is not C’s sophistry but <strong>the nature of the machinery called a compiler</strong>.</li></ul><div class="dev misconception"><p class="dev-label">A common misconception. <strong>“It is not in the standard yet, so it need not be minded for now”</strong></p><div class="dev-body">The direction is exactly backwards. The danger does not begin when it <strong>enters</strong> the standard; today is the more dangerous state. Compilers already optimise on the premise while the standard’s text has no clause announcing it, so there is no document to explain why the violating code broke. Writing it down is not a new shackle but <strong>the instructions for a shackle that was already locked</strong>.</div></div><h4 id="s38-2-6">38.2.6 Machines that carry the origin in hardware<a class="plink" href="#s38-2-6" aria-label="Link to this section" title="Link to this section">#</a></h4><div></div><p>None of this is confined to paper. Machines already exist in which the origin rides on the pointer and <strong>the hardware</strong> enforces it.</p><div class="dev realcase"><p class="dev-label">In practice. Capability-based architectures</p><div class="dev-body"><p><strong>CHERI.</strong> The architecture met in chapter 36 as a story about size. Here we look at it again from the angle of origin. A CHERI pointer is «address + bounds + permissions + <strong>one validity tag bit</strong>». The last item is decisive — the tag is not kept alongside the data but <strong>out of band</strong>, and ordinary instructions cannot set it. Manufacture an address with integer arithmetic and store it there, and the hardware clears the tag. A value that has lost its tag is no longer a pointer but merely a number, and the hardware stops it as soon as it is followed.</p><p><strong>Arm Morello.</strong> A real prototype board, shipped in early 2022.<sup class="fnref" id="ch38-fnref-5"><a href="#ch38-fn-5" aria-label="Notes 5">5</a></sup> Memory was extended to carry tag bits as well — that is, supporting this concept takes not only the CPU core but the whole machine.</p><p><strong>CHERIoT.</strong> The same idea pushed to the very small end, aimed at 32-bit RISC-V-class devices for the internet of things; it began as an instruction-set extension designed at Microsoft and has reached real boards. Evidence that this is not a server-only story.</p><p><strong>The idea is not new.</strong> Tagged machines are the older lineage, in fact. The 128-bit tagged pointers of IBM’s System/38 and AS/400 seen in chapter 36, and before them the tagged words of the Burroughs B5000 line, put the same thought into hardware. It merely happened that C was born on the untagged branch.</p></div></div><div class="dev platform"><p class="dev-label">Platform note. An easily confused neighbour of capability machines</p><div class="dev-body">AArch64’s TBI (top byte ignore) and MTE (memory tagging extension), and x86-64’s LAM, are a different story from capability machines. They ignore the top byte of an address, or paint a “colour” there and check it on access — useful for catching bad accesses <strong>probabilistically</strong>, but the pointer is not carrying bounds and permissions. Enforcing origin belongs to the capability family; colouring is a detection aid.</div></div><p>To sum up, two parties collect the price. On x86-64 the price of breaking provenance is collected by <strong>the compiler</strong> (so it is quiet and late); on a capability machine it is collected by <strong>the hardware</strong>, on the spot (so it is loud and immediate). Either way it is collected.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> So is this rule really preparation for special machines like CHERI?</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> No — the order is the other way round. The provenance rules did not arise because of CHERI; they became necessary because <strong>the optimising compiler on ordinary x86-64 already runs on that premise</strong>. CHERI merely moved the rule into hardware. Code that keeps the rule therefore gets a bonus: almost nothing to change when it moves to the new machines. Code resting on “it ran fine on x86-64”, by contrast, breaks once when the optimisation level changes and again when the machine does.</p></div></div><p>We have the rules of pointers too. Now we take these tools to contiguous memory — the array. The credit of <code>line[100]</code>, carried since chapter 26, is settled in the next chapter.</p><section class="chapter-notes" role="doc-endnotes"><h2>Notes</h2><ol><li id="ch38-fn-1">WG14 N2013, “C memory object and value semantics: the space of de facto and ISO standards”, and N2014, “What is C in practice? (Cerberus survey v2): Analysis of Responses”, 2016. <a class="fnback" href="#ch38-fnref-1" aria-label="back to text" title="back to text">&#8617;</a></li><li id="ch38-fn-2">WG14 N2219 and N2263, “Clarifying Pointer Provenance (Q1-Q20)”, Memarian, Gomes and Sewell, 2018. <a class="fnback" href="#ch38-fnref-2" aria-label="back to text" title="back to text">&#8617;</a></li><li id="ch38-fn-3">ISO/IEC TS 6010:2025, Programming languages — C — A provenance-aware memory object model for C, published May 2025. The working draft is public as WG14 N3231. <a class="fnback" href="#ch38-fnref-3" aria-label="back to text" title="back to text">&#8617;</a></li><li id="ch38-fn-4">Rust 1.84.0 release notes, 2025-01-09: the “strict provenance” and “exposed provenance” API set. <a class="fnback" href="#ch38-fnref-4" aria-label="back to text" title="back to text">&#8617;</a></li><li id="ch38-fn-5">Arm Morello — a prototype SoC and development board implementing a CHERI-extended ARMv8-A processor, shipped January 2022; a joint effort of Arm and the CTSRD/CHERI project at the University of Cambridge. <a class="fnback" href="#ch38-fnref-5" aria-label="back to text" title="back to text">&#8617;</a></li></ol></section>
+<div class="nav"><a href="ch37.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch39.html">Next →</a></div>
+</div></main>
+<script>(function(){var b=document.querySelector('.menu-btn'),p=document.getElementById('here-panel');function open(o){if(!p)return;p.hidden=!o;if(b)b.setAttribute('aria-expanded',o);}if(b)b.addEventListener('click',function(){open(p.hidden);});if(p)p.addEventListener('click',function(e){if(e.target.tagName==='A'&&e.target.getAttribute('href').charAt(0)==='#')open(false);});document.addEventListener('keydown',function(e){if(e.key==='Escape'&&p&&!p.hidden){open(false);if(b)b.focus();}});document.addEventListener('click',function(e){if(p&&!p.hidden&&!p.contains(e.target)&&!(b&&b.contains(e.target)))open(false);});var bk=document.querySelector('.bar .back');if(bk)bk.addEventListener('click',function(e){if(history.length>1&&document.referrer){e.preventDefault();history.back();}});var box=document.getElementById('setbox');if(!box)return;var r=document.documentElement;function load(){try{return JSON.parse(localStorage.getItem('doc-read')||'{}');}catch(e){return {};}}function save(s){try{localStorage.setItem('doc-read',JSON.stringify(s));}catch(e){}}function css(n){return getComputedStyle(r).getPropertyValue(n).trim();}function paint(){var s=load();var t=s.theme||'auto',w=s.width==='fit'?'fit':'960';[].forEach.call(box.querySelectorAll('.segb[data-theme]'),function(x){x.setAttribute('aria-pressed',x.dataset.theme===t);});[].forEach.call(box.querySelectorAll('.segb[data-width]'),function(x){x.setAttribute('aria-pressed',x.dataset.width===w);});var ly=s.layout||'auto';[].forEach.call(box.querySelectorAll('.segb[data-layout]'),function(x){x.setAttribute('aria-pressed',x.dataset.layout===ly);});document.getElementById('s-fg').value=s.fg||hex(css('--fg'));document.getElementById('s-bg').value=s.bg||hex(css('--bg'));document.getElementById('s-link').value=s.link||hex(css('--link'));}function hex(v){var m=v.match(/^rgba?\((\d+)[ ,]+(\d+)[ ,]+(\d+)/);if(!m)return v.charAt(0)==='#'?v:'#000000';return '#'+[1,2,3].map(function(i){return ('0'+parseInt(m[i],10).toString(16)).slice(-2);}).join('');}paint();[].forEach.call(box.querySelectorAll('.segb[data-width]'),function(x){x.addEventListener('click',function(){var s=load();if(x.dataset.width==='fit'){s.width='fit';r.setAttribute('data-measure','fit');}else{delete s.width;r.removeAttribute('data-measure');}save(s);setTimeout(paint,0);});});[].forEach.call(box.querySelectorAll('.segb[data-layout]'),function(x){x.addEventListener('click',function(){var s=load(),v=x.dataset.layout;if(v==='auto'){delete s.layout;r.removeAttribute('data-layout');}else{s.layout=v;r.setAttribute('data-layout',v);}save(s);var m=document.querySelector('meta[name=viewport]');var want=v==='desktop'?'width=1100':'width=device-width, initial-scale=1';if(m&&m.getAttribute('content')!==want)location.reload();else setTimeout(paint,0);});});[].forEach.call(box.querySelectorAll('.segb[data-theme]'),function(x){x.addEventListener('click',function(){var s=load();s.theme=x.dataset.theme;delete s.fg;delete s.bg;delete s.link;save(s);['--fg','--bg','--link'].forEach(function(n){r.style.removeProperty(n);});if(s.theme==='auto')r.removeAttribute('data-theme');else r.setAttribute('data-theme',s.theme);setTimeout(paint,0);});});[['s-fg','--fg','fg'],['s-bg','--bg','bg'],['s-link','--link','link']].forEach(function(a){document.getElementById(a[0]).addEventListener('input',function(){var s=load();s[a[2]]=this.value;save(s);r.style.setProperty(a[1],this.value);});});})();</script><script>
+(function(){
+  var q=document.getElementById('q'), out=document.getElementById('qr');
+  if(!q||!out) return;
+  var data=null, NONE="Nothing found";
+  function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+  function run(){
+    var v=q.value.trim().toLowerCase();
+    out.innerHTML='';
+    if(!v||!data) return;
+    var hits=[];
+    for(var i=0;i<data.length && hits.length<40;i++){
+      if(data[i][0].toLowerCase().indexOf(v)>=0) hits.push(data[i]);
+    }
+    if(!hits.length){ out.innerHTML='<li>'+NONE+'</li>'; return; }
+    out.innerHTML=hits.map(function(h){
+      return '<li><a href="'+h[1]+'">'+esc(h[0])+'</a>'+
+             (h[2]?'<span class="where">'+esc(h[2])+'</span>':'')+'</li>';
+    }).join('');
+  }
+  q.addEventListener('input',function(){
+    if(data){ run(); return; }
+    fetch('search-index.json').then(function(r){return r.json();})
+      .then(function(j){ data=j; run(); })
+      .catch(function(){ out.innerHTML='<li>'+NONE+'</li>'; });
+  });
+})();
+</script></body></html>
